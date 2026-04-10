@@ -134,6 +134,21 @@ const FIELD_POSITIONS: React.CSSProperties[] = [
   { top: "50%", left: "16%", transform: "translate(-50%, -50%)" },
 ];
 
+// Pozice figurek — každé pole posunuté o ~10 % směrem ke středu desky (50 %, 50 %)
+const FIGURINE_POSITIONS: React.CSSProperties[] = FIELD_POSITIONS.map((pos) => {
+  const left = parseFloat(pos.left as string);
+  const top  = parseFloat(pos.top  as string);
+  const dx = 50 - left;
+  const dy = 50 - top;
+  const len = Math.sqrt(dx * dx + dy * dy) || 1;
+  const offset = 10; // % směrem ke středu
+  return {
+    left: `${left + (dx / len) * offset}%`,
+    top:  `${top  + (dy / len) * offset}%`,
+    transform: "translate(-50%, -50%)",
+  };
+});
+
 // ─── Komponenta ───────────────────────────────────────────────────────────────
 
 interface Props {
@@ -485,24 +500,36 @@ export default function GameBoard({ gameCode }: Props) {
                     <div className="text-[9px] font-bold leading-tight text-center px-0.5 mt-0.5">
                       {field.type === "start" ? "START" : field.label}
                     </div>
-                    <div className="mt-0.5 flex flex-wrap items-center justify-center gap-0.5">
-                      {playersHere.map((player) => {
-                        const isAnimatingThis = player.id === animatingPlayerId;
-                        return (
-                          <div
-                            key={player.id}
-                            className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black text-white ring-2 ring-white transition-transform duration-200 ${player.color} ${isAnimatingThis ? "scale-125 animate-bounce" : ""}`}
-                            style={{ boxShadow: "0 3px 0 rgba(0,0,0,0.35), 0 4px 6px rgba(0,0,0,0.25)" }}
-                            title={player.name}
-                          >
-                            {player.name.charAt(0).toUpperCase()}
-                          </div>
-                        );
-                      })}
-                    </div>
                   </div>
                 );
               })}
+              {/* Figurky hráčů — mimo čtverce polí, posunuté ke středu */}
+              {FIELDS.map((field) => {
+                const playersHere = fieldPlayers(field.index);
+                if (playersHere.length === 0) return null;
+                return (
+                  <div
+                    key={`fig-${field.index}`}
+                    className="absolute flex items-center justify-center gap-0.5"
+                    style={FIGURINE_POSITIONS[field.index]}
+                  >
+                    {playersHere.map((player) => {
+                      const isAnimatingThis = player.id === animatingPlayerId;
+                      return (
+                        <div
+                          key={player.id}
+                          className={`flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-black text-white ring-2 ring-white transition-transform duration-200 ${player.color} ${isAnimatingThis ? "scale-125 animate-bounce" : ""}`}
+                          style={{ boxShadow: "0 3px 0 rgba(0,0,0,0.35), 0 4px 6px rgba(0,0,0,0.25)" }}
+                          title={player.name}
+                        >
+                          {player.name.charAt(0).toUpperCase()}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+
               <div className="absolute left-1/2 top-1/2 flex h-[42%] w-[42%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[36px] border-2 border-dashed border-slate-300 bg-slate-50 p-4 text-center">
                 <div>
                   <div className="text-2xl">🐎</div>
