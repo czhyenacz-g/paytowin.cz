@@ -263,7 +263,8 @@ export default function GameBoard({ gameCode }: Props) {
     }
 
     setIsMoving(false);
-    setAnimatingPlayerIdx(null);
+    // animatingPlayerIdx necháme nastavený až po zápisu do DB — jinak figurka
+    // problikne na starou pozici (player.position v DB ještě není aktualizované)
 
     // ── 3. Herní logika + zápis do Supabase ───────────────────────────────────
     const field = FIELDS[newPosition];
@@ -322,7 +323,8 @@ export default function GameBoard({ gameCode }: Props) {
       }).eq("game_id", gameId);
     }
 
-    // ── 4. Stopa zmizí po 1,5 s ──────────────────────────────────────────────
+    // ── 4. Vyčisti animační stav, stopa zmizí po 1,5 s ──────────────────────
+    setAnimatingPlayerIdx(null);
     setTimeout(() => setTrailFields([]), 1500);
   };
 
