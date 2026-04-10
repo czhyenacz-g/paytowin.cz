@@ -5,6 +5,12 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { generateGameCode, PLAYER_COLORS } from "@/lib/game";
 
+interface DiscordUser {
+  id: string;
+  name: string;
+  avatar: string | null;
+}
+
 export default function LandingPage() {
   const router = useRouter();
   const [name, setName] = React.useState("");
@@ -13,13 +19,47 @@ export default function LandingPage() {
   const [error, setError] = React.useState("");
   const [shareCode, setShareCode] = React.useState<string | null>(null);
   const [copied, setCopied] = React.useState(false);
+  const [discordUser, setDiscordUser] = React.useState<DiscordUser | null>(null);
 
-  // Předvyplň kód z URL parametru ?join=KOD
+  // Načti session + předvyplň ?join=KOD z URL
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const join = params.get("join");
     if (join) setJoinCode(join.toUpperCase());
+
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      const discordId = user.user_metadata?.provider_id as string | undefined;
+      if (!discordId) return;
+
+      const fullName = (user.user_metadata?.full_name ?? user.user_metadata?.name ?? "") as string;
+      const avatarUrl = user.user_metadata?.avatar_url as string | null ?? null;
+
+      // Ulož Discord ID do localStorage pro budoucí napojení
+      localStorage.setItem("paytowin_discord_id", discordId);
+      localStorage.setItem("paytowin_discord_name", fullName);
+
+      setDiscordUser({ id: discordId, name: fullName, avatar: avatarUrl });
+      // Předvyplň jméno jen pokud ho hráč ještě nezadal
+      setName((prev) => prev || fullName);
+    });
   }, []);
+
+  const loginWithDiscord = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: "discord",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=/`,
+      },
+    });
+  };
+
+  const logoutDiscord = async () => {
+    await supabase.auth.signOut();
+    setDiscordUser(null);
+    localStorage.removeItem("paytowin_discord_id");
+    localStorage.removeItem("paytowin_discord_name");
+  };
 
   const createGame = async () => {
     if (!name.trim()) return setError("Zadej své jméno.");
@@ -158,50 +198,79 @@ export default function LandingPage() {
               </div>
             ) : (
               <>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Tvoje jméno</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="např. Hynek"
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-800 outline-none focus:border-slate-500"
-              />
-            </div>
+                {/* Discord session info / login */}
+                {discordUser ? (
+                  <div className="flex items-center justify-between rounded-2xl bg-indigo-50 border border-indigo-200 px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      {discordUser.avatar ? (
+                        <img src={discordUser.avatar} alt="" className="h-8 w-8 rounded-full" />
+                      ) : (
+                        <div className="h-8 w-8 rounded-full bg-indigo-300 flex items-center justify-center text-white text-sm font-bold">
+                          {discordUser.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div>
+                        <div className="text-sm font-semibold text-indigo-900">{discordUser.name}</div>
+                        <div className="text-xs text-indigo-400">přihlášen přes Discord</div>
+                      </div>
+                    </div>
+                    <button onClick={logoutDiscord} className="text-xs text-indigo-400 hover:text-indigo-700 underline">
+                      Odhlásit
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={loginWithDiscord}
+                    className="w-full rounded-2xl border-2 border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100"
+                  >
+                    🎮 Přihlásit přes Discord <span className="font-normal text-indigo-400">(vyplní jméno automaticky)</span>
+                  </button>
+                )}
 
-            {error && <p className="text-sm text-red-600">{error}</p>}
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-700">Tvoje jméno</label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="např. Hynek"
+                    className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-800 outline-none focus:border-slate-500"
+                  />
+                </div>
 
-            <button
-              onClick={createGame}
-              disabled={loading}
-              className="w-full rounded-2xl bg-slate-900 px-4 py-4 text-lg font-semibold text-white shadow transition hover:bg-slate-800 disabled:bg-slate-400"
-            >
-              Vytvořit novou hru
-            </button>
+                {error && <p className="text-sm text-red-600">{error}</p>}
 
-            <div className="relative flex items-center gap-3">
-              <div className="flex-1 border-t border-slate-200" />
-              <span className="text-sm text-slate-400">nebo</span>
-              <div className="flex-1 border-t border-slate-200" />
-            </div>
+                <button
+                  onClick={createGame}
+                  disabled={loading}
+                  className="w-full rounded-2xl bg-slate-900 px-4 py-4 text-lg font-semibold text-white shadow transition hover:bg-slate-800 disabled:bg-slate-400"
+                >
+                  Vytvořit novou hru
+                </button>
 
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={joinCode}
-                onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                placeholder="Kód hry (např. XK9F2)"
-                maxLength={5}
-                className="flex-1 rounded-xl border border-slate-300 px-4 py-3 text-slate-800 uppercase tracking-widest outline-none focus:border-slate-500"
-              />
-              <button
-                onClick={joinGame}
-                disabled={loading}
-                className="rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white hover:bg-emerald-700 disabled:bg-slate-400"
-              >
-                Připojit
-              </button>
-            </div>
+                <div className="relative flex items-center gap-3">
+                  <div className="flex-1 border-t border-slate-200" />
+                  <span className="text-sm text-slate-400">nebo</span>
+                  <div className="flex-1 border-t border-slate-200" />
+                </div>
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={joinCode}
+                    onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                    placeholder="Kód hry (např. XK9F2)"
+                    maxLength={5}
+                    className="flex-1 rounded-xl border border-slate-300 px-4 py-3 text-slate-800 uppercase tracking-widest outline-none focus:border-slate-500"
+                  />
+                  <button
+                    onClick={joinGame}
+                    disabled={loading}
+                    className="rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white hover:bg-emerald-700 disabled:bg-slate-400"
+                  >
+                    Připojit
+                  </button>
+                </div>
               </>
             )}
           </div>
