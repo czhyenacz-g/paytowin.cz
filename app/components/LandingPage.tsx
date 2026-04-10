@@ -31,7 +31,7 @@ export default function LandingPage() {
       return;
     }
 
-    const { error: playerErr } = await supabase.from("players").insert({
+    const { data: newPlayer, error: playerErr } = await supabase.from("players").insert({
       game_id: game.id,
       name: name.trim(),
       color: PLAYER_COLORS[0],
@@ -39,9 +39,9 @@ export default function LandingPage() {
       coins: 500,
       horses: [],
       turn_order: 0,
-    });
+    }).select().single();
 
-    if (playerErr) {
+    if (playerErr || !newPlayer) {
       setError("Nepodařilo se přidat hráče.");
       setLoading(false);
       return;
@@ -54,6 +54,7 @@ export default function LandingPage() {
       log: [],
     });
 
+    localStorage.setItem(`paytowin_player_${code}`, newPlayer.id);
     router.push(`/game/${code}`);
   };
 
@@ -83,7 +84,7 @@ export default function LandingPage() {
     const turnOrder = existingPlayers?.length ?? 0;
     const color = PLAYER_COLORS[turnOrder % PLAYER_COLORS.length];
 
-    await supabase.from("players").insert({
+    const { data: newPlayer } = await supabase.from("players").insert({
       game_id: game.id,
       name: name.trim(),
       color,
@@ -91,8 +92,11 @@ export default function LandingPage() {
       coins: 500,
       horses: [],
       turn_order: turnOrder,
-    });
+    }).select().single();
 
+    if (newPlayer) {
+      localStorage.setItem(`paytowin_player_${game.code}`, newPlayer.id);
+    }
     router.push(`/game/${game.code}`);
   };
 

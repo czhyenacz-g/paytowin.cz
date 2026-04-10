@@ -141,6 +141,7 @@ export default function GameBoard({ gameCode }: Props) {
   const [gameState, setGameState] = React.useState<GameState | null>(null);
   const [loading, setLoading] = React.useState(!!gameCode);
   const [pendingHorse, setPendingHorse] = React.useState<{ horse: Horse; playerIndex: number } | null>(null);
+  const [myPlayerId, setMyPlayerId] = React.useState<string | null>(null);
 
   // ── Načtení hry ze Supabase ──────────────────────────────────────────────────
   React.useEffect(() => {
@@ -155,6 +156,7 @@ export default function GameBoard({ gameCode }: Props) {
 
       if (!game) { setLoading(false); return; }
       setGameId(game.id);
+      setMyPlayerId(localStorage.getItem(`paytowin_player_${gameCode}`));
       await refreshGame(game.id);
       setLoading(false);
 
@@ -277,7 +279,7 @@ export default function GameBoard({ gameCode }: Props) {
 
   const fieldPlayers = (fieldIndex: number) => players.filter((p) => p.position === fieldIndex);
   const currentPlayer = gameState ? players[gameState.current_player_index] : null;
-  const isMyTurn = !!pendingHorse || true; // TODO: per-player auth
+  const isMyTurn = !!myPlayerId && currentPlayer?.id === myPlayerId;
 
   // ── Render ───────────────────────────────────────────────────────────────────
 
@@ -352,7 +354,8 @@ export default function GameBoard({ gameCode }: Props) {
                       {playersHere.map((player) => (
                         <div
                           key={player.id}
-                          className={`flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-black text-white ring-2 ring-white shadow-md ${player.color}`}
+                          className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black text-white ring-2 ring-white ${player.color}`}
+                          style={{ boxShadow: "0 3px 0 rgba(0,0,0,0.35), 0 4px 6px rgba(0,0,0,0.25)" }}
                           title={player.name}
                         >
                           {player.name.charAt(0).toUpperCase()}
@@ -397,23 +400,29 @@ export default function GameBoard({ gameCode }: Props) {
                         </div>
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={buyHorse}
-                        disabled={(players[pendingHorse.playerIndex]?.coins ?? 0) < pendingHorse.horse.price}
-                        className="flex-1 rounded-xl bg-amber-500 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-600 disabled:cursor-not-allowed disabled:bg-slate-300"
-                      >
-                        Koupit
-                      </button>
-                      <button
-                        onClick={skipHorse}
-                        className="flex-1 rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                      >
-                        Přeskočit
-                      </button>
-                    </div>
+                    {isMyTurn ? (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={buyHorse}
+                          disabled={(players[pendingHorse.playerIndex]?.coins ?? 0) < pendingHorse.horse.price}
+                          className="flex-1 rounded-xl bg-amber-500 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-600 disabled:cursor-not-allowed disabled:bg-slate-300"
+                        >
+                          Koupit
+                        </button>
+                        <button
+                          onClick={skipHorse}
+                          className="flex-1 rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                        >
+                          Přeskočit
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="rounded-xl bg-slate-100 px-3 py-2 text-center text-sm text-slate-500">
+                        Čeká na rozhodnutí {players[pendingHorse.playerIndex]?.name}…
+                      </div>
+                    )}
                   </div>
-                ) : (
+                ) : isMyTurn ? (
                   <button
                     onClick={rollDice}
                     disabled={!gameState || players.length === 0}
@@ -421,6 +430,10 @@ export default function GameBoard({ gameCode }: Props) {
                   >
                     Hoď kostkou
                   </button>
+                ) : (
+                  <div className="w-full rounded-2xl bg-slate-100 px-4 py-4 text-center text-slate-500">
+                    Čekej na tah hráče <span className="font-semibold text-slate-700">{currentPlayer?.name ?? "…"}</span>
+                  </div>
                 )}
 
                 {/* Hráči */}
