@@ -206,10 +206,8 @@ export default function LandingPage() {
             )}
           </div>
 
-          <div className="text-center">
-            <a href="/admin" className="text-xs text-slate-400 hover:text-slate-600 underline">
-              Admin panel
-            </a>
+          <div className="text-center text-xs text-slate-400">
+            <a href="mailto:info@paytowin.cz" className="hover:text-slate-600 underline">info@paytowin.cz</a>
           </div>
         </div>
       </div>

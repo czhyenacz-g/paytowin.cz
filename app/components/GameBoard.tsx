@@ -658,6 +658,9 @@ export default function GameBoard({ gameCode }: Props) {
 
         </div>
       </div>
+      <div className="py-4 text-center text-xs text-slate-400">
+        <a href="mailto:info@paytowin.cz" className="hover:text-slate-600 underline">info@paytowin.cz</a>
+      </div>
     </div>
   );
 }
