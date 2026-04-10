@@ -134,6 +134,44 @@ const FIELD_POSITIONS: React.CSSProperties[] = [
   { top: "50%", left: "16%", transform: "translate(-50%, -50%)" },
 ];
 
+// ─── Kostka ───────────────────────────────────────────────────────────────────
+
+// Souřadnice teček pro každou stranu kostky [cx, cy] v SVG viewBox 0–100
+const DICE_DOTS: [number, number][][] = [
+  [[50, 50]],                                                          // 1
+  [[28, 28], [72, 72]],                                                // 2
+  [[28, 28], [50, 50], [72, 72]],                                      // 3
+  [[28, 28], [72, 28], [28, 72], [72, 72]],                            // 4
+  [[28, 28], [72, 28], [50, 50], [28, 72], [72, 72]],                  // 5
+  [[28, 28], [72, 28], [28, 50], [72, 50], [28, 72], [72, 72]],        // 6
+];
+
+function DiceFace({ value, size = 80, rolling = false }: { value: number | null; size?: number; rolling?: boolean }) {
+  if (value === null) {
+    // Prázdná kostka před prvním hodem
+    return (
+      <svg width={size} height={size} viewBox="0 0 100 100" style={{ filter: "drop-shadow(0 3px 6px rgba(0,0,0,0.12))" }}>
+        <rect x="6" y="6" width="88" height="88" rx="18" fill="#f8fafc" stroke="#cbd5e1" strokeWidth="3"/>
+      </svg>
+    );
+  }
+  const dots = DICE_DOTS[(value - 1 + 6) % 6];
+  return (
+    <svg
+      width={size} height={size} viewBox="0 0 100 100"
+      className={rolling ? "animate-spin" : "transition-transform duration-150"}
+      style={{ filter: "drop-shadow(0 3px 8px rgba(0,0,0,0.18))" }}
+    >
+      <rect x="6" y="6" width="88" height="88" rx="18" fill="white" stroke="#e2e8f0" strokeWidth="2.5"/>
+      {/* Lehký 3D highlight */}
+      <rect x="6" y="6" width="88" height="44" rx="18" fill="rgba(255,255,255,0.55)"/>
+      {dots.map(([cx, cy], i) => (
+        <circle key={i} cx={cx} cy={cy} r="9" fill="#1e293b"/>
+      ))}
+    </svg>
+  );
+}
+
 // Pozice figurek — každé pole posunuté o ~10 % směrem ke středu desky (50 %, 50 %)
 const FIGURINE_POSITIONS: React.CSSProperties[] = FIELD_POSITIONS.map((pos) => {
   const left = parseFloat(pos.left as string);
@@ -547,9 +585,18 @@ export default function GameBoard({ gameCode }: Props) {
               <div className="mt-4 space-y-4">
 
                 <div className={`rounded-2xl p-4 transition-colors ${isRolling ? "bg-amber-100" : "bg-slate-100"}`}>
-                  <div className="text-sm text-slate-500">Poslední hod</div>
-                  <div className={`mt-1 text-4xl font-bold transition-all ${isRolling ? "text-amber-600" : "text-slate-800"}`}>
-                    {(isRolling || isMoving) && displayRoll !== null ? displayRoll : (gameState?.last_roll ?? "-")}
+                  <div className="text-sm text-slate-500 mb-2">Poslední hod</div>
+                  <div className="flex items-center gap-3">
+                    <DiceFace
+                      value={(isRolling || isMoving) && displayRoll !== null ? displayRoll : (gameState?.last_roll ?? null)}
+                      size={72}
+                      rolling={isRolling}
+                    />
+                    {((isRolling || isMoving) && displayRoll !== null ? displayRoll : gameState?.last_roll) && (
+                      <span className={`text-3xl font-bold ${isRolling ? "text-amber-600" : "text-slate-700"}`}>
+                        {(isRolling || isMoving) && displayRoll !== null ? displayRoll : gameState?.last_roll}
+                      </span>
+                    )}
                   </div>
                 </div>
 
