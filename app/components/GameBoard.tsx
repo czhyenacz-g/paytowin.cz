@@ -518,7 +518,7 @@ export default function GameBoard({ gameCode }: Props) {
                       return (
                         <div
                           key={player.id}
-                          className={`flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-black text-white ring-2 ring-white transition-transform duration-200 ${player.color} ${isAnimatingThis ? "scale-125 animate-bounce" : ""}`}
+                          className={`flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-black text-black ring-2 ring-black/20 transition-transform duration-200 ${player.color} ${isAnimatingThis ? "scale-125 animate-bounce" : ""}`}
                           style={{ boxShadow: "0 3px 0 rgba(0,0,0,0.35), 0 4px 6px rgba(0,0,0,0.25)" }}
                           title={player.name}
                         >
@@ -629,7 +629,7 @@ export default function GameBoard({ gameCode }: Props) {
                         }`}>
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2 min-w-0">
-                              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-black text-white ring-2 ring-white shadow ${bankrupt ? "bg-slate-400" : player.color}`}>
+                              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-black text-black ring-2 ring-black/20 shadow ${bankrupt ? "bg-slate-400" : player.color}`}>
                                 {player.name.charAt(0).toUpperCase()}
                               </div>
                               <div className="min-w-0">
