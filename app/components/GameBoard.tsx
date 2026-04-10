@@ -28,7 +28,11 @@ interface GameState {
   current_player_index: number;
   last_roll: number | null;
   log: string[];
+  turn_count: number;
 }
+
+const BANKRUPTCY_TAX_ROUND = 3;   // od tohoto kola hráči platí daň za průchod STARTem
+const BANKRUPTCY_TAX_AMOUNT = 50; // daň v coins
 
 type FieldType = "start" | "coins_gain" | "coins_lose" | "gamble" | "horse" | "neutral";
 
@@ -219,25 +223,55 @@ export default function GameBoard({ gameCode }: Props) {
     const currentPlayer = players[gameState.current_player_index];
     if (!currentPlayer) return;
 
-    const newPosition = (currentPlayer.position + roll) % 21;
+    const oldPosition = currentPlayer.position;
+    const newPosition = (oldPosition + roll) % 21;
     const field = FIELDS[newPosition];
-    const movedPlayer = { ...currentPlayer, position: newPosition };
-
-    const nextIndex = (gameState.current_player_index + 1) % players.length;
     const newLog = gameState.log ?? [];
+    const newTurnCount = gameState.turn_count + 1;
+    const currentRound = Math.floor(gameState.turn_count / Math.max(1, players.length));
+
+    // Průchod STARTem bez přistání (přeskočení pole 0)
+    const passedStart = newPosition !== 0 && (oldPosition + roll) >= 21;
+
+    let movedPlayer = { ...currentPlayer, position: newPosition };
+    const extraLog: string[] = [];
+
+    if (passedStart) {
+      movedPlayer = { ...movedPlayer, coins: movedPlayer.coins + 200 };
+      extraLog.push(`${currentPlayer.name} prošel STARTem — +200 💰`);
+    }
+
+    // Daň za průchod/přistání na STARTu od kola BANKRUPTCY_TAX_ROUND
+    if (currentRound >= BANKRUPTCY_TAX_ROUND && (passedStart || newPosition === 0)) {
+      movedPlayer = { ...movedPlayer, coins: movedPlayer.coins - BANKRUPTCY_TAX_AMOUNT };
+      extraLog.push(`${currentPlayer.name}: Daň za průchod STARTem — -${BANKRUPTCY_TAX_AMOUNT} 💰`);
+    }
+
+    const nextIndex = getNextActiveIndex(gameState.current_player_index, players);
 
     if (field.type === "horse" && field.horse) {
-      // Zapíš pouze posun, čekáme na rozhodnutí
-      await supabase.from("players").update({ position: newPosition }).eq("id", currentPlayer.id);
-      await supabase.from("game_state").update({ last_roll: roll, log: [`${currentPlayer.name} přišel na stáj: ${field.horse.emoji} ${field.horse.name}`, ...newLog].slice(0, 20) }).eq("game_id", gameId);
+      await supabase.from("players").update({ position: newPosition, coins: movedPlayer.coins }).eq("id", currentPlayer.id);
+      await supabase.from("game_state").update({
+        last_roll: roll,
+        turn_count: newTurnCount,
+        log: [`${currentPlayer.name} přišel na stáj: ${field.horse.emoji} ${field.horse.name}`, ...extraLog, ...newLog].slice(0, 20),
+      }).eq("game_id", gameId);
       setPendingHorse({ horse: field.horse, playerIndex: gameState.current_player_index });
     } else {
-      const { player: updatedPlayer, log: logLine } = field.action(movedPlayer);
-      await supabase.from("players").update({ position: updatedPlayer.position, coins: updatedPlayer.coins, horses: updatedPlayer.horses }).eq("id", currentPlayer.id);
+      const { player: afterField, log: fieldLog } = field.action(movedPlayer);
+      const finalPlayer = afterField;
+      const logLines = [...(fieldLog ? [fieldLog] : []), ...extraLog];
+
+      // Bankrot?
+      const wentBankrupt = finalPlayer.coins <= 0 && currentPlayer.coins > 0;
+      if (wentBankrupt) logLines.push(`💀 ${finalPlayer.name} zkrachoval!`);
+
+      await supabase.from("players").update({ position: finalPlayer.position, coins: finalPlayer.coins, horses: finalPlayer.horses }).eq("id", currentPlayer.id);
       await supabase.from("game_state").update({
         current_player_index: nextIndex,
         last_roll: roll,
-        log: logLine ? [logLine, ...newLog].slice(0, 20) : newLog,
+        turn_count: newTurnCount,
+        log: [...logLines, ...newLog].slice(0, 20),
       }).eq("game_id", gameId);
     }
   };
@@ -248,14 +282,21 @@ export default function GameBoard({ gameCode }: Props) {
     const player = players[playerIndex];
     if (!player || player.coins < horse.price) return;
 
+    const updatedCoins = player.coins - horse.price;
     const updatedHorses = [...player.horses, horse];
     const newLog = gameState.log ?? [];
-    const nextIndex = (playerIndex + 1) % players.length;
+    const nextIndex = getNextActiveIndex(playerIndex, players);
+    const newTurnCount = gameState.turn_count + 1;
 
-    await supabase.from("players").update({ coins: player.coins - horse.price, horses: updatedHorses }).eq("id", player.id);
+    const wentBankrupt = updatedCoins <= 0;
+    const logLines = [`${player.name} koupil ${horse.emoji} ${horse.name} za ${horse.price} 💰`];
+    if (wentBankrupt) logLines.push(`💀 ${player.name} zkrachoval!`);
+
+    await supabase.from("players").update({ coins: updatedCoins, horses: updatedHorses }).eq("id", player.id);
     await supabase.from("game_state").update({
       current_player_index: nextIndex,
-      log: [`${player.name} koupil ${horse.emoji} ${horse.name} za ${horse.price} 💰`, ...newLog].slice(0, 20),
+      turn_count: newTurnCount,
+      log: [...logLines, ...newLog].slice(0, 20),
     }).eq("game_id", gameId);
 
     setPendingHorse(null);
@@ -264,11 +305,12 @@ export default function GameBoard({ gameCode }: Props) {
   const skipHorse = async () => {
     if (!pendingHorse || !gameState) return;
     const player = players[pendingHorse.playerIndex];
-    const nextIndex = (pendingHorse.playerIndex + 1) % players.length;
+    const nextIndex = getNextActiveIndex(pendingHorse.playerIndex, players);
     const newLog = gameState.log ?? [];
 
     await supabase.from("game_state").update({
       current_player_index: nextIndex,
+      turn_count: gameState.turn_count + 1,
       log: [`${player?.name ?? "?"} přeskočil nákup koně`, ...newLog].slice(0, 20),
     }).eq("game_id", gameId);
 
@@ -277,9 +319,12 @@ export default function GameBoard({ gameCode }: Props) {
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
-  const fieldPlayers = (fieldIndex: number) => players.filter((p) => p.position === fieldIndex);
+  // Bankrotáři nejsou vidět na desce
+  const fieldPlayers = (fieldIndex: number) =>
+    players.filter((p) => p.position === fieldIndex && !isBankrupt(p));
   const currentPlayer = gameState ? players[gameState.current_player_index] : null;
   const isMyTurn = !!myPlayerId && currentPlayer?.id === myPlayerId;
+  const currentRound = gameState ? Math.floor(gameState.turn_count / Math.max(1, players.length)) + 1 : 1;
 
   // ── Render ───────────────────────────────────────────────────────────────────
 
@@ -323,8 +368,16 @@ export default function GameBoard({ gameCode }: Props) {
                 <h1 className="text-3xl font-bold text-slate-800">Pay-to-Win</h1>
                 <p className="text-sm text-slate-500">Dostihy, sázky a finanční chaos.</p>
               </div>
-              <div className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700">
-                Na tahu: <span className="font-bold">{currentPlayer?.name ?? "-"}</span>
+              <div className="flex items-center gap-3">
+                <div className="rounded-2xl bg-slate-100 px-3 py-2 text-xs font-medium text-slate-500">
+                  Kolo <span className="font-bold text-slate-800">{currentRound}</span>
+                  {currentRound >= BANKRUPTCY_TAX_ROUND && (
+                    <span className="ml-1 text-red-500" title={`Od kola ${BANKRUPTCY_TAX_ROUND} se platí daň ${BANKRUPTCY_TAX_AMOUNT} za průchod STARTem`}>🏛️</span>
+                  )}
+                </div>
+                <div className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700">
+                  Na tahu: <span className="font-bold">{currentPlayer?.name ?? "-"}</span>
+                </div>
               </div>
             </div>
 
@@ -442,19 +495,31 @@ export default function GameBoard({ gameCode }: Props) {
                   <div className="space-y-2">
                     {players.map((player, index) => {
                       const isCurrent = gameState?.current_player_index === index;
+                      const bankrupt = isBankrupt(player);
                       const field = FIELDS[player.position];
                       return (
-                        <div key={player.id} className={`rounded-2xl border-2 p-3 transition-colors ${isCurrent ? "border-slate-900 bg-slate-50 shadow-sm" : "border-slate-200 bg-white"}`}>
+                        <div key={player.id} className={`rounded-2xl border-2 p-3 transition-colors ${
+                          bankrupt
+                            ? "border-red-300 bg-red-50 opacity-60"
+                            : isCurrent
+                            ? "border-slate-900 bg-slate-50 shadow-sm"
+                            : "border-slate-200 bg-white"
+                        }`}>
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2 min-w-0">
-                              {/* Figurka s iniciálou */}
-                              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-black text-white ring-2 ring-white shadow ${player.color}`}>
+                              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-black text-white ring-2 ring-white shadow ${bankrupt ? "bg-slate-400" : player.color}`}>
                                 {player.name.charAt(0).toUpperCase()}
                               </div>
                               <div className="min-w-0">
-                                <div className="font-semibold text-slate-800 text-sm leading-tight">{player.name}</div>
-                                <div className="text-xs text-slate-500 truncate">{field?.emoji} {field?.label}</div>
-                                {player.horses.length > 0 && (
+                                <div className={`font-semibold text-sm leading-tight ${bankrupt ? "text-slate-400 line-through" : "text-slate-800"}`}>
+                                  {player.name}
+                                </div>
+                                {bankrupt ? (
+                                  <div className="text-xs font-semibold text-red-500">💀 Zkrachoval</div>
+                                ) : (
+                                  <div className="text-xs text-slate-500 truncate">{field?.emoji} {field?.label}</div>
+                                )}
+                                {!bankrupt && player.horses.length > 0 && (
                                   <div className="text-xs text-amber-700 mt-0.5">
                                     {player.horses.map((h) => `${h.emoji} ${h.name}`).join(", ")}
                                   </div>
@@ -462,8 +527,10 @@ export default function GameBoard({ gameCode }: Props) {
                               </div>
                             </div>
                             <div className="text-right shrink-0 space-y-1">
-                              <div className="text-sm font-bold text-slate-800">{player.coins} 💰</div>
-                              {isCurrent && (
+                              <div className={`text-sm font-bold ${bankrupt ? "text-red-400" : "text-slate-800"}`}>
+                                {player.coins} 💰
+                              </div>
+                              {isCurrent && !bankrupt && (
                                 <div className="rounded-full bg-slate-900 px-2 py-0.5 text-center text-[10px] font-semibold text-white">
                                   ▶ Na tahu
                                 </div>
@@ -500,6 +567,24 @@ export default function GameBoard({ gameCode }: Props) {
   );
 }
 
+// ─── Herní helpery ────────────────────────────────────────────────────────────
+
+function isBankrupt(player: Player): boolean {
+  return player.coins <= 0;
+}
+
+/** Vrátí index dalšího aktivního (neozkrachovalého) hráče. */
+function getNextActiveIndex(currentIndex: number, players: Player[]): number {
+  if (players.length === 0) return 0;
+  let next = (currentIndex + 1) % players.length;
+  let attempts = 0;
+  while (isBankrupt(players[next]) && attempts < players.length) {
+    next = (next + 1) % players.length;
+    attempts++;
+  }
+  return next;
+}
+
 // ─── Normalizace dat ze Supabase ──────────────────────────────────────────────
 
 function normalizePlayer(raw: unknown): Player {
@@ -523,5 +608,6 @@ function normalizeState(raw: unknown): GameState {
     current_player_index: Number(r.current_player_index),
     last_roll: r.last_roll != null ? Number(r.last_roll) : null,
     log: Array.isArray(r.log) ? (r.log as string[]) : [],
+    turn_count: Number(r.turn_count ?? 0),
   };
 }

@@ -53,6 +53,7 @@ export interface Database {
           current_player_index: number;
           last_roll: number | null;
           log: Json;
+          turn_count: number;
           updated_at: string;
         };
         Insert: {
@@ -60,11 +61,13 @@ export interface Database {
           current_player_index: number;
           last_roll?: number | null;
           log: Json;
+          turn_count?: number;
         };
         Update: {
           current_player_index?: number;
           last_roll?: number | null;
           log?: Json;
+          turn_count?: number;
         };
       };
       horse_catalog: {
