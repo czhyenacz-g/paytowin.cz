@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(node *)",
+      "Bash(mkdir *)",
+      "Bash(cp *)",
+      "Bash(rm *)",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(sed *)",
+      "Bash(sleep *)",
+      "Bash(source *)",
+      "Bash(curl *)",
+      "Bash(python3 *)",
+      "Bash(brew *)",
+      "Bash(which *)",
+      "Bash(echo *)",
+      "WebFetch(domain:localhost)",
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:api.vercel.com)"
+    ],
+    "deny": []
+  }
+}
