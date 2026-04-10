@@ -19,15 +19,18 @@ Desková hra ve stylu Dostihy a sázky. Hráči házejí kostkou, pohybují se p
 
 - **Projekt**: paytowin
 - **URL**: `https://zyiaettnrfjzwcrumgty.supabase.co`
-- **Anon key**: uložen v `.env.local` (není v gitu)
+- **Anon key + Access token**: uloženy v `~/PhpstormProjects/starter/.tokens` a `.env.local` (není v gitu)
 
-### ⚠️ NUTNÉ UDĚLAT: spustit SQL schema v Supabase
+### Spuštění / aktualizace DB schématu
 
-Jdi na: https://supabase.com → projekt paytowin → SQL Editor → New Query → obsah souboru zkopíruj a spusť:
+```bash
+npm run db:migrate
+```
 
-📄 [`_db/before_run.sql`](_db/before_run.sql)
+Skript `_db/migrate.sh` načte token z `~/.tokens`, zjistí projekt z `.env.local` a spustí `_db/before_run.sql` přes Supabase Management API. Idempotentní — lze spustit opakovaně.
 
-Skript je idempotentní — lze spustit opakovaně bez chyb.
+📄 [`_db/before_run.sql`](_db/before_run.sql) — SQL schema  
+📄 [`_db/migrate.sh`](_db/migrate.sh) — spouštěcí skript
 
 ---
 
@@ -53,6 +56,10 @@ lib/
   supabase.ts                  # Supabase client
   database.types.ts            # TypeScript typy pro DB tabulky
   game.ts                      # generateGameCode(), PLAYER_COLORS
+
+_db/
+  before_run.sql               # Idempotentní SQL migrace
+  migrate.sh                   # Spustí migraci přes Supabase Management API
 ```
 
 ---
@@ -80,13 +87,14 @@ lib/
 | turn_order  | int   | pořadí v tahu                  |
 
 ### `game_state`
-| sloupec               | typ   | popis                     |
-|-----------------------|-------|---------------------------|
-| game_id               | uuid  | PK FK → games             |
-| current_player_index  | int   | index hráče na tahu       |
-| last_roll             | int?  | poslední hod kostkou      |
-| log                   | jsonb | string[] posledních tahů  |
-| updated_at            | ts    | čas poslední změny        |
+| sloupec               | typ   | popis                                        |
+|-----------------------|-------|----------------------------------------------|
+| game_id               | uuid  | PK FK → games                                |
+| current_player_index  | int   | index hráče na tahu                          |
+| last_roll             | int?  | poslední hod kostkou                         |
+| log                   | jsonb | string[] posledních tahů                     |
+| turn_count            | int   | celkový počet tahů (pro výpočet kola)        |
+| updated_at            | ts    | čas poslední změny                           |
 
 ### `horse_catalog`
 | sloupec | typ  | popis               |
@@ -96,6 +104,35 @@ lib/
 | speed   | int  | rychlost 1–5        |
 | price   | int  | cena v coins        |
 | emoji   | text | emoji ikonka        |
+
+---
+
+## Herní mechaniky
+
+### Kola
+- Kolo = `Math.floor(turn_count / počet_hráčů) + 1`
+- Zobrazeno v hlavičce herní desky
+
+### Průchod STARTem
+- Přistání nebo průchod polem 0 = **+200 coins**
+- Od kola 3 navíc **-50 coins daň** (nastavitelné: `BANKRUPTCY_TAX_ROUND`, `BANKRUPTCY_TAX_AMOUNT` v `GameBoard.tsx`)
+
+### Bankrot
+- Hráč s `coins <= 0` je bankrotář
+- Figurka zmizí z desky
+- V panelu hráčů: červený okraj, šedá karta, přeškrtnuté jméno, "💀 Zkrachoval"
+- Tahy bankrotáře se automaticky přeskakují
+
+### Identita hráče
+- `playerId` se uloží do `localStorage` při vytvoření/připojení hry (`paytowin_player_[KOD]`)
+- Tlačítko "Hoď kostkou" je aktivní pouze pro hráče na tahu
+- Ostatní vidí "Čekej na tah hráče X"
+
+### Koně
+- 4 koňská pole na desce (indexy 3, 10, 17, 19)
+- Při přistání se zobrazí nabídka Koupit / Přeskočit
+- Kůň se uloží do `horses: Horse[]` u hráče (jsonb v DB)
+- Katalog koní editovatelný z `/admin`
 
 ---
 
@@ -129,20 +166,19 @@ lib/
 
 ## URL struktura
 
-| URL                    | Co dělá                          |
-|------------------------|----------------------------------|
-| `/`                    | Landing — vytvoř nebo připoj hru |
-| `/game/[KOD]`          | Herní deska, sync přes Realtime  |
-| `/admin`               | Admin panel                      |
+| URL             | Co dělá                          |
+|-----------------|----------------------------------|
+| `/`             | Landing — vytvoř nebo připoj hru |
+| `/game/[KOD]`   | Herní deska, sync přes Realtime  |
+| `/admin`        | Admin panel                      |
 
 ---
 
 ## Co ještě chybí / možné další kroky
 
-- [ ] **Autentizace hráče** — momentálně kdokoli může hodit za kohokoliv (TODO: local session)
 - [ ] **Závody** — hráči s koňmi se utkají na dostihové dráze
 - [ ] **Stáje** — hráč si může koupit stáj (pole)
-- [ ] **Více kol** — hra momentálně nemá podmínku konce (např. X kol nebo bankrot)
+- [ ] **Podmínka konce hry** — poslední hráč co není bankrotář vyhrává
 - [ ] **Admin přihlášení** — /admin je prozatím veřejné
 - [ ] **Mobilní UI** — herní deska není responsivní na malých obrazovkách
 - [ ] **Zvuky / animace** — hod kostkou, posun figurky
