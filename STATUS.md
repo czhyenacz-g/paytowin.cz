@@ -94,6 +94,7 @@ _db/
 | last_roll             | int?  | poslední hod kostkou                         |
 | log                   | jsonb | string[] posledních tahů                     |
 | turn_count            | int   | celkový počet tahů (pro výpočet kola)        |
+| horse_pending         | bool  | čeká se na rozhodnutí koupit/přeskočit koně  |
 | updated_at            | ts    | čas poslední změny                           |
 
 ### `horse_catalog`
@@ -131,8 +132,20 @@ _db/
 ### Koně
 - 4 koňská pole na desce (indexy 3, 10, 17, 19)
 - Při přistání se zobrazí nabídka Koupit / Přeskočit
+- `horse_pending: bool` v `game_state` je jediný zdroj pravdy pro stav čekání na rozhodnutí
 - Kůň se uloží do `horses: Horse[]` u hráče (jsonb v DB)
 - Katalog koní editovatelný z `/admin`
+
+### Animace
+- **Hod kostkou**: 0,8–1,2s animace s rychle se měnícími čísly, pak finální hod
+- **Pohyb figurky**: krok po kroku (500ms/pole), ne teleport
+- **Stopa**: navštívená pole svítí zlatě, mizí po 1,5s
+- **UI zámek**: tlačítko není dostupné během `isRolling` nebo `isMoving`
+- Zápis do Supabase probíhá až po dokončení celé animace
+
+### Sdílení hry
+- Po vytvoření hry se zobrazí share panel s odkazem `/?join=KOD`
+- Kamarád klikne na odkaz → kód je předvyplněný, zadá jen jméno a Připojit
 
 ---
 
@@ -181,4 +194,4 @@ _db/
 - [ ] **Podmínka konce hry** — poslední hráč co není bankrotář vyhrává
 - [ ] **Admin přihlášení** — /admin je prozatím veřejné
 - [ ] **Mobilní UI** — herní deska není responsivní na malých obrazovkách
-- [ ] **Zvuky / animace** — hod kostkou, posun figurky
+- [ ] **Zvuky** — hod kostkou, posun figurky
