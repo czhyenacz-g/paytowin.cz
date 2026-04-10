@@ -147,6 +147,12 @@ export default function GameBoard({ gameCode }: Props) {
   const [loading, setLoading] = React.useState(!!gameCode);
   const [pendingHorse, setPendingHorse] = React.useState<{ horse: Horse; playerIndex: number } | null>(null);
   const [myPlayerId, setMyPlayerId] = React.useState<string | null>(null);
+  const [isRolling, setIsRolling] = React.useState(false);
+  const [isMoving, setIsMoving] = React.useState(false);
+  const [displayRoll, setDisplayRoll] = React.useState<number | null>(null);
+  const [animPosition, setAnimPosition] = React.useState<number | null>(null);
+  const [animatingPlayerIdx, setAnimatingPlayerIdx] = React.useState<number | null>(null);
+  const [trailFields, setTrailFields] = React.useState<number[]>([]);
 
   // ── Načtení hry ze Supabase ──────────────────────────────────────────────────
   React.useEffect(() => {
@@ -219,14 +225,47 @@ export default function GameBoard({ gameCode }: Props) {
   // ── Herní akce ────────────────────────────────────────────────────────────────
 
   const rollDice = async () => {
-    if (!gameState || pendingHorse) return;
+    if (!gameState || pendingHorse || isRolling || isMoving) return;
 
     const roll = Math.floor(Math.random() * 6) + 1;
     const currentPlayer = players[gameState.current_player_index];
     if (!currentPlayer) return;
 
+    // ── 1. Animace kostky ─────────────────────────────────────────────────────
+    setIsRolling(true);
+    setDisplayRoll(null);
+    const animDuration = 800 + Math.random() * 400;
+    const start = Date.now();
+    while (Date.now() - start < animDuration) {
+      setDisplayRoll(Math.floor(Math.random() * 6) + 1);
+      await sleep(80);
+    }
+    setDisplayRoll(roll);
+    await sleep(300);
+    setIsRolling(false);
+
+    // ── 2. Animace pohybu pole po poli ────────────────────────────────────────
     const oldPosition = currentPlayer.position;
     const newPosition = (oldPosition + roll) % 21;
+
+    setIsMoving(true);
+    setAnimatingPlayerIdx(gameState.current_player_index);
+    setAnimPosition(oldPosition);
+    setTrailFields([]);
+
+    const trail: number[] = [];
+    for (let step = 1; step <= roll; step++) {
+      const pos = (oldPosition + step) % 21;
+      trail.push(pos);
+      setAnimPosition(pos);
+      setTrailFields([...trail]);
+      await sleep(500);
+    }
+
+    setIsMoving(false);
+    setAnimatingPlayerIdx(null);
+
+    // ── 3. Herní logika + zápis do Supabase ───────────────────────────────────
     const field = FIELDS[newPosition];
     const newLog = gameState.log ?? [];
     const newTurnCount = gameState.turn_count + 1;
@@ -282,6 +321,9 @@ export default function GameBoard({ gameCode }: Props) {
         log: [...logLines, ...newLog].slice(0, 20),
       }).eq("game_id", gameId);
     }
+
+    // ── 4. Stopa zmizí po 1,5 s ──────────────────────────────────────────────
+    setTimeout(() => setTrailFields([]), 1500);
   };
 
   const buyHorse = async () => {
@@ -349,12 +391,18 @@ export default function GameBoard({ gameCode }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState?.horse_pending, gameState?.current_player_index]);
 
+  // Pro render desky: animující hráč se zobrazuje na animPosition, ne na DB pozici
+  const displayPlayers = players.map((p, i) =>
+    i === animatingPlayerIdx && animPosition !== null ? { ...p, position: animPosition } : p
+  );
+  const animatingPlayerId = animatingPlayerIdx !== null ? players[animatingPlayerIdx]?.id : null;
+
   // Bankrotáři nejsou vidět na desce
   const fieldPlayers = (fieldIndex: number) =>
-    players.filter((p) => p.position === fieldIndex && !isBankrupt(p));
+    displayPlayers.filter((p) => p.position === fieldIndex && !isBankrupt(p));
   const currentPlayer = gameState ? players[gameState.current_player_index] : null;
   // Bankrotář nemůže hrát ani když je na řadě — blokujeme deadlock
-  const isMyTurn = !!myPlayerId && currentPlayer?.id === myPlayerId && !isBankrupt(currentPlayer);
+  const isMyTurn = !!myPlayerId && currentPlayer?.id === myPlayerId && !isBankrupt(currentPlayer) && !isRolling && !isMoving;
   const currentRound = gameState ? Math.floor(gameState.turn_count / Math.max(1, players.length)) + 1 : 1;
 
   // ── Render ───────────────────────────────────────────────────────────────────
@@ -423,10 +471,11 @@ export default function GameBoard({ gameCode }: Props) {
               {FIELDS.map((field) => {
                 const pos = FIELD_POSITIONS[field.index];
                 const playersHere = fieldPlayers(field.index);
+                const isTrail = trailFields.includes(field.index);
                 return (
                   <div
                     key={field.index}
-                    className={`absolute flex flex-col items-center justify-center rounded-2xl border-2 shadow-sm ${FIELD_STYLE[field.type]}`}
+                    className={`absolute flex flex-col items-center justify-center rounded-2xl border-2 shadow-sm transition-all duration-200 ${FIELD_STYLE[field.type]} ${isTrail ? "ring-2 ring-amber-400 ring-offset-1 brightness-110" : ""}`}
                     style={pos}
                     title={field.description}
                   >
@@ -435,16 +484,19 @@ export default function GameBoard({ gameCode }: Props) {
                       {field.type === "start" ? "START" : field.label}
                     </div>
                     <div className="mt-0.5 flex flex-wrap items-center justify-center gap-0.5">
-                      {playersHere.map((player) => (
-                        <div
-                          key={player.id}
-                          className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black text-white ring-2 ring-white ${player.color}`}
-                          style={{ boxShadow: "0 3px 0 rgba(0,0,0,0.35), 0 4px 6px rgba(0,0,0,0.25)" }}
-                          title={player.name}
-                        >
-                          {player.name.charAt(0).toUpperCase()}
-                        </div>
-                      ))}
+                      {playersHere.map((player) => {
+                        const isAnimatingThis = player.id === animatingPlayerId;
+                        return (
+                          <div
+                            key={player.id}
+                            className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black text-white ring-2 ring-white transition-transform duration-200 ${player.color} ${isAnimatingThis ? "scale-125 animate-pulse" : ""}`}
+                            style={{ boxShadow: "0 3px 0 rgba(0,0,0,0.35), 0 4px 6px rgba(0,0,0,0.25)" }}
+                            title={player.name}
+                          >
+                            {player.name.charAt(0).toUpperCase()}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 );
@@ -465,9 +517,11 @@ export default function GameBoard({ gameCode }: Props) {
               <h2 className="text-2xl font-bold text-slate-800">Panel hry</h2>
               <div className="mt-4 space-y-4">
 
-                <div className="rounded-2xl bg-slate-100 p-4">
+                <div className={`rounded-2xl p-4 transition-colors ${isRolling ? "bg-amber-100" : "bg-slate-100"}`}>
                   <div className="text-sm text-slate-500">Poslední hod</div>
-                  <div className="mt-1 text-4xl font-bold text-slate-800">{gameState?.last_roll ?? "-"}</div>
+                  <div className={`mt-1 text-4xl font-bold transition-all ${isRolling ? "text-amber-600 animate-pulse" : "text-slate-800"}`}>
+                    {(isRolling || isMoving) && displayRoll !== null ? displayRoll : (gameState?.last_roll ?? "-")}
+                  </div>
                 </div>
 
                 {pendingHorse ? (
@@ -505,6 +559,14 @@ export default function GameBoard({ gameCode }: Props) {
                         Čeká na rozhodnutí {players[pendingHorse.playerIndex]?.name}…
                       </div>
                     )}
+                  </div>
+                ) : isRolling ? (
+                  <div className="w-full rounded-2xl bg-amber-100 px-4 py-4 text-center text-amber-700 font-semibold animate-pulse">
+                    🎲 Háže se…
+                  </div>
+                ) : isMoving ? (
+                  <div className="w-full rounded-2xl bg-slate-100 px-4 py-4 text-center text-slate-600 font-semibold">
+                    🐎 Figurka se pohybuje…
                   </div>
                 ) : isMyTurn ? (
                   <button
@@ -599,6 +661,8 @@ export default function GameBoard({ gameCode }: Props) {
 }
 
 // ─── Herní helpery ────────────────────────────────────────────────────────────
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 function isBankrupt(player: Player): boolean {
   return player.coins <= 0;
