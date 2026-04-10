@@ -155,24 +155,28 @@ export default function GameBoard({ gameCode }: Props) {
 
       if (!game) { setLoading(false); return; }
       setGameId(game.id);
-
-      const [{ data: playersData }, { data: stateData }] = await Promise.all([
-        supabase.from("players").select().eq("game_id", game.id).order("turn_order"),
-        supabase.from("game_state").select().eq("game_id", game.id).single(),
-      ]);
-
-      setPlayers((playersData ?? []).map(normalizePlayer));
-      if (stateData) setGameState(normalizeState(stateData));
+      await refreshGame(game.id);
       setLoading(false);
 
-      // Spuštění hry pokud ještě není
       if (game.status === "waiting") {
         await supabase.from("games").update({ status: "playing" }).eq("id", game.id);
       }
     };
 
     loadGame();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameCode]);
+
+  const refreshGame = async (id: string) => {
+    const [{ data: playersData }, { data: stateData }] = await Promise.all([
+      supabase.from("players").select().eq("game_id", id).order("turn_order"),
+      supabase.from("game_state").select().eq("game_id", id).single(),
+    ]);
+    const normalized = (playersData ?? []).map(normalizePlayer);
+    setPlayers(normalized);
+    if (stateData) setGameState(normalizeState(stateData));
+    return { players: normalized, state: stateData ? normalizeState(stateData) : null };
+  };
 
   // ── Realtime subscriptions ───────────────────────────────────────────────────
   React.useEffect(() => {
@@ -181,25 +185,19 @@ export default function GameBoard({ gameCode }: Props) {
     const channel = supabase
       .channel(`game:${gameId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "players", filter: `game_id=eq.${gameId}` },
-        (payload) => {
-          if (payload.eventType === "UPDATE") {
-            setPlayers((prev) => prev.map((p) => p.id === payload.new.id ? normalizePlayer(payload.new as Player) : p));
-          }
-          if (payload.eventType === "INSERT") {
-            setPlayers((prev) => [...prev, normalizePlayer(payload.new as Player)].sort((a, b) => a.turn_order - b.turn_order));
-          }
-        }
+        () => { refreshGame(gameId); }
       )
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "game_state", filter: `game_id=eq.${gameId}` },
-        (payload) => {
-          const newState = normalizeState(payload.new as GameState);
-          setGameState(newState);
-          // Zkontroluj jestli hráč přistál na koňském poli
-          const currentPlayer = players[newState.current_player_index - 1 < 0 ? players.length - 1 : newState.current_player_index - 1];
-          if (currentPlayer) {
-            const field = FIELDS[currentPlayer.position];
+        async () => {
+          const { players: freshPlayers, state: freshState } = await refreshGame(gameId);
+          if (!freshState) return;
+          // Detekuj koňské pole — hráč který právě táhl je ten před current
+          const prevIndex = (freshState.current_player_index - 1 + freshPlayers.length) % freshPlayers.length;
+          const prevPlayer = freshPlayers[prevIndex];
+          if (prevPlayer) {
+            const field = FIELDS[prevPlayer.position];
             if (field?.type === "horse" && field.horse) {
-              setPendingHorse({ horse: field.horse, playerIndex: newState.current_player_index === 0 ? players.length - 1 : newState.current_player_index - 1 });
+              setPendingHorse({ horse: field.horse, playerIndex: prevIndex });
             }
           }
         }
@@ -207,7 +205,8 @@ export default function GameBoard({ gameCode }: Props) {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [gameId, players]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameId]);
 
   // ── Herní akce ────────────────────────────────────────────────────────────────
 
@@ -349,9 +348,15 @@ export default function GameBoard({ gameCode }: Props) {
                     <div className="text-[9px] font-bold leading-tight text-center px-0.5 mt-0.5">
                       {field.type === "start" ? "START" : field.label}
                     </div>
-                    <div className="mt-1 flex flex-wrap items-center justify-center gap-1 px-1">
+                    <div className="mt-0.5 flex flex-wrap items-center justify-center gap-0.5">
                       {playersHere.map((player) => (
-                        <div key={player.id} className={`h-3 w-3 rounded-full ${player.color} ring-1 ring-white`} title={player.name} />
+                        <div
+                          key={player.id}
+                          className={`flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-black text-white ring-2 ring-white shadow-md ${player.color}`}
+                          title={player.name}
+                        >
+                          {player.name.charAt(0).toUpperCase()}
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -426,12 +431,15 @@ export default function GameBoard({ gameCode }: Props) {
                       const isCurrent = gameState?.current_player_index === index;
                       const field = FIELDS[player.position];
                       return (
-                        <div key={player.id} className={`rounded-2xl border p-3 ${isCurrent ? "border-slate-900 bg-slate-50" : "border-slate-200 bg-white"}`}>
+                        <div key={player.id} className={`rounded-2xl border-2 p-3 transition-colors ${isCurrent ? "border-slate-900 bg-slate-50 shadow-sm" : "border-slate-200 bg-white"}`}>
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2 min-w-0">
-                              <div className={`h-3 w-3 shrink-0 rounded-full ${player.color}`} />
+                              {/* Figurka s iniciálou */}
+                              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-black text-white ring-2 ring-white shadow ${player.color}`}>
+                                {player.name.charAt(0).toUpperCase()}
+                              </div>
                               <div className="min-w-0">
-                                <div className="font-semibold text-slate-800 text-sm">{player.name}</div>
+                                <div className="font-semibold text-slate-800 text-sm leading-tight">{player.name}</div>
                                 <div className="text-xs text-slate-500 truncate">{field?.emoji} {field?.label}</div>
                                 {player.horses.length > 0 && (
                                   <div className="text-xs text-amber-700 mt-0.5">
@@ -440,9 +448,13 @@ export default function GameBoard({ gameCode }: Props) {
                                 )}
                               </div>
                             </div>
-                            <div className="text-right shrink-0">
+                            <div className="text-right shrink-0 space-y-1">
                               <div className="text-sm font-bold text-slate-800">{player.coins} 💰</div>
-                              {isCurrent && <span className="text-[10px] rounded-full bg-slate-900 px-2 py-0.5 font-semibold text-white">Na tahu</span>}
+                              {isCurrent && (
+                                <div className="rounded-full bg-slate-900 px-2 py-0.5 text-center text-[10px] font-semibold text-white">
+                                  ▶ Na tahu
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
