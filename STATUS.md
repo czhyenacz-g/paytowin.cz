@@ -43,17 +43,21 @@ app/
     LandingPage.tsx            # UI landing stránky
     GameBoard.tsx              # Herní deska + logika (Supabase Realtime)
     AdminPanel.tsx             # Admin tabulky (hry, hráči, koně)
+    AdminAuth.tsx              # Discord OAuth wrapper pro /admin
   game/
     [code]/
       page.tsx                 # Route /game/XK9F2 → GameBoard
   admin/
-    page.tsx                   # Route /admin → AdminPanel
+    page.tsx                   # Route /admin → AdminAuth → AdminPanel
+  auth/
+    callback/
+      page.tsx                 # OAuth callback — zpracuje token, přesměruje na /admin
   api/og/route.tsx             # OG image endpoint
   layout.tsx
   globals.css
 
 lib/
-  supabase.ts                  # Supabase client
+  supabase.ts                  # Supabase client (implicit OAuth flow)
   database.types.ts            # TypeScript typy pro DB tabulky
   game.ts                      # generateGameCode(), PLAYER_COLORS
 
@@ -142,10 +146,38 @@ _db/
 - **Stopa**: navštívená pole svítí zlatě, mizí po 1,5s
 - **UI zámek**: tlačítko není dostupné během `isRolling` nebo `isMoving`
 - Zápis do Supabase probíhá až po dokončení celé animace
+- `animatingPlayerIdx` se čistí až po Supabase zápisu — jinak figurka problikne na starou pozici
 
 ### Sdílení hry
 - Po vytvoření hry se zobrazí share panel s odkazem `/?join=KOD`
 - Kamarád klikne na odkaz → kód je předvyplněný, zadá jen jméno a Připojit
+
+---
+
+## Přihlášení do adminu (Discord OAuth)
+
+- `/admin` je chráněno Discord OAuth přes Supabase Auth
+- Odkaz na admin je skrytý z UI — přístup jen přes přímou URL `/admin`
+- Po přihlášení se kontroluje Discord User ID proti env var `NEXT_PUBLIC_ADMIN_DISCORD_ID`
+
+### Discord aplikace
+- **Název**: PayToWin
+- **Application ID**: `1492242895267430541`
+- **Redirect URI v Discordu**: `https://zyiaettnrfjzwcrumgty.supabase.co/auth/v1/callback`
+
+### Supabase nastavení
+- Authentication → Providers → Discord: zapnuto, Client ID + Secret nastaveny
+- Authentication → URL Configuration:
+  - Site URL: `https://paytowin-cz.vercel.app`
+  - Redirect URLs: `https://paytowin-cz.vercel.app/**`
+- Auth flow: **implicit** (ne PKCE — v Next.js SPA způsoboval `bad_oauth_state`)
+
+### Vercel env var
+| Proměnná                       | Hodnota                  |
+|--------------------------------|--------------------------|
+| `NEXT_PUBLIC_ADMIN_DISCORD_ID` | Discord User ID admina   |
+
+⚠️ Tato env var zatím **není nastavena** na Vercelu — admin login funguje, ale zobrazí "Přístup zamítnut" dokud se nenastaví.
 
 ---
 
@@ -183,15 +215,17 @@ _db/
 |-----------------|----------------------------------|
 | `/`             | Landing — vytvoř nebo připoj hru |
 | `/game/[KOD]`   | Herní deska, sync přes Realtime  |
-| `/admin`        | Admin panel                      |
+| `/admin`        | Admin panel (vyžaduje Discord login) |
+| `/auth/callback`| OAuth callback po přihlášení     |
 
 ---
 
 ## Co ještě chybí / možné další kroky
 
+- [ ] **Nastavit `NEXT_PUBLIC_ADMIN_DISCORD_ID` na Vercelu** (946021835110240267)
 - [ ] **Závody** — hráči s koňmi se utkají na dostihové dráze
 - [ ] **Stáje** — hráč si může koupit stáj (pole)
 - [ ] **Podmínka konce hry** — poslední hráč co není bankrotář vyhrává
-- [ ] **Admin přihlášení** — /admin je prozatím veřejné
+- [ ] **Discord chat widget** — chatovací panel / voice místnost v herním UI
 - [ ] **Mobilní UI** — herní deska není responsivní na malých obrazovkách
 - [ ] **Zvuky** — hod kostkou, posun figurky
