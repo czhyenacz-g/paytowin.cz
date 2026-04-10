@@ -11,6 +11,15 @@ export default function LandingPage() {
   const [joinCode, setJoinCode] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
+  const [shareCode, setShareCode] = React.useState<string | null>(null);
+  const [copied, setCopied] = React.useState(false);
+
+  // Předvyplň kód z URL parametru ?join=KOD
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const join = params.get("join");
+    if (join) setJoinCode(join.toUpperCase());
+  }, []);
 
   const createGame = async () => {
     if (!name.trim()) return setError("Zadej své jméno.");
@@ -55,7 +64,8 @@ export default function LandingPage() {
     });
 
     localStorage.setItem(`paytowin_player_${code}`, newPlayer.id);
-    router.push(`/game/${code}`);
+    setShareCode(code);
+    setLoading(false);
   };
 
   const joinGame = async () => {
@@ -118,6 +128,36 @@ export default function LandingPage() {
           </div>
 
           <div className="rounded-3xl bg-white p-6 shadow-lg space-y-4">
+
+            {shareCode ? (
+              <div className="space-y-4">
+                <div className="rounded-2xl border-2 border-emerald-400 bg-emerald-50 p-4 space-y-3">
+                  <div className="text-sm font-semibold text-emerald-800">✅ Hra vytvořena! Pošli kamarádům odkaz:</div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 rounded-xl bg-white border border-emerald-200 px-3 py-2 font-mono text-sm text-slate-700 truncate select-all">
+                      {typeof window !== "undefined" ? `${window.location.origin}/?join=${shareCode}` : `/?join=${shareCode}`}
+                    </div>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/?join=${shareCode}`);
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      }}
+                      className="shrink-0 rounded-xl bg-emerald-500 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-600"
+                    >
+                      {copied ? "✓" : "Kopírovat"}
+                    </button>
+                  </div>
+                </div>
+                <button
+                  onClick={() => router.push(`/game/${shareCode}`)}
+                  className="w-full rounded-2xl bg-slate-900 px-4 py-4 text-lg font-semibold text-white shadow transition hover:bg-slate-800"
+                >
+                  Vstoupit do hry →
+                </button>
+              </div>
+            ) : (
+              <>
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700">Tvoje jméno</label>
               <input
@@ -162,6 +202,8 @@ export default function LandingPage() {
                 Připojit
               </button>
             </div>
+              </>
+            )}
           </div>
 
           <div className="text-center">
