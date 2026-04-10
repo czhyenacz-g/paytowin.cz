@@ -29,11 +29,13 @@ create table if not exists game_state (
   last_roll             int,
   log                   jsonb       not null default '[]',
   turn_count            int         not null default 0,
+  horse_pending         bool        not null default false,
   updated_at            timestamptz not null default now()
 );
 
--- Přidej turn_count pokud tabulka existovala bez něj
-alter table game_state add column if not exists turn_count int not null default 0;
+-- Přidej sloupce pokud tabulka existovala bez nich
+alter table game_state add column if not exists turn_count    int  not null default 0;
+alter table game_state add column if not exists horse_pending bool not null default false;
 
 create table if not exists horse_catalog (
   id     uuid primary key default gen_random_uuid(),

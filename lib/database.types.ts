@@ -54,6 +54,7 @@ export interface Database {
           last_roll: number | null;
           log: Json;
           turn_count: number;
+          horse_pending: boolean;
           updated_at: string;
         };
         Insert: {
@@ -62,12 +63,14 @@ export interface Database {
           last_roll?: number | null;
           log: Json;
           turn_count?: number;
+          horse_pending?: boolean;
         };
         Update: {
           current_player_index?: number;
           last_roll?: number | null;
           log?: Json;
           turn_count?: number;
+          horse_pending?: boolean;
         };
       };
       horse_catalog: {

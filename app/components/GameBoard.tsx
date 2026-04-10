@@ -29,6 +29,7 @@ interface GameState {
   last_roll: number | null;
   log: string[];
   turn_count: number;
+  horse_pending: boolean;
 }
 
 const BANKRUPTCY_TAX_ROUND = 3;   // od tohoto kola hráči platí daň za průchod STARTem
@@ -197,14 +198,15 @@ export default function GameBoard({ gameCode }: Props) {
         async () => {
           const { players: freshPlayers, state: freshState } = await refreshGame(gameId);
           if (!freshState) return;
-          // Detekuj koňské pole — hráč který právě táhl je ten před current
-          const prevIndex = (freshState.current_player_index - 1 + freshPlayers.length) % freshPlayers.length;
-          const prevPlayer = freshPlayers[prevIndex];
-          if (prevPlayer) {
-            const field = FIELDS[prevPlayer.position];
+          // horse_pending v DB je jediný zdroj pravdy — žádné hádání indexů
+          if (freshState.horse_pending) {
+            const currentP = freshPlayers[freshState.current_player_index];
+            const field = currentP ? FIELDS[currentP.position] : null;
             if (field?.type === "horse" && field.horse) {
-              setPendingHorse({ horse: field.horse, playerIndex: prevIndex });
+              setPendingHorse({ horse: field.horse, playerIndex: freshState.current_player_index });
             }
+          } else {
+            setPendingHorse(null);
           }
         }
       )
@@ -247,13 +249,13 @@ export default function GameBoard({ gameCode }: Props) {
       extraLog.push(`${currentPlayer.name}: Daň za průchod STARTem — -${BANKRUPTCY_TAX_AMOUNT} 💰`);
     }
 
-    const nextIndex = getNextActiveIndex(gameState.current_player_index, players);
-
     if (field.type === "horse" && field.horse) {
+      // Neukazujem tah dál — čekáme na rozhodnutí. horse_pending = true v DB.
       await supabase.from("players").update({ position: newPosition, coins: movedPlayer.coins }).eq("id", currentPlayer.id);
       await supabase.from("game_state").update({
         last_roll: roll,
         turn_count: newTurnCount,
+        horse_pending: true,
         log: [`${currentPlayer.name} přišel na stáj: ${field.horse.emoji} ${field.horse.name}`, ...extraLog, ...newLog].slice(0, 20),
       }).eq("game_id", gameId);
       setPendingHorse({ horse: field.horse, playerIndex: gameState.current_player_index });
@@ -262,15 +264,21 @@ export default function GameBoard({ gameCode }: Props) {
       const finalPlayer = afterField;
       const logLines = [...(fieldLog ? [fieldLog] : []), ...extraLog];
 
-      // Bankrot?
+      // Bankrot? — nextIndex počítáme s AKTUALIZOVANÝM hráčem, aby se přeskočil i sám sebe pokud zkrachoval
       const wentBankrupt = finalPlayer.coins <= 0 && currentPlayer.coins > 0;
       if (wentBankrupt) logLines.push(`💀 ${finalPlayer.name} zkrachoval!`);
+
+      const updatedPlayers = players.map((p, i) =>
+        i === gameState.current_player_index ? finalPlayer : p
+      );
+      const nextIndex = getNextActiveIndex(gameState.current_player_index, updatedPlayers);
 
       await supabase.from("players").update({ position: finalPlayer.position, coins: finalPlayer.coins, horses: finalPlayer.horses }).eq("id", currentPlayer.id);
       await supabase.from("game_state").update({
         current_player_index: nextIndex,
         last_roll: roll,
         turn_count: newTurnCount,
+        horse_pending: false,
         log: [...logLines, ...newLog].slice(0, 20),
       }).eq("game_id", gameId);
     }
@@ -285,17 +293,23 @@ export default function GameBoard({ gameCode }: Props) {
     const updatedCoins = player.coins - horse.price;
     const updatedHorses = [...player.horses, horse];
     const newLog = gameState.log ?? [];
-    const nextIndex = getNextActiveIndex(playerIndex, players);
     const newTurnCount = gameState.turn_count + 1;
 
     const wentBankrupt = updatedCoins <= 0;
     const logLines = [`${player.name} koupil ${horse.emoji} ${horse.name} za ${horse.price} 💰`];
     if (wentBankrupt) logLines.push(`💀 ${player.name} zkrachoval!`);
 
+    // nextIndex s aktualizovaným hráčem — aby se přeskočil pokud zkrachoval koupí
+    const updatedPlayers = players.map((p, i) =>
+      i === playerIndex ? { ...player, coins: updatedCoins } : p
+    );
+    const nextIndex = getNextActiveIndex(playerIndex, updatedPlayers);
+
     await supabase.from("players").update({ coins: updatedCoins, horses: updatedHorses }).eq("id", player.id);
     await supabase.from("game_state").update({
       current_player_index: nextIndex,
       turn_count: newTurnCount,
+      horse_pending: false,
       log: [...logLines, ...newLog].slice(0, 20),
     }).eq("game_id", gameId);
 
@@ -311,6 +325,7 @@ export default function GameBoard({ gameCode }: Props) {
     await supabase.from("game_state").update({
       current_player_index: nextIndex,
       turn_count: gameState.turn_count + 1,
+      horse_pending: false,
       log: [`${player?.name ?? "?"} přeskočil nákup koně`, ...newLog].slice(0, 20),
     }).eq("game_id", gameId);
 
@@ -319,11 +334,27 @@ export default function GameBoard({ gameCode }: Props) {
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
+  // Po načtení hry obnov pendingHorse ze stavu DB (page refresh survival)
+  React.useEffect(() => {
+    if (!gameState || players.length === 0) return;
+    if (gameState.horse_pending) {
+      const currentP = players[gameState.current_player_index];
+      const field = currentP ? FIELDS[currentP.position] : null;
+      if (field?.type === "horse" && field.horse) {
+        setPendingHorse({ horse: field.horse, playerIndex: gameState.current_player_index });
+      }
+    } else {
+      setPendingHorse(null);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState?.horse_pending, gameState?.current_player_index]);
+
   // Bankrotáři nejsou vidět na desce
   const fieldPlayers = (fieldIndex: number) =>
     players.filter((p) => p.position === fieldIndex && !isBankrupt(p));
   const currentPlayer = gameState ? players[gameState.current_player_index] : null;
-  const isMyTurn = !!myPlayerId && currentPlayer?.id === myPlayerId;
+  // Bankrotář nemůže hrát ani když je na řadě — blokujeme deadlock
+  const isMyTurn = !!myPlayerId && currentPlayer?.id === myPlayerId && !isBankrupt(currentPlayer);
   const currentRound = gameState ? Math.floor(gameState.turn_count / Math.max(1, players.length)) + 1 : 1;
 
   // ── Render ───────────────────────────────────────────────────────────────────
@@ -609,5 +640,6 @@ function normalizeState(raw: unknown): GameState {
     last_roll: r.last_roll != null ? Number(r.last_roll) : null,
     log: Array.isArray(r.log) ? (r.log as string[]) : [],
     turn_count: Number(r.turn_count ?? 0),
+    horse_pending: Boolean(r.horse_pending ?? false),
   };
 }
