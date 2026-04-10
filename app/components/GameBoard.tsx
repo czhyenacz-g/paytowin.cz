@@ -489,7 +489,7 @@ export default function GameBoard({ gameCode }: Props) {
                         return (
                           <div
                             key={player.id}
-                            className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black text-white ring-2 ring-white transition-transform duration-200 ${player.color} ${isAnimatingThis ? "scale-125 animate-pulse" : ""}`}
+                            className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black text-white ring-2 ring-white transition-transform duration-200 ${player.color} ${isAnimatingThis ? "scale-125 animate-bounce" : ""}`}
                             style={{ boxShadow: "0 3px 0 rgba(0,0,0,0.35), 0 4px 6px rgba(0,0,0,0.25)" }}
                             title={player.name}
                           >
@@ -519,7 +519,7 @@ export default function GameBoard({ gameCode }: Props) {
 
                 <div className={`rounded-2xl p-4 transition-colors ${isRolling ? "bg-amber-100" : "bg-slate-100"}`}>
                   <div className="text-sm text-slate-500">Poslední hod</div>
-                  <div className={`mt-1 text-4xl font-bold transition-all ${isRolling ? "text-amber-600 animate-pulse" : "text-slate-800"}`}>
+                  <div className={`mt-1 text-4xl font-bold transition-all ${isRolling ? "text-amber-600" : "text-slate-800"}`}>
                     {(isRolling || isMoving) && displayRoll !== null ? displayRoll : (gameState?.last_roll ?? "-")}
                   </div>
                 </div>
