@@ -275,7 +275,11 @@ export default function LandingPage() {
             )}
           </div>
 
-          <div className="text-center text-xs text-slate-400">
+          <div className="flex items-center justify-center gap-4 text-xs text-slate-400">
+            <a href="/pravidla" className="hover:text-slate-600 underline">Pravidla</a>
+            <span>·</span>
+            <a href="/o-nas" className="hover:text-slate-600 underline">O nás</a>
+            <span>·</span>
             <a href="mailto:info@paytowin.cz" className="hover:text-slate-600 underline">info@paytowin.cz</a>
           </div>
         </div>
