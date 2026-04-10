@@ -23,70 +23,11 @@ Desková hra ve stylu Dostihy a sázky. Hráči házejí kostkou, pohybují se p
 
 ### ⚠️ NUTNÉ UDĚLAT: spustit SQL schema v Supabase
 
-Jdi na: https://supabase.com → projekt paytowin → SQL Editor → New Query → vlož a spusť:
+Jdi na: https://supabase.com → projekt paytowin → SQL Editor → New Query → obsah souboru zkopíruj a spusť:
 
-```sql
--- Hry
-create table games (
-  id uuid primary key default gen_random_uuid(),
-  code text not null unique,
-  status text not null default 'waiting' check (status in ('waiting', 'playing', 'finished')),
-  created_at timestamptz not null default now()
-);
+📄 [`_db/before_run.sql`](_db/before_run.sql)
 
--- Hráči
-create table players (
-  id uuid primary key default gen_random_uuid(),
-  game_id uuid not null references games(id) on delete cascade,
-  name text not null,
-  color text not null,
-  position int not null default 0,
-  coins int not null default 500,
-  horses jsonb not null default '[]',
-  turn_order int not null default 0
-);
-
--- Stav hry
-create table game_state (
-  game_id uuid primary key references games(id) on delete cascade,
-  current_player_index int not null default 0,
-  last_roll int,
-  log jsonb not null default '[]',
-  updated_at timestamptz not null default now()
-);
-
--- Katalog koní (editovatelný z admin panelu)
-create table horse_catalog (
-  id uuid primary key default gen_random_uuid(),
-  name text not null,
-  speed int not null check (speed between 1 and 5),
-  price int not null,
-  emoji text not null
-);
-
--- Výchozí koně
-insert into horse_catalog (name, speed, price, emoji) values
-  ('Modrý blesk', 3, 150, '🔵'),
-  ('Zlatá hříva', 4, 250, '🟡'),
-  ('Rychlý vítr', 5, 400, '🟢'),
-  ('Divoká růže', 2, 80,  '🌹');
-
--- Realtime: povol pro všechny tabulky
-alter publication supabase_realtime add table games;
-alter publication supabase_realtime add table players;
-alter publication supabase_realtime add table game_state;
-
--- Row Level Security: prozatím otevřeno (PoC)
-alter table games       enable row level security;
-alter table players     enable row level security;
-alter table game_state  enable row level security;
-alter table horse_catalog enable row level security;
-
-create policy "public read games"       on games       for all using (true) with check (true);
-create policy "public read players"     on players     for all using (true) with check (true);
-create policy "public read game_state"  on game_state  for all using (true) with check (true);
-create policy "public read horses"      on horse_catalog for all using (true) with check (true);
-```
+Skript je idempotentní — lze spustit opakovaně bez chyb.
 
 ---
 
