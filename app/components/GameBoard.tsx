@@ -1,27 +1,118 @@
 "use client";
 
 import React from "react";
+import { supabase } from "@/lib/supabase";
 
-const TOTAL_FIELDS = 21;
-const START_INDEX = 0;
+// ─── Typy ─────────────────────────────────────────────────────────────────────
 
-const COLORS = [
-  "bg-blue-500",
-  "bg-green-500",
-  "bg-yellow-500",
-  "bg-purple-500",
-  "bg-pink-500",
-  "bg-orange-500",
+export interface Horse {
+  name: string;
+  speed: number;
+  price: number;
+  emoji: string;
+}
+
+export interface Player {
+  id: string;
+  game_id: string;
+  name: string;
+  position: number;
+  color: string;
+  coins: number;
+  horses: Horse[];
+  turn_order: number;
+}
+
+interface GameState {
+  game_id: string;
+  current_player_index: number;
+  last_roll: number | null;
+  log: string[];
+}
+
+type FieldType = "start" | "coins_gain" | "coins_lose" | "gamble" | "horse" | "neutral";
+
+interface Field {
+  index: number;
+  type: FieldType;
+  label: string;
+  emoji: string;
+  description: string;
+  horse?: Horse;
+  action: (player: Player) => { player: Player; log: string };
+}
+
+// ─── Statická herní data ───────────────────────────────────────────────────────
+
+const HORSES_FOR_SALE: Horse[] = [
+  { name: "Modrý blesk", speed: 3, price: 150, emoji: "🔵" },
+  { name: "Zlatá hříva", speed: 4, price: 250, emoji: "🟡" },
+  { name: "Rychlý vítr", speed: 5, price: 400, emoji: "🟢" },
+  { name: "Divoká růže", speed: 2, price: 80,  emoji: "🌹" },
 ];
 
+const FIELDS: Field[] = [
+  { index: 0,  type: "start",      label: "START",           emoji: "🏁", description: "Průchod = +200 coins.",
+    action: (p) => ({ player: { ...p, coins: p.coins + 200 }, log: `${p.name} prošel STARTem — +200 💰` }) },
+  { index: 1,  type: "coins_gain", label: "Sponzor",         emoji: "🤝", description: "+100 coins.",
+    action: (p) => ({ player: { ...p, coins: p.coins + 100 }, log: `${p.name}: Sponzor — +100 💰` }) },
+  { index: 2,  type: "coins_lose", label: "Veterinář",       emoji: "🩺", description: "-60 coins.",
+    action: (p) => ({ player: { ...p, coins: p.coins - 60 },  log: `${p.name}: Veterinář — -60 💰` }) },
+  { index: 3,  type: "horse",      label: "Divoká růže",     emoji: "🌹", description: "Kůň na prodej (rychlost 2) za 80 coins.", horse: HORSES_FOR_SALE[3],
+    action: (p) => ({ player: p, log: "" }) },
+  { index: 4,  type: "coins_gain", label: "Vítěz dostihu",   emoji: "🏆", description: "+150 coins.",
+    action: (p) => ({ player: { ...p, coins: p.coins + 150 }, log: `${p.name}: Vítěz dostihu — +150 💰` }) },
+  { index: 5,  type: "coins_lose", label: "Daňový úřad",     emoji: "🏛️", description: "-80 coins.",
+    action: (p) => ({ player: { ...p, coins: p.coins - 80 },  log: `${p.name}: Daňový úřad — -80 💰` }) },
+  { index: 6,  type: "coins_gain", label: "Zlaté podkůvky",  emoji: "🥇", description: "+80 coins.",
+    action: (p) => ({ player: { ...p, coins: p.coins + 80 },  log: `${p.name}: Zlaté podkůvky — +80 💰` }) },
+  { index: 7,  type: "coins_lose", label: "Korupce",         emoji: "💸", description: "-120 coins.",
+    action: (p) => ({ player: { ...p, coins: p.coins - 120 }, log: `${p.name}: Korupce — -120 💰` }) },
+  { index: 8,  type: "gamble",     label: "Loterie",         emoji: "🎟️", description: "Výhra 300 nebo ztráta 100 (30%).",
+    action: (p) => { const w = Math.random() < 0.3; return { player: { ...p, coins: p.coins + (w ? 300 : -100) }, log: `${p.name}: Loterie — ${w ? "+300 💰" : "-100 💰"}` }; } },
+  { index: 9,  type: "coins_gain", label: "Dobrá sezona",    emoji: "🌟", description: "+90 coins.",
+    action: (p) => ({ player: { ...p, coins: p.coins + 90 },  log: `${p.name}: Dobrá sezona — +90 💰` }) },
+  { index: 10, type: "horse",      label: "Modrý blesk",     emoji: "🔵", description: "Kůň na prodej (rychlost 3) za 150 coins.", horse: HORSES_FOR_SALE[0],
+    action: (p) => ({ player: p, log: "" }) },
+  { index: 11, type: "coins_lose", label: "Krize na trhu",   emoji: "📉", description: "-50 coins.",
+    action: (p) => ({ player: { ...p, coins: p.coins - 50 },  log: `${p.name}: Krize na trhu — -50 💰` }) },
+  { index: 12, type: "coins_gain", label: "Bankéř",          emoji: "🏦", description: "+40 coins.",
+    action: (p) => ({ player: { ...p, coins: p.coins + 40 },  log: `${p.name}: Bankéř — +40 💰` }) },
+  { index: 13, type: "coins_lose", label: "Zákeřný soupeř",  emoji: "😈", description: "-70 coins.",
+    action: (p) => ({ player: { ...p, coins: p.coins - 70 },  log: `${p.name}: Zákeřný soupeř — -70 💰` }) },
+  { index: 14, type: "gamble",     label: "Sázková kancelář",emoji: "📋", description: "Výhra 200 nebo ztráta 80 (40%).",
+    action: (p) => { const w = Math.random() < 0.4; return { player: { ...p, coins: p.coins + (w ? 200 : -80) }, log: `${p.name}: Sázkovka — ${w ? "+200 💰" : "-80 💰"}` }; } },
+  { index: 15, type: "coins_gain", label: "Věrnostní bonus", emoji: "🎁", description: "+50 coins.",
+    action: (p) => ({ player: { ...p, coins: p.coins + 50 },  log: `${p.name}: Věrnostní bonus — +50 💰` }) },
+  { index: 16, type: "coins_lose", label: "Zloděj",          emoji: "🦹", description: "-70 coins.",
+    action: (p) => ({ player: { ...p, coins: p.coins - 70 },  log: `${p.name}: Zloděj — -70 💰` }) },
+  { index: 17, type: "horse",      label: "Zlatá hříva",     emoji: "🟡", description: "Kůň na prodej (rychlost 4) za 250 coins.", horse: HORSES_FOR_SALE[1],
+    action: (p) => ({ player: p, log: "" }) },
+  { index: 18, type: "coins_lose", label: "Veterinář",       emoji: "💊", description: "-60 coins.",
+    action: (p) => ({ player: { ...p, coins: p.coins - 60 },  log: `${p.name}: Veterinář — -60 💰` }) },
+  { index: 19, type: "horse",      label: "Rychlý vítr",     emoji: "🟢", description: "Kůň na prodej (rychlost 5) za 400 coins.", horse: HORSES_FOR_SALE[2],
+    action: (p) => ({ player: p, log: "" }) },
+  { index: 20, type: "gamble",     label: "Ruleta",          emoji: "🎡", description: "Výhra 250 nebo ztráta 150 (45%).",
+    action: (p) => { const w = Math.random() < 0.45; return { player: { ...p, coins: p.coins + (w ? 250 : -150) }, log: `${p.name}: Ruleta — ${w ? "+250 💰" : "-150 💰"}` }; } },
+];
+
+const FIELD_STYLE: Record<FieldType, string> = {
+  start:      "h-20 w-20 border-red-400 bg-red-500 text-white",
+  coins_gain: "h-16 w-16 border-emerald-400 bg-emerald-100 text-emerald-800",
+  coins_lose: "h-16 w-16 border-red-300 bg-red-100 text-red-800",
+  gamble:     "h-16 w-16 border-violet-400 bg-violet-100 text-violet-800",
+  horse:      "h-16 w-16 border-amber-400 bg-amber-100 text-amber-800",
+  neutral:    "h-16 w-16 border-slate-300 bg-white text-slate-700",
+};
+
 const FIELD_POSITIONS: React.CSSProperties[] = [
-  { top: "50%", left: "8%", transform: "translate(-50%, -50%)" },
+  { top: "50%", left: "8%",  transform: "translate(-50%, -50%)" },
   { top: "35%", left: "10%", transform: "translate(-50%, -50%)" },
   { top: "22%", left: "15%", transform: "translate(-50%, -50%)" },
   { top: "12%", left: "24%", transform: "translate(-50%, -50%)" },
-  { top: "8%", left: "38%", transform: "translate(-50%, -50%)" },
-  { top: "8%", left: "50%", transform: "translate(-50%, -50%)" },
-  { top: "8%", left: "62%", transform: "translate(-50%, -50%)" },
+  { top: "8%",  left: "38%", transform: "translate(-50%, -50%)" },
+  { top: "8%",  left: "50%", transform: "translate(-50%, -50%)" },
+  { top: "8%",  left: "62%", transform: "translate(-50%, -50%)" },
   { top: "12%", left: "76%", transform: "translate(-50%, -50%)" },
   { top: "22%", left: "85%", transform: "translate(-50%, -50%)" },
   { top: "35%", left: "90%", transform: "translate(-50%, -50%)" },
@@ -38,209 +129,374 @@ const FIELD_POSITIONS: React.CSSProperties[] = [
   { top: "50%", left: "16%", transform: "translate(-50%, -50%)" },
 ];
 
-interface Player {
-  id: number;
-  name: string;
-  position: number;
-  color: string;
+// ─── Komponenta ───────────────────────────────────────────────────────────────
+
+interface Props {
+  gameCode?: string;
 }
 
-export default function GameBoard() {
-  const [playerCount, setPlayerCount] = React.useState(2);
-  const [players, setPlayers] = React.useState<Player[]>([
-    { id: 1, name: "Hráč 1", position: 0, color: COLORS[0] },
-    { id: 2, name: "Hráč 2", position: 0, color: COLORS[1] },
-  ]);
-  const [currentPlayerIndex, setCurrentPlayerIndex] = React.useState(0);
-  const [lastRoll, setLastRoll] = React.useState<number | null>(null);
+export default function GameBoard({ gameCode }: Props) {
+  const [gameId, setGameId] = React.useState<string | null>(null);
+  const [players, setPlayers] = React.useState<Player[]>([]);
+  const [gameState, setGameState] = React.useState<GameState | null>(null);
+  const [loading, setLoading] = React.useState(!!gameCode);
+  const [pendingHorse, setPendingHorse] = React.useState<{ horse: Horse; playerIndex: number } | null>(null);
 
+  // ── Načtení hry ze Supabase ──────────────────────────────────────────────────
   React.useEffect(() => {
-    setPlayers((prev) =>
-      Array.from({ length: playerCount }, (_, i) => ({
-        id: i + 1,
-        name: `Hráč ${i + 1}`,
-        position: prev[i]?.position ?? 0,
-        color: COLORS[i % COLORS.length],
-      }))
-    );
-    setCurrentPlayerIndex((prev) => Math.min(prev, Math.max(playerCount - 1, 0)));
-  }, [playerCount]);
+    if (!gameCode) return;
 
-  const rollDice = () => {
+    const loadGame = async () => {
+      const { data: game } = await supabase
+        .from("games")
+        .select()
+        .eq("code", gameCode)
+        .single();
+
+      if (!game) { setLoading(false); return; }
+      setGameId(game.id);
+
+      const [{ data: playersData }, { data: stateData }] = await Promise.all([
+        supabase.from("players").select().eq("game_id", game.id).order("turn_order"),
+        supabase.from("game_state").select().eq("game_id", game.id).single(),
+      ]);
+
+      setPlayers((playersData ?? []).map(normalizePlayer));
+      if (stateData) setGameState(normalizeState(stateData));
+      setLoading(false);
+
+      // Spuštění hry pokud ještě není
+      if (game.status === "waiting") {
+        await supabase.from("games").update({ status: "playing" }).eq("id", game.id);
+      }
+    };
+
+    loadGame();
+  }, [gameCode]);
+
+  // ── Realtime subscriptions ───────────────────────────────────────────────────
+  React.useEffect(() => {
+    if (!gameId) return;
+
+    const channel = supabase
+      .channel(`game:${gameId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "players", filter: `game_id=eq.${gameId}` },
+        (payload) => {
+          if (payload.eventType === "UPDATE") {
+            setPlayers((prev) => prev.map((p) => p.id === payload.new.id ? normalizePlayer(payload.new as Player) : p));
+          }
+          if (payload.eventType === "INSERT") {
+            setPlayers((prev) => [...prev, normalizePlayer(payload.new as Player)].sort((a, b) => a.turn_order - b.turn_order));
+          }
+        }
+      )
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "game_state", filter: `game_id=eq.${gameId}` },
+        (payload) => {
+          const newState = normalizeState(payload.new as GameState);
+          setGameState(newState);
+          // Zkontroluj jestli hráč přistál na koňském poli
+          const currentPlayer = players[newState.current_player_index - 1 < 0 ? players.length - 1 : newState.current_player_index - 1];
+          if (currentPlayer) {
+            const field = FIELDS[currentPlayer.position];
+            if (field?.type === "horse" && field.horse) {
+              setPendingHorse({ horse: field.horse, playerIndex: newState.current_player_index === 0 ? players.length - 1 : newState.current_player_index - 1 });
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [gameId, players]);
+
+  // ── Herní akce ────────────────────────────────────────────────────────────────
+
+  const rollDice = async () => {
+    if (!gameState || pendingHorse) return;
+
     const roll = Math.floor(Math.random() * 6) + 1;
-    setLastRoll(roll);
+    const currentPlayer = players[gameState.current_player_index];
+    if (!currentPlayer) return;
 
-    setPlayers((prev) => {
-      const updated = [...prev];
-      const current = updated[currentPlayerIndex];
-      updated[currentPlayerIndex] = {
-        ...current,
-        position: (current.position + roll) % TOTAL_FIELDS,
-      };
-      return updated;
-    });
+    const newPosition = (currentPlayer.position + roll) % 21;
+    const field = FIELDS[newPosition];
+    const movedPlayer = { ...currentPlayer, position: newPosition };
 
-    setCurrentPlayerIndex((prev) => (prev + 1) % players.length);
+    const nextIndex = (gameState.current_player_index + 1) % players.length;
+    const newLog = gameState.log ?? [];
+
+    if (field.type === "horse" && field.horse) {
+      // Zapíš pouze posun, čekáme na rozhodnutí
+      await supabase.from("players").update({ position: newPosition }).eq("id", currentPlayer.id);
+      await supabase.from("game_state").update({ last_roll: roll, log: [`${currentPlayer.name} přišel na stáj: ${field.horse.emoji} ${field.horse.name}`, ...newLog].slice(0, 20) }).eq("game_id", gameId);
+      setPendingHorse({ horse: field.horse, playerIndex: gameState.current_player_index });
+    } else {
+      const { player: updatedPlayer, log: logLine } = field.action(movedPlayer);
+      await supabase.from("players").update({ position: updatedPlayer.position, coins: updatedPlayer.coins, horses: updatedPlayer.horses }).eq("id", currentPlayer.id);
+      await supabase.from("game_state").update({
+        current_player_index: nextIndex,
+        last_roll: roll,
+        log: logLine ? [logLine, ...newLog].slice(0, 20) : newLog,
+      }).eq("game_id", gameId);
+    }
   };
 
-  const currentPlayer = players[currentPlayerIndex];
-  const fieldPlayers = (fieldIndex: number) =>
-    players.filter((p) => p.position === fieldIndex);
+  const buyHorse = async () => {
+    if (!pendingHorse || !gameState) return;
+    const { horse, playerIndex } = pendingHorse;
+    const player = players[playerIndex];
+    if (!player || player.coins < horse.price) return;
+
+    const updatedHorses = [...player.horses, horse];
+    const newLog = gameState.log ?? [];
+    const nextIndex = (playerIndex + 1) % players.length;
+
+    await supabase.from("players").update({ coins: player.coins - horse.price, horses: updatedHorses }).eq("id", player.id);
+    await supabase.from("game_state").update({
+      current_player_index: nextIndex,
+      log: [`${player.name} koupil ${horse.emoji} ${horse.name} za ${horse.price} 💰`, ...newLog].slice(0, 20),
+    }).eq("game_id", gameId);
+
+    setPendingHorse(null);
+  };
+
+  const skipHorse = async () => {
+    if (!pendingHorse || !gameState) return;
+    const player = players[pendingHorse.playerIndex];
+    const nextIndex = (pendingHorse.playerIndex + 1) % players.length;
+    const newLog = gameState.log ?? [];
+
+    await supabase.from("game_state").update({
+      current_player_index: nextIndex,
+      log: [`${player?.name ?? "?"} přeskočil nákup koně`, ...newLog].slice(0, 20),
+    }).eq("game_id", gameId);
+
+    setPendingHorse(null);
+  };
+
+  // ── Helpers ──────────────────────────────────────────────────────────────────
+
+  const fieldPlayers = (fieldIndex: number) => players.filter((p) => p.position === fieldIndex);
+  const currentPlayer = gameState ? players[gameState.current_player_index] : null;
+  const isMyTurn = !!pendingHorse || true; // TODO: per-player auth
+
+  // ── Render ───────────────────────────────────────────────────────────────────
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
+        <div className="text-slate-500">Načítám hru…</div>
+      </div>
+    );
+  }
+
+  if (gameCode && !gameId) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-2xl font-bold text-slate-800">Hra nenalezena</div>
+          <a href="/" className="mt-4 block text-sm text-slate-500 underline">Zpět na úvod</a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-100">
       <div className="bg-amber-100 border-b border-amber-300 px-4 py-2 text-center text-sm text-amber-800">
         Experimentální projekt · kontakt:{" "}
-        <a href="mailto:hynek@darbujan.cz" className="underline hover:text-amber-900">
-          hynek@darbujan.cz
-        </a>
+        <a href="mailto:hynek@darbujan.cz" className="underline hover:text-amber-900">hynek@darbujan.cz</a>
+        {gameCode && (
+          <span className="ml-4 font-mono font-bold tracking-widest">
+            🎮 hra: {gameCode}
+          </span>
+        )}
       </div>
       <div className="p-6">
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 lg:grid-cols-[1fr_340px]">
-        {/* Herní plocha */}
-        <div className="rounded-3xl bg-white p-6 shadow-lg">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-slate-800">Pay-to-Win</h1>
-              <p className="text-sm text-slate-500">
-                Základní deska se 21 poli, figurkami a hodem kostkou.
-              </p>
-            </div>
-            <div className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700">
-              Na tahu:{" "}
-              <span className="font-bold">{currentPlayer?.name ?? "-"}</span>
-            </div>
-          </div>
+        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 lg:grid-cols-[1fr_340px]">
 
-          <div className="relative mx-auto aspect-square w-full max-w-[760px] rounded-[40px] border border-slate-200 bg-emerald-50">
-            {FIELD_POSITIONS.map((pos, index) => {
-              const isStart = index === START_INDEX;
-              const playersHere = fieldPlayers(index);
-
-              return (
-                <div
-                  key={index}
-                  className={`absolute flex flex-col items-center justify-center rounded-2xl border-2 shadow-sm ${
-                    isStart
-                      ? "h-20 w-20 border-red-400 bg-red-500 text-white"
-                      : "h-16 w-16 border-slate-300 bg-white text-slate-700"
-                  }`}
-                  style={pos}
-                >
-                  <div className="text-xs font-bold">
-                    {isStart ? "START" : index}
-                  </div>
-                  <div className="mt-1 flex flex-wrap items-center justify-center gap-1 px-1">
-                    {playersHere.map((player) => (
-                      <div
-                        key={player.id}
-                        className={`h-3 w-3 rounded-full ${player.color} ring-1 ring-white`}
-                        title={player.name}
-                      />
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-
-            {/* Střed */}
-            <div className="absolute left-1/2 top-1/2 flex h-[46%] w-[46%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[36px] border-2 border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+          {/* Herní plocha */}
+          <div className="rounded-3xl bg-white p-6 shadow-lg">
+            <div className="mb-4 flex items-center justify-between">
               <div>
-                <div className="text-lg font-semibold text-slate-700">
-                  Střed hrací plochy
-                </div>
-                <div className="mt-2 text-sm text-slate-500">
-                  Přijde sem panel pro závody, koně, stáje a log hry.
+                <h1 className="text-3xl font-bold text-slate-800">Pay-to-Win</h1>
+                <p className="text-sm text-slate-500">Dostihy, sázky a finanční chaos.</p>
+              </div>
+              <div className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700">
+                Na tahu: <span className="font-bold">{currentPlayer?.name ?? "-"}</span>
+              </div>
+            </div>
+
+            <div className="mb-4 flex flex-wrap gap-3 text-xs">
+              <span className="rounded-lg bg-emerald-100 px-2 py-1 text-emerald-800">🟢 zisk</span>
+              <span className="rounded-lg bg-red-100 px-2 py-1 text-red-800">🔴 ztráta</span>
+              <span className="rounded-lg bg-violet-100 px-2 py-1 text-violet-800">🟣 hazard</span>
+              <span className="rounded-lg bg-amber-100 px-2 py-1 text-amber-800">🟠 kůň</span>
+            </div>
+
+            <div className="relative mx-auto aspect-square w-full max-w-[760px] rounded-[40px] border border-slate-200 bg-emerald-50">
+              {FIELDS.map((field) => {
+                const pos = FIELD_POSITIONS[field.index];
+                const playersHere = fieldPlayers(field.index);
+                return (
+                  <div
+                    key={field.index}
+                    className={`absolute flex flex-col items-center justify-center rounded-2xl border-2 shadow-sm ${FIELD_STYLE[field.type]}`}
+                    style={pos}
+                    title={field.description}
+                  >
+                    <div className="text-base leading-none">{field.emoji}</div>
+                    <div className="text-[9px] font-bold leading-tight text-center px-0.5 mt-0.5">
+                      {field.type === "start" ? "START" : field.label}
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center justify-center gap-1 px-1">
+                      {playersHere.map((player) => (
+                        <div key={player.id} className={`h-3 w-3 rounded-full ${player.color} ring-1 ring-white`} title={player.name} />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="absolute left-1/2 top-1/2 flex h-[42%] w-[42%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[36px] border-2 border-dashed border-slate-300 bg-slate-50 p-4 text-center">
+                <div>
+                  <div className="text-2xl">🐎</div>
+                  <div className="mt-1 text-sm font-semibold text-slate-700">Dostihiště</div>
+                  <div className="mt-1 text-xs text-slate-400">Přijdou závody.</div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Ovládací panel */}
-        <div className="rounded-3xl bg-white p-6 shadow-lg">
-          <h2 className="text-2xl font-bold text-slate-800">Panel hry</h2>
-          <div className="mt-6 space-y-6">
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">
-                Počet hráčů
-              </label>
-              <input
-                type="number"
-                min={2}
-                max={6}
-                value={playerCount}
-                onChange={(e) => {
-                  const next = Number(e.target.value);
-                  if (Number.isFinite(next)) {
-                    setPlayerCount(Math.max(2, Math.min(6, next)));
-                  }
-                }}
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-800 outline-none focus:border-slate-500"
-              />
-            </div>
+          {/* Pravý panel */}
+          <div className="flex flex-col gap-4">
+            <div className="rounded-3xl bg-white p-6 shadow-lg">
+              <h2 className="text-2xl font-bold text-slate-800">Panel hry</h2>
+              <div className="mt-4 space-y-4">
 
-            <div className="rounded-2xl bg-slate-100 p-4">
-              <div className="text-sm text-slate-500">Poslední hod</div>
-              <div className="mt-1 text-4xl font-bold text-slate-800">
-                {lastRoll ?? "-"}
-              </div>
-            </div>
+                <div className="rounded-2xl bg-slate-100 p-4">
+                  <div className="text-sm text-slate-500">Poslední hod</div>
+                  <div className="mt-1 text-4xl font-bold text-slate-800">{gameState?.last_roll ?? "-"}</div>
+                </div>
 
-            <button
-              onClick={rollDice}
-              disabled={players.length === 0}
-              className="w-full rounded-2xl bg-slate-900 px-4 py-4 text-lg font-semibold text-white shadow transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
-            >
-              Hoď kostkou
-            </button>
+                {pendingHorse ? (
+                  <div className="rounded-2xl border-2 border-amber-400 bg-amber-50 p-4 space-y-3">
+                    <div className="text-sm font-semibold text-amber-900">Stáj nabízí koně:</div>
+                    <div className="flex items-center gap-3">
+                      <div className="text-3xl">{pendingHorse.horse.emoji}</div>
+                      <div>
+                        <div className="font-bold text-slate-800">{pendingHorse.horse.name}</div>
+                        <div className="text-sm text-slate-500">Rychlost: {"⭐".repeat(pendingHorse.horse.speed)}</div>
+                        <div className="text-sm font-semibold text-amber-700">Cena: {pendingHorse.horse.price} 💰</div>
+                        <div className="text-xs text-slate-400">
+                          {players[pendingHorse.playerIndex]?.name} má: {players[pendingHorse.playerIndex]?.coins ?? 0} 💰
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={buyHorse}
+                        disabled={(players[pendingHorse.playerIndex]?.coins ?? 0) < pendingHorse.horse.price}
+                        className="flex-1 rounded-xl bg-amber-500 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-600 disabled:cursor-not-allowed disabled:bg-slate-300"
+                      >
+                        Koupit
+                      </button>
+                      <button
+                        onClick={skipHorse}
+                        className="flex-1 rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                      >
+                        Přeskočit
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={rollDice}
+                    disabled={!gameState || players.length === 0}
+                    className="w-full rounded-2xl bg-slate-900 px-4 py-4 text-lg font-semibold text-white shadow transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                  >
+                    Hoď kostkou
+                  </button>
+                )}
 
-            <div>
-              <div className="mb-3 text-sm font-medium text-slate-700">
-                Seznam hráčů
-              </div>
-              <div className="space-y-3">
-                {players.map((player, index) => {
-                  const isCurrent = index === currentPlayerIndex;
-                  return (
-                    <div
-                      key={player.id}
-                      className={`rounded-2xl border p-4 ${
-                        isCurrent
-                          ? "border-slate-900 bg-slate-50"
-                          : "border-slate-200 bg-white"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <div className={`h-4 w-4 rounded-full ${player.color}`} />
-                          <div>
-                            <div className="font-semibold text-slate-800">
-                              {player.name}
+                {/* Hráči */}
+                <div>
+                  <div className="mb-3 text-sm font-medium text-slate-700">Hráči</div>
+                  <div className="space-y-2">
+                    {players.map((player, index) => {
+                      const isCurrent = gameState?.current_player_index === index;
+                      const field = FIELDS[player.position];
+                      return (
+                        <div key={player.id} className={`rounded-2xl border p-3 ${isCurrent ? "border-slate-900 bg-slate-50" : "border-slate-200 bg-white"}`}>
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className={`h-3 w-3 shrink-0 rounded-full ${player.color}`} />
+                              <div className="min-w-0">
+                                <div className="font-semibold text-slate-800 text-sm">{player.name}</div>
+                                <div className="text-xs text-slate-500 truncate">{field?.emoji} {field?.label}</div>
+                                {player.horses.length > 0 && (
+                                  <div className="text-xs text-amber-700 mt-0.5">
+                                    {player.horses.map((h) => `${h.emoji} ${h.name}`).join(", ")}
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                            <div className="text-sm text-slate-500">
-                              Pole:{" "}
-                              {player.position === 0
-                                ? "START"
-                                : player.position}
+                            <div className="text-right shrink-0">
+                              <div className="text-sm font-bold text-slate-800">{player.coins} 💰</div>
+                              {isCurrent && <span className="text-[10px] rounded-full bg-slate-900 px-2 py-0.5 font-semibold text-white">Na tahu</span>}
                             </div>
                           </div>
                         </div>
-                        {isCurrent && (
-                          <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">
-                            Na tahu
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+                      );
+                    })}
+                  </div>
+                </div>
+
               </div>
             </div>
+
+            {/* Log */}
+            {(gameState?.log?.length ?? 0) > 0 && (
+              <div className="rounded-3xl bg-white p-6 shadow-lg">
+                <div className="text-sm font-medium text-slate-700 mb-3">Log tahů</div>
+                <div className="space-y-1 max-h-52 overflow-y-auto">
+                  {(gameState?.log ?? []).map((entry, i) => (
+                    <div key={i} className={`text-xs text-slate-600 ${i === 0 ? "font-semibold text-slate-900" : ""}`}>
+                      {entry}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
+
         </div>
-      </div>
       </div>
     </div>
   );
+}
+
+// ─── Normalizace dat ze Supabase ──────────────────────────────────────────────
+
+function normalizePlayer(raw: unknown): Player {
+  const r = raw as Record<string, unknown>;
+  return {
+    id: r.id as string,
+    game_id: r.game_id as string,
+    name: r.name as string,
+    position: Number(r.position),
+    color: r.color as string,
+    coins: Number(r.coins),
+    horses: Array.isArray(r.horses) ? (r.horses as Horse[]) : [],
+    turn_order: Number(r.turn_order),
+  };
+}
+
+function normalizeState(raw: unknown): GameState {
+  const r = raw as Record<string, unknown>;
+  return {
+    game_id: r.game_id as string,
+    current_player_index: Number(r.current_player_index),
+    last_roll: r.last_roll != null ? Number(r.last_roll) : null,
+    log: Array.isArray(r.log) ? (r.log as string[]) : [],
+  };
 }
