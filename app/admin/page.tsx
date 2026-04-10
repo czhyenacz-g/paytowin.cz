@@ -1,5 +1,5 @@
-import AdminPanel from "@/app/components/AdminPanel";
+import AdminAuth from "@/app/components/AdminAuth";
 
 export default function AdminPage() {
-  return <AdminPanel />;
+  return <AdminAuth />;
 }
