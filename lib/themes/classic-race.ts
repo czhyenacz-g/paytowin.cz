@@ -22,6 +22,8 @@ export const classicRaceTheme: Theme = {
       gamble:     "h-16 w-16 border-purple-500 bg-purple-100 text-purple-900",
       horse:      "h-16 w-16 border-amber-600 bg-amber-200 text-amber-900",
       neutral:    "h-16 w-16 border-stone-400 bg-stone-100 text-stone-700",
+      chance:     "h-16 w-16 border-sky-500 bg-sky-100 text-sky-900",
+      finance:    "h-16 w-16 border-teal-600 bg-teal-100 text-teal-900",
     },
     activePlayerBadge: "bg-green-900 text-amber-200",
     rollPanelIdle:     "bg-amber-100",

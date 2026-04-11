@@ -3,7 +3,7 @@ import { darkTheme } from "./dark";
 import { classicRaceTheme } from "./classic-race";
 
 // Typy polí na desce (musí odpovídat FieldType v GameBoard)
-export type FieldStyleKey = "start" | "coins_gain" | "coins_lose" | "gamble" | "horse" | "neutral";
+export type FieldStyleKey = "start" | "coins_gain" | "coins_lose" | "gamble" | "horse" | "neutral" | "chance" | "finance";
 
 /** Definice koně v rámci theme — 4 koně v pořadí [speed3, speed4, speed5, speed2]. */
 export interface HorseConfig {

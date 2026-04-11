@@ -3,6 +3,7 @@
 import React from "react";
 import { supabase } from "@/lib/supabase";
 import { getThemeById, HorseConfig } from "@/lib/themes";
+import { GameCard, drawCard } from "@/lib/cards";
 
 // ─── Typy ─────────────────────────────────────────────────────────────────────
 
@@ -23,6 +24,7 @@ export interface Player {
   coins: number;
   horses: Horse[];
   turn_order: number;
+  skip_next_turn: boolean;
 }
 
 interface GameState {
@@ -32,6 +34,7 @@ interface GameState {
   log: string[];
   turn_count: number;
   horse_pending: boolean;
+  card_pending: GameCard | null; // karta čekající na aplikaci efektu
 }
 
 const BANKRUPTCY_TAX_PER_ROUND = 50; // daň roste o tuto částku každé kolo (kolo 1 = 0, kolo 2 = 50, kolo 3 = 100, …)
@@ -42,7 +45,7 @@ function getStartTax(round: number): number {
   return Math.min((round - 1) * BANKRUPTCY_TAX_PER_ROUND, BANKRUPTCY_TAX_CAP);
 }
 
-type FieldType = "start" | "coins_gain" | "coins_lose" | "gamble" | "horse" | "neutral";
+type FieldType = "start" | "coins_gain" | "coins_lose" | "gamble" | "horse" | "neutral" | "chance" | "finance";
 
 interface Field {
   index: number;
@@ -79,8 +82,8 @@ function buildFields(horses: HorseConfig[]): Field[] {
       action: (p) => ({ player: { ...p, coins: p.coins + 80 },  log: `${p.name}: Zlaté podkůvky — +80 💰` }) },
     { index: 7,  type: "coins_lose", label: "Korupce",         emoji: "💸", description: "-120 coins.",
       action: (p) => ({ player: { ...p, coins: p.coins - 120 }, log: `${p.name}: Korupce — -120 💰` }) },
-    { index: 8,  type: "gamble",     label: "Loterie",         emoji: "🎟️", description: "Výhra 300 nebo ztráta 100 (30%).",
-      action: (p) => { const w = Math.random() < 0.3; return { player: { ...p, coins: p.coins + (w ? 300 : -100) }, log: `${p.name}: Loterie — ${w ? "+300 💰" : "-100 💰"}` }; } },
+    { index: 8,  type: "chance",     label: "Náhoda",          emoji: "🎴", description: "Líznout kartu Náhoda.",
+      action: (p) => ({ player: p, log: "" }) },
     { index: 9,  type: "coins_gain", label: "Dobrá sezona",    emoji: "🌟", description: "+90 coins.",
       action: (p) => ({ player: { ...p, coins: p.coins + 90 },  log: `${p.name}: Dobrá sezona — +90 💰` }) },
     { index: 10, type: "horse",      label: horses[1].name,    emoji: horses[1].emoji, description: `Kůň na prodej (rychlost ${horses[1].speed}) za ${horses[1].price} coins.`, horse: h(1),
@@ -91,8 +94,8 @@ function buildFields(horses: HorseConfig[]): Field[] {
       action: (p) => ({ player: { ...p, coins: p.coins + 40 },  log: `${p.name}: Bankéř — +40 💰` }) },
     { index: 13, type: "coins_lose", label: "Zákeřný soupeř",  emoji: "😈", description: "-70 coins.",
       action: (p) => ({ player: { ...p, coins: p.coins - 70 },  log: `${p.name}: Zákeřný soupeř — -70 💰` }) },
-    { index: 14, type: "gamble",     label: "Sázková kancelář",emoji: "📋", description: "Výhra 200 nebo ztráta 80 (40%).",
-      action: (p) => { const w = Math.random() < 0.4; return { player: { ...p, coins: p.coins + (w ? 200 : -80) }, log: `${p.name}: Sázkovka — ${w ? "+200 💰" : "-80 💰"}` }; } },
+    { index: 14, type: "finance",    label: "Finance",          emoji: "💼", description: "Líznout kartu Finance.",
+      action: (p) => ({ player: p, log: "" }) },
     { index: 15, type: "coins_gain", label: "Věrnostní bonus", emoji: "🎁", description: "+50 coins.",
       action: (p) => ({ player: { ...p, coins: p.coins + 50 },  log: `${p.name}: Věrnostní bonus — +50 💰` }) },
     { index: 16, type: "coins_lose", label: "Zloděj",          emoji: "🦹", description: "-70 coins.",
@@ -103,8 +106,8 @@ function buildFields(horses: HorseConfig[]): Field[] {
       action: (p) => ({ player: { ...p, coins: p.coins - 60 },  log: `${p.name}: Veterinář — -60 💰` }) },
     { index: 19, type: "horse",      label: horses[3].name,    emoji: horses[3].emoji, description: `Kůň na prodej (rychlost ${horses[3].speed}) za ${horses[3].price} coins.`, horse: h(3),
       action: (p) => ({ player: p, log: "" }) },
-    { index: 20, type: "gamble",     label: "Ruleta",          emoji: "🎡", description: "Výhra 250 nebo ztráta 150 (45%).",
-      action: (p) => { const w = Math.random() < 0.45; return { player: { ...p, coins: p.coins + (w ? 250 : -150) }, log: `${p.name}: Ruleta — ${w ? "+250 💰" : "-150 💰"}` }; } },
+    { index: 20, type: "chance",     label: "Náhoda",          emoji: "🎴", description: "Líznout kartu Náhoda.",
+      action: (p) => ({ player: p, log: "" }) },
   ];
 }
 
@@ -204,6 +207,9 @@ export default function GameBoard({ gameCode }: Props) {
   const [gameState, setGameState] = React.useState<GameState | null>(null);
   const [loading, setLoading] = React.useState(!!gameCode);
   const [pendingHorse, setPendingHorse] = React.useState<{ horse: Horse; playerIndex: number } | null>(null);
+  const [pendingCard, setPendingCard] = React.useState<{ card: GameCard; playerIndex: number } | null>(null);
+  // Ochrana: ID karty, jejíž efekt jsme už aplikovali — zabrání dvojímu spuštění
+  const cardAppliedRef = React.useRef<string | null>(null);
   const [myPlayerId, setMyPlayerId] = React.useState<string | null>(null);
   const [viewerRole, setViewerRole] = React.useState<"loading" | "player" | "spectator" | "login_required">("loading");
   const [isRolling, setIsRolling] = React.useState(false);
@@ -380,7 +386,7 @@ export default function GameBoard({ gameCode }: Props) {
   // ── Herní akce ────────────────────────────────────────────────────────────────
 
   const rollDice = async () => {
-    if (!gameState || pendingHorse || isRolling || isMoving) return;
+    if (!gameState || pendingHorse || pendingCard || isRolling || isMoving) return;
 
     const roll = Math.floor(Math.random() * 6) + 1;
     const currentPlayer = players[gameState.current_player_index];
@@ -466,6 +472,7 @@ export default function GameBoard({ gameCode }: Props) {
           last_roll: roll,
           turn_count: newTurnCount,
           horse_pending: false,
+          card_pending: null,
           log: [...logLines, ...newLog].slice(0, 20),
         }).eq("game_id", gameId);
       } else {
@@ -475,10 +482,25 @@ export default function GameBoard({ gameCode }: Props) {
           last_roll: roll,
           turn_count: newTurnCount,
           horse_pending: true,
+          card_pending: null,
           log: [`${currentPlayer.name} přišel na stáj: ${field.horse.emoji} ${field.horse.name}`, ...extraLog, ...newLog].slice(0, 20),
         }).eq("game_id", gameId);
         setPendingHorse({ horse: field.horse, playerIndex: gameState.current_player_index });
       }
+    } else if (field.type === "chance" || field.type === "finance") {
+      // ── Karta: lízni, zobraz všem, efekt se aplikuje automaticky po 2.5 s ──
+      const card = drawCard(field.type);
+      const cardLabel = field.type === "chance" ? "🎴 Náhoda" : "💼 Finance";
+      await supabase.from("players").update({ position: newPosition, coins: movedPlayer.coins }).eq("id", currentPlayer.id);
+      await supabase.from("game_state").update({
+        last_roll: roll,
+        turn_count: newTurnCount,
+        horse_pending: false,
+        card_pending: card as unknown as Record<string, unknown>,
+        log: [`${currentPlayer.name} lízl kartu ${cardLabel}`, ...extraLog, ...newLog].slice(0, 20),
+      }).eq("game_id", gameId);
+      // Lokální state — ostatní klienti dostanou přes Realtime
+      setPendingCard({ card, playerIndex: gameState.current_player_index });
     } else {
       const { player: afterField, log: fieldLog } = field.action(movedPlayer);
       const finalPlayer = afterField;
@@ -499,6 +521,7 @@ export default function GameBoard({ gameCode }: Props) {
         last_roll: roll,
         turn_count: newTurnCount,
         horse_pending: false,
+        card_pending: null,
         log: [...logLines, ...newLog].slice(0, 20),
       }).eq("game_id", gameId);
     }
@@ -559,6 +582,86 @@ export default function GameBoard({ gameCode }: Props) {
     setPendingHorse(null);
   };
 
+  // ── Efekt karty ──────────────────────────────────────────────────────────────
+
+  /**
+   * Aplikuje efekt karty — volá POUZE aktivní hráčův klient (isMyTurn).
+   * Ochrana cardAppliedRef zabrání dvojímu spuštění při re-renderu.
+   */
+  const applyCardEffect = React.useCallback(async (card: GameCard, playerIndex: number) => {
+    if (!gameState || !gameId) return;
+    // Ochrana: karta tohoto ID už byla aplikována
+    if (cardAppliedRef.current === card.id + "_" + gameState.turn_count) return;
+    cardAppliedRef.current = card.id + "_" + gameState.turn_count;
+
+    const player = players[playerIndex];
+    if (!player) return;
+
+    let updatedPlayer = { ...player };
+    const logLines: string[] = [];
+    const newLog = gameState.log ?? [];
+
+    if (card.effect.kind === "coins" && card.effect.value !== undefined) {
+      updatedPlayer = { ...updatedPlayer, coins: updatedPlayer.coins + card.effect.value };
+      const sign = card.effect.value > 0 ? "+" : "";
+      logLines.push(`${player.name}: ${card.text} (${sign}${card.effect.value} 💰)`);
+    } else if (card.effect.kind === "move" && card.effect.value !== undefined) {
+      const newPos = ((updatedPlayer.position + card.effect.value) % 21 + 21) % 21;
+      updatedPlayer = { ...updatedPlayer, position: newPos };
+      const sign = card.effect.value > 0 ? "+" : "";
+      logLines.push(`${player.name}: ${card.text} (posun ${sign}${card.effect.value})`);
+    } else if (card.effect.kind === "skip_turn") {
+      // skip_next_turn uložíme do DB — bude přeskočen při příštím tahu
+      logLines.push(`${player.name}: ${card.text} (vynechá příští tah)`);
+    }
+
+    const wentBankrupt = updatedPlayer.coins <= 0 && player.coins > 0;
+    if (wentBankrupt) logLines.push(`💀 ${player.name} zkrachoval!`);
+
+    // Updatuj hráče v DB
+    const playerUpdate: Record<string, unknown> = {
+      position: updatedPlayer.position,
+      coins: updatedPlayer.coins,
+    };
+    if (card.effect.kind === "skip_turn") {
+      // Příznak se aplikuje na TOHOTO hráče — příští tah ho auto-přeskočí (viz useEffect níže)
+      playerUpdate.skip_next_turn = true;
+    }
+    await supabase.from("players").update(playerUpdate).eq("id", player.id);
+
+    // Urči dalšího hráče
+    const updatedPlayers = players.map((p, i) => i === playerIndex ? updatedPlayer : p);
+    const nextIndex = getNextActiveIndex(playerIndex, updatedPlayers);
+
+    await supabase.from("game_state").update({
+      current_player_index: nextIndex,
+      turn_count: gameState.turn_count + 1,
+      horse_pending: false,
+      card_pending: null,
+      log: [...logLines, ...newLog].slice(0, 20),
+    }).eq("game_id", gameId);
+
+    setPendingCard(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState, players, gameId]);
+
+  // Automaticky aplikuj efekt karty po 2.5 s — jen aktivní hráčův klient
+  React.useEffect(() => {
+    if (!pendingCard) return;
+    const isActivePlayerClient =
+      gameMode === "local"
+        ? true // local: aktuální hráč vždy u zařízení
+        : (myPlayerId && players[pendingCard.playerIndex]?.id === myPlayerId);
+    if (!isActivePlayerClient) return;
+
+    const timer = setTimeout(() => {
+      applyCardEffect(pendingCard.card, pendingCard.playerIndex);
+    }, 2500);
+
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingCard?.card.id, pendingCard?.playerIndex]);
+
   const cancelGame = async () => {
     if (!gameId) return;
     if (!window.confirm("Opravdu chceš zrušit hru? Ostatní hráči ji ztratí.")) return;
@@ -568,7 +671,7 @@ export default function GameBoard({ gameCode }: Props) {
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
-  // Po načtení hry obnov pendingHorse ze stavu DB (page refresh survival)
+  // Po načtení / refresh: obnov pendingHorse a pendingCard ze stavu DB
   React.useEffect(() => {
     if (!gameState || players.length === 0) return;
     if (gameState.horse_pending) {
@@ -580,8 +683,40 @@ export default function GameBoard({ gameCode }: Props) {
     } else {
       setPendingHorse(null);
     }
+    if (gameState.card_pending) {
+      setPendingCard({ card: gameState.card_pending, playerIndex: gameState.current_player_index });
+    } else {
+      setPendingCard(null);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameState?.horse_pending, gameState?.current_player_index]);
+  }, [gameState?.horse_pending, gameState?.card_pending, gameState?.current_player_index]);
+
+  // Auto-skip: pokud má aktuální hráč skip_next_turn = true, přeskočíme jeho tah
+  React.useEffect(() => {
+    if (!gameState || players.length === 0 || !gameId) return;
+    const currentP = players[gameState.current_player_index];
+    if (!currentP?.skip_next_turn) return;
+    if (gameState.horse_pending || gameState.card_pending) return; // počkej až se vyřeší
+
+    // Jen trigger klient: local = kdokoliv, online = hráč s myPlayerId
+    const isActiveClient = gameMode === "local"
+      ? viewerRole === "player"
+      : myPlayerId === currentP.id;
+    if (!isActiveClient) return;
+
+    const doSkip = async () => {
+      const newLog = gameState.log ?? [];
+      const nextIndex = getNextActiveIndex(gameState.current_player_index, players);
+      await supabase.from("players").update({ skip_next_turn: false }).eq("id", currentP.id);
+      await supabase.from("game_state").update({
+        current_player_index: nextIndex,
+        turn_count: gameState.turn_count + 1,
+        log: [`${currentP.name} přeskakuje tah (penalizace z karty)`, ...newLog].slice(0, 20),
+      }).eq("game_id", gameId);
+    };
+    doSkip();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState?.current_player_index, players.map(p => p.skip_next_turn).join(",")]);
 
   // Pro render desky: animující hráč se zobrazuje na animPosition, ne na DB pozici
   const displayPlayers = players.map((p, i) =>
@@ -857,7 +992,32 @@ export default function GameBoard({ gameCode }: Props) {
                   </div>
                 </div>
 
-                {pendingHorse ? (
+                {pendingCard ? (
+                  <div className={`rounded-2xl border-2 p-4 space-y-2 ${
+                    pendingCard.card.type === "chance"
+                      ? "border-sky-400 bg-sky-50"
+                      : "border-teal-400 bg-teal-50"
+                  }`}>
+                    <div className={`text-xs font-bold uppercase tracking-widest ${
+                      pendingCard.card.type === "chance" ? "text-sky-600" : "text-teal-600"
+                    }`}>
+                      {pendingCard.card.type === "chance" ? "🎴 Náhoda" : "💼 Finance"}
+                    </div>
+                    <div className="text-sm font-medium text-slate-800 leading-snug">
+                      {pendingCard.card.text}
+                    </div>
+                    <div className={`mt-1 inline-block rounded-full px-3 py-1 text-xs font-bold ${
+                      pendingCard.card.type === "chance"
+                        ? "bg-sky-100 text-sky-800"
+                        : "bg-teal-100 text-teal-800"
+                    }`}>
+                      {pendingCard.card.effectLabel}
+                    </div>
+                    <div className="text-xs text-slate-400 pt-1">
+                      Lízl: {players[pendingCard.playerIndex]?.name ?? "?"} · efekt se aplikuje za chvíli…
+                    </div>
+                  </div>
+                ) : pendingHorse ? (
                   <div className="rounded-2xl border-2 border-amber-400 bg-amber-50 p-4 space-y-3">
                     <div className="text-sm font-semibold text-amber-900">Stáj nabízí koně:</div>
                     <div className="flex items-center gap-3">
@@ -1044,6 +1204,7 @@ function normalizePlayer(raw: unknown): Player {
     coins: Number(r.coins),
     horses: Array.isArray(r.horses) ? (r.horses as Horse[]) : [],
     turn_order: Number(r.turn_order),
+    skip_next_turn: Boolean(r.skip_next_turn ?? false),
   };
 }
 
@@ -1056,5 +1217,6 @@ function normalizeState(raw: unknown): GameState {
     log: Array.isArray(r.log) ? (r.log as string[]) : [],
     turn_count: Number(r.turn_count ?? 0),
     horse_pending: Boolean(r.horse_pending ?? false),
+    card_pending: (r.card_pending as GameCard | null) ?? null,
   };
 }

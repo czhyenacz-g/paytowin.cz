@@ -41,6 +41,7 @@ export interface Database {
           coins: number;
           horses: Json;
           turn_order: number;
+          skip_next_turn: boolean;
         };
         Insert: {
           game_id: string;
@@ -50,6 +51,7 @@ export interface Database {
           coins: number;
           horses: Json;
           turn_order: number;
+          skip_next_turn?: boolean;
         };
         Update: {
           position?: number;
@@ -57,6 +59,7 @@ export interface Database {
           horses?: Json;
           color?: string;
           name?: string;
+          skip_next_turn?: boolean;
         };
       };
       game_state: {
@@ -67,6 +70,7 @@ export interface Database {
           log: Json;
           turn_count: number;
           horse_pending: boolean;
+          card_pending: Json | null;
           updated_at: string;
         };
         Insert: {
@@ -76,6 +80,7 @@ export interface Database {
           log: Json;
           turn_count?: number;
           horse_pending?: boolean;
+          card_pending?: Json | null;
         };
         Update: {
           current_player_index?: number;
@@ -83,6 +88,7 @@ export interface Database {
           log?: Json;
           turn_count?: number;
           horse_pending?: boolean;
+          card_pending?: Json | null;
         };
       };
       horse_catalog: {
