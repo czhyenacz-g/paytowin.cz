@@ -165,6 +165,9 @@ export default function LandingPage() {
             <div className="text-5xl">🐎</div>
             <h1 className="mt-3 text-4xl font-bold text-slate-800">Pay-to-Win</h1>
             <p className="mt-2 text-slate-500">Dostihy, sázky a finanční chaos.</p>
+            <a href="/hry" className="mt-3 inline-block rounded-xl bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100">
+              👀 Sledovat aktivní hry
+            </a>
           </div>
 
           <div className="rounded-3xl bg-white p-6 shadow-lg space-y-4">
@@ -268,9 +271,27 @@ export default function LandingPage() {
                     disabled={loading}
                     className="rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white hover:bg-emerald-700 disabled:bg-slate-400"
                   >
-                    Připojit
+                    Připojit jako hráč
                   </button>
                 </div>
+                <button
+                  onClick={() => {
+                    if (!joinCode.trim()) return setError("Zadej kód hry.");
+                    if (discordUser) {
+                      router.push(`/game/${joinCode.trim().toUpperCase()}`);
+                    } else {
+                      supabase.auth.signInWithOAuth({
+                        provider: "discord",
+                        options: { redirectTo: `${window.location.origin}/auth/callback?next=/game/${joinCode.trim().toUpperCase()}` },
+                      });
+                    }
+                  }}
+                  disabled={loading}
+                  className="w-full rounded-xl border-2 border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 disabled:opacity-50"
+                >
+                  👀 Sledovat jako divák
+                  {!discordUser && <span className="ml-1 font-normal text-indigo-400">(vyžaduje Discord)</span>}
+                </button>
               </>
             )}
           </div>

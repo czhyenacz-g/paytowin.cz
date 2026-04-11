@@ -200,6 +200,7 @@ export default function GameBoard({ gameCode }: Props) {
   const [loading, setLoading] = React.useState(!!gameCode);
   const [pendingHorse, setPendingHorse] = React.useState<{ horse: Horse; playerIndex: number } | null>(null);
   const [myPlayerId, setMyPlayerId] = React.useState<string | null>(null);
+  const [viewerRole, setViewerRole] = React.useState<"loading" | "player" | "spectator" | "login_required">("loading");
   const [isRolling, setIsRolling] = React.useState(false);
   const [isMoving, setIsMoving] = React.useState(false);
   const [displayRoll, setDisplayRoll] = React.useState<number | null>(null);
@@ -220,7 +221,19 @@ export default function GameBoard({ gameCode }: Props) {
 
       if (!game) { setLoading(false); return; }
       setGameId(game.id);
-      setMyPlayerId(localStorage.getItem(`paytowin_player_${gameCode}`));
+
+      const pid = localStorage.getItem(`paytowin_player_${gameCode}`);
+      setMyPlayerId(pid);
+
+      // Urči roli: hráč / pozorovatel / nepřihlášen
+      if (pid) {
+        setViewerRole("player");
+      } else {
+        const { data: { user } } = await supabase.auth.getUser();
+        const hasDiscord = !!user?.user_metadata?.provider_id;
+        setViewerRole(hasDiscord ? "spectator" : "login_required");
+      }
+
       await refreshGame(game.id);
       setLoading(false);
 
@@ -457,7 +470,9 @@ export default function GameBoard({ gameCode }: Props) {
     displayPlayers.filter((p) => p.position === fieldIndex && !isBankrupt(p));
   const currentPlayer = gameState ? players[gameState.current_player_index] : null;
   // Bankrotář nemůže hrát ani když je na řadě — blokujeme deadlock
-  const isMyTurn = !!myPlayerId && currentPlayer?.id === myPlayerId && !isBankrupt(currentPlayer) && !isRolling && !isMoving;
+  // Pozorovatel nikdy nemůže hrát
+  const isSpectator = viewerRole === "spectator";
+  const isMyTurn = !!myPlayerId && currentPlayer?.id === myPlayerId && !isBankrupt(currentPlayer) && !isRolling && !isMoving && !isSpectator;
   const currentRound = gameState ? Math.floor(gameState.turn_count / Math.max(1, players.length)) + 1 : 1;
 
   // ── Render ───────────────────────────────────────────────────────────────────
@@ -476,6 +491,30 @@ export default function GameBoard({ gameCode }: Props) {
         <div className="text-center">
           <div className="text-2xl font-bold text-slate-800">Hra nenalezena</div>
           <a href="/" className="mt-4 block text-sm text-slate-500 underline">Zpět na úvod</a>
+        </div>
+      </div>
+    );
+  }
+
+  if (viewerRole === "login_required") {
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-6">
+        <div className="w-full max-w-sm text-center space-y-4">
+          <div className="text-4xl">👀</div>
+          <h2 className="text-xl font-bold text-slate-800">Sleduj hru jako pozorovatel</h2>
+          <p className="text-sm text-slate-500">
+            Pro sledování hry se přihlas přes Discord.
+          </p>
+          <button
+            onClick={() => supabase.auth.signInWithOAuth({
+              provider: "discord",
+              options: { redirectTo: `${window.location.origin}/auth/callback?next=/game/${gameCode}` },
+            })}
+            className="w-full rounded-2xl bg-indigo-600 px-4 py-4 text-lg font-semibold text-white hover:bg-indigo-700"
+          >
+            🎮 Přihlásit přes Discord
+          </button>
+          <a href="/" className="block text-xs text-slate-400 underline hover:text-slate-600">Zpět na úvod</a>
         </div>
       </div>
     );
@@ -503,6 +542,11 @@ export default function GameBoard({ gameCode }: Props) {
                 <p className="text-sm text-slate-500">Dostihy, sázky a finanční chaos.</p>
               </div>
               <div className="flex items-center gap-3">
+                {isSpectator && (
+                  <div className="rounded-2xl bg-indigo-100 px-3 py-2 text-xs font-semibold text-indigo-700">
+                    👀 Pozorovatel
+                  </div>
+                )}
                 <div className="rounded-2xl bg-slate-100 px-3 py-2 text-xs font-medium text-slate-500">
                   Kolo <span className="font-bold text-slate-800">{currentRound}</span>
                   {currentRound >= BANKRUPTCY_TAX_ROUND && (
@@ -635,6 +679,10 @@ export default function GameBoard({ gameCode }: Props) {
                         Čeká na rozhodnutí {players[pendingHorse.playerIndex]?.name}…
                       </div>
                     )}
+                  </div>
+                ) : isSpectator ? (
+                  <div className="w-full rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-4 text-center text-sm text-indigo-600">
+                    👀 Sleduješ hru jako pozorovatel
                   </div>
                 ) : isRolling ? (
                   <div className="w-full rounded-2xl bg-amber-100 px-4 py-4 text-center text-amber-700 font-semibold animate-pulse">
