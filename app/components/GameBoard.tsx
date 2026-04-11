@@ -207,6 +207,54 @@ export default function GameBoard({ gameCode }: Props) {
   const [animPosition, setAnimPosition] = React.useState<number | null>(null);
   const [animatingPlayerIdx, setAnimatingPlayerIdx] = React.useState<number | null>(null);
   const [trailFields, setTrailFields] = React.useState<number[]>([]);
+  const [hoveredPlayerId, setHoveredPlayerId] = React.useState<string | null>(null);
+  const [soundEnabled, setSoundEnabled] = React.useState(true);
+  const audioCtxRef = React.useRef<AudioContext | null>(null);
+  const soundEnabledRef = React.useRef(true);
+
+  // Načti preference zvuku z localStorage
+  React.useEffect(() => {
+    const stored = localStorage.getItem("paytowin_sound");
+    const enabled = stored !== "off";
+    setSoundEnabled(enabled);
+    soundEnabledRef.current = enabled;
+  }, []);
+
+  const toggleSound = () => {
+    const next = !soundEnabled;
+    setSoundEnabled(next);
+    soundEnabledRef.current = next;
+    localStorage.setItem("paytowin_sound", next ? "on" : "off");
+  };
+
+  const playStepSound = React.useCallback(() => {
+    if (!soundEnabledRef.current) return;
+    try {
+      if (!audioCtxRef.current) audioCtxRef.current = new AudioContext();
+      const ctx = audioCtxRef.current;
+      // Krátký perkusivní klik — filtrovaný šum
+      const bufferSize = Math.floor(ctx.sampleRate * 0.04);
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 5);
+      }
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      const filter = ctx.createBiquadFilter();
+      filter.type = "bandpass";
+      filter.frequency.value = 1400;
+      filter.Q.value = 0.6;
+      const gain = ctx.createGain();
+      gain.gain.value = 0.35;
+      source.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      source.start();
+    } catch {
+      // AudioContext nedostupný (SSR, blokovaný prohlížečem)
+    }
+  }, []);
 
   // ── Načtení hry ze Supabase ──────────────────────────────────────────────────
   React.useEffect(() => {
@@ -325,6 +373,7 @@ export default function GameBoard({ gameCode }: Props) {
       trail.push(pos);
       setAnimPosition(pos);
       setTrailFields([...trail]);
+      playStepSound();
       await sleep(500);
     }
 
@@ -571,10 +620,13 @@ export default function GameBoard({ gameCode }: Props) {
                 const pos = FIELD_POSITIONS[field.index];
                 const playersHere = fieldPlayers(field.index);
                 const isTrail = trailFields.includes(field.index);
+                const isHoverHighlight = hoveredPlayerId
+                  ? displayPlayers.some(p => p.id === hoveredPlayerId && p.position === field.index && !isBankrupt(p))
+                  : false;
                 return (
                   <div
                     key={field.index}
-                    className={`absolute flex flex-col items-center justify-center rounded-2xl border-2 shadow-sm transition-all duration-200 ${FIELD_STYLE[field.type]} ${isTrail ? "ring-2 ring-amber-400 ring-offset-1 brightness-110" : ""}`}
+                    className={`absolute flex flex-col items-center justify-center rounded-2xl border-2 shadow-sm transition-all duration-200 ${FIELD_STYLE[field.type]} ${isTrail ? "ring-2 ring-amber-400 ring-offset-1 brightness-110" : ""} ${isHoverHighlight ? "ring-2 ring-blue-400 ring-offset-2 brightness-110 scale-105" : ""}`}
                     style={pos}
                     title={field.description}
                   >
@@ -625,7 +677,16 @@ export default function GameBoard({ gameCode }: Props) {
           {/* Pravý panel */}
           <div className="flex flex-col gap-4">
             <div className="rounded-3xl bg-white p-6 shadow-lg">
-              <h2 className="text-2xl font-bold text-slate-800">Panel hry</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-slate-800">Panel hry</h2>
+                <button
+                  onClick={toggleSound}
+                  title={soundEnabled ? "Vypnout zvuky" : "Zapnout zvuky"}
+                  className="rounded-xl px-2 py-1 text-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                >
+                  {soundEnabled ? "🔊" : "🔇"}
+                </button>
+              </div>
               <div className="mt-4 space-y-4">
 
                 <div className={`rounded-2xl p-4 transition-colors ${isRolling ? "bg-amber-100" : "bg-slate-100"}`}>
@@ -715,13 +776,20 @@ export default function GameBoard({ gameCode }: Props) {
                       const bankrupt = isBankrupt(player);
                       const field = FIELDS[player.position];
                       return (
-                        <div key={player.id} className={`rounded-2xl border-2 p-3 transition-colors ${
-                          bankrupt
-                            ? "border-red-300 bg-red-50 opacity-60"
-                            : isCurrent
-                            ? "border-slate-900 bg-slate-50 shadow-sm"
-                            : "border-slate-200 bg-white"
-                        }`}>
+                        <div
+                          key={player.id}
+                          onMouseEnter={() => !bankrupt && setHoveredPlayerId(player.id)}
+                          onMouseLeave={() => setHoveredPlayerId(null)}
+                          className={`rounded-2xl border-2 p-3 transition-colors cursor-default ${
+                            bankrupt
+                              ? "border-red-300 bg-red-50 opacity-60"
+                              : hoveredPlayerId === player.id
+                              ? "border-blue-400 bg-blue-50 shadow-sm"
+                              : isCurrent
+                              ? "border-slate-900 bg-slate-50 shadow-sm"
+                              : "border-slate-200 bg-white"
+                          }`}
+                        >
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2 min-w-0">
                               <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-black text-black ring-2 ring-black/20 shadow ${bankrupt ? "bg-slate-400" : player.color}`}>
