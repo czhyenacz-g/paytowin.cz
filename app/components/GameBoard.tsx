@@ -524,6 +524,10 @@ export default function GameBoard({ gameCode }: Props) {
   const isMyTurn = !!myPlayerId && currentPlayer?.id === myPlayerId && !isBankrupt(currentPlayer) && !isRolling && !isMoving && !isSpectator;
   const currentRound = gameState ? Math.floor(gameState.turn_count / Math.max(1, players.length)) + 1 : 1;
 
+  // Mapa kůň.name → vlastník (pro zobrazení na herní desce)
+  const horseOwnership: Record<string, Player> = {};
+  players.forEach(p => p.horses.forEach(h => { horseOwnership[h.name] = p; }));
+
   // ── Render ───────────────────────────────────────────────────────────────────
 
   if (loading) {
@@ -623,17 +627,40 @@ export default function GameBoard({ gameCode }: Props) {
                 const isHoverHighlight = hoveredPlayerId
                   ? displayPlayers.some(p => p.id === hoveredPlayerId && p.position === field.index && !isBankrupt(p))
                   : false;
+                const owner = field.type === "horse" && field.horse ? horseOwnership[field.horse.name] ?? null : null;
                 return (
                   <div
                     key={field.index}
-                    className={`absolute flex flex-col items-center justify-center rounded-2xl border-2 shadow-sm transition-all duration-200 ${FIELD_STYLE[field.type]} ${isTrail ? "ring-2 ring-amber-400 ring-offset-1 brightness-110" : ""} ${isHoverHighlight ? "ring-2 ring-blue-400 ring-offset-2 brightness-110 scale-105" : ""}`}
+                    className={`group absolute flex flex-col items-center justify-center rounded-2xl border-2 shadow-sm transition-all duration-200 ${FIELD_STYLE[field.type]} ${isTrail ? "ring-2 ring-amber-400 ring-offset-1 brightness-110" : ""} ${isHoverHighlight ? "ring-2 ring-blue-400 ring-offset-2 brightness-110 scale-105" : ""} ${owner ? "ring-2 ring-indigo-500 ring-offset-1" : ""}`}
                     style={pos}
-                    title={field.description}
                   >
                     <div className="text-base leading-none">{field.emoji}</div>
                     <div className="text-[9px] font-bold leading-tight text-center px-0.5 mt-0.5">
                       {field.type === "start" ? "START" : field.label}
                     </div>
+                    {owner && (
+                      <div className={`h-1.5 w-1.5 rounded-full mt-0.5 ${owner.color}`} title={owner.name} />
+                    )}
+                    {/* Tooltip pro koňská pole — instant CSS hover, bez delay */}
+                    {field.type === "horse" && field.horse && (
+                      <div className="pointer-events-none absolute bottom-full left-1/2 mb-2 hidden -translate-x-1/2 group-hover:block z-50 w-40">
+                        <div className="rounded-xl bg-slate-900 px-3 py-2 text-left shadow-xl">
+                          <div className="text-xs font-bold text-white">{field.horse.emoji} {field.horse.name}</div>
+                          <div className="mt-1 text-[10px] text-slate-300">Rychlost: {"⭐".repeat(field.horse.speed)}</div>
+                          <div className="text-[10px] text-slate-300">Cena: {field.horse.price} 💰</div>
+                          {owner ? (
+                            <div className="mt-1.5 flex items-center gap-1.5">
+                              <div className={`h-3 w-3 rounded-full ${owner.color}`} />
+                              <span className="text-[10px] font-semibold text-amber-300">Vlastní: {owner.name}</span>
+                            </div>
+                          ) : (
+                            <div className="mt-1.5 text-[10px] font-semibold text-emerald-400">Na prodej</div>
+                          )}
+                        </div>
+                        {/* Šipka dolů */}
+                        <div className="mx-auto h-0 w-0 border-x-4 border-t-4 border-x-transparent border-t-slate-900" />
+                      </div>
+                    )}
                   </div>
                 );
               })}
