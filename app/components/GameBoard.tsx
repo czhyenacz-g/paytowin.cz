@@ -631,7 +631,10 @@ export default function GameBoard({ gameCode }: Props) {
           <div className={`rounded-3xl p-6 shadow-lg ${theme.colors.cardBackground}`}>
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h1 className={`text-3xl font-bold ${theme.colors.textPrimary}`}>Pay-to-Win</h1>
+                <h1
+                  className={`text-3xl font-bold cursor-pointer hover:opacity-75 transition-opacity ${theme.colors.textPrimary}`}
+                  onClick={() => window.open("/", "_blank")}
+                >PayToWin.cz</h1>
                 <p className={`text-sm ${theme.colors.textMuted}`}>Dostihy, sázky a finanční chaos.</p>
               </div>
               <div className="flex items-center gap-3">

@@ -10,7 +10,7 @@ export default function ONasPage() {
 
           <div className="rounded-3xl bg-white p-6 shadow-sm">
             <div className="text-4xl mb-3">🐎</div>
-            <h2 className="text-xl font-bold text-slate-800">Pay-to-Win</h2>
+            <h2 className="text-xl font-bold text-slate-800">PayToWin.cz</h2>
             <p className="mt-2">
               Webová multiplayer hra inspirovaná klasickými Dostihy a sázkami.
               Hráči závodí o přežití na herní desce, kupují koně a snaží se nepřijít o všechny coins.
@@ -20,7 +20,7 @@ export default function ONasPage() {
           <div className="rounded-3xl bg-white p-6 shadow-sm">
             <h2 className="text-xl font-bold text-slate-800">Experimentální projekt</h2>
             <p className="mt-2">
-              Pay-to-Win je experimentální projekt. Hra je ve vývoji — přibývají nové funkce,
+              PayToWin.cz je experimentální projekt. Hra je ve vývoji — přibývají nové funkce,
               může se měnit herní mechanika a občas se může stát, že něco nefunguje úplně správně.
             </p>
             <p className="mt-3">

@@ -166,7 +166,10 @@ export default function LandingPage() {
         <div className="w-full max-w-md space-y-6">
           <div className="text-center">
             <div className="text-5xl">🐎</div>
-            <h1 className="mt-3 text-4xl font-bold text-slate-800">Pay-to-Win</h1>
+            <h1
+              className="mt-3 text-4xl font-bold text-slate-800 cursor-pointer hover:opacity-75 transition-opacity"
+              onClick={() => window.open("/", "_blank")}
+            >PayToWin.cz</h1>
             <p className="mt-2 text-slate-500">Dostihy, sázky a finanční chaos.</p>
             <a href="/hry" className="mt-3 inline-block rounded-xl bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100">
               👀 Sledovat aktivní hry
