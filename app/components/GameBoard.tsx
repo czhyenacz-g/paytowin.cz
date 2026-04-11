@@ -631,7 +631,7 @@ export default function GameBoard({ gameCode }: Props) {
                 return (
                   <div
                     key={field.index}
-                    className={`group absolute flex flex-col items-center justify-center rounded-2xl border-2 shadow-sm transition-all duration-200 ${FIELD_STYLE[field.type]} ${isTrail ? "ring-2 ring-amber-400 ring-offset-1 brightness-110" : ""} ${isHoverHighlight ? "ring-2 ring-blue-400 ring-offset-2 brightness-110 scale-105" : ""} ${owner ? "ring-2 ring-indigo-500 ring-offset-1" : ""}`}
+                    className={`group absolute flex flex-col items-center justify-center rounded-2xl border-2 shadow-sm transition-all duration-200 hover:z-50 ${FIELD_STYLE[field.type]} ${isTrail ? "ring-2 ring-amber-400 ring-offset-1 brightness-110" : ""} ${isHoverHighlight ? "ring-2 ring-blue-400 ring-offset-2 brightness-110 scale-105" : ""} ${owner ? "ring-2 ring-indigo-500 ring-offset-1" : ""}`}
                     style={pos}
                   >
                     <div className="text-base leading-none">{field.emoji}</div>
