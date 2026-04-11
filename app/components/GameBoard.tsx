@@ -211,6 +211,9 @@ export default function GameBoard({ gameCode }: Props) {
   const [soundEnabled, setSoundEnabled] = React.useState(true);
   const audioCtxRef = React.useRef<AudioContext | null>(null);
   const soundEnabledRef = React.useRef(true);
+  // Refs pro ochranu animace před Realtime přepsáním pozice
+  const animatingPlayerIdRef = React.useRef<string | null>(null);
+  const animPositionRef = React.useRef<number | null>(null);
 
   // Načti preference zvuku z localStorage
   React.useEffect(() => {
@@ -299,7 +302,18 @@ export default function GameBoard({ gameCode }: Props) {
       supabase.from("players").select().eq("game_id", id).order("turn_order"),
       supabase.from("game_state").select().eq("game_id", id).single(),
     ]);
-    const normalized = (playersData ?? []).map(normalizePlayer);
+    let normalized = (playersData ?? []).map(normalizePlayer);
+
+    // Pojistka: pokud právě animujeme pohyb, nepřepíše Realtime pozici animující figurky
+    // (stale closure v Realtime handleru by jinak skočila zpět na DB pozici)
+    if (animatingPlayerIdRef.current !== null && animPositionRef.current !== null) {
+      normalized = normalized.map(p =>
+        p.id === animatingPlayerIdRef.current
+          ? { ...p, position: animPositionRef.current! }
+          : p
+      );
+    }
+
     setPlayers(normalized);
     if (stateData) setGameState(normalizeState(stateData));
     return { players: normalized, state: stateData ? normalizeState(stateData) : null };
@@ -366,12 +380,16 @@ export default function GameBoard({ gameCode }: Props) {
     setAnimatingPlayerIdx(gameState.current_player_index);
     setAnimPosition(oldPosition);
     setTrailFields([]);
+    // Nastav refs — refreshGame je bude číst i ze stale closure v Realtime handleru
+    animatingPlayerIdRef.current = currentPlayer.id;
+    animPositionRef.current = oldPosition;
 
     const trail: number[] = [];
     for (let step = 1; step <= roll; step++) {
       const pos = (oldPosition + step) % 21;
       trail.push(pos);
       setAnimPosition(pos);
+      animPositionRef.current = pos;
       setTrailFields([...trail]);
       playStepSound();
       await sleep(500);
@@ -440,6 +458,8 @@ export default function GameBoard({ gameCode }: Props) {
 
     // ── 4. Vyčisti animační stav, stopa zmizí po 1,5 s ──────────────────────
     setAnimatingPlayerIdx(null);
+    animatingPlayerIdRef.current = null;
+    animPositionRef.current = null;
     setTimeout(() => setTrailFields([]), 1500);
   };
 
