@@ -2,11 +2,12 @@
 
 import React from "react";
 import { supabase } from "@/lib/supabase";
-import { getThemeById } from "@/lib/themes";
+import { getThemeById, HorseConfig } from "@/lib/themes";
 
 // ─── Typy ─────────────────────────────────────────────────────────────────────
 
 export interface Horse {
+  id?: string;
   name: string;
   speed: number;
   price: number;
@@ -53,61 +54,61 @@ interface Field {
   action: (player: Player) => { player: Player; log: string };
 }
 
-// ─── Statická herní data ───────────────────────────────────────────────────────
+// ─── Herní data sestavená z theme koní ────────────────────────────────────────
 
-const HORSES_FOR_SALE: Horse[] = [
-  { name: "Modrý blesk", speed: 3, price: 150, emoji: "🔵" },
-  { name: "Zlatá hříva", speed: 4, price: 250, emoji: "🟡" },
-  { name: "Rychlý vítr", speed: 5, price: 400, emoji: "🟢" },
-  { name: "Divoká růže", speed: 2, price: 80,  emoji: "🌹" },
-];
+/**
+ * Sestaví 21 polí desky z konfigurace koní daného theme.
+ * Koně jsou mapováni na pozice: horses[0]→3, horses[1]→10, horses[2]→17, horses[3]→19.
+ */
+function buildFields(horses: HorseConfig[]): Field[] {
+  const h = (i: number): Horse => ({ id: horses[i].id, name: horses[i].name, speed: horses[i].speed, price: horses[i].price, emoji: horses[i].emoji });
+  return [
+    { index: 0,  type: "start",      label: "START",           emoji: "🏁", description: "Průchod = +200 coins.",
+      action: (p) => ({ player: { ...p, coins: p.coins + 200 }, log: `${p.name} prošel STARTem — +200 💰` }) },
+    { index: 1,  type: "coins_gain", label: "Sponzor",         emoji: "🤝", description: "+100 coins.",
+      action: (p) => ({ player: { ...p, coins: p.coins + 100 }, log: `${p.name}: Sponzor — +100 💰` }) },
+    { index: 2,  type: "coins_lose", label: "Veterinář",       emoji: "🩺", description: "-60 coins.",
+      action: (p) => ({ player: { ...p, coins: p.coins - 60 },  log: `${p.name}: Veterinář — -60 💰` }) },
+    { index: 3,  type: "horse",      label: horses[0].name,    emoji: horses[0].emoji, description: `Kůň na prodej (rychlost ${horses[0].speed}) za ${horses[0].price} coins.`, horse: h(0),
+      action: (p) => ({ player: p, log: "" }) },
+    { index: 4,  type: "coins_gain", label: "Vítěz dostihu",   emoji: "🏆", description: "+150 coins.",
+      action: (p) => ({ player: { ...p, coins: p.coins + 150 }, log: `${p.name}: Vítěz dostihu — +150 💰` }) },
+    { index: 5,  type: "coins_lose", label: "Daňový úřad",     emoji: "🏛️", description: "-80 coins.",
+      action: (p) => ({ player: { ...p, coins: p.coins - 80 },  log: `${p.name}: Daňový úřad — -80 💰` }) },
+    { index: 6,  type: "coins_gain", label: "Zlaté podkůvky",  emoji: "🥇", description: "+80 coins.",
+      action: (p) => ({ player: { ...p, coins: p.coins + 80 },  log: `${p.name}: Zlaté podkůvky — +80 💰` }) },
+    { index: 7,  type: "coins_lose", label: "Korupce",         emoji: "💸", description: "-120 coins.",
+      action: (p) => ({ player: { ...p, coins: p.coins - 120 }, log: `${p.name}: Korupce — -120 💰` }) },
+    { index: 8,  type: "gamble",     label: "Loterie",         emoji: "🎟️", description: "Výhra 300 nebo ztráta 100 (30%).",
+      action: (p) => { const w = Math.random() < 0.3; return { player: { ...p, coins: p.coins + (w ? 300 : -100) }, log: `${p.name}: Loterie — ${w ? "+300 💰" : "-100 💰"}` }; } },
+    { index: 9,  type: "coins_gain", label: "Dobrá sezona",    emoji: "🌟", description: "+90 coins.",
+      action: (p) => ({ player: { ...p, coins: p.coins + 90 },  log: `${p.name}: Dobrá sezona — +90 💰` }) },
+    { index: 10, type: "horse",      label: horses[1].name,    emoji: horses[1].emoji, description: `Kůň na prodej (rychlost ${horses[1].speed}) za ${horses[1].price} coins.`, horse: h(1),
+      action: (p) => ({ player: p, log: "" }) },
+    { index: 11, type: "coins_lose", label: "Krize na trhu",   emoji: "📉", description: "-50 coins.",
+      action: (p) => ({ player: { ...p, coins: p.coins - 50 },  log: `${p.name}: Krize na trhu — -50 💰` }) },
+    { index: 12, type: "coins_gain", label: "Bankéř",          emoji: "🏦", description: "+40 coins.",
+      action: (p) => ({ player: { ...p, coins: p.coins + 40 },  log: `${p.name}: Bankéř — +40 💰` }) },
+    { index: 13, type: "coins_lose", label: "Zákeřný soupeř",  emoji: "😈", description: "-70 coins.",
+      action: (p) => ({ player: { ...p, coins: p.coins - 70 },  log: `${p.name}: Zákeřný soupeř — -70 💰` }) },
+    { index: 14, type: "gamble",     label: "Sázková kancelář",emoji: "📋", description: "Výhra 200 nebo ztráta 80 (40%).",
+      action: (p) => { const w = Math.random() < 0.4; return { player: { ...p, coins: p.coins + (w ? 200 : -80) }, log: `${p.name}: Sázkovka — ${w ? "+200 💰" : "-80 💰"}` }; } },
+    { index: 15, type: "coins_gain", label: "Věrnostní bonus", emoji: "🎁", description: "+50 coins.",
+      action: (p) => ({ player: { ...p, coins: p.coins + 50 },  log: `${p.name}: Věrnostní bonus — +50 💰` }) },
+    { index: 16, type: "coins_lose", label: "Zloděj",          emoji: "🦹", description: "-70 coins.",
+      action: (p) => ({ player: { ...p, coins: p.coins - 70 },  log: `${p.name}: Zloděj — -70 💰` }) },
+    { index: 17, type: "horse",      label: horses[2].name,    emoji: horses[2].emoji, description: `Kůň na prodej (rychlost ${horses[2].speed}) za ${horses[2].price} coins.`, horse: h(2),
+      action: (p) => ({ player: p, log: "" }) },
+    { index: 18, type: "coins_lose", label: "Veterinář",       emoji: "💊", description: "-60 coins.",
+      action: (p) => ({ player: { ...p, coins: p.coins - 60 },  log: `${p.name}: Veterinář — -60 💰` }) },
+    { index: 19, type: "horse",      label: horses[3].name,    emoji: horses[3].emoji, description: `Kůň na prodej (rychlost ${horses[3].speed}) za ${horses[3].price} coins.`, horse: h(3),
+      action: (p) => ({ player: p, log: "" }) },
+    { index: 20, type: "gamble",     label: "Ruleta",          emoji: "🎡", description: "Výhra 250 nebo ztráta 150 (45%).",
+      action: (p) => { const w = Math.random() < 0.45; return { player: { ...p, coins: p.coins + (w ? 250 : -150) }, log: `${p.name}: Ruleta — ${w ? "+250 💰" : "-150 💰"}` }; } },
+  ];
+}
 
-const FIELDS: Field[] = [
-  { index: 0,  type: "start",      label: "START",           emoji: "🏁", description: "Průchod = +200 coins.",
-    action: (p) => ({ player: { ...p, coins: p.coins + 200 }, log: `${p.name} prošel STARTem — +200 💰` }) },
-  { index: 1,  type: "coins_gain", label: "Sponzor",         emoji: "🤝", description: "+100 coins.",
-    action: (p) => ({ player: { ...p, coins: p.coins + 100 }, log: `${p.name}: Sponzor — +100 💰` }) },
-  { index: 2,  type: "coins_lose", label: "Veterinář",       emoji: "🩺", description: "-60 coins.",
-    action: (p) => ({ player: { ...p, coins: p.coins - 60 },  log: `${p.name}: Veterinář — -60 💰` }) },
-  { index: 3,  type: "horse",      label: "Divoká růže",     emoji: "🌹", description: "Kůň na prodej (rychlost 2) za 80 coins.", horse: HORSES_FOR_SALE[3],
-    action: (p) => ({ player: p, log: "" }) },
-  { index: 4,  type: "coins_gain", label: "Vítěz dostihu",   emoji: "🏆", description: "+150 coins.",
-    action: (p) => ({ player: { ...p, coins: p.coins + 150 }, log: `${p.name}: Vítěz dostihu — +150 💰` }) },
-  { index: 5,  type: "coins_lose", label: "Daňový úřad",     emoji: "🏛️", description: "-80 coins.",
-    action: (p) => ({ player: { ...p, coins: p.coins - 80 },  log: `${p.name}: Daňový úřad — -80 💰` }) },
-  { index: 6,  type: "coins_gain", label: "Zlaté podkůvky",  emoji: "🥇", description: "+80 coins.",
-    action: (p) => ({ player: { ...p, coins: p.coins + 80 },  log: `${p.name}: Zlaté podkůvky — +80 💰` }) },
-  { index: 7,  type: "coins_lose", label: "Korupce",         emoji: "💸", description: "-120 coins.",
-    action: (p) => ({ player: { ...p, coins: p.coins - 120 }, log: `${p.name}: Korupce — -120 💰` }) },
-  { index: 8,  type: "gamble",     label: "Loterie",         emoji: "🎟️", description: "Výhra 300 nebo ztráta 100 (30%).",
-    action: (p) => { const w = Math.random() < 0.3; return { player: { ...p, coins: p.coins + (w ? 300 : -100) }, log: `${p.name}: Loterie — ${w ? "+300 💰" : "-100 💰"}` }; } },
-  { index: 9,  type: "coins_gain", label: "Dobrá sezona",    emoji: "🌟", description: "+90 coins.",
-    action: (p) => ({ player: { ...p, coins: p.coins + 90 },  log: `${p.name}: Dobrá sezona — +90 💰` }) },
-  { index: 10, type: "horse",      label: "Modrý blesk",     emoji: "🔵", description: "Kůň na prodej (rychlost 3) za 150 coins.", horse: HORSES_FOR_SALE[0],
-    action: (p) => ({ player: p, log: "" }) },
-  { index: 11, type: "coins_lose", label: "Krize na trhu",   emoji: "📉", description: "-50 coins.",
-    action: (p) => ({ player: { ...p, coins: p.coins - 50 },  log: `${p.name}: Krize na trhu — -50 💰` }) },
-  { index: 12, type: "coins_gain", label: "Bankéř",          emoji: "🏦", description: "+40 coins.",
-    action: (p) => ({ player: { ...p, coins: p.coins + 40 },  log: `${p.name}: Bankéř — +40 💰` }) },
-  { index: 13, type: "coins_lose", label: "Zákeřný soupeř",  emoji: "😈", description: "-70 coins.",
-    action: (p) => ({ player: { ...p, coins: p.coins - 70 },  log: `${p.name}: Zákeřný soupeř — -70 💰` }) },
-  { index: 14, type: "gamble",     label: "Sázková kancelář",emoji: "📋", description: "Výhra 200 nebo ztráta 80 (40%).",
-    action: (p) => { const w = Math.random() < 0.4; return { player: { ...p, coins: p.coins + (w ? 200 : -80) }, log: `${p.name}: Sázkovka — ${w ? "+200 💰" : "-80 💰"}` }; } },
-  { index: 15, type: "coins_gain", label: "Věrnostní bonus", emoji: "🎁", description: "+50 coins.",
-    action: (p) => ({ player: { ...p, coins: p.coins + 50 },  log: `${p.name}: Věrnostní bonus — +50 💰` }) },
-  { index: 16, type: "coins_lose", label: "Zloděj",          emoji: "🦹", description: "-70 coins.",
-    action: (p) => ({ player: { ...p, coins: p.coins - 70 },  log: `${p.name}: Zloděj — -70 💰` }) },
-  { index: 17, type: "horse",      label: "Zlatá hříva",     emoji: "🟡", description: "Kůň na prodej (rychlost 4) za 250 coins.", horse: HORSES_FOR_SALE[1],
-    action: (p) => ({ player: p, log: "" }) },
-  { index: 18, type: "coins_lose", label: "Veterinář",       emoji: "💊", description: "-60 coins.",
-    action: (p) => ({ player: { ...p, coins: p.coins - 60 },  log: `${p.name}: Veterinář — -60 💰` }) },
-  { index: 19, type: "horse",      label: "Rychlý vítr",     emoji: "🟢", description: "Kůň na prodej (rychlost 5) za 400 coins.", horse: HORSES_FOR_SALE[2],
-    action: (p) => ({ player: p, log: "" }) },
-  { index: 20, type: "gamble",     label: "Ruleta",          emoji: "🎡", description: "Výhra 250 nebo ztráta 150 (45%).",
-    action: (p) => { const w = Math.random() < 0.45; return { player: { ...p, coins: p.coins + (w ? 250 : -150) }, log: `${p.name}: Ruleta — ${w ? "+250 💰" : "-150 💰"}` }; } },
-];
-
-// Styly polí jsou nyní součástí theme systému (lib/themes/*)
+// Styly polí jsou součástí theme systému (lib/themes/*)
 // Přistupuj přes: theme.colors.fieldStyles[field.type]
 
 const FIELD_POSITIONS: React.CSSProperties[] = [
@@ -218,6 +219,13 @@ export default function GameBoard({ gameCode }: Props) {
   // Refs pro ochranu animace před Realtime přepsáním pozice
   const animatingPlayerIdRef = React.useRef<string | null>(null);
   const animPositionRef = React.useRef<number | null>(null);
+
+  // Theme + FIELDS — odvozeno ze stavu themeId, aktualizuje se při každém renderu
+  const theme = getThemeById(themeId);
+  const FIELDS = buildFields(theme.horses);
+  // Ref aby stale closures (Realtime subscriptions) vždy dostaly aktuální FIELDS
+  const fieldsRef = React.useRef<Field[]>(FIELDS);
+  fieldsRef.current = FIELDS;
 
   // Načti preference zvuku z localStorage
   React.useEffect(() => {
@@ -354,7 +362,7 @@ export default function GameBoard({ gameCode }: Props) {
           // horse_pending v DB je jediný zdroj pravdy — žádné hádání indexů
           if (freshState.horse_pending) {
             const currentP = freshPlayers[freshState.current_player_index];
-            const field = currentP ? FIELDS[currentP.position] : null;
+            const field = currentP ? fieldsRef.current[currentP.position] : null;
             if (field?.type === "horse" && field.horse) {
               setPendingHorse({ horse: field.horse, playerIndex: freshState.current_player_index });
             }
@@ -565,7 +573,7 @@ export default function GameBoard({ gameCode }: Props) {
     if (!gameState || players.length === 0) return;
     if (gameState.horse_pending) {
       const currentP = players[gameState.current_player_index];
-      const field = currentP ? FIELDS[currentP.position] : null;
+      const field = currentP ? fieldsRef.current[currentP.position] : null;
       if (field?.type === "horse" && field.horse) {
         setPendingHorse({ horse: field.horse, playerIndex: gameState.current_player_index });
       }
@@ -601,9 +609,6 @@ export default function GameBoard({ gameCode }: Props) {
   players.forEach(p => p.horses.forEach(h => { horseOwnership[h.name] = p; }));
 
   // ── Render ───────────────────────────────────────────────────────────────────
-
-  // Aktivní theme — fallback na default pokud themeId neexistuje
-  const theme = getThemeById(themeId);
 
   if (loading) {
     return (

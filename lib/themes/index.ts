@@ -1,8 +1,18 @@
 import { defaultTheme } from "./default";
 import { darkTheme } from "./dark";
+import { classicRaceTheme } from "./classic-race";
 
 // Typy polí na desce (musí odpovídat FieldType v GameBoard)
 export type FieldStyleKey = "start" | "coins_gain" | "coins_lose" | "gamble" | "horse" | "neutral";
+
+/** Definice koně v rámci theme — 4 koně v pořadí [speed3, speed4, speed5, speed2]. */
+export interface HorseConfig {
+  id: string;
+  name: string;
+  speed: number;
+  price: number;
+  emoji: string;
+}
 
 export interface ThemeColors {
   // Stránka
@@ -45,10 +55,11 @@ export interface Theme {
     centerTitle: string;
     centerSubtitle: string;
   };
+  horses: HorseConfig[];
 }
 
 // Registr všech dostupných témat
-export const THEMES: Theme[] = [defaultTheme, darkTheme];
+export const THEMES: Theme[] = [defaultTheme, darkTheme, classicRaceTheme];
 
 /** Vrátí theme podle id; pokud není nalezeno nebo id je null, vrátí default. */
 export function getThemeById(id: string | null | undefined): Theme {

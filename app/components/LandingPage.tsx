@@ -444,7 +444,7 @@ export default function LandingPage() {
                       <div className={`h-16 w-24 shrink-0 rounded-xl border flex items-center justify-center text-2xl ${
                         isSelected ? "border-slate-700 bg-slate-800" : "border-slate-200 bg-slate-50"
                       }`}>
-                        {theme.id === "dark" ? "🌙" : "☀️"}
+                        {theme.id === "dark" ? "🌙" : theme.id === "classic-race" ? "🏇" : "☀️"}
                       </div>
                       <div className="min-w-0">
                         <div className={`font-semibold ${isSelected ? "text-white" : "text-slate-800"}`}>

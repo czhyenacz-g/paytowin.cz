@@ -1,0 +1,46 @@
+import type { Theme } from ".";
+
+export const classicRaceTheme: Theme = {
+  id: "classic-race",
+  name: "Klasické dostihy",
+  description: "Zelené závodiště, krémová pole — autentický boardgame zážitek.",
+  isPaid: false,
+  priceCzk: 0,
+  colors: {
+    pageBackground:     "bg-amber-50",
+    cardBackground:     "bg-amber-50",
+    boardSurface:       "bg-green-700",
+    boardSurfaceBorder: "border-green-900",
+    centerBackground:   "bg-green-800",
+    centerBorder:       "border-green-600",
+    centerTitle:        "text-amber-200",
+    centerSubtitle:     "text-green-300",
+    fieldStyles: {
+      start:      "h-20 w-20 border-red-700 bg-red-600 text-white",
+      coins_gain: "h-16 w-16 border-green-600 bg-amber-100 text-green-900",
+      coins_lose: "h-16 w-16 border-red-400 bg-red-100 text-red-900",
+      gamble:     "h-16 w-16 border-purple-500 bg-purple-100 text-purple-900",
+      horse:      "h-16 w-16 border-amber-600 bg-amber-200 text-amber-900",
+      neutral:    "h-16 w-16 border-stone-400 bg-stone-100 text-stone-700",
+    },
+    activePlayerBadge: "bg-green-900 text-amber-200",
+    rollPanelIdle:     "bg-amber-100",
+    rollPanelRolling:  "bg-green-100",
+    textPrimary:       "text-stone-800",
+    textMuted:         "text-stone-500",
+    playerCardActive:  "border-green-700 bg-green-50 shadow-sm",
+    playerCardNormal:  "border-stone-300 bg-amber-50",
+    playerCardHover:   "border-amber-500 bg-amber-100 shadow-sm",
+  },
+  labels: {
+    themeName:      "Klasické dostihy",
+    centerTitle:    "Hipódromo",
+    centerSubtitle: "Que gane el mejor.",
+  },
+  horses: [
+    { id: "sombra_roja",   name: "Sombra Roja",   speed: 2, price: 80,  emoji: "🔴" },
+    { id: "viento_dorado", name: "Viento Dorado",  speed: 3, price: 150, emoji: "🟤" },
+    { id: "el_relampago",  name: "El Relámpago",   speed: 4, price: 250, emoji: "⚡" },
+    { id: "caballo_real",  name: "Caballo Real",   speed: 5, price: 400, emoji: "👑" },
+  ],
+};
