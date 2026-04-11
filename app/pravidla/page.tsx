@@ -37,7 +37,12 @@ export default function PravidlaPage() {
             <div className="mt-2 space-y-2">
               <div className="flex items-start gap-3 rounded-xl bg-red-50 px-4 py-3">
                 <span className="text-lg">🏁</span>
-                <div><strong>START</strong> — průchod nebo přistání = +200 coins. Od 3. kola navíc daň −50 coins.</div>
+                <div>
+                  <strong>START</strong> — průchod nebo přistání = <strong>+200 coins</strong> státní dotace.
+                  Jenže stát se zadlužuje, a tak každé kolo zvyšuje daně:
+                  kolo 1 = −0, kolo 2 = −50, kolo 3 = −100, kolo 4 = −150 … až na strop <strong>−500</strong>.
+                  V pozdních kolech tak průchod STARTem přináší čím dál méně — nebo tě rovnou připraví o coins.
+                </div>
               </div>
               <div className="flex items-start gap-3 rounded-xl bg-emerald-50 px-4 py-3">
                 <span className="text-lg">🟢</span>

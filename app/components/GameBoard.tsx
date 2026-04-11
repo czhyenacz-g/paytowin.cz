@@ -33,8 +33,13 @@ interface GameState {
   horse_pending: boolean;
 }
 
-const BANKRUPTCY_TAX_ROUND = 3;   // od tohoto kola hráči platí daň za průchod STARTem
-const BANKRUPTCY_TAX_AMOUNT = 50; // daň v coins
+const BANKRUPTCY_TAX_PER_ROUND = 50; // daň roste o tuto částku každé kolo (kolo 1 = 0, kolo 2 = 50, kolo 3 = 100, …)
+const BANKRUPTCY_TAX_CAP = 500;      // maximální daň za průchod STARTem
+
+/** Vrátí daň za průchod STARTem pro dané kolo. Kolo 1 = 0, každé další +50, max 500. */
+function getStartTax(round: number): number {
+  return Math.min((round - 1) * BANKRUPTCY_TAX_PER_ROUND, BANKRUPTCY_TAX_CAP);
+}
 
 type FieldType = "start" | "coins_gain" | "coins_lose" | "gamble" | "horse" | "neutral";
 
@@ -413,10 +418,11 @@ export default function GameBoard({ gameCode }: Props) {
       extraLog.push(`${currentPlayer.name} prošel STARTem — +200 💰`);
     }
 
-    // Daň za průchod/přistání na STARTu od kola BANKRUPTCY_TAX_ROUND
-    if (currentRound >= BANKRUPTCY_TAX_ROUND && (passedStart || newPosition === 0)) {
-      movedPlayer = { ...movedPlayer, coins: movedPlayer.coins - BANKRUPTCY_TAX_AMOUNT };
-      extraLog.push(`${currentPlayer.name}: Daň za průchod STARTem — -${BANKRUPTCY_TAX_AMOUNT} 💰`);
+    // Daň za průchod/přistání na STARTu — roste každé kolo, od kola 2
+    const startTax = getStartTax(currentRound);
+    if (startTax > 0 && (passedStart || newPosition === 0)) {
+      movedPlayer = { ...movedPlayer, coins: movedPlayer.coins - startTax };
+      extraLog.push(`${currentPlayer.name}: Daň za průchod STARTem — -${startTax} 💰`);
     }
 
     if (field.type === "horse" && field.horse) {
@@ -645,8 +651,8 @@ export default function GameBoard({ gameCode }: Props) {
                 )}
                 <div className="rounded-2xl bg-slate-100 px-3 py-2 text-xs font-medium text-slate-500">
                   Kolo <span className="font-bold text-slate-800">{currentRound}</span>
-                  {currentRound >= BANKRUPTCY_TAX_ROUND && (
-                    <span className="ml-1 text-red-500" title={`Od kola ${BANKRUPTCY_TAX_ROUND} se platí daň ${BANKRUPTCY_TAX_AMOUNT} za průchod STARTem`}>🏛️</span>
+                  {getStartTax(currentRound) > 0 && (
+                    <span className="ml-1 text-red-500" title={`Daň za průchod STARTem: -${getStartTax(currentRound)} 💰 (roste každé kolo, max 500)`}>🏛️</span>
                   )}
                 </div>
                 <div className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700">
