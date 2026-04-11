@@ -150,9 +150,23 @@ export default function AdminPanel() {
         {/* Hráči vybrané hry */}
         {selectedGame && (
           <div className="rounded-3xl bg-white p-6 shadow-lg">
-            <h2 className="mb-4 text-xl font-bold text-slate-800">
-              Hráči — hra <span className="font-mono text-amber-600">{selectedGame.code}</span>
-            </h2>
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-slate-800">
+                Hráči — hra <span className="font-mono text-amber-600">{selectedGame.code}</span>
+              </h2>
+              <a
+                href={`/game/${selectedGame.code}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-indigo-500 hover:text-indigo-700 underline"
+              >
+                Otevřít hru →
+              </a>
+            </div>
+            <div className="mb-4 rounded-xl bg-amber-50 border border-amber-200 px-4 py-2.5 text-xs text-amber-800">
+              <strong>Impersonace:</strong> Tlačítko &quot;Hrát jako&quot; nastaví tvůj prohlížeč tak, aby tě hra poznala jako daného hráče.
+              Otevře se nová záložka. Funguje jen v tomto prohlížeči — ostatní hráče neovlivní.
+            </div>
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-200 text-left text-slate-500">
@@ -160,12 +174,13 @@ export default function AdminPanel() {
                   <th className="pb-2 pr-4">Pořadí</th>
                   <th className="pb-2 pr-4">Pozice</th>
                   <th className="pb-2 pr-4">Coins</th>
-                  <th className="pb-2">Koně</th>
+                  <th className="pb-2 pr-4">Koně</th>
+                  <th className="pb-2"></th>
                 </tr>
               </thead>
               <tbody>
                 {players.length === 0 && (
-                  <tr><td colSpan={5} className="py-4 text-slate-400">Žádní hráči</td></tr>
+                  <tr><td colSpan={6} className="py-4 text-slate-400">Žádní hráči</td></tr>
                 )}
                 {players.map((player) => (
                   <tr key={player.id} className="border-b border-slate-100">
@@ -178,10 +193,21 @@ export default function AdminPanel() {
                     <td className="py-2 pr-4 text-slate-500">{player.turn_order + 1}</td>
                     <td className="py-2 pr-4 text-slate-500">pole {player.position}</td>
                     <td className="py-2 pr-4 font-semibold text-slate-800">{player.coins} 💰</td>
-                    <td className="py-2 text-slate-500">
+                    <td className="py-2 pr-4 text-slate-500">
                       {Array.isArray(player.horses) && player.horses.length > 0
                         ? (player.horses as { emoji: string; name: string }[]).map((h) => `${h.emoji} ${h.name}`).join(", ")
                         : "—"}
+                    </td>
+                    <td className="py-2">
+                      <button
+                        onClick={() => {
+                          localStorage.setItem(`paytowin_player_${selectedGame.code}`, player.id);
+                          window.open(`/game/${selectedGame.code}`, "_blank");
+                        }}
+                        className="rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-600 hover:bg-indigo-100 transition"
+                      >
+                        Hrát jako →
+                      </button>
                     </td>
                   </tr>
                 ))}
