@@ -43,6 +43,13 @@ export interface ThemeColors {
   playerCardHover: string;
 }
 
+/** Volitelná obrazová aktiva theme — pro budoucí vizuální skiny. */
+export interface ThemeAssets {
+  boardBgImage?: string;   // URL nebo cesta k /public
+  fieldImages?: Partial<Record<string, string>>; // fieldLabel → image URL
+  horseImages?: Partial<Record<string, string>>; // horseId → image URL
+}
+
 export interface Theme {
   id: string;
   name: string;
@@ -56,6 +63,8 @@ export interface Theme {
     centerSubtitle: string;
   };
   horses: HorseConfig[];
+  /** Volitelné obrazové assety — zatím nepovinné, placeholder pro theme builder. */
+  assets?: ThemeAssets;
 }
 
 // Registr všech dostupných témat

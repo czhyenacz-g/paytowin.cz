@@ -2,125 +2,24 @@
 
 import React from "react";
 import { supabase } from "@/lib/supabase";
-import { getThemeById, HorseConfig } from "@/lib/themes";
-import { GameCard, drawCard } from "@/lib/cards";
-
-// ─── Typy ─────────────────────────────────────────────────────────────────────
-
-export interface Horse {
-  id?: string;
-  name: string;
-  speed: number;
-  price: number;
-  emoji: string;
-}
-
-export interface Player {
-  id: string;
-  game_id: string;
-  name: string;
-  position: number;
-  color: string;
-  coins: number;
-  horses: Horse[];
-  turn_order: number;
-  skip_next_turn: boolean;
-}
-
-interface OfferPending {
-  type: "reroll";
-  playerId: string;
-  playerName: string;
-  cost: number;
-}
-
-interface GameState {
-  game_id: string;
-  current_player_index: number;
-  last_roll: number | null;
-  log: string[];
-  turn_count: number;
-  horse_pending: boolean;
-  card_pending: GameCard | null;
-  offer_pending: OfferPending | null;
-}
-
-const REROLL_COST = 250;
-const REROLL_CHANCE = 0.25; // 25 % šance na zobrazení nabídky po tahu
-
-const BANKRUPTCY_TAX_PER_ROUND = 50; // daň roste o tuto částku každé kolo (kolo 1 = 0, kolo 2 = 50, kolo 3 = 100, …)
-const BANKRUPTCY_TAX_CAP = 500;      // maximální daň za průchod STARTem
-
-/** Vrátí daň za průchod STARTem pro dané kolo. Kolo 1 = 0, každé další +50, max 500. */
-function getStartTax(round: number): number {
-  return Math.min((round - 1) * BANKRUPTCY_TAX_PER_ROUND, BANKRUPTCY_TAX_CAP);
-}
-
-type FieldType = "start" | "coins_gain" | "coins_lose" | "gamble" | "horse" | "neutral" | "chance" | "finance";
-
-interface Field {
-  index: number;
-  type: FieldType;
-  label: string;
-  emoji: string;
-  description: string;
-  horse?: Horse;
-  action: (player: Player) => { player: Player; log: string };
-}
-
-// ─── Herní data sestavená z theme koní ────────────────────────────────────────
-
-/**
- * Sestaví 21 polí desky z konfigurace koní daného theme.
- * Koně jsou mapováni na pozice: horses[0]→3, horses[1]→10, horses[2]→17, horses[3]→19.
- */
-function buildFields(horses: HorseConfig[]): Field[] {
-  const h = (i: number): Horse => ({ id: horses[i].id, name: horses[i].name, speed: horses[i].speed, price: horses[i].price, emoji: horses[i].emoji });
-  return [
-    { index: 0,  type: "start",      label: "START",           emoji: "🏁", description: "Průchod = +200 coins.",
-      action: (p) => ({ player: { ...p, coins: p.coins + 200 }, log: `${p.name} prošel STARTem — +200 💰` }) },
-    { index: 1,  type: "coins_gain", label: "Sponzor",         emoji: "🤝", description: "+100 coins.",
-      action: (p) => ({ player: { ...p, coins: p.coins + 100 }, log: `${p.name}: Sponzor — +100 💰` }) },
-    { index: 2,  type: "coins_lose", label: "Veterinář",       emoji: "🩺", description: "-60 coins.",
-      action: (p) => ({ player: { ...p, coins: p.coins - 60 },  log: `${p.name}: Veterinář — -60 💰` }) },
-    { index: 3,  type: "horse",      label: horses[0].name,    emoji: horses[0].emoji, description: `Kůň na prodej (rychlost ${horses[0].speed}) za ${horses[0].price} coins.`, horse: h(0),
-      action: (p) => ({ player: p, log: "" }) },
-    { index: 4,  type: "coins_gain", label: "Vítěz dostihu",   emoji: "🏆", description: "+150 coins.",
-      action: (p) => ({ player: { ...p, coins: p.coins + 150 }, log: `${p.name}: Vítěz dostihu — +150 💰` }) },
-    { index: 5,  type: "coins_lose", label: "Daňový úřad",     emoji: "🏛️", description: "-80 coins.",
-      action: (p) => ({ player: { ...p, coins: p.coins - 80 },  log: `${p.name}: Daňový úřad — -80 💰` }) },
-    { index: 6,  type: "coins_gain", label: "Zlaté podkůvky",  emoji: "🥇", description: "+80 coins.",
-      action: (p) => ({ player: { ...p, coins: p.coins + 80 },  log: `${p.name}: Zlaté podkůvky — +80 💰` }) },
-    { index: 7,  type: "coins_lose", label: "Korupce",         emoji: "💸", description: "-120 coins.",
-      action: (p) => ({ player: { ...p, coins: p.coins - 120 }, log: `${p.name}: Korupce — -120 💰` }) },
-    { index: 8,  type: "chance",     label: "Náhoda",          emoji: "🎴", description: "Líznout kartu Náhoda.",
-      action: (p) => ({ player: p, log: "" }) },
-    { index: 9,  type: "coins_gain", label: "Dobrá sezona",    emoji: "🌟", description: "+90 coins.",
-      action: (p) => ({ player: { ...p, coins: p.coins + 90 },  log: `${p.name}: Dobrá sezona — +90 💰` }) },
-    { index: 10, type: "horse",      label: horses[1].name,    emoji: horses[1].emoji, description: `Kůň na prodej (rychlost ${horses[1].speed}) za ${horses[1].price} coins.`, horse: h(1),
-      action: (p) => ({ player: p, log: "" }) },
-    { index: 11, type: "coins_lose", label: "Krize na trhu",   emoji: "📉", description: "-50 coins.",
-      action: (p) => ({ player: { ...p, coins: p.coins - 50 },  log: `${p.name}: Krize na trhu — -50 💰` }) },
-    { index: 12, type: "coins_gain", label: "Bankéř",          emoji: "🏦", description: "+40 coins.",
-      action: (p) => ({ player: { ...p, coins: p.coins + 40 },  log: `${p.name}: Bankéř — +40 💰` }) },
-    { index: 13, type: "coins_lose", label: "Zákeřný soupeř",  emoji: "😈", description: "-70 coins.",
-      action: (p) => ({ player: { ...p, coins: p.coins - 70 },  log: `${p.name}: Zákeřný soupeř — -70 💰` }) },
-    { index: 14, type: "finance",    label: "Finance",          emoji: "💼", description: "Líznout kartu Finance.",
-      action: (p) => ({ player: p, log: "" }) },
-    { index: 15, type: "coins_gain", label: "Věrnostní bonus", emoji: "🎁", description: "+50 coins.",
-      action: (p) => ({ player: { ...p, coins: p.coins + 50 },  log: `${p.name}: Věrnostní bonus — +50 💰` }) },
-    { index: 16, type: "coins_lose", label: "Zloděj",          emoji: "🦹", description: "-70 coins.",
-      action: (p) => ({ player: { ...p, coins: p.coins - 70 },  log: `${p.name}: Zloděj — -70 💰` }) },
-    { index: 17, type: "horse",      label: horses[2].name,    emoji: horses[2].emoji, description: `Kůň na prodej (rychlost ${horses[2].speed}) za ${horses[2].price} coins.`, horse: h(2),
-      action: (p) => ({ player: p, log: "" }) },
-    { index: 18, type: "coins_lose", label: "Veterinář",       emoji: "💊", description: "-60 coins.",
-      action: (p) => ({ player: { ...p, coins: p.coins - 60 },  log: `${p.name}: Veterinář — -60 💰` }) },
-    { index: 19, type: "horse",      label: horses[3].name,    emoji: horses[3].emoji, description: `Kůň na prodej (rychlost ${horses[3].speed}) za ${horses[3].price} coins.`, horse: h(3),
-      action: (p) => ({ player: p, log: "" }) },
-    { index: 20, type: "chance",     label: "Náhoda",          emoji: "🎴", description: "Líznout kartu Náhoda.",
-      action: (p) => ({ player: p, log: "" }) },
-  ];
-}
+import { getThemeById } from "@/lib/themes";
+import type { Field } from "@/lib/engine";
+import {
+  sleep,
+  buildFields,
+  getStartTax,
+  isBankrupt,
+  getNextActiveIndex,
+  normalizePlayer,
+  normalizeState,
+  REROLL_COST,
+  REROLL_CHANCE,
+} from "@/lib/engine";
+import { drawCard } from "@/lib/cards";
+import type { GameCard } from "@/lib/cards";
+import type { Player, Horse, GameState, OfferPending } from "@/lib/types/game";
+import CardModal from "./modals/CardModal";
+import OfferModal from "./modals/OfferModal";
 
 // Styly polí jsou součástí theme systému (lib/themes/*)
 // Přistupuj přes: theme.colors.fieldStyles[field.type]
@@ -895,111 +794,24 @@ export default function GameBoard({ gameCode }: Props) {
   return (
     <div className={`min-h-screen ${theme.colors.pageBackground}`}>
 
-      {/* ── Card Modal — overlay přes celou obrazovku ─────────────────────── */}
+      {/* ── Card Modal ────────────────────────────────────────────────────── */}
       {pendingCard && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          style={{ background: "rgba(0,0,0,0.55)" }}
-        >
-          <div
-            className="mx-4 w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden"
-            style={{ animation: "cardFadeIn 0.25s ease-out both" }}
-          >
-            {/* Hlavička karty */}
-            <div className={`px-6 pt-6 pb-4 ${
-              pendingCard.card.type === "chance"
-                ? "bg-sky-600"
-                : "bg-teal-700"
-            }`}>
-              <div className="text-xs font-bold uppercase tracking-widest text-white/70">
-                {pendingCard.card.type === "chance" ? "Náhoda" : "Finance"}
-              </div>
-              <div className="mt-1 text-3xl">
-                {pendingCard.card.type === "chance" ? "🎴" : "💼"}
-              </div>
-              <div className="mt-2 text-xs font-semibold text-white/80">
-                {players[pendingCard.playerIndex]?.name ?? "?"} lízl kartu:
-              </div>
-            </div>
-
-            {/* Tělo karty */}
-            <div className="bg-white px-6 py-5 space-y-4">
-              <p className="text-base font-medium text-slate-800 leading-snug">
-                {pendingCard.card.text}
-              </p>
-              <div className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold ${
-                pendingCard.card.type === "chance"
-                  ? "bg-sky-100 text-sky-800"
-                  : "bg-teal-100 text-teal-800"
-              }`}>
-                {pendingCard.card.effectLabel}
-              </div>
-              <div className="text-xs text-slate-400">
-                Efekt se aplikuje za chvíli…
-              </div>
-            </div>
-          </div>
-        </div>
+        <CardModal
+          card={pendingCard.card}
+          playerName={players[pendingCard.playerIndex]?.name ?? "?"}
+        />
       )}
 
-      {/* ── Offer Modal — speciální nabídka ─────────────────────────────────── */}
-      {pendingOffer && (() => {
-        const offerPlayer = players.find(p => p.id === pendingOffer.playerId);
-        const canAfford = (offerPlayer?.coins ?? 0) >= pendingOffer.cost;
-        const isActivePlayer = gameMode === "local"
-          ? viewerRole === "player"
-          : myPlayerId === pendingOffer.playerId;
-        return (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center"
-            style={{ background: "rgba(0,0,0,0.55)" }}
-          >
-            <div
-              className="mx-4 w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden"
-              style={{ animation: "cardFadeIn 0.25s ease-out both" }}
-            >
-              {/* Hlavička */}
-              <div className="bg-amber-500 px-6 pt-6 pb-4">
-                <div className="text-xs font-bold uppercase tracking-widest text-white/70">Speciální nabídka</div>
-                <div className="mt-1 text-3xl">🎲</div>
-                <div className="mt-2 text-xs font-semibold text-white/80">
-                  {pendingOffer.playerName}
-                </div>
-              </div>
-              {/* Tělo */}
-              <div className="bg-white px-6 py-5 space-y-4">
-                <p className="text-base font-medium text-slate-800 leading-snug">
-                  Zaplať <span className="font-bold text-amber-700">{pendingOffer.cost} 💰</span> a hoď kostkou znovu.
-                </p>
-                <div className="text-xs text-slate-500">
-                  {pendingOffer.playerName} má nyní <span className="font-semibold">{offerPlayer?.coins ?? 0} 💰</span>
-                </div>
-                {isActivePlayer ? (
-                  <div className="flex gap-3 pt-1">
-                    <button
-                      onClick={acceptOffer}
-                      disabled={!canAfford}
-                      className="flex-1 rounded-xl bg-amber-500 px-3 py-3 text-sm font-bold text-white hover:bg-amber-600 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 transition"
-                    >
-                      {canAfford ? `Zaplatit ${pendingOffer.cost} 💰` : "Nedostatek coins"}
-                    </button>
-                    <button
-                      onClick={declineOffer}
-                      className="flex-1 rounded-xl border border-slate-300 px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
-                    >
-                      Odmítnout
-                    </button>
-                  </div>
-                ) : (
-                  <div className="rounded-xl bg-slate-100 px-3 py-3 text-center text-sm text-slate-500">
-                    Rozhoduje {pendingOffer.playerName}…
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      })()}
+      {/* ── Offer Modal ───────────────────────────────────────────────────── */}
+      {pendingOffer && (
+        <OfferModal
+          offer={pendingOffer}
+          playerCoins={players.find(p => p.id === pendingOffer.playerId)?.coins ?? 0}
+          isActivePlayer={gameMode === "local" ? viewerRole === "player" : myPlayerId === pendingOffer.playerId}
+          onAccept={acceptOffer}
+          onDecline={declineOffer}
+        />
+      )}
 
       <div className="bg-amber-100 border-b border-amber-300 px-4 py-2 text-center text-sm text-amber-800">
         Experimentální projekt · kontakt:{" "}
@@ -1360,53 +1172,3 @@ export default function GameBoard({ gameCode }: Props) {
   );
 }
 
-// ─── Herní helpery ────────────────────────────────────────────────────────────
-
-const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
-
-function isBankrupt(player: Player): boolean {
-  return player.coins <= 0;
-}
-
-/** Vrátí index dalšího aktivního (neozkrachovalého) hráče. */
-function getNextActiveIndex(currentIndex: number, players: Player[]): number {
-  if (players.length === 0) return 0;
-  let next = (currentIndex + 1) % players.length;
-  let attempts = 0;
-  while (isBankrupt(players[next]) && attempts < players.length) {
-    next = (next + 1) % players.length;
-    attempts++;
-  }
-  return next;
-}
-
-// ─── Normalizace dat ze Supabase ──────────────────────────────────────────────
-
-function normalizePlayer(raw: unknown): Player {
-  const r = raw as Record<string, unknown>;
-  return {
-    id: r.id as string,
-    game_id: r.game_id as string,
-    name: r.name as string,
-    position: Number(r.position),
-    color: r.color as string,
-    coins: Number(r.coins),
-    horses: Array.isArray(r.horses) ? (r.horses as Horse[]) : [],
-    turn_order: Number(r.turn_order),
-    skip_next_turn: Boolean(r.skip_next_turn ?? false),
-  };
-}
-
-function normalizeState(raw: unknown): GameState {
-  const r = raw as Record<string, unknown>;
-  return {
-    game_id: r.game_id as string,
-    current_player_index: Number(r.current_player_index),
-    last_roll: r.last_roll != null ? Number(r.last_roll) : null,
-    log: Array.isArray(r.log) ? (r.log as string[]) : [],
-    turn_count: Number(r.turn_count ?? 0),
-    horse_pending: Boolean(r.horse_pending ?? false),
-    card_pending: (r.card_pending as GameCard | null) ?? null,
-    offer_pending: (r.offer_pending as OfferPending | null) ?? null,
-  };
-}
