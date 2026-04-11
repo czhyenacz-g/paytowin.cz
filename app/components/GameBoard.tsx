@@ -819,6 +819,54 @@ export default function GameBoard({ gameCode }: Props) {
 
   return (
     <div className={`min-h-screen ${theme.colors.pageBackground}`}>
+
+      {/* ── Card Modal — overlay přes celou obrazovku ─────────────────────── */}
+      {pendingCard && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.55)" }}
+        >
+          <div
+            className="mx-4 w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden"
+            style={{ animation: "cardFadeIn 0.25s ease-out both" }}
+          >
+            {/* Hlavička karty */}
+            <div className={`px-6 pt-6 pb-4 ${
+              pendingCard.card.type === "chance"
+                ? "bg-sky-600"
+                : "bg-teal-700"
+            }`}>
+              <div className="text-xs font-bold uppercase tracking-widest text-white/70">
+                {pendingCard.card.type === "chance" ? "Náhoda" : "Finance"}
+              </div>
+              <div className="mt-1 text-3xl">
+                {pendingCard.card.type === "chance" ? "🎴" : "💼"}
+              </div>
+              <div className="mt-2 text-xs font-semibold text-white/80">
+                {players[pendingCard.playerIndex]?.name ?? "?"} lízl kartu:
+              </div>
+            </div>
+
+            {/* Tělo karty */}
+            <div className="bg-white px-6 py-5 space-y-4">
+              <p className="text-base font-medium text-slate-800 leading-snug">
+                {pendingCard.card.text}
+              </p>
+              <div className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold ${
+                pendingCard.card.type === "chance"
+                  ? "bg-sky-100 text-sky-800"
+                  : "bg-teal-100 text-teal-800"
+              }`}>
+                {pendingCard.card.effectLabel}
+              </div>
+              <div className="text-xs text-slate-400">
+                Efekt se aplikuje za chvíli…
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="bg-amber-100 border-b border-amber-300 px-4 py-2 text-center text-sm text-amber-800">
         Experimentální projekt · kontakt:{" "}
         <a href="mailto:hynek@darbujan.cz" className="underline hover:text-amber-900">hynek@darbujan.cz</a>
