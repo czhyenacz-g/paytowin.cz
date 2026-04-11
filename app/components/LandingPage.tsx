@@ -4,6 +4,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { generateGameCode, PLAYER_COLORS } from "@/lib/game";
+import { THEMES } from "@/lib/themes";
 
 interface DiscordUser {
   id: string;
@@ -20,6 +21,7 @@ export default function LandingPage() {
   const [shareCode, setShareCode] = React.useState<string | null>(null);
   const [copied, setCopied] = React.useState(false);
   const [discordUser, setDiscordUser] = React.useState<DiscordUser | null>(null);
+  const [selectedThemeId, setSelectedThemeId] = React.useState("default");
 
   // Načti session + předvyplň ?join=KOD z URL
   React.useEffect(() => {
@@ -70,7 +72,7 @@ export default function LandingPage() {
 
     const { data: game, error: gameErr } = await supabase
       .from("games")
-      .insert({ code, status: "waiting" })
+      .insert({ code, status: "waiting", theme_id: selectedThemeId })
       .select()
       .single();
 
@@ -239,6 +241,30 @@ export default function LandingPage() {
                     placeholder="např. Hynek"
                     className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-800 outline-none focus:border-slate-500"
                   />
+                </div>
+
+                {/* Výběr tématu — pouze při vytváření nové hry */}
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Vzhled hry</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {THEMES.map((theme) => (
+                      <button
+                        key={theme.id}
+                        type="button"
+                        onClick={() => setSelectedThemeId(theme.id)}
+                        className={`rounded-xl border-2 px-3 py-2.5 text-left transition ${
+                          selectedThemeId === theme.id
+                            ? "border-slate-900 bg-slate-900 text-white"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-slate-400"
+                        }`}
+                      >
+                        <div className="text-sm font-semibold">{theme.name}</div>
+                        <div className={`text-xs mt-0.5 ${selectedThemeId === theme.id ? "text-slate-300" : "text-slate-400"}`}>
+                          {theme.description}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {error && <p className="text-sm text-red-600">{error}</p>}

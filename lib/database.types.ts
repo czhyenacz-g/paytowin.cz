@@ -9,14 +9,17 @@ export interface Database {
           code: string;
           status: "waiting" | "playing" | "finished";
           created_at: string;
+          theme_id: string | null;
         };
         Insert: {
           code: string;
           status?: "waiting" | "playing" | "finished";
+          theme_id?: string | null;
         };
         Update: {
           code?: string;
           status?: "waiting" | "playing" | "finished";
+          theme_id?: string | null;
         };
       };
       players: {

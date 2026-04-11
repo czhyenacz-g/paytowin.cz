@@ -2,6 +2,7 @@
 
 import React from "react";
 import { supabase } from "@/lib/supabase";
+import { getThemeById } from "@/lib/themes";
 
 // ─── Typy ─────────────────────────────────────────────────────────────────────
 
@@ -101,14 +102,8 @@ const FIELDS: Field[] = [
     action: (p) => { const w = Math.random() < 0.45; return { player: { ...p, coins: p.coins + (w ? 250 : -150) }, log: `${p.name}: Ruleta — ${w ? "+250 💰" : "-150 💰"}` }; } },
 ];
 
-const FIELD_STYLE: Record<FieldType, string> = {
-  start:      "h-20 w-20 border-red-400 bg-red-500 text-white",
-  coins_gain: "h-16 w-16 border-emerald-400 bg-emerald-100 text-emerald-800",
-  coins_lose: "h-16 w-16 border-red-300 bg-red-100 text-red-800",
-  gamble:     "h-16 w-16 border-violet-400 bg-violet-100 text-violet-800",
-  horse:      "h-16 w-16 border-amber-400 bg-amber-100 text-amber-800",
-  neutral:    "h-16 w-16 border-slate-300 bg-white text-slate-700",
-};
+// Styly polí jsou nyní součástí theme systému (lib/themes/*)
+// Přistupuj přes: theme.colors.fieldStyles[field.type]
 
 const FIELD_POSITIONS: React.CSSProperties[] = [
   { top: "50%", left: "8%",  transform: "translate(-50%, -50%)" },
@@ -195,6 +190,7 @@ interface Props {
 
 export default function GameBoard({ gameCode }: Props) {
   const [gameId, setGameId] = React.useState<string | null>(null);
+  const [themeId, setThemeId] = React.useState<string>("default");
   const [players, setPlayers] = React.useState<Player[]>([]);
   const [gameState, setGameState] = React.useState<GameState | null>(null);
   const [loading, setLoading] = React.useState(!!gameCode);
@@ -272,6 +268,7 @@ export default function GameBoard({ gameCode }: Props) {
 
       if (!game) { setLoading(false); return; }
       setGameId(game.id);
+      setThemeId(game.theme_id ?? "default");
 
       const pid = localStorage.getItem(`paytowin_player_${gameCode}`);
       setMyPlayerId(pid);
@@ -570,6 +567,9 @@ export default function GameBoard({ gameCode }: Props) {
 
   // ── Render ───────────────────────────────────────────────────────────────────
 
+  // Aktivní theme — fallback na default pokud themeId neexistuje
+  const theme = getThemeById(themeId);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center">
@@ -614,7 +614,7 @@ export default function GameBoard({ gameCode }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className={`min-h-screen ${theme.colors.pageBackground}`}>
       <div className="bg-amber-100 border-b border-amber-300 px-4 py-2 text-center text-sm text-amber-800">
         Experimentální projekt · kontakt:{" "}
         <a href="mailto:hynek@darbujan.cz" className="underline hover:text-amber-900">hynek@darbujan.cz</a>
@@ -628,11 +628,11 @@ export default function GameBoard({ gameCode }: Props) {
         <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 lg:grid-cols-[1fr_340px]">
 
           {/* Herní plocha */}
-          <div className="rounded-3xl bg-white p-6 shadow-lg">
+          <div className={`rounded-3xl p-6 shadow-lg ${theme.colors.cardBackground}`}>
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-slate-800">Pay-to-Win</h1>
-                <p className="text-sm text-slate-500">Dostihy, sázky a finanční chaos.</p>
+                <h1 className={`text-3xl font-bold ${theme.colors.textPrimary}`}>Pay-to-Win</h1>
+                <p className={`text-sm ${theme.colors.textMuted}`}>Dostihy, sázky a finanční chaos.</p>
               </div>
               <div className="flex items-center gap-3">
                 {isSpectator && (
@@ -659,7 +659,7 @@ export default function GameBoard({ gameCode }: Props) {
               <span className="rounded-lg bg-amber-100 px-2 py-1 text-amber-800">🟠 kůň</span>
             </div>
 
-            <div className="relative mx-auto aspect-square w-full max-w-[760px] rounded-[40px] border border-slate-200 bg-emerald-50">
+            <div className={`relative mx-auto aspect-square w-full max-w-[760px] rounded-[40px] border ${theme.colors.boardSurfaceBorder} ${theme.colors.boardSurface}`}>
               {FIELDS.map((field) => {
                 const pos = FIELD_POSITIONS[field.index];
                 const playersHere = fieldPlayers(field.index);
@@ -671,7 +671,7 @@ export default function GameBoard({ gameCode }: Props) {
                 return (
                   <div
                     key={field.index}
-                    className={`group absolute flex flex-col items-center justify-center rounded-2xl border-2 shadow-sm transition-all duration-200 hover:z-50 ${FIELD_STYLE[field.type]} ${isTrail ? "ring-2 ring-amber-400 ring-offset-1 brightness-110" : ""} ${isHoverHighlight ? "ring-2 ring-blue-400 ring-offset-2 brightness-110 scale-105" : ""} ${owner ? "ring-2 ring-indigo-500 ring-offset-1" : ""}`}
+                    className={`group absolute flex flex-col items-center justify-center rounded-2xl border-2 shadow-sm transition-all duration-200 hover:z-50 ${theme.colors.fieldStyles[field.type]} ${isTrail ? "ring-2 ring-amber-400 ring-offset-1 brightness-110" : ""} ${isHoverHighlight ? "ring-2 ring-blue-400 ring-offset-2 brightness-110 scale-105" : ""} ${owner ? "ring-2 ring-indigo-500 ring-offset-1" : ""}`}
                     style={pos}
                   >
                     <div className="text-base leading-none">{field.emoji}</div>
@@ -731,11 +731,11 @@ export default function GameBoard({ gameCode }: Props) {
                 );
               })}
 
-              <div className="absolute left-1/2 top-1/2 flex h-[42%] w-[42%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[36px] border-2 border-dashed border-slate-300 bg-slate-50 p-4 text-center">
+              <div className={`absolute left-1/2 top-1/2 flex h-[42%] w-[42%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[36px] border-2 border-dashed p-4 text-center ${theme.colors.centerBorder} ${theme.colors.centerBackground}`}>
                 <div>
                   <div className="text-2xl">🐎</div>
-                  <div className="mt-1 text-sm font-semibold text-slate-700">Dostihiště</div>
-                  <div className="mt-1 text-xs text-slate-400">Přijdou závody.</div>
+                  <div className={`mt-1 text-sm font-semibold ${theme.colors.centerTitle}`}>{theme.labels.centerTitle}</div>
+                  <div className={`mt-1 text-xs ${theme.colors.centerSubtitle}`}>{theme.labels.centerSubtitle}</div>
                 </div>
               </div>
             </div>
@@ -743,9 +743,9 @@ export default function GameBoard({ gameCode }: Props) {
 
           {/* Pravý panel */}
           <div className="flex flex-col gap-4">
-            <div className="rounded-3xl bg-white p-6 shadow-lg">
+            <div className={`rounded-3xl p-6 shadow-lg ${theme.colors.cardBackground}`}>
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-slate-800">Panel hry</h2>
+                <h2 className={`text-2xl font-bold ${theme.colors.textPrimary}`}>Panel hry</h2>
                 <button
                   onClick={toggleSound}
                   title={soundEnabled ? "Vypnout zvuky" : "Zapnout zvuky"}
@@ -756,7 +756,7 @@ export default function GameBoard({ gameCode }: Props) {
               </div>
               <div className="mt-4 space-y-4">
 
-                <div className={`rounded-2xl p-4 transition-colors ${isRolling ? "bg-amber-100" : "bg-slate-100"}`}>
+                <div className={`rounded-2xl p-4 transition-colors ${isRolling ? theme.colors.rollPanelRolling : theme.colors.rollPanelIdle}`}>
                   <div className="text-sm text-slate-500 mb-2">Poslední hod</div>
                   <div className="flex items-center gap-3">
                     <DiceFace
@@ -836,7 +836,7 @@ export default function GameBoard({ gameCode }: Props) {
 
                 {/* Hráči */}
                 <div>
-                  <div className="mb-3 text-sm font-medium text-slate-700">Hráči</div>
+                  <div className={`mb-3 text-sm font-medium ${theme.colors.textPrimary}`}>Hráči</div>
                   <div className="space-y-2">
                     {players.map((player, index) => {
                       const isCurrent = gameState?.current_player_index === index;
@@ -851,10 +851,10 @@ export default function GameBoard({ gameCode }: Props) {
                             bankrupt
                               ? "border-red-300 bg-red-50 opacity-60"
                               : hoveredPlayerId === player.id
-                              ? "border-blue-400 bg-blue-50 shadow-sm"
+                              ? theme.colors.playerCardHover
                               : isCurrent
-                              ? "border-slate-900 bg-slate-50 shadow-sm"
-                              : "border-slate-200 bg-white"
+                              ? theme.colors.playerCardActive
+                              : theme.colors.playerCardNormal
                           }`}
                         >
                           <div className="flex items-center justify-between gap-2">
@@ -863,27 +863,27 @@ export default function GameBoard({ gameCode }: Props) {
                                 {player.name.charAt(0).toUpperCase()}
                               </div>
                               <div className="min-w-0">
-                                <div className={`font-semibold text-sm leading-tight ${bankrupt ? "text-slate-400 line-through" : "text-slate-800"}`}>
+                                <div className={`font-semibold text-sm leading-tight ${bankrupt ? "text-slate-400 line-through" : theme.colors.textPrimary}`}>
                                   {player.name}
                                 </div>
                                 {bankrupt ? (
                                   <div className="text-xs font-semibold text-red-500">💀 Zkrachoval</div>
                                 ) : (
-                                  <div className="text-xs text-slate-500 truncate">{field?.emoji} {field?.label}</div>
+                                  <div className={`text-xs truncate ${theme.colors.textMuted}`}>{field?.emoji} {field?.label}</div>
                                 )}
                                 {!bankrupt && player.horses.length > 0 && (
-                                  <div className="text-xs text-amber-700 mt-0.5">
+                                  <div className="text-xs text-amber-500 mt-0.5">
                                     {player.horses.map((h) => `${h.emoji} ${h.name}`).join(", ")}
                                   </div>
                                 )}
                               </div>
                             </div>
                             <div className="text-right shrink-0 space-y-1">
-                              <div className={`text-sm font-bold ${bankrupt ? "text-red-400" : "text-slate-800"}`}>
+                              <div className={`text-sm font-bold ${bankrupt ? "text-red-400" : theme.colors.textPrimary}`}>
                                 {player.coins} 💰
                               </div>
                               {isCurrent && !bankrupt && (
-                                <div className="rounded-full bg-slate-900 px-2 py-0.5 text-center text-[10px] font-semibold text-white">
+                                <div className={`rounded-full px-2 py-0.5 text-center text-[10px] font-semibold ${theme.colors.activePlayerBadge}`}>
                                   ▶ Na tahu
                                 </div>
                               )}
@@ -900,8 +900,8 @@ export default function GameBoard({ gameCode }: Props) {
 
             {/* Log */}
             {(gameState?.log?.length ?? 0) > 0 && (
-              <div className="rounded-3xl bg-white p-6 shadow-lg">
-                <div className="text-sm font-medium text-slate-700 mb-3">Log tahů</div>
+              <div className={`rounded-3xl p-6 shadow-lg ${theme.colors.cardBackground}`}>
+                <div className={`text-sm font-medium mb-3 ${theme.colors.textPrimary}`}>Log tahů</div>
                 <div className="space-y-1 max-h-52 overflow-y-auto">
                   {(gameState?.log ?? []).map((entry, i) => (
                     <div key={i} className={`text-xs text-slate-600 ${i === 0 ? "font-semibold text-slate-900" : ""}`}>

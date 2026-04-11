@@ -1,0 +1,40 @@
+import type { Theme } from ".";
+
+export const defaultTheme: Theme = {
+  id: "default",
+  name: "Klasika",
+  description: "Světlý vzhled, zelené závodiště.",
+  isPaid: false,
+  priceCzk: 0,
+  colors: {
+    pageBackground:     "bg-slate-100",
+    cardBackground:     "bg-white",
+    boardSurface:       "bg-emerald-50",
+    boardSurfaceBorder: "border-slate-200",
+    centerBackground:   "bg-slate-50",
+    centerBorder:       "border-slate-300",
+    centerTitle:        "text-slate-700",
+    centerSubtitle:     "text-slate-400",
+    fieldStyles: {
+      start:      "h-20 w-20 border-red-400 bg-red-500 text-white",
+      coins_gain: "h-16 w-16 border-emerald-400 bg-emerald-100 text-emerald-800",
+      coins_lose: "h-16 w-16 border-red-300 bg-red-100 text-red-800",
+      gamble:     "h-16 w-16 border-violet-400 bg-violet-100 text-violet-800",
+      horse:      "h-16 w-16 border-amber-400 bg-amber-100 text-amber-800",
+      neutral:    "h-16 w-16 border-slate-300 bg-white text-slate-700",
+    },
+    activePlayerBadge: "bg-slate-900 text-white",
+    rollPanelIdle:     "bg-slate-100",
+    rollPanelRolling:  "bg-amber-100",
+    textPrimary:       "text-slate-800",
+    textMuted:         "text-slate-500",
+    playerCardActive:  "border-slate-900 bg-slate-50 shadow-sm",
+    playerCardNormal:  "border-slate-200 bg-white",
+    playerCardHover:   "border-blue-400 bg-blue-50 shadow-sm",
+  },
+  labels: {
+    themeName:      "Klasika",
+    centerTitle:    "Dostihiště",
+    centerSubtitle: "Přijdou závody.",
+  },
+};
