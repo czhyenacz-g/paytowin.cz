@@ -7,19 +7,28 @@ export interface Database {
         Row: {
           id: string;
           code: string;
-          status: "waiting" | "playing" | "finished";
+          status: "waiting" | "playing" | "finished" | "cancelled";
           created_at: string;
           theme_id: string | null;
+          game_mode: string | null;
+          owner_discord_id: string | null;
+          max_players: number | null;
         };
         Insert: {
           code: string;
-          status?: "waiting" | "playing" | "finished";
+          status?: "waiting" | "playing" | "finished" | "cancelled";
           theme_id?: string | null;
+          game_mode?: string | null;
+          owner_discord_id?: string | null;
+          max_players?: number | null;
         };
         Update: {
           code?: string;
-          status?: "waiting" | "playing" | "finished";
+          status?: "waiting" | "playing" | "finished" | "cancelled";
           theme_id?: string | null;
+          game_mode?: string | null;
+          owner_discord_id?: string | null;
+          max_players?: number | null;
         };
       };
       players: {

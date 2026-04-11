@@ -38,6 +38,8 @@ export default function GamesList() {
         .from("games")
         .select("id, code, status, created_at, players(id, name, coins)")
         .neq("status", "finished")
+        .neq("status", "cancelled")
+        .neq("game_mode", "local")
         .order("created_at", { ascending: false });
 
       setGames((data ?? []) as GameRow[]);

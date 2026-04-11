@@ -196,6 +196,9 @@ interface Props {
 export default function GameBoard({ gameCode }: Props) {
   const [gameId, setGameId] = React.useState<string | null>(null);
   const [themeId, setThemeId] = React.useState<string>("default");
+  const [gameMode, setGameMode] = React.useState<"online" | "local">("online");
+  const [isHost, setIsHost] = React.useState(false);
+  const [gameStatus, setGameStatus] = React.useState<string>("playing");
   const [players, setPlayers] = React.useState<Player[]>([]);
   const [gameState, setGameState] = React.useState<GameState | null>(null);
   const [loading, setLoading] = React.useState(!!gameCode);
@@ -274,6 +277,11 @@ export default function GameBoard({ gameCode }: Props) {
       if (!game) { setLoading(false); return; }
       setGameId(game.id);
       setThemeId(game.theme_id ?? "default");
+      setGameMode((game.game_mode ?? "online") as "online" | "local");
+      setGameStatus(game.status);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      const myDiscordId = user?.user_metadata?.provider_id as string | undefined;
 
       const pid = localStorage.getItem(`paytowin_player_${gameCode}`);
       setMyPlayerId(pid);
@@ -282,9 +290,12 @@ export default function GameBoard({ gameCode }: Props) {
       if (pid) {
         setViewerRole("player");
       } else {
-        const { data: { user } } = await supabase.auth.getUser();
-        const hasDiscord = !!user?.user_metadata?.provider_id;
-        setViewerRole(hasDiscord ? "spectator" : "login_required");
+        setViewerRole(myDiscordId ? "spectator" : "login_required");
+      }
+
+      // Host detekce: Discord ID musí souhlasit s owner_discord_id hry
+      if (myDiscordId && game.owner_discord_id && myDiscordId === game.owner_discord_id) {
+        setIsHost(true);
       }
 
       await refreshGame(game.id);
@@ -327,6 +338,12 @@ export default function GameBoard({ gameCode }: Props) {
 
     const channel = supabase
       .channel(`game:${gameId}`)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "games", filter: `id=eq.${gameId}` },
+        (payload) => {
+          const updated = payload.new as { status?: string };
+          if (updated.status) setGameStatus(updated.status);
+        }
+      )
       .on("postgres_changes", { event: "*", schema: "public", table: "players", filter: `game_id=eq.${gameId}` },
         () => { refreshGame(gameId); }
       )
@@ -534,6 +551,13 @@ export default function GameBoard({ gameCode }: Props) {
     setPendingHorse(null);
   };
 
+  const cancelGame = async () => {
+    if (!gameId) return;
+    if (!window.confirm("Opravdu chceš zrušit hru? Ostatní hráči ji ztratí.")) return;
+    await supabase.from("games").update({ status: "cancelled" }).eq("id", gameId);
+    setGameStatus("cancelled");
+  };
+
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
   // Po načtení hry obnov pendingHorse ze stavu DB (page refresh survival)
@@ -563,8 +587,13 @@ export default function GameBoard({ gameCode }: Props) {
   const currentPlayer = gameState ? players[gameState.current_player_index] : null;
   // Bankrotář nemůže hrát ani když je na řadě — blokujeme deadlock
   // Pozorovatel nikdy nemůže hrát
+  const isLocalGame = gameMode === "local";
   const isSpectator = viewerRole === "spectator";
-  const isMyTurn = !!myPlayerId && currentPlayer?.id === myPlayerId && !isBankrupt(currentPlayer) && !isRolling && !isMoving && !isSpectator;
+  // Local: kdokoliv "player" může hodit za aktuálního hráče (hot-seat)
+  // Online: jen hráč jehož ID sedí s localStorage
+  const isMyTurn = isLocalGame
+    ? (viewerRole === "player" && !!currentPlayer && !isBankrupt(currentPlayer) && !isRolling && !isMoving)
+    : (!!myPlayerId && currentPlayer?.id === myPlayerId && !isBankrupt(currentPlayer) && !isRolling && !isMoving && !isSpectator);
   const currentRound = gameState ? Math.floor(gameState.turn_count / Math.max(1, players.length)) + 1 : 1;
 
   // Mapa kůň.name → vlastník (pro zobrazení na herní desce)
@@ -595,7 +624,36 @@ export default function GameBoard({ gameCode }: Props) {
     );
   }
 
+  if (gameStatus === "cancelled") {
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-6">
+        <div className="text-center space-y-4">
+          <div className="text-5xl">🚫</div>
+          <h2 className="text-2xl font-bold text-slate-800">Hra byla zrušena</h2>
+          <p className="text-slate-500">Hostitel ukončil tuto hru.</p>
+          <a href="/" className="block text-sm text-slate-400 underline hover:text-slate-600">← Zpět na úvod</a>
+        </div>
+      </div>
+    );
+  }
+
   if (viewerRole === "login_required") {
+    // Lokální hra — nemá smysl žádat o Discord login na jiném zařízení
+    if (isLocalGame) {
+      return (
+        <div className="min-h-screen bg-slate-100 flex items-center justify-center p-6">
+          <div className="w-full max-w-sm text-center space-y-4">
+            <div className="text-4xl">🖥️</div>
+            <h2 className="text-xl font-bold text-slate-800">Lokální hra</h2>
+            <p className="text-sm text-slate-500">
+              Tato hra je lokální (hot-seat) a lze ji hrát pouze na zařízení, kde byla vytvořena.
+            </p>
+            <a href="/" className="block text-sm text-slate-400 underline hover:text-slate-600">← Zpět na úvod</a>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center p-6">
         <div className="w-full max-w-sm text-center space-y-4">
@@ -644,10 +702,23 @@ export default function GameBoard({ gameCode }: Props) {
                 <p className={`text-sm ${theme.colors.textMuted}`}>Dostihy, sázky a finanční chaos.</p>
               </div>
               <div className="flex items-center gap-3">
+                {isLocalGame && (
+                  <div className="rounded-2xl bg-orange-100 px-3 py-2 text-xs font-semibold text-orange-700">
+                    🖥️ Lokální
+                  </div>
+                )}
                 {isSpectator && (
                   <div className="rounded-2xl bg-indigo-100 px-3 py-2 text-xs font-semibold text-indigo-700">
                     👀 Pozorovatel
                   </div>
+                )}
+                {isHost && gameStatus !== "cancelled" && (
+                  <button
+                    onClick={cancelGame}
+                    className="rounded-2xl bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-100 transition"
+                  >
+                    Zrušit hru
+                  </button>
                 )}
                 <div className="rounded-2xl bg-slate-100 px-3 py-2 text-xs font-medium text-slate-500">
                   Kolo <span className="font-bold text-slate-800">{currentRound}</span>

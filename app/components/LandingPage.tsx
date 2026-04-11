@@ -23,6 +23,7 @@ export default function LandingPage() {
   const [discordUser, setDiscordUser] = React.useState<DiscordUser | null>(null);
   const [selectedThemeId, setSelectedThemeId] = React.useState("default");
   const [showThemeModal, setShowThemeModal] = React.useState(false);
+  const [maxPlayers, setMaxPlayers] = React.useState(6);
 
   // Načti session + předvyplň ?join=KOD z URL
   React.useEffect(() => {
@@ -73,7 +74,14 @@ export default function LandingPage() {
 
     const { data: game, error: gameErr } = await supabase
       .from("games")
-      .insert({ code, status: "waiting", theme_id: selectedThemeId })
+      .insert({
+        code,
+        status: "waiting",
+        theme_id: selectedThemeId,
+        game_mode: "online",
+        owner_discord_id: discordUser?.id ?? null,
+        max_players: maxPlayers,
+      })
       .select()
       .single();
 
@@ -129,10 +137,41 @@ export default function LandingPage() {
       return;
     }
 
-    const { data: existingPlayers } = await supabase
-      .from("players")
-      .select()
-      .eq("game_id", game.id);
+    // Lokální hra — nelze se připojit online
+    if ((game.game_mode ?? "online") === "local") {
+      setError("Tato hra je lokální (hot-seat) a nelze se k ní připojit online.");
+      setLoading(false);
+      return;
+    }
+
+    // Zrušená hra
+    if (game.status === "cancelled") {
+      setError("Tato hra byla zrušena hostitelem.");
+      setLoading(false);
+      return;
+    }
+
+    const [{ data: existingPlayers }, { data: stateData }] = await Promise.all([
+      supabase.from("players").select().eq("game_id", game.id),
+      supabase.from("game_state").select("turn_count").eq("game_id", game.id).single(),
+    ]);
+
+    // Kapacita hry
+    const maxP = game.max_players ?? 32;
+    if ((existingPlayers?.length ?? 0) >= maxP) {
+      setError(`Hra je plná (max. ${maxP} hráčů).`);
+      setLoading(false);
+      return;
+    }
+
+    // Omezení joinu po prvním kole: turn_count >= počet hráčů → kolo 2 začalo
+    const turnCount = stateData?.turn_count ?? 0;
+    const currentPlayerCount = existingPlayers?.length ?? 0;
+    if (currentPlayerCount > 0 && turnCount >= currentPlayerCount) {
+      setError("Do této hry se již nelze připojit — první kolo už skončilo.");
+      setLoading(false);
+      return;
+    }
 
     const turnOrder = existingPlayers?.length ?? 0;
     const color = PLAYER_COLORS[turnOrder % PLAYER_COLORS.length];
@@ -278,6 +317,20 @@ export default function LandingPage() {
                   </button>
                 </div>
 
+                {/* Max počet hráčů pro online hru */}
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-700">Max. hráčů</label>
+                  <select
+                    value={maxPlayers}
+                    onChange={(e) => setMaxPlayers(Number(e.target.value))}
+                    className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-800 outline-none focus:border-slate-500 bg-white"
+                  >
+                    {[2,3,4,5,6,8,10,12,16,20,24,32].map(n => (
+                      <option key={n} value={n}>{n} hráčů</option>
+                    ))}
+                  </select>
+                </div>
+
                 {error && <p className="text-sm text-red-600">{error}</p>}
 
                 <button
@@ -285,7 +338,14 @@ export default function LandingPage() {
                   disabled={loading}
                   className="w-full rounded-2xl bg-slate-900 px-4 py-4 text-lg font-semibold text-white shadow transition hover:bg-slate-800 disabled:bg-slate-400"
                 >
-                  Vytvořit novou hru
+                  🌐 Vytvořit online hru
+                </button>
+
+                <button
+                  onClick={() => router.push("/local/new")}
+                  className="w-full rounded-2xl border-2 border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 hover:border-slate-400 hover:bg-white transition"
+                >
+                  🖥️ Lokální hra (hot-seat)
                 </button>
 
                 <div className="relative flex items-center gap-3">
