@@ -423,15 +423,34 @@ export default function GameBoard({ gameCode }: Props) {
     }
 
     if (field.type === "horse" && field.horse) {
-      // Neukazujem tah dál — čekáme na rozhodnutí. horse_pending = true v DB.
-      await supabase.from("players").update({ position: newPosition, coins: movedPlayer.coins }).eq("id", currentPlayer.id);
-      await supabase.from("game_state").update({
-        last_roll: roll,
-        turn_count: newTurnCount,
-        horse_pending: true,
-        log: [`${currentPlayer.name} přišel na stáj: ${field.horse.emoji} ${field.horse.name}`, ...extraLog, ...newLog].slice(0, 20),
-      }).eq("game_id", gameId);
-      setPendingHorse({ horse: field.horse, playerIndex: gameState.current_player_index });
+      const alreadyOwned = movedPlayer.horses.some(h => h.name === field.horse!.name);
+
+      if (alreadyOwned) {
+        // Hráč už tohoto koně vlastní — přeskočíme nabídku, pokračujeme normálně
+        const logLines = [`${currentPlayer.name} přijel ke své stáji: ${field.horse.emoji} ${field.horse.name}`, ...extraLog];
+        const updatedPlayers = players.map((p, i) =>
+          i === gameState.current_player_index ? movedPlayer : p
+        );
+        const nextIndex = getNextActiveIndex(gameState.current_player_index, updatedPlayers);
+        await supabase.from("players").update({ position: newPosition, coins: movedPlayer.coins }).eq("id", currentPlayer.id);
+        await supabase.from("game_state").update({
+          current_player_index: nextIndex,
+          last_roll: roll,
+          turn_count: newTurnCount,
+          horse_pending: false,
+          log: [...logLines, ...newLog].slice(0, 20),
+        }).eq("game_id", gameId);
+      } else {
+        // Neukazujem tah dál — čekáme na rozhodnutí. horse_pending = true v DB.
+        await supabase.from("players").update({ position: newPosition, coins: movedPlayer.coins }).eq("id", currentPlayer.id);
+        await supabase.from("game_state").update({
+          last_roll: roll,
+          turn_count: newTurnCount,
+          horse_pending: true,
+          log: [`${currentPlayer.name} přišel na stáj: ${field.horse.emoji} ${field.horse.name}`, ...extraLog, ...newLog].slice(0, 20),
+        }).eq("game_id", gameId);
+        setPendingHorse({ horse: field.horse, playerIndex: gameState.current_player_index });
+      }
     } else {
       const { player: afterField, log: fieldLog } = field.action(movedPlayer);
       const finalPlayer = afterField;
@@ -468,6 +487,7 @@ export default function GameBoard({ gameCode }: Props) {
     const { horse, playerIndex } = pendingHorse;
     const player = players[playerIndex];
     if (!player || player.coins < horse.price) return;
+    if (player.horses.some(h => h.name === horse.name)) return; // pojistka: už vlastní
 
     const updatedCoins = player.coins - horse.price;
     const updatedHorses = [...player.horses, horse];
