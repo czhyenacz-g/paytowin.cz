@@ -27,6 +27,13 @@ export interface Player {
   skip_next_turn: boolean;
 }
 
+interface OfferPending {
+  type: "reroll";
+  playerId: string;
+  playerName: string;
+  cost: number;
+}
+
 interface GameState {
   game_id: string;
   current_player_index: number;
@@ -34,8 +41,12 @@ interface GameState {
   log: string[];
   turn_count: number;
   horse_pending: boolean;
-  card_pending: GameCard | null; // karta čekající na aplikaci efektu
+  card_pending: GameCard | null;
+  offer_pending: OfferPending | null;
 }
+
+const REROLL_COST = 250;
+const REROLL_CHANCE = 0.25; // 25 % šance na zobrazení nabídky po tahu
 
 const BANKRUPTCY_TAX_PER_ROUND = 50; // daň roste o tuto částku každé kolo (kolo 1 = 0, kolo 2 = 50, kolo 3 = 100, …)
 const BANKRUPTCY_TAX_CAP = 500;      // maximální daň za průchod STARTem
@@ -208,8 +219,11 @@ export default function GameBoard({ gameCode }: Props) {
   const [loading, setLoading] = React.useState(!!gameCode);
   const [pendingHorse, setPendingHorse] = React.useState<{ horse: Horse; playerIndex: number } | null>(null);
   const [pendingCard, setPendingCard] = React.useState<{ card: GameCard; playerIndex: number } | null>(null);
-  // Ochrana: ID karty, jejíž efekt jsme už aplikovali — zabrání dvojímu spuštění
   const cardAppliedRef = React.useRef<string | null>(null);
+  const [pendingOffer, setPendingOffer] = React.useState<OfferPending | null>(null);
+  const [canReroll, setCanReroll] = React.useState(false);
+  // Ochrana: klíč nabídky, kterou jsme už potvrdili — zabrání dvojímu spuštění
+  const offerAcceptedRef = React.useRef<string | null>(null);
   const [myPlayerId, setMyPlayerId] = React.useState<string | null>(null);
   const [viewerRole, setViewerRole] = React.useState<"loading" | "player" | "spectator" | "login_required">("loading");
   const [isRolling, setIsRolling] = React.useState(false);
@@ -386,7 +400,7 @@ export default function GameBoard({ gameCode }: Props) {
   // ── Herní akce ────────────────────────────────────────────────────────────────
 
   const rollDice = async () => {
-    if (!gameState || pendingHorse || pendingCard || isRolling || isMoving) return;
+    if (!gameState || pendingHorse || pendingCard || pendingOffer || isRolling || isMoving) return;
 
     const roll = Math.floor(Math.random() * 6) + 1;
     const currentPlayer = players[gameState.current_player_index];
@@ -515,15 +529,34 @@ export default function GameBoard({ gameCode }: Props) {
       );
       const nextIndex = getNextActiveIndex(gameState.current_player_index, updatedPlayers);
 
+      // Hráč aktualizován vždy (pozice, coins, koně)
       await supabase.from("players").update({ position: finalPlayer.position, coins: finalPlayer.coins, horses: finalPlayer.horses }).eq("id", currentPlayer.id);
-      await supabase.from("game_state").update({
-        current_player_index: nextIndex,
-        last_roll: roll,
-        turn_count: newTurnCount,
-        horse_pending: false,
-        card_pending: null,
-        log: [...logLines, ...newLog].slice(0, 20),
-      }).eq("game_id", gameId);
+
+      // Nabídka rerollu: 25 % šance, jen pokud nešel do bankrotu a nejde o reroll
+      const triggerOffer = !canReroll && !wentBankrupt && Math.random() < REROLL_CHANCE;
+
+      if (triggerOffer) {
+        const offer: OfferPending = { type: "reroll", playerId: currentPlayer.id, playerName: currentPlayer.name, cost: REROLL_COST };
+        await supabase.from("game_state").update({
+          last_roll: roll,
+          horse_pending: false,
+          card_pending: null,
+          offer_pending: offer as unknown as Record<string, unknown>,
+          log: [...logLines, `💡 Speciální nabídka pro ${currentPlayer.name}!`, ...newLog].slice(0, 20),
+        }).eq("game_id", gameId);
+        setPendingOffer(offer);
+      } else {
+        await supabase.from("game_state").update({
+          current_player_index: nextIndex,
+          last_roll: roll,
+          turn_count: newTurnCount,
+          horse_pending: false,
+          card_pending: null,
+          offer_pending: null,
+          log: [...logLines, ...newLog].slice(0, 20),
+        }).eq("game_id", gameId);
+        if (canReroll) setCanReroll(false);
+      }
     }
 
     // ── 4. Vyčisti animační stav, stopa zmizí po 1,5 s ──────────────────────
@@ -580,6 +613,43 @@ export default function GameBoard({ gameCode }: Props) {
     }).eq("game_id", gameId);
 
     setPendingHorse(null);
+  };
+
+  // ── Nabídka rerollu ───────────────────────────────────────────────────────────
+
+  const acceptOffer = async () => {
+    if (!pendingOffer || !gameState || !gameId) return;
+    // Ochrana: tato nabídka už byla potvrzena
+    const key = pendingOffer.playerId + "_" + gameState.turn_count;
+    if (offerAcceptedRef.current === key) return;
+    offerAcceptedRef.current = key;
+
+    const player = players.find(p => p.id === pendingOffer.playerId);
+    if (!player || player.coins < pendingOffer.cost) return;
+
+    const newLog = gameState.log ?? [];
+    await supabase.from("players").update({ coins: player.coins - pendingOffer.cost }).eq("id", player.id);
+    await supabase.from("game_state").update({
+      offer_pending: null,
+      log: [`${player.name} zaplatil ${pendingOffer.cost} 💰 za druhý hod`, ...newLog].slice(0, 20),
+    }).eq("game_id", gameId);
+
+    setCanReroll(true);
+    setPendingOffer(null);
+  };
+
+  const declineOffer = async () => {
+    if (!pendingOffer || !gameState || !gameId) return;
+    const newLog = gameState.log ?? [];
+    const nextIndex = getNextActiveIndex(gameState.current_player_index, players);
+    await supabase.from("game_state").update({
+      offer_pending: null,
+      current_player_index: nextIndex,
+      turn_count: gameState.turn_count + 1,
+      log: [`${pendingOffer.playerName} odmítl nabídku`, ...newLog].slice(0, 20),
+    }).eq("game_id", gameId);
+
+    setPendingOffer(null);
   };
 
   // ── Efekt karty ──────────────────────────────────────────────────────────────
@@ -688,8 +758,13 @@ export default function GameBoard({ gameCode }: Props) {
     } else {
       setPendingCard(null);
     }
+    if (gameState.offer_pending) {
+      setPendingOffer(gameState.offer_pending);
+    } else {
+      setPendingOffer(null);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameState?.horse_pending, gameState?.card_pending, gameState?.current_player_index]);
+  }, [gameState?.horse_pending, gameState?.card_pending, gameState?.offer_pending, gameState?.current_player_index]);
 
   // Auto-skip: pokud má aktuální hráč skip_next_turn = true, přeskočíme jeho tah
   React.useEffect(() => {
@@ -866,6 +941,65 @@ export default function GameBoard({ gameCode }: Props) {
           </div>
         </div>
       )}
+
+      {/* ── Offer Modal — speciální nabídka ─────────────────────────────────── */}
+      {pendingOffer && (() => {
+        const offerPlayer = players.find(p => p.id === pendingOffer.playerId);
+        const canAfford = (offerPlayer?.coins ?? 0) >= pendingOffer.cost;
+        const isActivePlayer = gameMode === "local"
+          ? viewerRole === "player"
+          : myPlayerId === pendingOffer.playerId;
+        return (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            style={{ background: "rgba(0,0,0,0.55)" }}
+          >
+            <div
+              className="mx-4 w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden"
+              style={{ animation: "cardFadeIn 0.25s ease-out both" }}
+            >
+              {/* Hlavička */}
+              <div className="bg-amber-500 px-6 pt-6 pb-4">
+                <div className="text-xs font-bold uppercase tracking-widest text-white/70">Speciální nabídka</div>
+                <div className="mt-1 text-3xl">🎲</div>
+                <div className="mt-2 text-xs font-semibold text-white/80">
+                  {pendingOffer.playerName}
+                </div>
+              </div>
+              {/* Tělo */}
+              <div className="bg-white px-6 py-5 space-y-4">
+                <p className="text-base font-medium text-slate-800 leading-snug">
+                  Zaplať <span className="font-bold text-amber-700">{pendingOffer.cost} 💰</span> a hoď kostkou znovu.
+                </p>
+                <div className="text-xs text-slate-500">
+                  {pendingOffer.playerName} má nyní <span className="font-semibold">{offerPlayer?.coins ?? 0} 💰</span>
+                </div>
+                {isActivePlayer ? (
+                  <div className="flex gap-3 pt-1">
+                    <button
+                      onClick={acceptOffer}
+                      disabled={!canAfford}
+                      className="flex-1 rounded-xl bg-amber-500 px-3 py-3 text-sm font-bold text-white hover:bg-amber-600 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 transition"
+                    >
+                      {canAfford ? `Zaplatit ${pendingOffer.cost} 💰` : "Nedostatek coins"}
+                    </button>
+                    <button
+                      onClick={declineOffer}
+                      className="flex-1 rounded-xl border border-slate-300 px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
+                    >
+                      Odmítnout
+                    </button>
+                  </div>
+                ) : (
+                  <div className="rounded-xl bg-slate-100 px-3 py-3 text-center text-sm text-slate-500">
+                    Rozhoduje {pendingOffer.playerName}…
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       <div className="bg-amber-100 border-b border-amber-300 px-4 py-2 text-center text-sm text-amber-800">
         Experimentální projekt · kontakt:{" "}
@@ -1114,13 +1248,20 @@ export default function GameBoard({ gameCode }: Props) {
                     🐎 Figurka se pohybuje…
                   </div>
                 ) : isMyTurn ? (
-                  <button
-                    onClick={rollDice}
-                    disabled={!gameState || players.length === 0}
-                    className="w-full rounded-2xl bg-slate-900 px-4 py-4 text-lg font-semibold text-white shadow transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
-                  >
-                    Hoď kostkou
-                  </button>
+                  <div className="space-y-2">
+                    {canReroll && (
+                      <div className="rounded-xl bg-amber-100 px-3 py-2 text-center text-xs font-semibold text-amber-800">
+                        🎲 Máš druhý hod zdarma!
+                      </div>
+                    )}
+                    <button
+                      onClick={rollDice}
+                      disabled={!gameState || players.length === 0}
+                      className={`w-full rounded-2xl px-4 py-4 text-lg font-semibold text-white shadow transition disabled:cursor-not-allowed disabled:bg-slate-400 ${canReroll ? "bg-amber-500 hover:bg-amber-600" : "bg-slate-900 hover:bg-slate-800"}`}
+                    >
+                      {canReroll ? "🎲 Hoď znovu!" : "Hoď kostkou"}
+                    </button>
+                  </div>
                 ) : (
                   <div className="w-full rounded-2xl bg-slate-100 px-4 py-4 text-center text-slate-500">
                     Čekej na tah hráče <span className="font-semibold text-slate-700">{currentPlayer?.name ?? "…"}</span>
@@ -1266,5 +1407,6 @@ function normalizeState(raw: unknown): GameState {
     turn_count: Number(r.turn_count ?? 0),
     horse_pending: Boolean(r.horse_pending ?? false),
     card_pending: (r.card_pending as GameCard | null) ?? null,
+    offer_pending: (r.offer_pending as OfferPending | null) ?? null,
   };
 }

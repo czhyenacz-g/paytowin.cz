@@ -71,6 +71,7 @@ export interface Database {
           turn_count: number;
           horse_pending: boolean;
           card_pending: Json | null;
+          offer_pending: Json | null;
           updated_at: string;
         };
         Insert: {
@@ -81,6 +82,7 @@ export interface Database {
           turn_count?: number;
           horse_pending?: boolean;
           card_pending?: Json | null;
+          offer_pending?: Json | null;
         };
         Update: {
           current_player_index?: number;
@@ -89,6 +91,7 @@ export interface Database {
           turn_count?: number;
           horse_pending?: boolean;
           card_pending?: Json | null;
+          offer_pending?: Json | null;
         };
       };
       horse_catalog: {
