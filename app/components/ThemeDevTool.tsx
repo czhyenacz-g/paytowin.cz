@@ -104,8 +104,12 @@ function ThemePreview({ manifest }: { manifest: ThemeManifest }) {
     { key: "neutral", label: "Neutrální" },
   ] as const;
 
+  const boardBgImage = manifest.assets?.boardBackgroundImage;
   return (
-    <div className={`rounded-xl border ${colors.boardSurfaceBorder} ${colors.boardSurface} p-4 space-y-4`}>
+    <div
+      className={`rounded-xl border ${colors.boardSurfaceBorder} ${colors.boardSurface} p-4 space-y-4`}
+      style={boardBgImage ? { backgroundImage: `url(${boardBgImage})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
+    >
       <div className={`rounded-lg border ${colors.centerBorder} ${colors.centerBackground} p-4 text-center`}>
         <div className={`text-lg font-bold ${colors.centerTitle}`}>{meta.name}</div>
         <div className={`text-sm ${colors.centerSubtitle}`}>{meta.description}</div>

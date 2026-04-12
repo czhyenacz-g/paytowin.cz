@@ -26,6 +26,10 @@ export default function LandingPage() {
   const [selectedBoardId, setSelectedBoardId] = React.useState("small");
   const [showThemeModal, setShowThemeModal] = React.useState(false);
   const [maxPlayers, setMaxPlayers] = React.useState(6);
+  const [dbThemes, setDbThemes] = React.useState<Array<{
+    id: string; name: string; description: string;
+    isPaid: boolean; priceCzk: number; boardBgImage?: string;
+  }>>([]);
 
   // Načti session + předvyplň ?join=KOD z URL
   React.useEffect(() => {
@@ -49,6 +53,30 @@ export default function LandingPage() {
       // Předvyplň jméno jen pokud ho hráč ještě nezadal
       setName((prev) => prev || fullName);
     });
+  }, []);
+
+  React.useEffect(() => {
+    supabase
+      .from("themes")
+      .select("id, manifest")
+      .eq("is_archived", false)
+      .or("is_public.eq.true,is_official.eq.true")
+      .then(({ data }) => {
+        if (!data) return;
+        setDbThemes(data.map((row) => {
+          const m = row.manifest as Record<string, unknown>;
+          const meta = m?.meta as Record<string, unknown> | undefined;
+          const assets = m?.assets as Record<string, unknown> | undefined;
+          return {
+            id: row.id,
+            name: (meta?.name as string) ?? row.id,
+            description: (meta?.description as string) ?? "",
+            isPaid: (meta?.isPaid as boolean) ?? false,
+            priceCzk: (meta?.priceCzk as number) ?? 0,
+            boardBgImage: assets?.boardBackgroundImage as string | undefined,
+          };
+        }));
+      });
   }, []);
 
   const loginWithDiscord = async () => {
@@ -310,6 +338,23 @@ export default function LandingPage() {
                         </div>
                       </button>
                     ))}
+                    {dbThemes.map((theme) => (
+                      <button
+                        key={theme.id}
+                        type="button"
+                        onClick={() => setSelectedThemeId(theme.id)}
+                        className={`rounded-xl border-2 px-3 py-2.5 text-left transition ${
+                          selectedThemeId === theme.id
+                            ? "border-slate-900 bg-slate-900 text-white"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-slate-400"
+                        }`}
+                      >
+                        <div className="text-sm font-semibold">{theme.name}</div>
+                        <div className={`text-xs mt-0.5 ${selectedThemeId === theme.id ? "text-slate-300" : "text-slate-400"}`}>
+                          {theme.description}
+                        </div>
+                      </button>
+                    ))}
                   </div>
                   <button
                     type="button"
@@ -457,8 +502,19 @@ export default function LandingPage() {
             </div>
 
             {/* Seznam témat */}
-            <div className="space-y-3 p-6">
-              {THEMES.map((theme) => {
+            <div className="space-y-3 p-6 max-h-[60vh] overflow-y-auto">
+              {[
+                ...THEMES.map(t => ({
+                  id: t.id,
+                  name: t.name,
+                  description: t.description,
+                  isPaid: t.isPaid ?? false,
+                  priceCzk: t.priceCzk ?? 0,
+                  boardBgImage: undefined as string | undefined,
+                  emoji: t.id === "dark" ? "🌙" : t.id === "classic-race" ? "🏇" : "☀️",
+                })),
+                ...dbThemes.map(t => ({ ...t, emoji: "🎨" })),
+              ].map((theme) => {
                 const isSelected = selectedThemeId === theme.id;
                 return (
                   <button
@@ -472,11 +528,13 @@ export default function LandingPage() {
                     }`}
                   >
                     <div className="flex gap-4">
-                      {/* Placeholder pro náhled — bude obrázek */}
-                      <div className={`h-16 w-24 shrink-0 rounded-xl border flex items-center justify-center text-2xl ${
-                        isSelected ? "border-slate-700 bg-slate-800" : "border-slate-200 bg-slate-50"
-                      }`}>
-                        {theme.id === "dark" ? "🌙" : theme.id === "classic-race" ? "🏇" : "☀️"}
+                      <div
+                        className={`h-16 w-24 shrink-0 rounded-xl border flex items-center justify-center text-2xl overflow-hidden ${
+                          isSelected ? "border-slate-700 bg-slate-800" : "border-slate-200 bg-slate-50"
+                        }`}
+                        style={theme.boardBgImage ? { backgroundImage: `url(${theme.boardBgImage})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
+                      >
+                        {!theme.boardBgImage && theme.emoji}
                       </div>
                       <div className="min-w-0">
                         <div className={`font-semibold ${isSelected ? "text-white" : "text-slate-800"}`}>
@@ -485,12 +543,11 @@ export default function LandingPage() {
                         <div className={`text-sm mt-0.5 ${isSelected ? "text-slate-300" : "text-slate-500"}`}>
                           {theme.description}
                         </div>
-                        {theme.isPaid && (
+                        {theme.isPaid ? (
                           <div className="mt-1.5 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
                             {theme.priceCzk} Kč
                           </div>
-                        )}
-                        {!theme.isPaid && (
+                        ) : (
                           <div className={`mt-1.5 inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${isSelected ? "bg-slate-700 text-slate-300" : "bg-emerald-50 text-emerald-700"}`}>
                             Zdarma
                           </div>

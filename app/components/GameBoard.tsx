@@ -3,6 +3,7 @@
 import React from "react";
 import { supabase } from "@/lib/supabase";
 import { getThemeById, getThemeRacers } from "@/lib/themes";
+import { loadThemeManifestAsync } from "@/lib/themes/loader";
 import { getBoardById } from "@/lib/board";
 import type { Field } from "@/lib/engine";
 import {
@@ -141,6 +142,20 @@ export default function GameBoard({ gameCode }: Props) {
   // Refs pro ochranu animace před Realtime přepsáním pozice
   const animatingPlayerIdRef = React.useRef<string | null>(null);
   const animPositionRef = React.useRef<number | null>(null);
+
+  const [boardBgUrl, setBoardBgUrl] = React.useState<string>("");
+
+  React.useEffect(() => {
+    let cancelled = false;
+    loadThemeManifestAsync(themeId).then((manifest) => {
+      if (!cancelled) {
+        const bgUrl = manifest.assets?.boardBackgroundImage ?? "";
+        setBoardBgUrl(bgUrl);
+        console.log(`[GameBoard] theme="${themeId}" boardBgUrl="${bgUrl || "none"}"`);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [themeId]);
 
   // Theme + FIELDS — odvozeno ze stavu themeId/boardId, aktualizuje se při každém renderu
   const theme = getThemeById(themeId);
@@ -880,7 +895,10 @@ export default function GameBoard({ gameCode }: Props) {
               <span className="rounded-lg bg-amber-100 px-2 py-1 text-amber-800">🟠 {theme.labels.legend.horse}</span>
             </div>
 
-            <div className={`relative mx-auto aspect-square w-full max-w-[760px] rounded-[40px] border ${theme.colors.boardSurfaceBorder} ${theme.colors.boardSurface}`}>
+            <div
+              className={`relative mx-auto aspect-square w-full max-w-[760px] rounded-[40px] border ${theme.colors.boardSurfaceBorder} ${theme.colors.boardSurface}`}
+              style={boardBgUrl ? { backgroundImage: `url(${boardBgUrl})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
+            >
               {FIELDS.map((field) => {
                 const pos = FIELD_POSITIONS[field.index];
                 const playersHere = fieldPlayers(field.index);

@@ -21,6 +21,9 @@ export default function LocalNewPage() {
   const [selectedBoardId, setSelectedBoardId] = React.useState("small");
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
+  const [dbThemes, setDbThemes] = React.useState<Array<{
+    id: string; name: string; description: string;
+  }>>([]);
 
   React.useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -30,6 +33,26 @@ export default function LocalNewPage() {
       setDiscordName((user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? "") as string);
       setAuthState("ready");
     });
+  }, []);
+
+  React.useEffect(() => {
+    supabase
+      .from("themes")
+      .select("id, manifest")
+      .eq("is_archived", false)
+      .or("is_public.eq.true,is_official.eq.true")
+      .then(({ data }) => {
+        if (!data) return;
+        setDbThemes(data.map((row) => {
+          const m = row.manifest as Record<string, unknown>;
+          const meta = m?.meta as Record<string, unknown> | undefined;
+          return {
+            id: row.id,
+            name: (meta?.name as string) ?? row.id,
+            description: (meta?.description as string) ?? "",
+          };
+        }));
+      });
   }, []);
 
   const updatePlayerCount = (count: number) => {
@@ -216,7 +239,10 @@ export default function LocalNewPage() {
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">Vzhled hry</label>
               <div className="grid grid-cols-2 gap-2">
-                {THEMES.map((theme) => (
+                {[
+                  ...THEMES.map(t => ({ id: t.id, name: t.name, description: t.description })),
+                  ...dbThemes,
+                ].map((theme) => (
                   <button
                     key={theme.id}
                     type="button"
