@@ -703,7 +703,9 @@ export default function GameBoard({ gameCode }: Props) {
     const soloLoss = updatedPlayers.length === 1 && activePlayers.length === 0;
     if (multiplayerWin || soloLoss) {
       await supabase.from("games").update({ status: "finished" }).eq("id", gameId);
-      // Realtime subscription (setGameStatus) propaguje stav všem klientům automaticky
+      // Okamžitý lokální update — stejný vzor jako cancelGame.
+      // Realtime propaguje ostatním klientům, ale tento klient nečeká.
+      setGameStatus("finished");
     }
   };
 
