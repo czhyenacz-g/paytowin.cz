@@ -3,7 +3,8 @@
 import React from "react";
 import { validateThemeManifest } from "@/lib/themes/validator";
 import type { ThemeManifest } from "@/lib/themes/manifest";
-import { loadThemeAction, saveThemeAction } from "@/app/admin/themes/dev/actions";
+import { loadThemeAction, saveThemeAction, listThemesAction } from "@/app/admin/themes/dev/actions";
+import type { ThemeMeta } from "@/app/admin/themes/dev/actions";
 
 // ─── Default template ─────────────────────────────────────────────────────────
 
@@ -215,9 +216,19 @@ export default function ThemeDevTool() {
   const [previewManifest, setPreviewManifest] = React.useState<ThemeManifest | null>(null);
   const [saveStatus, setSaveStatus] = React.useState<"idle" | "saving" | "saved" | "error">("idle");
   const [saveError, setSaveError] = React.useState<string | null>(null);
+  const [themeList, setThemeList] = React.useState<ThemeMeta[]>([]);
+  const [listStatus, setListStatus] = React.useState<"loading" | "ready" | "error">("loading");
+  const [selectedId, setSelectedId] = React.useState("");
   const [loadId, setLoadId] = React.useState("");
   const [loadStatus, setLoadStatus] = React.useState<"idle" | "loading" | "error">("idle");
   const [loadError, setLoadError] = React.useState<string | null>(null);
+
+  // Načti seznam themes při mountu
+  React.useEffect(() => {
+    listThemesAction()
+      .then((list) => { setThemeList(list); setListStatus("ready"); })
+      .catch(() => setListStatus("error"));
+  }, []);
 
   // Parse JSON from textarea
   function parseJson(): ThemeManifest | null {
@@ -259,11 +270,10 @@ export default function ThemeDevTool() {
     }
   }
 
-  async function handleLoad() {
-    if (!loadId.trim()) return;
+  async function loadById(id: string) {
     setLoadStatus("loading");
     setLoadError(null);
-    const result = await loadThemeAction(loadId.trim());
+    const result = await loadThemeAction(id);
     if ("error" in result) {
       setLoadStatus("error");
       setLoadError(result.error);
@@ -272,8 +282,18 @@ export default function ThemeDevTool() {
       setValidation(null);
       setShowPreview(false);
       setLoadStatus("idle");
-      setLoadId("");
     }
+  }
+
+  async function handleSelectLoad() {
+    if (!selectedId) return;
+    await loadById(selectedId);
+  }
+
+  async function handleLoad() {
+    if (!loadId.trim()) return;
+    await loadById(loadId.trim());
+    setLoadId("");
   }
 
   function handleFormat() {
@@ -293,32 +313,73 @@ export default function ThemeDevTool() {
       </div>
 
       <div className="max-w-6xl mx-auto p-6 space-y-6">
-        {/* Load from DB */}
-        <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-2">
-          <div className="text-sm font-semibold text-slate-700">Načíst theme z DB</div>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="ID theme, např. classic-race"
-              value={loadId}
-              onChange={(e) => setLoadId(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleLoad()}
-              className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-300"
-            />
-            <button
-              onClick={handleLoad}
-              disabled={loadStatus === "loading" || !loadId.trim()}
-              className="rounded-lg bg-slate-700 px-4 py-2 text-sm text-white hover:bg-slate-800 disabled:opacity-50"
-            >
-              {loadStatus === "loading" ? "Načítám…" : "Načíst"}
-            </button>
+        {/* Load theme */}
+        <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-4">
+          <div className="text-sm font-semibold text-slate-700">Načíst existující theme do editoru</div>
+
+          {/* Primary: selectbox */}
+          <div className="space-y-1.5">
+            <div className="text-xs font-medium text-slate-500">Vyber theme</div>
+            <div className="flex gap-2">
+              <select
+                value={selectedId}
+                onChange={(e) => setSelectedId(e.target.value)}
+                disabled={listStatus !== "ready"}
+                className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-300 disabled:opacity-50"
+              >
+                <option value="">
+                  {listStatus === "loading" ? "Načítám seznam…" : listStatus === "error" ? "Chyba načítání" : "— vyber theme —"}
+                </option>
+                {themeList.map((t) => (
+                  <option key={`${t.source}-${t.id}`} value={t.id}>
+                    {t.id} — {t.name} ({t.source}{t.isOfficial ? " · official" : ""} · v{t.version})
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={handleSelectLoad}
+                disabled={!selectedId || loadStatus === "loading"}
+                className="rounded-lg bg-slate-700 px-4 py-2 text-sm text-white hover:bg-slate-800 disabled:opacity-50 whitespace-nowrap"
+              >
+                {loadStatus === "loading" ? "Načítám…" : "Načíst vybrané"}
+              </button>
+            </div>
           </div>
+
+          {/* Divider */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 border-t border-slate-200" />
+            <span className="text-xs text-slate-400">nebo načti podle ID</span>
+            <div className="flex-1 border-t border-slate-200" />
+          </div>
+
+          {/* Fallback: manual ID input */}
+          <div className="space-y-1.5">
+            <div className="text-xs font-medium text-slate-500">Načíst podle ID (advanced)</div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="ID theme, např. my-custom-theme"
+                value={loadId}
+                onChange={(e) => setLoadId(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleLoad()}
+                className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 font-mono placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              />
+              <button
+                onClick={handleLoad}
+                disabled={loadStatus === "loading" || !loadId.trim()}
+                className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50 whitespace-nowrap"
+              >
+                Načíst
+              </button>
+            </div>
+          </div>
+
           {loadStatus === "error" && loadError && (
-            <div className="text-xs text-red-600">{loadError}</div>
+            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+              {loadError}
+            </div>
           )}
-          <div className="text-xs text-slate-400">
-            Built-in ID: <code className="font-mono">default</code> · <code className="font-mono">dark</code> · <code className="font-mono">classic-race</code> (musí být seednuté)
-          </div>
         </div>
 
         {/* JSON Editor */}
