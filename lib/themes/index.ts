@@ -1,11 +1,12 @@
 import { defaultTheme } from "./default";
 import { darkTheme } from "./dark";
 import { classicRaceTheme } from "./classic-race";
+import type { GameCard } from "@/lib/cards";
 
-// Typy polí na desce (musí odpovídat FieldType v GameBoard)
+// Typy polí na desce (musí odpovídat FieldType v engine.ts)
 export type FieldStyleKey = "start" | "coins_gain" | "coins_lose" | "gamble" | "horse" | "neutral" | "chance" | "finance";
 
-/** Definice koně v rámci theme — 4 koně v pořadí [speed3, speed4, speed5, speed2]. */
+/** Definice koně v rámci theme — 4 koně v pořadí mapovaném na pevné pozice desky. */
 export interface HorseConfig {
   id: string;
   name: string;
@@ -43,11 +44,45 @@ export interface ThemeColors {
   playerCardHover: string;
 }
 
-/** Volitelná obrazová aktiva theme — pro budoucí vizuální skiny. */
+/**
+ * Texty zobrazované v UI — UI nesmí mít hardcoded texty mimo tuto strukturu.
+ */
+export interface ThemeLabels {
+  themeName: string;
+  centerTitle: string;
+  centerSubtitle: string;
+  /** Legenda polí na desce */
+  legend: {
+    gain: string;    // např. "zisk"
+    lose: string;    // např. "ztráta"
+    gamble: string;  // např. "hazard"
+    horse: string;   // např. "kůň"
+  };
+}
+
+/**
+ * Volitelná obrazová aktiva theme — pro vizuální skiny a theme builder.
+ * UI preferuje images před emoji pokud jsou k dispozici.
+ */
 export interface ThemeAssets {
-  boardBgImage?: string;   // URL nebo cesta k /public
-  fieldImages?: Partial<Record<string, string>>; // fieldLabel → image URL
-  horseImages?: Partial<Record<string, string>>; // horseId → image URL
+  /** URL nebo cesta k /public pro pozadí desky */
+  boardBgImage?: string;
+  /** horseId → image URL; UI fallback na horse.emoji */
+  horseImages?: Partial<Record<string, string>>;
+  /** fieldLabel nebo fieldType → image/texture URL */
+  fieldTextures?: Partial<Record<string, string>>;
+}
+
+/**
+ * Volitelný herní obsah specifický pro theme.
+ * Zatím jen placeholder — nepoužívá se v herní logice.
+ * Připraveno pro theme builder a lokalizaci.
+ */
+export interface ThemeContent {
+  cards?: {
+    chance?: GameCard[];
+    finance?: GameCard[];
+  };
 }
 
 export interface Theme {
@@ -57,14 +92,12 @@ export interface Theme {
   isPaid: boolean;
   priceCzk: number;
   colors: ThemeColors;
-  labels: {
-    themeName: string;
-    centerTitle: string;
-    centerSubtitle: string;
-  };
+  labels: ThemeLabels;
   horses: HorseConfig[];
-  /** Volitelné obrazové assety — zatím nepovinné, placeholder pro theme builder. */
+  /** Volitelné obrazové assety — theme builder je vyplní. */
   assets?: ThemeAssets;
+  /** Volitelný herní obsah (vlastní karty atd.) — zatím nepoužíváno. */
+  content?: ThemeContent;
 }
 
 // Registr všech dostupných témat

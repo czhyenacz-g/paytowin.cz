@@ -18,8 +18,8 @@ import {
 import { drawCard } from "@/lib/cards";
 import type { GameCard } from "@/lib/cards";
 import type { Player, Horse, GameState, OfferPending } from "@/lib/types/game";
-import CardModal from "./modals/CardModal";
-import OfferModal from "./modals/OfferModal";
+import type { CenterEvent } from "@/lib/types/events";
+import CenterEventModal from "./modals/CenterEventModal";
 
 // Styly polí jsou součástí theme systému (lib/themes/*)
 // Přistupuj přes: theme.colors.fieldStyles[field.type]
@@ -717,6 +717,16 @@ export default function GameBoard({ gameCode }: Props) {
   const horseOwnership: Record<string, Player> = {};
   players.forEach(p => p.horses.forEach(h => { horseOwnership[h.name] = p; }));
 
+  // Sestavení CenterEvent view modelu pro sjednocený modal
+  const centerEvent = mapToCenterEvent(
+    pendingCard,
+    pendingOffer,
+    players,
+    gameMode,
+    viewerRole,
+    myPlayerId
+  );
+
   // ── Render ───────────────────────────────────────────────────────────────────
 
   if (loading) {
@@ -794,21 +804,11 @@ export default function GameBoard({ gameCode }: Props) {
   return (
     <div className={`min-h-screen ${theme.colors.pageBackground}`}>
 
-      {/* ── Card Modal ────────────────────────────────────────────────────── */}
-      {pendingCard && (
-        <CardModal
-          card={pendingCard.card}
-          playerName={players[pendingCard.playerIndex]?.name ?? "?"}
-        />
-      )}
-
-      {/* ── Offer Modal ───────────────────────────────────────────────────── */}
-      {pendingOffer && (
-        <OfferModal
-          offer={pendingOffer}
-          playerCoins={players.find(p => p.id === pendingOffer.playerId)?.coins ?? 0}
-          isActivePlayer={gameMode === "local" ? viewerRole === "player" : myPlayerId === pendingOffer.playerId}
-          onAccept={acceptOffer}
+      {/* ── Center Event Modal (card + offer) ───────────────────────────── */}
+      {centerEvent && (
+        <CenterEventModal
+          event={centerEvent}
+          onConfirm={acceptOffer}
           onDecline={declineOffer}
         />
       )}
@@ -867,10 +867,10 @@ export default function GameBoard({ gameCode }: Props) {
             </div>
 
             <div className="mb-4 flex flex-wrap gap-3 text-xs">
-              <span className="rounded-lg bg-emerald-100 px-2 py-1 text-emerald-800">🟢 zisk</span>
-              <span className="rounded-lg bg-red-100 px-2 py-1 text-red-800">🔴 ztráta</span>
-              <span className="rounded-lg bg-violet-100 px-2 py-1 text-violet-800">🟣 hazard</span>
-              <span className="rounded-lg bg-amber-100 px-2 py-1 text-amber-800">🟠 kůň</span>
+              <span className="rounded-lg bg-emerald-100 px-2 py-1 text-emerald-800">🟢 {theme.labels.legend.gain}</span>
+              <span className="rounded-lg bg-red-100 px-2 py-1 text-red-800">🔴 {theme.labels.legend.lose}</span>
+              <span className="rounded-lg bg-violet-100 px-2 py-1 text-violet-800">🟣 {theme.labels.legend.gamble}</span>
+              <span className="rounded-lg bg-amber-100 px-2 py-1 text-amber-800">🟠 {theme.labels.legend.horse}</span>
             </div>
 
             <div className={`relative mx-auto aspect-square w-full max-w-[760px] rounded-[40px] border ${theme.colors.boardSurfaceBorder} ${theme.colors.boardSurface}`}>
@@ -896,10 +896,17 @@ export default function GameBoard({ gameCode }: Props) {
                       <div className={`h-1.5 w-1.5 rounded-full mt-0.5 ${owner.color}`} title={owner.name} />
                     )}
                     {/* Tooltip pro koňská pole — instant CSS hover, bez delay */}
-                    {field.type === "horse" && field.horse && (
+                    {field.type === "horse" && field.horse && (() => {
+                      const horseDisplay = resolveHorseDisplay(field.horse, theme.assets?.horseImages);
+                      return (
                       <div className="pointer-events-none absolute bottom-full left-1/2 mb-2 hidden -translate-x-1/2 group-hover:block z-50 w-40">
                         <div className="rounded-xl bg-slate-900 px-3 py-2 text-left shadow-xl">
-                          <div className="text-xs font-bold text-white">{field.horse.emoji} {field.horse.name}</div>
+                          <div className="text-xs font-bold text-white">
+                            {horseDisplay.type === "image"
+                              ? <img src={horseDisplay.src} alt={horseDisplay.alt} className="inline h-4 w-4 mr-1 rounded object-cover" />
+                              : horseDisplay.value
+                            }{" "}{field.horse.name}
+                          </div>
                           <div className="mt-1 text-[10px] text-slate-300">Rychlost: {"⭐".repeat(field.horse.speed)}</div>
                           <div className="text-[10px] text-slate-300">Cena: {field.horse.price} 💰</div>
                           {owner ? (
@@ -914,7 +921,8 @@ export default function GameBoard({ gameCode }: Props) {
                         {/* Šipka dolů */}
                         <div className="mx-auto h-0 w-0 border-x-4 border-t-4 border-x-transparent border-t-slate-900" />
                       </div>
-                    )}
+                      );
+                    })()}
                   </div>
                 );
               })}
@@ -1170,5 +1178,62 @@ export default function GameBoard({ gameCode }: Props) {
       </div>
     </div>
   );
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Mapuje herní stav na CenterEvent view model pro CenterEventModal.
+ * Priorita: card_pending > offer_pending.
+ */
+function mapToCenterEvent(
+  pendingCard: { card: GameCard; playerIndex: number } | null,
+  pendingOffer: OfferPending | null,
+  players: Player[],
+  gameMode: "online" | "local",
+  viewerRole: string,
+  myPlayerId: string | null
+): CenterEvent | null {
+  if (pendingCard) {
+    const { card, playerIndex } = pendingCard;
+    return {
+      type: "card",
+      cardType: card.type,
+      category: card.type === "chance" ? "Náhoda" : "Finance",
+      emoji: card.type === "chance" ? "🎴" : "💼",
+      playerName: players[playerIndex]?.name ?? "?",
+      text: card.text,
+      effectLabel: card.effectLabel,
+    };
+  }
+  if (pendingOffer) {
+    const offerPlayer = players.find(p => p.id === pendingOffer.playerId);
+    const playerCoins = offerPlayer?.coins ?? 0;
+    return {
+      type: "offer",
+      playerName: pendingOffer.playerName,
+      playerCoins,
+      cost: pendingOffer.cost,
+      canConfirm: playerCoins >= pendingOffer.cost,
+      isActivePlayer: gameMode === "local"
+        ? viewerRole === "player"
+        : myPlayerId === pendingOffer.playerId,
+    };
+  }
+  return null;
+}
+
+/**
+ * Vrátí zobrazitelný identifikátor koně.
+ * Preferuje image URL z theme.assets.horseImages pokud existuje, jinak emoji.
+ */
+export function resolveHorseDisplay(
+  horse: Horse,
+  horseImages?: Partial<Record<string, string>>
+): { type: "emoji"; value: string } | { type: "image"; src: string; alt: string } {
+  const key = horse.id ?? horse.name;
+  const src = horseImages?.[key];
+  if (src) return { type: "image", src, alt: horse.name };
+  return { type: "emoji", value: horse.emoji };
 }
 

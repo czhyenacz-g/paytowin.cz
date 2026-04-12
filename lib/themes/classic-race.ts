@@ -38,6 +38,12 @@ export const classicRaceTheme: Theme = {
     themeName:      "Klasické dostihy",
     centerTitle:    "Hipódromo",
     centerSubtitle: "Que gane el mejor.",
+    legend: {
+      gain:   "ganancia",
+      lose:   "pérdida",
+      gamble: "apuesta",
+      horse:  "caballo",
+    },
   },
   horses: [
     { id: "sombra_roja",   name: "Sombra Roja",   speed: 2, price: 80,  emoji: "🔴" },

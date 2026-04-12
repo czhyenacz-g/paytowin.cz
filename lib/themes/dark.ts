@@ -38,6 +38,12 @@ export const darkTheme: Theme = {
     themeName:      "Noční závody",
     centerTitle:    "Dostihiště",
     centerSubtitle: "Přijdou závody.",
+    legend: {
+      gain:   "zisk",
+      lose:   "ztráta",
+      gamble: "hazard",
+      horse:  "kůň",
+    },
   },
   horses: [
     { id: "divoka_ruze",  name: "Divoká růže",  speed: 2, price: 80,  emoji: "🌹" },
