@@ -19,9 +19,10 @@ import {
 } from "@/lib/engine";
 import { drawCard } from "@/lib/cards";
 import type { GameCard } from "@/lib/cards";
-import type { Player, Horse, GameState, OfferPending } from "@/lib/types/game";
+import type { Player, Horse, GameState, OfferPending, RerollOffer, RaceOffer } from "@/lib/types/game";
 import type { CenterEvent } from "@/lib/types/events";
 import CenterEventModal from "./modals/CenterEventModal";
+import RaceModal from "./RaceModal";
 import BuildInfoBar from "./BuildInfoBar";
 
 // Styly polí jsou součástí theme systému (lib/themes/*)
@@ -123,10 +124,11 @@ export default function GameBoard({ gameCode }: Props) {
   const [pendingRacer, setPendingRacer] = React.useState<{ racer: Horse; playerIndex: number } | null>(null);
   const [pendingCard, setPendingCard] = React.useState<{ card: GameCard; playerIndex: number } | null>(null);
   const cardAppliedRef = React.useRef<string | null>(null);
-  const [pendingOffer, setPendingOffer] = React.useState<OfferPending | null>(null);
+  const [pendingOffer, setPendingOffer] = React.useState<RerollOffer | null>(null);
   const [canReroll, setCanReroll] = React.useState(false);
   // Ochrana: klíč nabídky, kterou jsme už potvrdili — zabrání dvojímu spuštění
   const offerAcceptedRef = React.useRef<string | null>(null);
+  const raceSubmittedRef = React.useRef<string | null>(null);
   const [myPlayerId, setMyPlayerId] = React.useState<string | null>(null);
   const [viewerRole, setViewerRole] = React.useState<"loading" | "player" | "spectator" | "login_required">("loading");
   const [isRolling, setIsRolling] = React.useState(false);
@@ -321,7 +323,8 @@ export default function GameBoard({ gameCode }: Props) {
   // ── Herní akce ────────────────────────────────────────────────────────────────
 
   const rollDice = async () => {
-    if (!gameState || pendingRacer || pendingCard || pendingOffer || isRolling || isMoving) return;
+    const activePendingRace = gameState?.offer_pending?.type === "race" ? gameState.offer_pending as RaceOffer : null;
+    if (!gameState || pendingRacer || pendingCard || pendingOffer || activePendingRace || isRolling || isMoving) return;
 
     const roll = Math.floor(Math.random() * 6) + 1;
     const currentPlayer = players[gameState.current_player_index];
@@ -692,6 +695,70 @@ export default function GameBoard({ gameCode }: Props) {
     setGameStatus("cancelled");
   };
 
+  // ── Závod (race miniGame) ──────────────────────────────────────────────────
+
+  const startRace = async () => {
+    if (!gameId || !gameState) return;
+    if (pendingRacer || pendingCard || pendingOffer) return;
+    if (gameState.offer_pending?.type === "race") return; // already running
+    const activePlayers = players.filter(p => !isBankrupt(p));
+    if (activePlayers.length < 2) return;
+    const race: RaceOffer = {
+      type: "race",
+      phase: "racing",
+      currentRacerIndex: 0,
+      playerIds: activePlayers.map(p => p.id),
+      scores: {},
+    };
+    await supabase.from("game_state").update({
+      offer_pending: race as unknown as Record<string, unknown>,
+    }).eq("game_id", gameId);
+  };
+
+  const submitRaceScore = async (score: number) => {
+    if (!gameId || !gameState) return;
+    const race = gameState.offer_pending?.type === "race" ? gameState.offer_pending as RaceOffer : null;
+    if (!race || race.phase !== "racing") return;
+    const key = `${race.playerIds[race.currentRacerIndex]}_${race.currentRacerIndex}`;
+    if (raceSubmittedRef.current === key) return;
+    raceSubmittedRef.current = key;
+
+    const currentRacerId = race.playerIds[race.currentRacerIndex];
+    const newScores = { ...race.scores, [currentRacerId]: score };
+    const isLast = race.currentRacerIndex >= race.playerIds.length - 1;
+    const updatedRace: RaceOffer = {
+      ...race,
+      scores: newScores,
+      currentRacerIndex: isLast ? race.currentRacerIndex : race.currentRacerIndex + 1,
+      phase: isLast ? "results" : "racing",
+    };
+    await supabase.from("game_state").update({
+      offer_pending: updatedRace as unknown as Record<string, unknown>,
+    }).eq("game_id", gameId);
+  };
+
+  const closeRace = async () => {
+    if (!gameId || !gameState) return;
+    const race = gameState.offer_pending?.type === "race" ? gameState.offer_pending as RaceOffer : null;
+    if (!race || race.phase !== "results") return;
+    const winner = race.playerIds
+      .map(id => ({ id, score: race.scores[id] ?? 0 }))
+      .sort((a, b) => b.score - a.score)[0];
+    const winnerPlayer = winner ? players.find(p => p.id === winner.id) : null;
+    const scoreLog = race.playerIds
+      .map(id => { const p = players.find(pl => pl.id === id); return `${p?.name ?? id}: ${race.scores[id] ?? 0}`; })
+      .join(", ");
+    const logLine = winnerPlayer
+      ? `🏁 Závod: ${winnerPlayer.name} vyhrál! (${scoreLog})`
+      : `🏁 Závod skončil (${scoreLog})`;
+    const newLog = gameState.log ?? [];
+    await supabase.from("game_state").update({
+      offer_pending: null,
+      log: [logLine, ...newLog].slice(0, 20),
+    }).eq("game_id", gameId);
+    raceSubmittedRef.current = null;
+  };
+
   // Zkontroluj podmínky konce hry a nastav status na "finished".
   // Dvě pravidla:
   //   Multiplayer výhra: >=2 hráčů celkem, přesně 1 aktivní zbývá.
@@ -728,8 +795,8 @@ export default function GameBoard({ gameCode }: Props) {
     } else {
       setPendingCard(null);
     }
-    if (gameState.offer_pending) {
-      setPendingOffer(gameState.offer_pending);
+    if (gameState.offer_pending?.type === "reroll") {
+      setPendingOffer(gameState.offer_pending as RerollOffer);
     } else {
       setPendingOffer(null);
     }
@@ -776,6 +843,11 @@ export default function GameBoard({ gameCode }: Props) {
   // Bankrotář nemůže hrát ani když je na řadě — blokujeme deadlock
   // Pozorovatel nikdy nemůže hrát
   const isLocalGame = gameMode === "local";
+  // Závod — odvozeno z DB stavu
+  const pendingRace = (gameState?.offer_pending?.type === "race") ? gameState.offer_pending as RaceOffer : null;
+  const isMyRaceTurn = !!(pendingRace?.phase === "racing" && (
+    isLocalGame ? true : myPlayerId === pendingRace?.playerIds[pendingRace?.currentRacerIndex ?? -1]
+  ));
   const isSpectator = viewerRole === "spectator";
   // Local: kdokoliv "player" může hodit za aktuálního hráče (hot-seat)
   // Online: jen hráč jehož ID sedí s localStorage
@@ -935,6 +1007,18 @@ export default function GameBoard({ gameCode }: Props) {
         />
       )}
 
+      {/* ── Race Modal ───────────────────────────────────────────────────── */}
+      {pendingRace && (
+        <RaceModal
+          race={pendingRace}
+          players={players}
+          isMyRaceTurn={isMyRaceTurn}
+          onSubmitScore={submitRaceScore}
+          onClose={closeRace}
+          isHost={isHost}
+        />
+      )}
+
       <div className="bg-amber-100 border-b border-amber-300 px-4 py-2 text-center text-sm text-amber-800">
         Experimentální projekt · kontakt:{" "}
         <a href="mailto:hynek@darbujan.cz" className="underline hover:text-amber-900">hynek@darbujan.cz</a>
@@ -969,12 +1053,22 @@ export default function GameBoard({ gameCode }: Props) {
                   </div>
                 )}
                 {isHost && gameStatus !== "cancelled" && (
-                  <button
-                    onClick={cancelGame}
-                    className="rounded-2xl bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-100 transition"
-                  >
-                    Zrušit hru
-                  </button>
+                  <>
+                    {!pendingRace && !pendingCard && !pendingRacer && !pendingOffer && players.filter(p => !isBankrupt(p)).length >= 2 && (
+                      <button
+                        onClick={startRace}
+                        className="rounded-2xl bg-amber-500 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-600 transition"
+                      >
+                        🏁 Závod
+                      </button>
+                    )}
+                    <button
+                      onClick={cancelGame}
+                      className="rounded-2xl bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-100 transition"
+                    >
+                      Zrušit hru
+                    </button>
+                  </>
                 )}
                 <div className="rounded-2xl bg-slate-100 px-3 py-2 text-xs font-medium text-slate-500">
                   Kolo <span className="font-bold text-slate-800">{currentRound}</span>
@@ -1317,7 +1411,7 @@ export default function GameBoard({ gameCode }: Props) {
  */
 function mapToCenterEvent(
   pendingCard: { card: GameCard; playerIndex: number } | null,
-  pendingOffer: OfferPending | null,
+  pendingOffer: RerollOffer | null,
   players: Player[],
   gameMode: "online" | "local",
   viewerRole: string,

@@ -30,12 +30,22 @@ export interface Player {
 
 // ─── Herní stav ───────────────────────────────────────────────────────────────
 
-export interface OfferPending {
+export interface RerollOffer {
   type: "reroll";
   playerId: string;
   playerName: string;
   cost: number;
 }
+
+export interface RaceOffer {
+  type: "race";
+  phase: "racing" | "results";
+  currentRacerIndex: number;
+  playerIds: string[];
+  scores: Record<string, number>;
+}
+
+export type OfferPending = RerollOffer | RaceOffer;
 
 export interface GameState {
   game_id: string;
