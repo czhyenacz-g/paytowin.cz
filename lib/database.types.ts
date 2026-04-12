@@ -118,6 +118,30 @@ export interface Database {
           emoji?: string;
         };
       };
+      themes: {
+        Row: {
+          id: string;
+          manifest: Json;
+          created_by: string | null;
+          is_public: boolean;
+          is_official: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          manifest: Json;
+          created_by?: string | null;
+          is_public?: boolean;
+          is_official?: boolean;
+        };
+        Update: {
+          manifest?: Json;
+          created_by?: string | null;
+          is_public?: boolean;
+          is_official?: boolean;
+        };
+      };
     };
   };
 }

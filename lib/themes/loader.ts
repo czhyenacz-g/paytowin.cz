@@ -1,16 +1,20 @@
 /**
  * lib/themes/loader.ts — single safe entry point pro theme data.
  *
- * loadThemeManifest() je jediné místo kde se theme "sestaví" pro zbytek aplikace.
- * Vnitřní postup:
- *   1. Najde theme source z in-memory registru (budoucí: z DB / JSON)
- *   2. Převede ho přes themeToManifest() adapter
- *   3. Validuje přes validateThemeManifest()
- *   4. Vrátí validní ThemeManifest
- *   5. Pokud validace selže, fallbackne na default theme
+ * Dvě varianty loaderu:
+ *
+ * ### loadThemeManifest(id) — synchronní
+ *   Hledá pouze v in-memory registru (built-in themes).
+ *   Používej tam kde není async kontext (render, GameBoard init).
+ *   Fallback: built-in default.
+ *
+ * ### loadThemeManifestAsync(id) — asynchronní
+ *   Priority: DB → built-in → default
+ *   Používej v Server Components, API routes nebo při inicializaci hry.
+ *   Fallback: stejný jako sync loader.
  *
  * IMPORT POZNÁMKA:
- * Importuj loadThemeManifest přímo z tohoto souboru, ne přes lib/themes/index.
+ * Importuj přímo z tohoto souboru, ne přes lib/themes/index.
  * Důvod: loader importuje z index → přidání re-exportu by vytvořilo circular dep.
  *
  * Správně:  import { loadThemeManifest } from "@/lib/themes/loader"
@@ -55,6 +59,39 @@ export function loadThemeManifest(id: string | null | undefined): ThemeManifest 
   // I default selhal — vrátíme manifest tak jak je, hra musí mít šanci nastartovat
   console.error(`[loadThemeManifest] Default theme neprojde validací. Vrací se nevalidovaný manifest.`);
   return manifest;
+}
+
+// ─── Async loader (DB → built-in → default) ──────────────────────────────────
+
+/**
+ * loadThemeManifestAsync — vrátí validní ThemeManifest, hledá i v DB.
+ *
+ * Priority:
+ *   1. DB (supabase `themes` tabulka) — user-created nebo seeded themes
+ *   2. In-memory registr (built-in themes)
+ *   3. Default theme jako ultimate fallback
+ *
+ * Nikdy nevyhazuje výjimku.
+ */
+export async function loadThemeManifestAsync(id: string | null | undefined): Promise<ThemeManifest> {
+  const resolvedId = id ?? "default";
+
+  // 1. Zkus DB
+  try {
+    const { getThemeFromDb } = await import("@/lib/repository");
+    const dbManifest = await getThemeFromDb(resolvedId);
+    if (dbManifest) {
+      if (validateThemeManifest(dbManifest)) {
+        return dbManifest;
+      }
+      console.warn(`[loadThemeManifestAsync] DB theme "${resolvedId}" neprojde validací, zkouším built-in.`);
+    }
+  } catch (e) {
+    console.warn(`[loadThemeManifestAsync] DB lookup selhalo pro "${resolvedId}":`, e);
+  }
+
+  // 2. Zkus built-in (synchronní fallback)
+  return loadThemeManifest(resolvedId);
 }
 
 /**

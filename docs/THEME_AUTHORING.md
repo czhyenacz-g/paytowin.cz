@@ -97,6 +97,10 @@ Board builder **nikdy neovlivní** vizuál.
 
 ## Jak funguje loader
 
+Existují dvě varianty:
+
+### loadThemeManifest — synchronní (built-in only)
+
 ```
 loadThemeManifest(themeId)
   │
@@ -111,10 +115,28 @@ loadThemeManifest(themeId)
              pokud i default selže → vrátí manifest stejně (hra musí běžet)
 ```
 
+Používej tam kde není async kontext (render, GameBoard, lokální hra).
+
+### loadThemeManifestAsync — asynchronní (DB → built-in → default)
+
+```
+loadThemeManifestAsync(themeId)
+  │
+  ├─ getThemeFromDb(themeId)      ← Supabase: SELECT manifest FROM themes WHERE id=...
+  │   ├─ nalezeno + validní  → vrátí manifest
+  │   ├─ nalezeno + nevalidní → loguj warn, pokračuj
+  │   └─ nenalezeno / chyba   → pokračuj
+  │
+  └─ loadThemeManifest(themeId)   ← fallback na sync built-in loader
+```
+
+Používej v Server Components, API routes nebo při inicializaci online hry.
+
 **Import:**
 ```ts
 // Správně — přímý import z loaderu (vyhne se circular dep)
 import { loadThemeManifest } from "@/lib/themes/loader";
+import { loadThemeManifestAsync } from "@/lib/themes/loader";
 
 // Pro adapter bez validace:
 import { themeToManifest } from "@/lib/themes";
@@ -249,7 +271,7 @@ lib/themes/
   index.ts         ← Theme typ, getThemeById(), THEMES registr, re-exporty
   manifest.ts      ← ThemeManifest typ (datový kontrakt) + themeToManifest() adapter
   validator.ts     ← validateThemeManifest() + crossCheckBoardAndTheme()
-  loader.ts        ← loadThemeManifest() — single safe entry point
+  loader.ts        ← loadThemeManifest() + loadThemeManifestAsync() — safe entry points
   default.ts       ← built-in theme "Klasika"
   dark.ts          ← built-in theme "Noční závody"
   classic-race.ts  ← built-in theme "Klasické dostihy"
@@ -259,6 +281,34 @@ lib/board/
   presets.ts       ← SMALL_BOARD preset
   validator.ts     ← validateBoardConfig() + re-exporty z themes/validator
   index.ts         ← getBoardById(), BOARD_PRESETS pro UI
+
+lib/repository.ts  ← getThemeFromDb(), upsertThemeToDb() — DB přístup
+```
+
+## DB schéma pro themes
+
+```sql
+themes (
+  id            TEXT PRIMARY KEY,   -- === manifest.meta.id
+  manifest      JSONB NOT NULL,     -- celý ThemeManifest objekt
+  created_by    TEXT NULL,          -- discord_id autora, NULL = systémové
+  is_public     BOOLEAN DEFAULT false,
+  is_official   BOOLEAN DEFAULT false,
+  created_at    TIMESTAMPTZ DEFAULT now(),
+  updated_at    TIMESTAMPTZ DEFAULT now()  -- auto-update trigger
+)
+```
+
+### Jak seedovat built-in theme do DB
+
+```ts
+import { loadAllThemeManifests } from "@/lib/themes/loader";
+import { upsertThemeToDb } from "@/lib/repository";
+
+const { valid } = loadAllThemeManifests();
+for (const manifest of valid) {
+  await upsertThemeToDb(manifest, { isOfficial: true, isPublic: true });
+}
 ```
 
 ---

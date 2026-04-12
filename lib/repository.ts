@@ -11,6 +11,7 @@ import { supabase } from "./supabase";
 import type { Horse } from "./types/game";
 import type { GameCard } from "./cards";
 import type { OfferPending } from "./types/game";
+import type { ThemeManifest } from "./themes/manifest";
 
 // ─── Hry ──────────────────────────────────────────────────────────────────────
 
@@ -105,4 +106,42 @@ export function subscribeToGame(
 
 export function unsubscribeChannel(channel: ReturnType<typeof supabase.channel>) {
   supabase.removeChannel(channel);
+}
+
+// ─── Themes ───────────────────────────────────────────────────────────────────
+
+/**
+ * getThemeFromDb — načte ThemeManifest z DB podle id.
+ *
+ * Vrátí null pokud theme v DB neexistuje nebo při chybě.
+ * Volající (loadThemeManifestAsync) se stará o fallback.
+ */
+export async function getThemeFromDb(id: string): Promise<ThemeManifest | null> {
+  const { data, error } = await supabase
+    .from("themes")
+    .select("manifest")
+    .eq("id", id)
+    .single();
+
+  if (error || !data) return null;
+  return data.manifest as ThemeManifest;
+}
+
+/**
+ * upsertThemeToDb — uloží nebo přepíše ThemeManifest v DB.
+ *
+ * Používej pro seeding zabudovaných themes nebo uložení z theme builderu.
+ * id je převzato z manifest.meta.id.
+ */
+export async function upsertThemeToDb(
+  manifest: ThemeManifest,
+  opts?: { createdBy?: string; isPublic?: boolean; isOfficial?: boolean }
+): Promise<void> {
+  await supabase.from("themes").upsert({
+    id: manifest.meta.id,
+    manifest: manifest as unknown as Record<string, unknown>,
+    created_by: opts?.createdBy ?? null,
+    is_public: opts?.isPublic ?? false,
+    is_official: opts?.isOfficial ?? false,
+  });
 }
