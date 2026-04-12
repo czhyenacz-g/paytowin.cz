@@ -117,8 +117,8 @@ function ThemePreview({ manifest }: { manifest: ThemeManifest }) {
           id: <code className="font-mono">{meta.id}</code> · v{meta.version}
         </div>
       </div>
-      <div>
-        <div className="mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">Typy polí</div>
+      <div className={`rounded-lg border ${colors.centerBorder} ${colors.centerBackground} p-4`}>
+        <div className={`mb-2 text-xs font-semibold uppercase tracking-wide ${colors.centerSubtitle}`}>Typy polí</div>
         <div className="flex flex-wrap gap-2">
           {fieldTypes.map(({ key, label }) => {
             const cls = colors.fieldStyles[key as keyof typeof colors.fieldStyles] ?? "";
@@ -131,8 +131,8 @@ function ThemePreview({ manifest }: { manifest: ThemeManifest }) {
           })}
         </div>
       </div>
-      <div>
-        <div className="mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">{labels.racers} ({labels.racerField})</div>
+      <div className={`rounded-lg border ${colors.centerBorder} ${colors.centerBackground} p-4`}>
+        <div className={`mb-2 text-xs font-semibold uppercase tracking-wide ${colors.centerSubtitle}`}>{labels.racers} ({labels.racerField})</div>
         <div className="flex flex-wrap gap-2">
           {racers.map((r) => (
             <div key={r.id} className={`rounded-lg border px-3 py-2 text-sm flex items-center gap-2 ${colors.playerCardNormal}`}>
@@ -156,8 +156,8 @@ function ThemePreview({ manifest }: { manifest: ThemeManifest }) {
           ))}
         </div>
       </div>
-      <div>
-        <div className="mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">Player cards</div>
+      <div className={`rounded-lg border ${colors.centerBorder} ${colors.centerBackground} p-4`}>
+        <div className={`mb-2 text-xs font-semibold uppercase tracking-wide ${colors.centerSubtitle}`}>Player cards</div>
         <div className="flex gap-2">
           <div className={`rounded-lg border-2 px-3 py-1.5 text-xs ${colors.playerCardActive}`}>Aktivní hráč</div>
           <div className={`rounded-lg border-2 px-3 py-1.5 text-xs ${colors.playerCardNormal}`}>Normální hráč</div>
