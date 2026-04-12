@@ -325,15 +325,27 @@ Interní nástroj pro správu a tvorbu themes. Přístup přes Discord admin př
 │  ─────────────  │  ────────────────────────────────   │
 │  [+ Nové]       │  meta bar: id · name · version · zdroj│
 │                 │                                      │
-│  Built-in (3)   │  [JSON textarea]                     │
-│  • default      │                                      │
-│  • dark         │  [Validovat] [Preview] [Duplikovat]  │
-│  • classic-race │  [Uložit] [Uložit jako nové]         │
-│                 │                                      │
-│  Databáze (n)   │  [výsledek validace]                 │
-│  • my-theme [✕] │  [preview]                           │
+│  Built-in (3)   │  [Metadata form]                     │
+│  • default      │    Theme ID | Název                  │
+│  • dark         │    Popis    | Verze                  │
+│  • classic-race │                                      │
+│                 │  [JSON textarea]                     │
+│  Databáze (n)   │                                      │
+│  • my-theme [✕] │  [Validovat] [Preview] [Duplikovat]  │
+│                 │  [Uložit] [Uložit jako nové]         │
 └─────────────────┴──────────────────────────────────────┘
 ```
+
+### Metadata form
+
+Mezi meta barem a JSON editorem je malý formulář pro nejčastěji upravovaná pole:
+`Theme ID`, `Název`, `Popis`, `Verze`.
+
+- Změna v tomto formuláři se **okamžitě zapíše do JSON** (`patchMeta`)
+- JSON zůstává jediný source-of-truth
+- Pokud JSON obsahuje syntaktickou chybu, formulář je disabled
+
+Toto zrychluje zejm. flow **Duplikovat → rename → Uložit jako nové**, kde není nutné hledat `meta.id` hluboko v JSON textu.
 
 ### Pravidla: Built-in vs DB
 
@@ -366,8 +378,8 @@ Interní nástroj pro správu a tvorbu themes. Přístup přes Discord admin př
 
 1. Klik na built-in theme v sidebaru (např. `default`)
 2. Klik **Duplikovat** → `id` se změní na `default-copy`, zdroj na `nový`
-3. Uprav `meta.id` na cílové ID
-4. **Uložit jako nové** → uloží do DB
+3. **Uprav `Theme ID` a `Název` ve formuláři Metadata** (bez nutnosti editovat JSON ručně)
+4. **Uložit jako nové** → uloží do DB pod novým ID
 
 ### Archivace DB theme
 

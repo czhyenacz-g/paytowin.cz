@@ -282,11 +282,16 @@ export default function ThemeDevTool() {
   const [saving, setSaving] = React.useState(false);
   const [notif, setNotif] = React.useState<{ type: NotifType; msg: string } | null>(null);
 
-  // Meta bar — derived from JSON, best-effort
+  // Meta — derived from JSON, best-effort. Používá se v meta baru i metadata formu.
   const parsedMeta = React.useMemo(() => {
     try {
       const p = JSON.parse(json) as ThemeManifest;
-      return { id: p?.meta?.id ?? "?", name: p?.meta?.name ?? "?", version: p?.meta?.version ?? "?" };
+      return {
+        id:          p?.meta?.id          ?? "",
+        name:        p?.meta?.name        ?? "",
+        description: p?.meta?.description ?? "",
+        version:     p?.meta?.version     ?? "1.0.0",
+      };
     } catch { return null; }
   }, [json]);
 
@@ -322,6 +327,20 @@ export default function ThemeDevTool() {
     } catch (e) {
       setParseError(`JSON chyba: ${e instanceof Error ? e.message : String(e)}`);
       return null;
+    }
+  }
+
+  // ── Metadata patch — zapisuje změny z formu zpět do JSON ─────────────────
+  //    JSON je stále jediný source-of-truth; form jen čte parsedMeta a patchuje.
+
+  function patchMeta(updates: Partial<{ id: string; name: string; description: string; version: string }>) {
+    try {
+      const parsed = JSON.parse(json) as ThemeManifest;
+      parsed.meta = { ...parsed.meta, ...updates };
+      setJson(JSON.stringify(parsed, null, 2));
+      setParseError(null);
+    } catch {
+      setParseError("JSON obsahuje syntaktickou chybu — oprav ho nejdřív.");
     }
   }
 
@@ -361,7 +380,7 @@ export default function ThemeDevTool() {
     setCurrentSource("new");
     setValidation(null);
     setShowPreview(false);
-    notify("info", `Duplikováno jako "${copy.meta.id}". Uprav meta.id a ulož jako nové.`);
+    notify("info", `Kopie otevřena jako "${copy.meta.id}". Uprav ID a název v poli Metadata níže, pak ulož jako nové.`);
   }
 
   function handleValidate() {
@@ -527,6 +546,63 @@ export default function ThemeDevTool() {
               source={currentSource}
             />
           )}
+
+          {/* Metadata form — rychlá úprava nejdůležitějších polí */}
+          <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-slate-700">Metadata</span>
+              <span className="text-[11px] text-slate-400">změny se zapisují přímo do JSON</span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="block text-xs font-medium text-slate-500">Theme ID</label>
+                <input
+                  type="text"
+                  value={parsedMeta?.id ?? ""}
+                  onChange={(e) => patchMeta({ id: e.target.value })}
+                  placeholder="moje-theme"
+                  disabled={!parsedMeta}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 font-mono placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-300 disabled:opacity-40"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="block text-xs font-medium text-slate-500">Název</label>
+                <input
+                  type="text"
+                  value={parsedMeta?.name ?? ""}
+                  onChange={(e) => patchMeta({ name: e.target.value })}
+                  placeholder="Moje theme"
+                  disabled={!parsedMeta}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-300 disabled:opacity-40"
+                />
+              </div>
+              <div className="space-y-1 col-span-2">
+                <label className="block text-xs font-medium text-slate-500">Popis</label>
+                <input
+                  type="text"
+                  value={parsedMeta?.description ?? ""}
+                  onChange={(e) => patchMeta({ description: e.target.value })}
+                  placeholder="Krátký popis theme."
+                  disabled={!parsedMeta}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-300 disabled:opacity-40"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="block text-xs font-medium text-slate-500">Verze</label>
+                <input
+                  type="text"
+                  value={parsedMeta?.version ?? ""}
+                  onChange={(e) => patchMeta({ version: e.target.value })}
+                  placeholder="1.0.0"
+                  disabled={!parsedMeta}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 font-mono placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-300 disabled:opacity-40"
+                />
+              </div>
+            </div>
+            {!parsedMeta && (
+              <div className="text-xs text-amber-600">JSON obsahuje syntaktickou chybu — oprav ji nejdřív.</div>
+            )}
+          </div>
 
           {/* JSON Editor */}
           <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
