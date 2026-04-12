@@ -7,16 +7,20 @@ type AuthState = "loading" | "unauthenticated" | "unauthorized" | "authorized";
 
 /**
  * WithAdminAuth — generický auth gate pro admin stránky.
- * Stejná logika jako AdminAuth, ale renderuje children místo AdminPanel.
+ * Renderuje children místo AdminPanel (jinak identický s AdminAuth).
  */
 export default function WithAdminAuth({ children }: { children: React.ReactNode }) {
   const [state, setState] = React.useState<AuthState>("loading");
   const [userName, setUserName] = React.useState<string>("");
 
-  React.useEffect(() => {
-    const check = async () => {
+  const checkAuth = React.useCallback(async () => {
+    try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setState("unauthenticated"); return; }
+
+      if (!user) {
+        setState("unauthenticated");
+        return;
+      }
 
       const discordId = user.user_metadata?.provider_id as string | undefined;
       const adminId = process.env.NEXT_PUBLIC_ADMIN_DISCORD_ID;
@@ -26,18 +30,29 @@ export default function WithAdminAuth({ children }: { children: React.ReactNode 
         setUserName(user.user_metadata?.full_name ?? user.email ?? "?");
         return;
       }
-      setState("authorized");
-    };
 
-    check();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(check);
-    return () => subscription.unsubscribe();
+      setState("authorized");
+    } catch {
+      setState("unauthenticated");
+    }
   }, []);
+
+  React.useEffect(() => {
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      checkAuth();
+    });
+
+    return () => subscription.unsubscribe();
+  }, [checkAuth]);
 
   const login = async () => {
     await supabase.auth.signInWithOAuth({
       provider: "discord",
-      options: { redirectTo: `${window.location.origin}/auth/callback?next=/admin/themes/dev` },
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=/admin/themes/dev`,
+      },
     });
   };
 
@@ -59,7 +74,9 @@ export default function WithAdminAuth({ children }: { children: React.ReactNode 
         >
           🎮 Přihlásit přes Discord
         </button>
-        <a href="/" className="block text-xs text-slate-400 hover:text-slate-600 underline">Zpět na úvod</a>
+        <a href="/" className="block text-xs text-slate-400 hover:text-slate-600 underline">
+          Zpět na úvod
+        </a>
       </div>
     </div>
   );
@@ -70,7 +87,8 @@ export default function WithAdminAuth({ children }: { children: React.ReactNode 
         <div className="text-4xl">⛔</div>
         <h1 className="text-xl font-bold text-slate-800">Přístup zamítnut</h1>
         <p className="text-sm text-slate-500">
-          Přihlášen jako <span className="font-semibold">{userName}</span>, ale tento účet nemá přístup.
+          Přihlášen jako <span className="font-semibold">{userName}</span>,
+          ale tento účet nemá přístup.
         </p>
         <button
           onClick={() => supabase.auth.signOut()}
@@ -78,7 +96,9 @@ export default function WithAdminAuth({ children }: { children: React.ReactNode 
         >
           Odhlásit
         </button>
-        <a href="/" className="block text-xs text-slate-400 hover:text-slate-600 underline">Zpět na úvod</a>
+        <a href="/" className="block text-xs text-slate-400 hover:text-slate-600 underline">
+          Zpět na úvod
+        </a>
       </div>
     </div>
   );
