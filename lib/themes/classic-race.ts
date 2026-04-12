@@ -20,7 +20,8 @@ export const classicRaceTheme: Theme = {
       coins_gain: "h-16 w-16 border-green-600 bg-amber-100 text-green-900",
       coins_lose: "h-16 w-16 border-red-400 bg-red-100 text-red-900",
       gamble:     "h-16 w-16 border-purple-500 bg-purple-100 text-purple-900",
-      horse:      "h-16 w-16 border-amber-600 bg-amber-200 text-amber-900",
+      racer:      "h-16 w-16 border-amber-600 bg-amber-200 text-amber-900",
+      horse:      "h-16 w-16 border-amber-600 bg-amber-200 text-amber-900", // @deprecated alias
       neutral:    "h-16 w-16 border-stone-400 bg-stone-100 text-stone-700",
       chance:     "h-16 w-16 border-sky-500 bg-sky-100 text-sky-900",
       finance:    "h-16 w-16 border-teal-600 bg-teal-100 text-teal-900",
@@ -44,8 +45,11 @@ export const classicRaceTheme: Theme = {
       gamble: "apuesta",
       horse:  "caballo",
     },
+    racer:      "Kůň",
+    racers:     "Koně",
+    racerField: "Stáj",
   },
-  horses: [
+  racers: [
     { id: "sombra_roja",   name: "Sombra Roja",   speed: 2, price: 80,  emoji: "🔴" },
     { id: "viento_dorado", name: "Viento Dorado",  speed: 3, price: 150, emoji: "🟤" },
     { id: "el_relampago",  name: "El Relámpago",   speed: 4, price: 250, emoji: "⚡" },

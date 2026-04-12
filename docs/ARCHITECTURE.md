@@ -66,36 +66,77 @@ Renderuje různé varianty podle `event.type` — sdílí wrapper, animaci, over
 2. Přidej branch do `mapToCenterEvent` v `GameBoard.tsx`
 3. Přidej render větev do `CenterEventModal.tsx`
 
+## Racer systém — proč "racer", ne "horse"
+
+Engine a theme systém používají pojem **racer** místo horse, aby projekt nebyl svázaný
+s jedním typem závodníka. Theme **určuje**, jak se racer v UI nazývá:
+
+| Theme | racer | racers | racerField |
+|---|---|---|---|
+| Dostihy (default, dark, classic-race) | "Kůň" | "Koně" | "Stáj" |
+| Auta (budoucí) | "Auto" | "Auta" | "Garáž" |
+| Mořští koníci (budoucí) | "Mořský koník" | "Mořští koníci" | "Přístav" |
+
+UI čte `theme.labels.racer` / `theme.labels.racers` / `theme.labels.racerField` —
+žádný hardcoded text "kůň" v komponentách.
+
+**Kompatibilitní most pro legacy `horses`:**
+```ts
+// Nikdy nečti theme.horses přímo — vždy přes helper:
+getThemeRacers(theme)
+// → theme.racers  (nový kanonický zdroj)
+// → theme.horses  (legacy fallback — staré theme soubory)
+// → []            (prázdné, pokud theme není nakonfigurovaný)
+```
+
+**Poznámka o DB:** DB sloupec `players.horses` a `game_state.horse_pending` zachovávají
+původní název — přejmenování by vyžadovalo DB migraci. Interně v kódu engine používá
+`racers`, DB vrstva zůstává `horses`.
+
 ## Theme systém
 
-Každý theme definuje tři vrstvy:
+Každý theme definuje tyto vrstvy:
 
 | Vrstva | Typ | Účel |
 |---|---|---|
 | `colors` | `ThemeColors` | Tailwind třídy pro vizuální prvky |
-| `labels` | `ThemeLabels` | UI texty (legenda, názvy, titulky) |
-| `horses` | `HorseConfig[4]` | 4 koně mapovaní na pevné pozice desky |
-| `assets?` | `ThemeAssets` | Obrázky — boardBg, horseImages, fieldTextures |
+| `labels` | `ThemeLabels` | UI texty + racer terminologie |
+| `racers` | `RacerConfig[]` | závodníci theme (4 kusů, mapování na pevné pozice) |
+| `horses?` | `RacerConfig[]` | @deprecated — legacy fallback, stále funguje |
+| `assets?` | `ThemeAssets` | Obrázky — boardBg, racerImages (+ horseImages legacy) |
 | `content?` | `ThemeContent` | Vlastní karty (připraveno, zatím nepoužíváno) |
 
-**Horse image fallback:**
+**RacerConfig** (kanonický typ, nahradil `HorseConfig`):
 ```ts
-resolveHorseDisplay(horse, theme.assets?.horseImages)
-// → { type: "image", src, alt } pokud existuje horseImages[horse.id]
-// → { type: "emoji", value } jinak
+interface RacerConfig {
+  id: string; name: string; speed: number; price: number;
+  emoji: string;   // vždy k dispozici
+  image?: string;  // přímý obrázek — theme builder vyplní
+}
+// HorseConfig = RacerConfig  (legacy alias, stále funguje)
 ```
+
+**Racer image fallback (3 úrovně):**
+```ts
+resolveRacerDisplay(racer, theme.assets?.racerImages ?? theme.assets?.horseImages)
+// 1. racerImages[racer.id] — z theme assets
+// 2. (budoucí: racer.image přímý obrázek v config)
+// 3. racer.emoji — vždy dostupný fallback
+```
+
+**Field type "racer":**
+`buildFields()` generuje pole s `type: "racer"` (nahradilo `"horse"`).
+`"horse"` zůstává v `FieldStyleKey` jako deprecated alias — všechny theme soubory
+definují obě hodnoty se stejným stylem pro zpětnou kompatibilitu.
 
 **ThemeContent** (připraveno pro theme builder):
 ```ts
 content?: {
-  cards?: {
-    chance?: GameCard[];   // vlastní balíček Náhoda
-    finance?: GameCard[];  // vlastní balíček Finance
-  };
+  cards?: { chance?: GameCard[]; finance?: GameCard[]; }
 }
 ```
 
-`buildFields(horses)` v `lib/engine.ts` sestaví 21 polí desky z konfigurace koní.
+`buildFields(getThemeRacers(theme))` v `lib/engine.ts` sestaví 21 polí desky.
 
 ## Datový tok
 

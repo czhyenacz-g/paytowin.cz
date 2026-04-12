@@ -3,87 +3,130 @@ import { darkTheme } from "./dark";
 import { classicRaceTheme } from "./classic-race";
 import type { GameCard } from "@/lib/cards";
 
-// Typy polí na desce (musí odpovídat FieldType v engine.ts)
-export type FieldStyleKey = "start" | "coins_gain" | "coins_lose" | "gamble" | "horse" | "neutral" | "chance" | "finance";
+// ─── Field style keys ─────────────────────────────────────────────────────────
 
-/** Definice koně v rámci theme — 4 koně v pořadí mapovaném na pevné pozice desky. */
-export interface HorseConfig {
+/**
+ * "racer" je nový kanonický typ racerového pole.
+ * "horse" je zachován jako legacy — starý field type z dob kdy engine znal jen koně.
+ * Nové theme soubory definují oboje; buildFields generuje "racer".
+ */
+export type FieldStyleKey =
+  | "start"
+  | "coins_gain"
+  | "coins_lose"
+  | "gamble"
+  | "racer"    // nový kanonický typ
+  | "horse"    // @deprecated legacy alias — zachováno pro kompatibilitu
+  | "neutral"
+  | "chance"
+  | "finance";
+
+// ─── RacerConfig ──────────────────────────────────────────────────────────────
+
+/**
+ * RacerConfig — kanonický typ pro entitu závodníka v theme.
+ *
+ * Může reprezentovat koně, auto, mořského koníka nebo cokoliv jiného.
+ * Theme určuje, jak se racer v UI nazývá (viz ThemeLabels.racer).
+ */
+export interface RacerConfig {
   id: string;
   name: string;
   speed: number;
   price: number;
   emoji: string;
+  /** Volitelná přímá URL obrázku — theme builder ji vyplní. Fallback: emoji. */
+  image?: string;
 }
 
+/**
+ * HorseConfig — @deprecated legacy alias pro RacerConfig.
+ * Existující theme soubory používající `horses: HorseConfig[]` stále fungují.
+ * Nové theme soubory by měly používat `racers: RacerConfig[]`.
+ */
+export type HorseConfig = RacerConfig;
+
+// ─── ThemeColors ──────────────────────────────────────────────────────────────
+
 export interface ThemeColors {
-  // Stránka
   pageBackground: string;
-  // Karty (board, panel, log)
   cardBackground: string;
-  // Herní plocha (ovál)
   boardSurface: string;
   boardSurfaceBorder: string;
-  // Střed desky
   centerBackground: string;
   centerBorder: string;
   centerTitle: string;
   centerSubtitle: string;
-  // Styl jednotlivých typů polí — celý class string (size + barvy)
+  /** Tailwind class string pro každý typ pole. Musí obsahovat "racer" i "horse" (legacy). */
   fieldStyles: Record<FieldStyleKey, string>;
-  // "Na tahu" badge
   activePlayerBadge: string;
-  // Panel s kostkou
   rollPanelIdle: string;
   rollPanelRolling: string;
-  // Texty
   textPrimary: string;
   textMuted: string;
-  // Karty hráčů v panelu
   playerCardActive: string;
   playerCardNormal: string;
   playerCardHover: string;
 }
 
+// ─── ThemeLabels ──────────────────────────────────────────────────────────────
+
 /**
- * Texty zobrazované v UI — UI nesmí mít hardcoded texty mimo tuto strukturu.
+ * ThemeLabels — všechny UI texty theme.
+ * UI nesmí mít hardcoded texty — čte je odsud.
+ *
+ * racer / racers / racerField dovoluje theme nazývat závodníka libovolně:
+ *   dostihy:  racer="Kůň",  racers="Koně",  racerField="Stáj"
+ *   auta:     racer="Auto", racers="Auta",  racerField="Garáž"
  */
 export interface ThemeLabels {
   themeName: string;
   centerTitle: string;
   centerSubtitle: string;
-  /** Legenda polí na desce */
+  /** Legenda typů polí na desce */
   legend: {
-    gain: string;    // např. "zisk"
-    lose: string;    // např. "ztráta"
-    gamble: string;  // např. "hazard"
-    horse: string;   // např. "kůň"
+    gain: string;
+    lose: string;
+    gamble: string;
+    horse: string;  // TODO: přejmenovat na "racer" v příštím čištění labels
   };
+  /** Jak theme nazývá jednoho závodníka, např. "Kůň" nebo "Auto" */
+  racer: string;
+  /** Jak theme nazývá závodníky v množném čísle, např. "Koně" nebo "Auta" */
+  racers: string;
+  /** Jak theme nazývá místo kde závodníci stojí, např. "Stáj" nebo "Garáž" */
+  racerField: string;
 }
 
+// ─── ThemeAssets ──────────────────────────────────────────────────────────────
+
 /**
- * Volitelná obrazová aktiva theme — pro vizuální skiny a theme builder.
- * UI preferuje images před emoji pokud jsou k dispozici.
+ * ThemeAssets — volitelné obrazové assety theme.
+ *
+ * racerImages je nový kanonický název.
+ * horseImages je @deprecated — zachováno pro zpětnou kompatibilitu.
+ * resolveRacerDisplay() zkusí nejprve racerImages, pak horseImages, pak emoji.
  */
 export interface ThemeAssets {
-  /** URL nebo cesta k /public pro pozadí desky */
   boardBgImage?: string;
-  /** horseId → image URL; UI fallback na horse.emoji */
+  /** Kanonický: racer.id → image URL */
+  racerImages?: Partial<Record<string, string>>;
+  /** @deprecated použij racerImages */
   horseImages?: Partial<Record<string, string>>;
-  /** fieldLabel nebo fieldType → image/texture URL */
   fieldTextures?: Partial<Record<string, string>>;
 }
 
-/**
- * Volitelný herní obsah specifický pro theme.
- * Zatím jen placeholder — nepoužívá se v herní logice.
- * Připraveno pro theme builder a lokalizaci.
- */
+// ─── ThemeContent ─────────────────────────────────────────────────────────────
+
+/** Volitelný herní obsah per theme — připraveno pro theme builder, zatím nepoužíváno. */
 export interface ThemeContent {
   cards?: {
     chance?: GameCard[];
     finance?: GameCard[];
   };
 }
+
+// ─── Theme ────────────────────────────────────────────────────────────────────
 
 export interface Theme {
   id: string;
@@ -93,14 +136,35 @@ export interface Theme {
   priceCzk: number;
   colors: ThemeColors;
   labels: ThemeLabels;
-  horses: HorseConfig[];
-  /** Volitelné obrazové assety — theme builder je vyplní. */
+  /** Kanonický seznam závodníků — nové theme soubory vyplňují toto. */
+  racers?: RacerConfig[];
+  /**
+   * @deprecated Legacy — staré theme soubory, které ještě nebyly migrovány.
+   * Engine čte přes getThemeRacers(), ne přímo.
+   */
+  horses?: RacerConfig[];
   assets?: ThemeAssets;
-  /** Volitelný herní obsah (vlastní karty atd.) — zatím nepoužíváno. */
   content?: ThemeContent;
 }
 
-// Registr všech dostupných témat
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * getThemeRacers — kompatibilitní most horses → racers.
+ *
+ * Vrací závodníky z theme. Pořadí fallbacků:
+ *   1. theme.racers (nový kanonický zdroj)
+ *   2. theme.horses (legacy fallback)
+ *   3. [] (prázdné — theme není správně nakonfigurovaný)
+ *
+ * Engine a UI NIKDY nečtou theme.horses přímo — vždy přes tuto funkci.
+ */
+export function getThemeRacers(theme: Theme): RacerConfig[] {
+  return theme.racers ?? theme.horses ?? [];
+}
+
+// ─── Registr témat ────────────────────────────────────────────────────────────
+
 export const THEMES: Theme[] = [defaultTheme, darkTheme, classicRaceTheme];
 
 /** Vrátí theme podle id; pokud není nalezeno nebo id je null, vrátí default. */

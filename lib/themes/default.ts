@@ -20,7 +20,8 @@ export const defaultTheme: Theme = {
       coins_gain: "h-16 w-16 border-emerald-400 bg-emerald-100 text-emerald-800",
       coins_lose: "h-16 w-16 border-red-300 bg-red-100 text-red-800",
       gamble:     "h-16 w-16 border-violet-400 bg-violet-100 text-violet-800",
-      horse:      "h-16 w-16 border-amber-400 bg-amber-100 text-amber-800",
+      racer:      "h-16 w-16 border-amber-400 bg-amber-100 text-amber-800",
+      horse:      "h-16 w-16 border-amber-400 bg-amber-100 text-amber-800", // @deprecated alias
       neutral:    "h-16 w-16 border-slate-300 bg-white text-slate-700",
       chance:     "h-16 w-16 border-sky-400 bg-sky-100 text-sky-800",
       finance:    "h-16 w-16 border-teal-400 bg-teal-100 text-teal-800",
@@ -44,8 +45,11 @@ export const defaultTheme: Theme = {
       gamble: "hazard",
       horse:  "kůň",
     },
+    racer:      "Kůň",
+    racers:     "Koně",
+    racerField: "Stáj",
   },
-  horses: [
+  racers: [
     { id: "divoka_ruze",  name: "Divoká růže",  speed: 2, price: 80,  emoji: "🌹" },
     { id: "modry_blesk",  name: "Modrý blesk",  speed: 3, price: 150, emoji: "🔵" },
     { id: "zlata_hriva",  name: "Zlatá hříva",  speed: 4, price: 250, emoji: "🟡" },

@@ -2,7 +2,7 @@
 
 import React from "react";
 import { supabase } from "@/lib/supabase";
-import { getThemeById } from "@/lib/themes";
+import { getThemeById, getThemeRacers } from "@/lib/themes";
 import type { Field } from "@/lib/engine";
 import {
   sleep,
@@ -116,7 +116,7 @@ export default function GameBoard({ gameCode }: Props) {
   const [players, setPlayers] = React.useState<Player[]>([]);
   const [gameState, setGameState] = React.useState<GameState | null>(null);
   const [loading, setLoading] = React.useState(!!gameCode);
-  const [pendingHorse, setPendingHorse] = React.useState<{ horse: Horse; playerIndex: number } | null>(null);
+  const [pendingRacer, setPendingRacer] = React.useState<{ racer: Horse; playerIndex: number } | null>(null);
   const [pendingCard, setPendingCard] = React.useState<{ card: GameCard; playerIndex: number } | null>(null);
   const cardAppliedRef = React.useRef<string | null>(null);
   const [pendingOffer, setPendingOffer] = React.useState<OfferPending | null>(null);
@@ -141,7 +141,7 @@ export default function GameBoard({ gameCode }: Props) {
 
   // Theme + FIELDS — odvozeno ze stavu themeId, aktualizuje se při každém renderu
   const theme = getThemeById(themeId);
-  const FIELDS = buildFields(theme.horses);
+  const FIELDS = buildFields(getThemeRacers(theme));
   // Ref aby stale closures (Realtime subscriptions) vždy dostaly aktuální FIELDS
   const fieldsRef = React.useRef<Field[]>(FIELDS);
   fieldsRef.current = FIELDS;
@@ -282,11 +282,11 @@ export default function GameBoard({ gameCode }: Props) {
           if (freshState.horse_pending) {
             const currentP = freshPlayers[freshState.current_player_index];
             const field = currentP ? fieldsRef.current[currentP.position] : null;
-            if (field?.type === "horse" && field.horse) {
-              setPendingHorse({ horse: field.horse, playerIndex: freshState.current_player_index });
+            if (field?.type === "racer" && field.racer) {
+              setPendingRacer({ racer: field.racer, playerIndex: freshState.current_player_index });
             }
           } else {
-            setPendingHorse(null);
+            setPendingRacer(null);
           }
         }
       )
@@ -299,7 +299,7 @@ export default function GameBoard({ gameCode }: Props) {
   // ── Herní akce ────────────────────────────────────────────────────────────────
 
   const rollDice = async () => {
-    if (!gameState || pendingHorse || pendingCard || pendingOffer || isRolling || isMoving) return;
+    if (!gameState || pendingRacer || pendingCard || pendingOffer || isRolling || isMoving) return;
 
     const roll = Math.floor(Math.random() * 6) + 1;
     const currentPlayer = players[gameState.current_player_index];
@@ -369,12 +369,12 @@ export default function GameBoard({ gameCode }: Props) {
       extraLog.push(`${currentPlayer.name}: Daň za průchod STARTem — -${startTax} 💰`);
     }
 
-    if (field.type === "horse" && field.horse) {
-      const alreadyOwned = movedPlayer.horses.some(h => h.name === field.horse!.name);
+    if (field.type === "racer" && field.racer) {
+      const alreadyOwned = movedPlayer.horses.some(h => h.name === field.racer!.name);
 
       if (alreadyOwned) {
-        // Hráč už tohoto koně vlastní — přeskočíme nabídku, pokračujeme normálně
-        const logLines = [`${currentPlayer.name} přijel ke své stáji: ${field.horse.emoji} ${field.horse.name}`, ...extraLog];
+        // Hráč tohoto závodníka už vlastní — přeskočíme nabídku, pokračujeme normálně
+        const logLines = [`${currentPlayer.name} přijel ke své stáji: ${field.racer.emoji} ${field.racer.name}`, ...extraLog];
         const updatedPlayers = players.map((p, i) =>
           i === gameState.current_player_index ? movedPlayer : p
         );
@@ -389,16 +389,16 @@ export default function GameBoard({ gameCode }: Props) {
           log: [...logLines, ...newLog].slice(0, 20),
         }).eq("game_id", gameId);
       } else {
-        // Neukazujem tah dál — čekáme na rozhodnutí. horse_pending = true v DB.
+        // Čekáme na rozhodnutí hráče. horse_pending = true v DB (DB sloupec zachován).
         await supabase.from("players").update({ position: newPosition, coins: movedPlayer.coins }).eq("id", currentPlayer.id);
         await supabase.from("game_state").update({
           last_roll: roll,
           turn_count: newTurnCount,
           horse_pending: true,
           card_pending: null,
-          log: [`${currentPlayer.name} přišel na stáj: ${field.horse.emoji} ${field.horse.name}`, ...extraLog, ...newLog].slice(0, 20),
+          log: [`${currentPlayer.name} přišel na stáj: ${field.racer.emoji} ${field.racer.name}`, ...extraLog, ...newLog].slice(0, 20),
         }).eq("game_id", gameId);
-        setPendingHorse({ horse: field.horse, playerIndex: gameState.current_player_index });
+        setPendingRacer({ racer: field.racer, playerIndex: gameState.current_player_index });
       }
     } else if (field.type === "chance" || field.type === "finance") {
       // ── Karta: lízni, zobraz všem, efekt se aplikuje automaticky po 2.5 s ──
@@ -465,20 +465,20 @@ export default function GameBoard({ gameCode }: Props) {
     setTimeout(() => setTrailFields([]), 1500);
   };
 
-  const buyHorse = async () => {
-    if (!pendingHorse || !gameState) return;
-    const { horse, playerIndex } = pendingHorse;
+  const buyRacer = async () => {
+    if (!pendingRacer || !gameState) return;
+    const { racer, playerIndex } = pendingRacer;
     const player = players[playerIndex];
-    if (!player || player.coins < horse.price) return;
-    if (player.horses.some(h => h.name === horse.name)) return; // pojistka: už vlastní
+    if (!player || player.coins < racer.price) return;
+    if (player.horses.some(h => h.name === racer.name)) return; // pojistka: už vlastní
 
-    const updatedCoins = player.coins - horse.price;
-    const updatedHorses = [...player.horses, horse];
+    const updatedCoins = player.coins - racer.price;
+    const updatedHorses = [...player.horses, racer];
     const newLog = gameState.log ?? [];
     const newTurnCount = gameState.turn_count + 1;
 
     const wentBankrupt = updatedCoins <= 0;
-    const logLines = [`${player.name} koupil ${horse.emoji} ${horse.name} za ${horse.price} 💰`];
+    const logLines = [`${player.name} koupil ${racer.emoji} ${racer.name} za ${racer.price} 💰`];
     if (wentBankrupt) logLines.push(`💀 ${player.name} zkrachoval!`);
 
     // nextIndex s aktualizovaným hráčem — aby se přeskočil pokud zkrachoval koupí
@@ -495,23 +495,23 @@ export default function GameBoard({ gameCode }: Props) {
       log: [...logLines, ...newLog].slice(0, 20),
     }).eq("game_id", gameId);
 
-    setPendingHorse(null);
+    setPendingRacer(null);
   };
 
-  const skipHorse = async () => {
-    if (!pendingHorse || !gameState) return;
-    const player = players[pendingHorse.playerIndex];
-    const nextIndex = getNextActiveIndex(pendingHorse.playerIndex, players);
+  const skipRacer = async () => {
+    if (!pendingRacer || !gameState) return;
+    const player = players[pendingRacer.playerIndex];
+    const nextIndex = getNextActiveIndex(pendingRacer.playerIndex, players);
     const newLog = gameState.log ?? [];
 
     await supabase.from("game_state").update({
       current_player_index: nextIndex,
       turn_count: gameState.turn_count + 1,
       horse_pending: false,
-      log: [`${player?.name ?? "?"} přeskočil nákup koně`, ...newLog].slice(0, 20),
+      log: [`${player?.name ?? "?"} přeskočil nákup`, ...newLog].slice(0, 20),
     }).eq("game_id", gameId);
 
-    setPendingHorse(null);
+    setPendingRacer(null);
   };
 
   // ── Nabídka rerollu ───────────────────────────────────────────────────────────
@@ -640,17 +640,17 @@ export default function GameBoard({ gameCode }: Props) {
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
-  // Po načtení / refresh: obnov pendingHorse a pendingCard ze stavu DB
+  // Po načtení / refresh: obnov pendingRacer a pendingCard ze stavu DB
   React.useEffect(() => {
     if (!gameState || players.length === 0) return;
     if (gameState.horse_pending) {
       const currentP = players[gameState.current_player_index];
       const field = currentP ? fieldsRef.current[currentP.position] : null;
-      if (field?.type === "horse" && field.horse) {
-        setPendingHorse({ horse: field.horse, playerIndex: gameState.current_player_index });
+      if (field?.type === "racer" && field.racer) {
+        setPendingRacer({ racer: field.racer, playerIndex: gameState.current_player_index });
       }
     } else {
-      setPendingHorse(null);
+      setPendingRacer(null);
     }
     if (gameState.card_pending) {
       setPendingCard({ card: gameState.card_pending, playerIndex: gameState.current_player_index });
@@ -713,9 +713,9 @@ export default function GameBoard({ gameCode }: Props) {
     : (!!myPlayerId && currentPlayer?.id === myPlayerId && !isBankrupt(currentPlayer) && !isRolling && !isMoving && !isSpectator);
   const currentRound = gameState ? Math.floor(gameState.turn_count / Math.max(1, players.length)) + 1 : 1;
 
-  // Mapa kůň.name → vlastník (pro zobrazení na herní desce)
-  const horseOwnership: Record<string, Player> = {};
-  players.forEach(p => p.horses.forEach(h => { horseOwnership[h.name] = p; }));
+  // Mapa racer.name → vlastník (pro zobrazení na herní desce)
+  const racerOwnership: Record<string, Player> = {};
+  players.forEach(p => p.horses.forEach(h => { racerOwnership[h.name] = p; }));
 
   // Sestavení CenterEvent view modelu pro sjednocený modal
   const centerEvent = mapToCenterEvent(
@@ -881,7 +881,7 @@ export default function GameBoard({ gameCode }: Props) {
                 const isHoverHighlight = hoveredPlayerId
                   ? displayPlayers.some(p => p.id === hoveredPlayerId && p.position === field.index && !isBankrupt(p))
                   : false;
-                const owner = field.type === "horse" && field.horse ? horseOwnership[field.horse.name] ?? null : null;
+                const owner = field.type === "racer" && field.racer ? racerOwnership[field.racer.name] ?? null : null;
                 return (
                   <div
                     key={field.index}
@@ -895,20 +895,20 @@ export default function GameBoard({ gameCode }: Props) {
                     {owner && (
                       <div className={`h-1.5 w-1.5 rounded-full mt-0.5 ${owner.color}`} title={owner.name} />
                     )}
-                    {/* Tooltip pro koňská pole — instant CSS hover, bez delay */}
-                    {field.type === "horse" && field.horse && (() => {
-                      const horseDisplay = resolveHorseDisplay(field.horse, theme.assets?.horseImages);
+                    {/* Tooltip pro racerová pole — instant CSS hover, bez delay */}
+                    {field.type === "racer" && field.racer && (() => {
+                      const racerDisplay = resolveRacerDisplay(field.racer, theme.assets?.racerImages ?? theme.assets?.horseImages);
                       return (
                       <div className="pointer-events-none absolute bottom-full left-1/2 mb-2 hidden -translate-x-1/2 group-hover:block z-50 w-40">
                         <div className="rounded-xl bg-slate-900 px-3 py-2 text-left shadow-xl">
                           <div className="text-xs font-bold text-white">
-                            {horseDisplay.type === "image"
-                              ? <img src={horseDisplay.src} alt={horseDisplay.alt} className="inline h-4 w-4 mr-1 rounded object-cover" />
-                              : horseDisplay.value
-                            }{" "}{field.horse.name}
+                            {racerDisplay.type === "image"
+                              ? <img src={racerDisplay.src} alt={racerDisplay.alt} className="inline h-4 w-4 mr-1 rounded object-cover" />
+                              : racerDisplay.value
+                            }{" "}{field.racer.name}
                           </div>
-                          <div className="mt-1 text-[10px] text-slate-300">Rychlost: {"⭐".repeat(field.horse.speed)}</div>
-                          <div className="text-[10px] text-slate-300">Cena: {field.horse.price} 💰</div>
+                          <div className="mt-1 text-[10px] text-slate-300">Rychlost: {"⭐".repeat(field.racer.speed)}</div>
+                          <div className="text-[10px] text-slate-300">Cena: {field.racer.price} 💰</div>
                           {owner ? (
                             <div className="mt-1.5 flex items-center gap-1.5">
                               <div className={`h-3 w-3 rounded-full ${owner.color}`} />
@@ -1019,31 +1019,34 @@ export default function GameBoard({ gameCode }: Props) {
                       Lízl: {players[pendingCard.playerIndex]?.name ?? "?"} · efekt se aplikuje za chvíli…
                     </div>
                   </div>
-                ) : pendingHorse ? (
+                ) : pendingRacer ? (
                   <div className="rounded-2xl border-2 border-amber-400 bg-amber-50 p-4 space-y-3">
-                    <div className="text-sm font-semibold text-amber-900">Stáj nabízí koně:</div>
+                    <div className="text-sm font-semibold text-amber-900">
+                      {/* theme.labels.racerField + racer — UI text z theme */}
+                      {theme.labels.racerField} nabízí {theme.labels.racer.toLowerCase()}:
+                    </div>
                     <div className="flex items-center gap-3">
-                      <div className="text-3xl">{pendingHorse.horse.emoji}</div>
+                      <div className="text-3xl">{pendingRacer.racer.emoji}</div>
                       <div>
-                        <div className="font-bold text-slate-800">{pendingHorse.horse.name}</div>
-                        <div className="text-sm text-slate-500">Rychlost: {"⭐".repeat(pendingHorse.horse.speed)}</div>
-                        <div className="text-sm font-semibold text-amber-700">Cena: {pendingHorse.horse.price} 💰</div>
+                        <div className="font-bold text-slate-800">{pendingRacer.racer.name}</div>
+                        <div className="text-sm text-slate-500">Rychlost: {"⭐".repeat(pendingRacer.racer.speed)}</div>
+                        <div className="text-sm font-semibold text-amber-700">Cena: {pendingRacer.racer.price} 💰</div>
                         <div className="text-xs text-slate-400">
-                          {players[pendingHorse.playerIndex]?.name} má: {players[pendingHorse.playerIndex]?.coins ?? 0} 💰
+                          {players[pendingRacer.playerIndex]?.name} má: {players[pendingRacer.playerIndex]?.coins ?? 0} 💰
                         </div>
                       </div>
                     </div>
                     {isMyTurn ? (
                       <div className="flex gap-2">
                         <button
-                          onClick={buyHorse}
-                          disabled={(players[pendingHorse.playerIndex]?.coins ?? 0) < pendingHorse.horse.price}
+                          onClick={buyRacer}
+                          disabled={(players[pendingRacer.playerIndex]?.coins ?? 0) < pendingRacer.racer.price}
                           className="flex-1 rounded-xl bg-amber-500 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-600 disabled:cursor-not-allowed disabled:bg-slate-300"
                         >
                           Koupit
                         </button>
                         <button
-                          onClick={skipHorse}
+                          onClick={skipRacer}
                           className="flex-1 rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                         >
                           Přeskočit
@@ -1051,7 +1054,7 @@ export default function GameBoard({ gameCode }: Props) {
                       </div>
                     ) : (
                       <div className="rounded-xl bg-slate-100 px-3 py-2 text-center text-sm text-slate-500">
-                        Čeká na rozhodnutí {players[pendingHorse.playerIndex]?.name}…
+                        Čeká na rozhodnutí {players[pendingRacer.playerIndex]?.name}…
                       </div>
                     )}
                   </div>
@@ -1224,16 +1227,22 @@ function mapToCenterEvent(
 }
 
 /**
- * Vrátí zobrazitelný identifikátor koně.
- * Preferuje image URL z theme.assets.horseImages pokud existuje, jinak emoji.
+ * Vrátí zobrazitelný identifikátor závodníka.
+ *
+ * Priorita fallbacků:
+ *   1. racerImages[racer.id] — z theme.assets.racerImages (nový kanonický zdroj)
+ *   2. racer.image — přímý obrázek v RacerConfig (theme builder ho vyplní)
+ *   3. racer.emoji — vždy k dispozici
+ *
+ * Pozn.: horseImages je legacy název; volající předává `racerImages ?? horseImages`.
  */
-export function resolveHorseDisplay(
-  horse: Horse,
-  horseImages?: Partial<Record<string, string>>
+export function resolveRacerDisplay(
+  racer: Horse,
+  racerImages?: Partial<Record<string, string>>
 ): { type: "emoji"; value: string } | { type: "image"; src: string; alt: string } {
-  const key = horse.id ?? horse.name;
-  const src = horseImages?.[key];
-  if (src) return { type: "image", src, alt: horse.name };
-  return { type: "emoji", value: horse.emoji };
+  const key = racer.id ?? racer.name;
+  const src = racerImages?.[key];
+  if (src) return { type: "image", src, alt: racer.name };
+  return { type: "emoji", value: racer.emoji };
 }
 
