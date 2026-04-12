@@ -125,6 +125,7 @@ export interface Database {
           created_by: string | null;
           is_public: boolean;
           is_official: boolean;
+          is_archived: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -134,12 +135,14 @@ export interface Database {
           created_by?: string | null;
           is_public?: boolean;
           is_official?: boolean;
+          is_archived?: boolean;
         };
         Update: {
           manifest?: Json;
           created_by?: string | null;
           is_public?: boolean;
           is_official?: boolean;
+          is_archived?: boolean;
         };
       };
     };

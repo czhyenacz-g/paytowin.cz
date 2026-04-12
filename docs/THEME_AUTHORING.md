@@ -313,51 +313,75 @@ for (const manifest of valid) {
 
 ---
 
-## Interní Theme Dev Tool
+## Theme Library — `/admin/themes/dev`
 
-Rychlý workflow pro tvorbu a testování themes bez plnohodnotného UI.
+Interní nástroj pro správu a tvorbu themes. Přístup přes Discord admin přihlášení.
 
-### URL
-
-```
-/admin/themes/dev
-```
-
-Vyžaduje Discord přihlášení (stejná admin ochrana jako `/admin`).
-
-### Workflow
-
-1. **Otevři** `/admin/themes/dev`
-2. **Uprav JSON** v textarea — defaultně je tam template ThemeManifest
-3. **Načíst existující theme:** zadej ID (např. `classic-race`) → klik "Načíst"
-4. **Validovat:** klik "Validovat" → zobrazí chyby i warningy
-5. **Preview:** klik "Preview" → zobrazí vizuální náhled (barvy polí, závodníci, labels)
-6. **Uložit do DB:** klik "Uložit do DB" → uloží/přepíše theme v `themes` tabulce
-7. **Použít ve hře:** při vytváření hry nastav `theme_id = manifest.meta.id`
-
-### Klávesové zkratky
-
-- "Formátovat JSON" — zarovná JSON v textarea
-- Enter v poli "Načíst theme z DB" — spustí load
-
-### Kde jsou soubory
+### Layout
 
 ```
-app/admin/themes/dev/
-  page.tsx        ← route + AdminAuth wrapper
-  actions.ts      ← Server Actions: loadThemeAction, saveThemeAction
-
-app/components/
-  ThemeDevTool.tsx    ← hlavní client component
-  WithAdminAuth.tsx   ← generický auth wrapper (reusable)
+┌─────────────────┬──────────────────────────────────────┐
+│  Sidebar        │  Editor                              │
+│  ─────────────  │  ────────────────────────────────   │
+│  [+ Nové]       │  meta bar: id · name · version · zdroj│
+│                 │                                      │
+│  Built-in (3)   │  [JSON textarea]                     │
+│  • default      │                                      │
+│  • dark         │  [Validovat] [Preview] [Duplikovat]  │
+│  • classic-race │  [Uložit] [Uložit jako nové]         │
+│                 │                                      │
+│  Databáze (n)   │  [výsledek validace]                 │
+│  • my-theme [✕] │  [preview]                           │
+└─────────────────┴──────────────────────────────────────┘
 ```
+
+### Pravidla: Built-in vs DB
+
+| Akce              | Built-in | DB  |
+|---|---|---|
+| Načíst            | ✅       | ✅  |
+| Preview           | ✅       | ✅  |
+| Duplikovat        | ✅       | ✅  |
+| Uložit (update)   | ❌       | ✅  |
+| Uložit jako nové  | ❌*      | ❌* |
+| Archivovat        | ❌       | ✅  |
+
+*"Uložit jako nové" funguje vždy, ale **meta.id nesmí být built-in ID** ani **ID již existující v DB**.
+
+### Workflow: nový theme
+
+1. Klik **+ Nové** v sidebaru → otevře prázdný template
+2. Uprav JSON (zejm. `meta.id`, `meta.name`, barvy, závodníci)
+3. **Validovat** → ověří strukturu
+4. **Preview** → zobrazí vizuální náhled
+5. **Uložit jako nové** → uloží do DB
+
+### Workflow: úprava DB theme
+
+1. Klik na DB theme v sidebaru → načte do editoru
+2. Uprav JSON
+3. **Uložit** → přepíše DB záznam
+
+### Workflow: duplikace built-in theme
+
+1. Klik na built-in theme v sidebaru (např. `default`)
+2. Klik **Duplikovat** → `id` se změní na `default-copy`, zdroj na `nový`
+3. Uprav `meta.id` na cílové ID
+4. **Uložit jako nové** → uloží do DB
+
+### Archivace DB theme
+
+Klik na **✕** vedle DB theme v sidebaru → confirm → theme zmizí ze seznamu.
+Data zůstanou v DB (`is_archived = true`). Built-in themes archivovat nelze.
+
+### Použití theme ve hře
+
+Po uložení do DB vytvoř hru s `theme_id = manifest.meta.id`.
+`loadThemeManifestAsync()` ho najde automaticky (DB → built-in → default).
 
 ### Seed built-in themes do DB (volitelné)
 
-Pokud chceš mít built-in themes přístupné přes `loadThemeManifestAsync`:
-
 ```ts
-// Spusť jednou (např. v admin API route nebo manuálně)
 import { loadAllThemeManifests } from "@/lib/themes/loader";
 import { upsertThemeToDb } from "@/lib/repository";
 
@@ -365,6 +389,18 @@ const { valid } = loadAllThemeManifests();
 for (const manifest of valid) {
   await upsertThemeToDb(manifest, { isOfficial: true, isPublic: true });
 }
+```
+
+### Soubory
+
+```
+app/admin/themes/dev/
+  page.tsx     ← route + WithAdminAuth wrapper
+  actions.ts   ← Server Actions: list, load, save, saveAsNew, archive
+
+app/components/
+  ThemeDevTool.tsx   ← sidebar + editor (hlavní component)
+  WithAdminAuth.tsx  ← generický auth gate
 ```
 
 ---
