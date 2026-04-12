@@ -401,9 +401,14 @@ export default function GameBoard({ gameCode }: Props) {
 
     if (field.type === "racer" && field.racer) {
       const alreadyOwned = movedPlayer.horses.some(h => h.name === field.racer!.name);
+      // Vlastník = jiný hráč který má tohoto racera ve svém horses[]
+      const ownerPlayer = players.find(
+        p => p.id !== currentPlayer.id && p.horses.some(h => h.name === field.racer!.name)
+      );
 
       if (alreadyOwned) {
         // Hráč tohoto závodníka už vlastní — přeskočíme nabídku, pokračujeme normálně
+        console.log(`[racer-rent] ${currentPlayer.name} landed on own racer "${field.racer.name}" — no rent`);
         const logLines = [`${currentPlayer.name} přijel ke své stáji: ${field.racer.emoji} ${field.racer.name}`, ...extraLog];
         const updatedPlayers = players.map((p, i) =>
           i === gameState.current_player_index ? movedPlayer : p
@@ -418,6 +423,48 @@ export default function GameBoard({ gameCode }: Props) {
           card_pending: null,
           log: [...logLines, ...newLog].slice(0, 20),
         }).eq("game_id", gameId);
+      } else if (ownerPlayer) {
+        // ── Rent: racer patří jinému hráči ────────────────────────────────────
+        const rent = Math.round(field.racer.price * 0.2);
+        const rentedPlayer = { ...movedPlayer, coins: movedPlayer.coins - rent };
+        const paidOwner = { ...ownerPlayer, coins: ownerPlayer.coins + rent };
+
+        console.log(`[racer-rent] ${currentPlayer.name} landed on "${field.racer.name}" owned by ${ownerPlayer.name} → rent=${rent}`);
+        console.log(`[racer-rent] transfer: ${currentPlayer.name} ${movedPlayer.coins}→${rentedPlayer.coins}, ${ownerPlayer.name} ${ownerPlayer.coins}→${paidOwner.coins}`);
+
+        const wentBankrupt = rentedPlayer.coins <= 0 && currentPlayer.coins > 0;
+        const logLines = [
+          `${currentPlayer.name} zaplatil ${rent} 💰 hráči ${ownerPlayer.name} za ${field.racer.emoji} ${field.racer.name}`,
+          ...extraLog,
+        ];
+        if (wentBankrupt) {
+          logLines.push(`💀 ${rentedPlayer.name} zkrachoval!`);
+          console.log(`[racer-rent] ${rentedPlayer.name} went bankrupt after paying rent`);
+        }
+
+        const updatedPlayers = players.map(p => {
+          if (p.id === rentedPlayer.id) return rentedPlayer;
+          if (p.id === paidOwner.id) return paidOwner;
+          return p;
+        });
+        const nextIndex = getNextActiveIndex(gameState.current_player_index, updatedPlayers);
+
+        // Oba hráči se aktualizují najednou; game_state až potom
+        await Promise.all([
+          supabase.from("players").update({ position: rentedPlayer.position, coins: rentedPlayer.coins }).eq("id", rentedPlayer.id),
+          supabase.from("players").update({ coins: paidOwner.coins }).eq("id", paidOwner.id),
+        ]);
+        await supabase.from("game_state").update({
+          current_player_index: nextIndex,
+          last_roll: roll,
+          turn_count: newTurnCount,
+          horse_pending: false,
+          card_pending: null,
+          offer_pending: null,
+          log: [...logLines, ...newLog].slice(0, 20),
+        }).eq("game_id", gameId);
+
+        if (wentBankrupt) await checkAndFinishGame(updatedPlayers);
       } else {
         // Čekáme na rozhodnutí hráče. horse_pending = true v DB (DB sloupec zachován).
         await supabase.from("players").update({ position: newPosition, coins: movedPlayer.coins }).eq("id", currentPlayer.id);
