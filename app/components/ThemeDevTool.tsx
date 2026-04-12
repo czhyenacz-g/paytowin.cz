@@ -404,7 +404,7 @@ export default function ThemeDevTool() {
             }}
             spellCheck={false}
             rows={28}
-            className="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 font-mono text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-y"
+            className="w-full rounded-lg border border-slate-700 bg-slate-900 text-slate-100 px-3 py-2 font-mono text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-y"
           />
 
           {parseError && (
