@@ -10,6 +10,7 @@ export interface Database {
           status: "waiting" | "playing" | "finished" | "cancelled";
           created_at: string;
           theme_id: string | null;
+          board_id: string | null;
           game_mode: string | null;
           owner_discord_id: string | null;
           max_players: number | null;
@@ -18,6 +19,7 @@ export interface Database {
           code: string;
           status?: "waiting" | "playing" | "finished" | "cancelled";
           theme_id?: string | null;
+          board_id?: string | null;
           game_mode?: string | null;
           owner_discord_id?: string | null;
           max_players?: number | null;
@@ -26,6 +28,7 @@ export interface Database {
           code?: string;
           status?: "waiting" | "playing" | "finished" | "cancelled";
           theme_id?: string | null;
+          board_id?: string | null;
           game_mode?: string | null;
           owner_discord_id?: string | null;
           max_players?: number | null;

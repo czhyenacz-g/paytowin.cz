@@ -15,6 +15,7 @@
 import type { Player, Horse, GameState, OfferPending } from "./types/game";
 import type { RacerConfig } from "./themes";
 import type { GameCard } from "./cards";
+import type { BoardConfig } from "./board";
 
 // ─── Konstanty ────────────────────────────────────────────────────────────────
 
@@ -118,75 +119,102 @@ export function normalizeState(raw: unknown): GameState {
 // ─── Deska ────────────────────────────────────────────────────────────────────
 
 /**
- * Sestaví 21 polí desky z konfigurace závodníků daného theme.
- * Závodníci jsou mapováni na fixní pozice: racers[0]→3, racers[1]→10, racers[2]→17, racers[3]→19.
+ * buildFields — sestaví herní pole z BoardConfig + závodníků theme.
  *
- * Pole závodníka má type: "racer" (nový kanonický název).
- * Zpětná kompatibilita: pole má i alias `horse` = `racer` pro starší kód.
+ * Vstup:
+ *   board   — konfigurace desky (typy polí, pořadí, coin amounts, racer sloty)
+ *   racers  — závodníci theme (RacerConfig[]), mapováni 1:1 na board.racerSlotIndexes
+ *
+ * Výstup: Field[] ve stejném runtime tvaru jako dříve — GameBoard.tsx se nemění.
+ *
+ * Coin amounts, typy polí a racer sloty jsou nyní v BoardConfig, ne hardcoded tady.
+ * Engine zůstává čistý — žádná data, jen transformace.
  */
-export function buildFields(racers: RacerConfig[]): Field[] {
-  /** Převede RacerConfig na Horse (formát uložený na hráči v DB). */
-  const toHorse = (i: number): Horse => ({
-    id: racers[i].id,
-    name: racers[i].name,
-    speed: racers[i].speed,
-    price: racers[i].price,
-    emoji: racers[i].emoji,
-  });
-  /** Vytvoří racerové pole s oběma aliasy racer + horse. */
-  const racerField = (index: number, i: number, extra?: Partial<Field>): Field => {
-    const r = toHorse(i);
-    return {
-      index,
-      type: "racer",
-      label: racers[i].name,
-      emoji: racers[i].emoji,
-      description: `${racers[i].name} na prodej (rychlost ${racers[i].speed}) za ${racers[i].price} coins.`,
-      racer: r,
-      horse: r, // @deprecated legacy alias — odstraní se až GameBoard plně migruje na field.racer
-      action: (p) => ({ player: p, log: "" }),
-      ...extra,
-    };
-  };
+export function buildFields(board: BoardConfig, racers: RacerConfig[]): Field[] {
+  let racerSlotCount = 0;
 
-  return [
-    { index: 0,  type: "start",      label: "START",           emoji: "🏁", description: "Průchod = +200 coins.",
-      action: (p) => ({ player: { ...p, coins: p.coins + 200 }, log: `${p.name} prošel STARTem — +200 💰` }) },
-    { index: 1,  type: "coins_gain", label: "Sponzor",         emoji: "🤝", description: "+100 coins.",
-      action: (p) => ({ player: { ...p, coins: p.coins + 100 }, log: `${p.name}: Sponzor — +100 💰` }) },
-    { index: 2,  type: "coins_lose", label: "Veterinář",       emoji: "🩺", description: "-60 coins.",
-      action: (p) => ({ player: { ...p, coins: p.coins - 60 },  log: `${p.name}: Veterinář — -60 💰` }) },
-    racerField(3,  0),
-    { index: 4,  type: "coins_gain", label: "Vítěz dostihu",   emoji: "🏆", description: "+150 coins.",
-      action: (p) => ({ player: { ...p, coins: p.coins + 150 }, log: `${p.name}: Vítěz dostihu — +150 💰` }) },
-    { index: 5,  type: "coins_lose", label: "Daňový úřad",     emoji: "🏛️", description: "-80 coins.",
-      action: (p) => ({ player: { ...p, coins: p.coins - 80 },  log: `${p.name}: Daňový úřad — -80 💰` }) },
-    { index: 6,  type: "coins_gain", label: "Zlaté podkůvky",  emoji: "🥇", description: "+80 coins.",
-      action: (p) => ({ player: { ...p, coins: p.coins + 80 },  log: `${p.name}: Zlaté podkůvky — +80 💰` }) },
-    { index: 7,  type: "coins_lose", label: "Korupce",         emoji: "💸", description: "-120 coins.",
-      action: (p) => ({ player: { ...p, coins: p.coins - 120 }, log: `${p.name}: Korupce — -120 💰` }) },
-    { index: 8,  type: "chance",     label: "Náhoda",          emoji: "🎴", description: "Líznout kartu Náhoda.",
-      action: (p) => ({ player: p, log: "" }) },
-    { index: 9,  type: "coins_gain", label: "Dobrá sezona",    emoji: "🌟", description: "+90 coins.",
-      action: (p) => ({ player: { ...p, coins: p.coins + 90 },  log: `${p.name}: Dobrá sezona — +90 💰` }) },
-    racerField(10, 1),
-    { index: 11, type: "coins_lose", label: "Krize na trhu",   emoji: "📉", description: "-50 coins.",
-      action: (p) => ({ player: { ...p, coins: p.coins - 50 },  log: `${p.name}: Krize na trhu — -50 💰` }) },
-    { index: 12, type: "coins_gain", label: "Bankéř",          emoji: "🏦", description: "+40 coins.",
-      action: (p) => ({ player: { ...p, coins: p.coins + 40 },  log: `${p.name}: Bankéř — +40 💰` }) },
-    { index: 13, type: "coins_lose", label: "Zákeřný soupeř",  emoji: "😈", description: "-70 coins.",
-      action: (p) => ({ player: { ...p, coins: p.coins - 70 },  log: `${p.name}: Zákeřný soupeř — -70 💰` }) },
-    { index: 14, type: "finance",    label: "Finance",          emoji: "💼", description: "Líznout kartu Finance.",
-      action: (p) => ({ player: p, log: "" }) },
-    { index: 15, type: "coins_gain", label: "Věrnostní bonus", emoji: "🎁", description: "+50 coins.",
-      action: (p) => ({ player: { ...p, coins: p.coins + 50 },  log: `${p.name}: Věrnostní bonus — +50 💰` }) },
-    { index: 16, type: "coins_lose", label: "Zloděj",          emoji: "🦹", description: "-70 coins.",
-      action: (p) => ({ player: { ...p, coins: p.coins - 70 },  log: `${p.name}: Zloděj — -70 💰` }) },
-    racerField(17, 2),
-    { index: 18, type: "coins_lose", label: "Veterinář",       emoji: "💊", description: "-60 coins.",
-      action: (p) => ({ player: { ...p, coins: p.coins - 60 },  log: `${p.name}: Veterinář — -60 💰` }) },
-    racerField(19, 3),
-    { index: 20, type: "chance",     label: "Náhoda",          emoji: "🎴", description: "Líznout kartu Náhoda.",
-      action: (p) => ({ player: p, log: "" }) },
-  ];
+  return board.fields.map((fc): Field => {
+    // ── Racer pole ──────────────────────────────────────────────────────────
+    if (fc.type === "racer") {
+      const rc = racers[racerSlotCount++];
+      if (!rc) {
+        // Board má víc racer slotů než theme poskytuje závodníků — bezpečný fallback
+        console.warn(`[buildFields] Board "${board.id}" slot ${fc.index}: chybí závodník (theme má jen ${racers.length}).`);
+        return {
+          index: fc.index, type: "racer", label: fc.label, emoji: fc.emoji,
+          description: fc.label,
+          action: (p) => ({ player: p, log: "" }),
+        };
+      }
+      const r: Horse = { id: rc.id, name: rc.name, speed: rc.speed, price: rc.price, emoji: rc.emoji };
+      return {
+        index:       fc.index,
+        type:        "racer",
+        label:       rc.name,
+        emoji:       rc.emoji,
+        description: `${rc.name} na prodej (rychlost ${rc.speed}) za ${rc.price} coins.`,
+        racer:       r,
+        horse:       r, // @deprecated legacy alias
+        action:      (p) => ({ player: p, log: "" }),
+      };
+    }
+
+    // ── START pole ──────────────────────────────────────────────────────────
+    if (fc.type === "start") {
+      const bonus = fc.amount ?? 200;
+      return {
+        index:       fc.index,
+        type:        "start",
+        label:       fc.label,
+        emoji:       fc.emoji,
+        description: `Průchod = +${bonus} coins.`,
+        action:      (p) => ({
+          player: { ...p, coins: p.coins + bonus },
+          log:    `${p.name} prošel STARTem — +${bonus} 💰`,
+        }),
+      };
+    }
+
+    // ── Coins gain ──────────────────────────────────────────────────────────
+    if (fc.type === "coins_gain") {
+      const amount = fc.amount ?? 0;
+      return {
+        index:       fc.index,
+        type:        "coins_gain",
+        label:       fc.label,
+        emoji:       fc.emoji,
+        description: `+${amount} coins.`,
+        action:      (p) => ({
+          player: { ...p, coins: p.coins + amount },
+          log:    `${p.name}: ${fc.label} — +${amount} 💰`,
+        }),
+      };
+    }
+
+    // ── Coins lose ──────────────────────────────────────────────────────────
+    if (fc.type === "coins_lose") {
+      const amount = fc.amount ?? 0; // záporné číslo, např. -60
+      return {
+        index:       fc.index,
+        type:        "coins_lose",
+        label:       fc.label,
+        emoji:       fc.emoji,
+        description: `${amount} coins.`,
+        action:      (p) => ({
+          player: { ...p, coins: p.coins + amount },
+          log:    `${p.name}: ${fc.label} — ${amount} 💰`,
+        }),
+      };
+    }
+
+    // ── Ostatní typy (chance, finance, gamble, neutral) — no-op action ─────
+    return {
+      index:       fc.index,
+      type:        fc.type as FieldType,
+      label:       fc.label,
+      emoji:       fc.emoji,
+      description: fc.label,
+      action:      (p) => ({ player: p, log: "" }),
+    };
+  });
 }

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { generateGameCode, PLAYER_COLORS } from "@/lib/game";
 import { THEMES } from "@/lib/themes";
+import { BOARD_PRESETS } from "@/lib/board";
 
 interface DiscordUser {
   id: string;
@@ -22,6 +23,7 @@ export default function LandingPage() {
   const [copied, setCopied] = React.useState(false);
   const [discordUser, setDiscordUser] = React.useState<DiscordUser | null>(null);
   const [selectedThemeId, setSelectedThemeId] = React.useState("default");
+  const [selectedBoardId, setSelectedBoardId] = React.useState("small");
   const [showThemeModal, setShowThemeModal] = React.useState(false);
   const [maxPlayers, setMaxPlayers] = React.useState(6);
 
@@ -78,6 +80,7 @@ export default function LandingPage() {
         code,
         status: "waiting",
         theme_id: selectedThemeId,
+        board_id: selectedBoardId,
         game_mode: "online",
         owner_discord_id: discordUser?.id ?? null,
         max_players: maxPlayers,
@@ -315,6 +318,35 @@ export default function LandingPage() {
                   >
                     Procházet všechna témata →
                   </button>
+                </div>
+
+                {/* Výběr herní desky */}
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Herní deska</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {BOARD_PRESETS.map((preset) => (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        disabled={!preset.available}
+                        onClick={() => preset.available && setSelectedBoardId(preset.id)}
+                        className={`rounded-xl border-2 px-3 py-2.5 text-left transition ${
+                          !preset.available
+                            ? "border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed"
+                            : selectedBoardId === preset.id
+                            ? "border-slate-900 bg-slate-900 text-white"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-slate-400"
+                        }`}
+                      >
+                        <div className="text-sm font-semibold">{preset.name}</div>
+                        <div className={`text-xs mt-0.5 ${
+                          !preset.available ? "text-slate-300" : selectedBoardId === preset.id ? "text-slate-300" : "text-slate-400"
+                        }`}>
+                          {preset.available ? preset.description : "Brzy k dispozici"}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Max počet hráčů pro online hru */}

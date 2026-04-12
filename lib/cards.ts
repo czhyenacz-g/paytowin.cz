@@ -132,8 +132,22 @@ export const FINANCE_CARDS: GameCard[] = [
 
 // ─── Pomocné funkce ───────────────────────────────────────────────────────────
 
-/** Náhodně lízne kartu daného typu. */
-export function drawCard(type: "chance" | "finance"): GameCard {
-  const deck = type === "chance" ? CHANCE_CARDS : FINANCE_CARDS;
+/**
+ * drawCard — náhodně lízne kartu daného typu.
+ *
+ * Pokud theme poskytuje vlastní karty (ThemeManifest.cards), použijí se místo globálních.
+ * Fallback: pokud theme karty chybí nebo jsou prázdné, použijí se globální balíčky.
+ *
+ * @param type       "chance" nebo "finance"
+ * @param themeCards volitelné per-theme karty (z theme.content?.cards)
+ */
+export function drawCard(
+  type: "chance" | "finance",
+  themeCards?: { chance?: GameCard[]; finance?: GameCard[] }
+): GameCard {
+  const globalDeck = type === "chance" ? CHANCE_CARDS : FINANCE_CARDS;
+  const themeDeck  = type === "chance" ? themeCards?.chance : themeCards?.finance;
+  // Použij theme karty jen pokud jsou neprázdné; jinak fallback na globální balíček
+  const deck = (themeDeck && themeDeck.length > 0) ? themeDeck : globalDeck;
   return deck[Math.floor(Math.random() * deck.length)];
 }

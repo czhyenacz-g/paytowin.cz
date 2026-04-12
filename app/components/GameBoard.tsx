@@ -3,6 +3,7 @@
 import React from "react";
 import { supabase } from "@/lib/supabase";
 import { getThemeById, getThemeRacers } from "@/lib/themes";
+import { getBoardById } from "@/lib/board";
 import type { Field } from "@/lib/engine";
 import {
   sleep,
@@ -20,6 +21,7 @@ import type { GameCard } from "@/lib/cards";
 import type { Player, Horse, GameState, OfferPending } from "@/lib/types/game";
 import type { CenterEvent } from "@/lib/types/events";
 import CenterEventModal from "./modals/CenterEventModal";
+import BuildInfoBar from "./BuildInfoBar";
 
 // Styly polí jsou součástí theme systému (lib/themes/*)
 // Přistupuj přes: theme.colors.fieldStyles[field.type]
@@ -110,6 +112,7 @@ interface Props {
 export default function GameBoard({ gameCode }: Props) {
   const [gameId, setGameId] = React.useState<string | null>(null);
   const [themeId, setThemeId] = React.useState<string>("default");
+  const [boardId, setBoardId] = React.useState<string>("small");
   const [gameMode, setGameMode] = React.useState<"online" | "local">("online");
   const [isHost, setIsHost] = React.useState(false);
   const [gameStatus, setGameStatus] = React.useState<string>("playing");
@@ -139,9 +142,10 @@ export default function GameBoard({ gameCode }: Props) {
   const animatingPlayerIdRef = React.useRef<string | null>(null);
   const animPositionRef = React.useRef<number | null>(null);
 
-  // Theme + FIELDS — odvozeno ze stavu themeId, aktualizuje se při každém renderu
+  // Theme + FIELDS — odvozeno ze stavu themeId/boardId, aktualizuje se při každém renderu
   const theme = getThemeById(themeId);
-  const FIELDS = buildFields(getThemeRacers(theme));
+  const board = getBoardById(boardId);
+  const FIELDS = buildFields(board, getThemeRacers(theme));
   // Ref aby stale closures (Realtime subscriptions) vždy dostaly aktuální FIELDS
   const fieldsRef = React.useRef<Field[]>(FIELDS);
   fieldsRef.current = FIELDS;
@@ -204,6 +208,7 @@ export default function GameBoard({ gameCode }: Props) {
       if (!game) { setLoading(false); return; }
       setGameId(game.id);
       setThemeId(game.theme_id ?? "default");
+      setBoardId(game.board_id ?? "small");
       setGameMode((game.game_mode ?? "online") as "online" | "local");
       setGameStatus(game.status);
 
@@ -320,7 +325,8 @@ export default function GameBoard({ gameCode }: Props) {
 
     // ── 2. Animace pohybu pole po poli ────────────────────────────────────────
     const oldPosition = currentPlayer.position;
-    const newPosition = (oldPosition + roll) % 21;
+    const fieldCount = FIELDS.length;
+    const newPosition = (oldPosition + roll) % fieldCount;
 
     setIsMoving(true);
     setAnimatingPlayerIdx(gameState.current_player_index);
@@ -332,7 +338,7 @@ export default function GameBoard({ gameCode }: Props) {
 
     const trail: number[] = [];
     for (let step = 1; step <= roll; step++) {
-      const pos = (oldPosition + step) % 21;
+      const pos = (oldPosition + step) % fieldCount;
       trail.push(pos);
       setAnimPosition(pos);
       animPositionRef.current = pos;
@@ -352,7 +358,7 @@ export default function GameBoard({ gameCode }: Props) {
     const currentRound = Math.floor(gameState.turn_count / Math.max(1, players.length));
 
     // Průchod STARTem bez přistání (přeskočení pole 0)
-    const passedStart = newPosition !== 0 && (oldPosition + roll) >= 21;
+    const passedStart = newPosition !== 0 && (oldPosition + roll) >= fieldCount;
 
     let movedPlayer = { ...currentPlayer, position: newPosition };
     const extraLog: string[] = [];
@@ -402,7 +408,7 @@ export default function GameBoard({ gameCode }: Props) {
       }
     } else if (field.type === "chance" || field.type === "finance") {
       // ── Karta: lízni, zobraz všem, efekt se aplikuje automaticky po 2.5 s ──
-      const card = drawCard(field.type);
+      const card = drawCard(field.type, theme.content?.cards);
       const cardLabel = field.type === "chance" ? "🎴 Náhoda" : "💼 Finance";
       await supabase.from("players").update({ position: newPosition, coins: movedPlayer.coins }).eq("id", currentPlayer.id);
       await supabase.from("game_state").update({
@@ -575,7 +581,8 @@ export default function GameBoard({ gameCode }: Props) {
       const sign = card.effect.value > 0 ? "+" : "";
       logLines.push(`${player.name}: ${card.text} (${sign}${card.effect.value} 💰)`);
     } else if (card.effect.kind === "move" && card.effect.value !== undefined) {
-      const newPos = ((updatedPlayer.position + card.effect.value) % 21 + 21) % 21;
+      const fc = fieldsRef.current.length;
+      const newPos = ((updatedPlayer.position + card.effect.value) % fc + fc) % fc;
       updatedPlayer = { ...updatedPlayer, position: newPos };
       const sign = card.effect.value > 0 ? "+" : "";
       logLines.push(`${player.name}: ${card.text} (posun ${sign}${card.effect.value})`);
@@ -1172,7 +1179,8 @@ export default function GameBoard({ gameCode }: Props) {
 
         </div>
       </div>
-      <div className="py-4 flex items-center justify-center gap-4 text-xs text-slate-400">
+      <BuildInfoBar theme={theme} boardId={boardId} />
+      <div className="py-2 flex items-center justify-center gap-4 text-xs text-slate-400">
         <a href="/pravidla" className="hover:text-slate-600 underline">Pravidla</a>
         <span>·</span>
         <a href="/o-nas" className="hover:text-slate-600 underline">O nás</a>

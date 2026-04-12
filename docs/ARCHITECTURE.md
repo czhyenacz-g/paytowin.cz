@@ -21,8 +21,14 @@ lib/
   engine.ts                čisté herní funkce (bez Reactu, bez Supabase)
   repository.ts            všechna Supabase volání — UI je NEVOLÁ přímo
   cards.ts                 definice karet Náhoda / Finance + drawCard()
+  board/                   ← datový kontrakt herní desky (BoardConfig)
+    types.ts                 BoardPresetId, BoardFieldType, BoardFieldConfig, BoardConfig
+    presets.ts               SMALL_BOARD — officiální preset 21 polí
+    validator.ts             validateBoardConfig, validateThemeManifest, crossCheckBoardAndTheme
+    index.ts                 getBoardById() loader + re-exporty
   themes/                  vizuální + content theme systém
-    index.ts                 typy Theme, ThemeColors, ThemeLabels, ThemeAssets, ThemeContent
+    index.ts                 Theme, ThemeColors, ThemeLabels, ThemeAssets, ThemeContent
+    manifest.ts              ThemeManifest v1 + themeToManifest() adapter
     default.ts, dark.ts, classic-race.ts
   supabase.ts              singleton Supabase client
   database.types.ts        typy DB schématu
@@ -197,3 +203,252 @@ přesouvá se sem — bez zasahování do ostatních domén.
 - `features/game/race.ts` — logika závodů
 - `features/game/bankruptcy.ts` — bankrotní procedury
 - `features/offers/types.ts` — nové typy nabídek
+
+---
+
+## Engine vs Board vs Theme — oddělení zodpovědností
+
+| Vrstva | Co obsahuje | Co NEOBSAHUJE |
+|---|---|---|
+| **Engine** (`lib/engine.ts`) | dice, pohyb, bankrot, skip_turn, normalize*, REROLL_*, getStartTax | coin amounts, typy polí, racer sloty |
+| **BoardConfig** (`lib/board/`) | fieldCount, typy polí, pořadí, coin amounts, racer sloty | barvy, texty, závodníci, obrázky |
+| **ThemeManifest** (`lib/themes/manifest.ts`) | meta, labels, colors, racers, assets, cards | engine logika, počet polí, coin amounts |
+
+**Tok dat:**
+```
+BoardConfig + RacerConfig[] → buildFields() → Field[] → herní runtime
+ThemeManifest               → colors, labels, racers, cards
+```
+
+**Proč toto oddělení:**
+- Engine se nemění při přidání nového board presetu
+- Deska se nemění při přidání nového theme
+- Theme builder bude pracovat pouze s ThemeManifest — nemusí znát engine
+- Board builder bude pracovat pouze s BoardConfig — nemusí znát vizuál
+
+---
+
+## ThemeManifest v1
+
+`ThemeManifest` je formalizovaný datový kontrakt pro theme — připraven pro theme builder.
+
+```ts
+interface ThemeManifest {
+  meta:    { id, name, description, version, author?, isPaid?, priceCzk? }
+  labels:  { gameName, start, gain, loss, hazard, chance, finance,
+             racer, racers, racerField, bankrupt }
+  colors:  ThemeColors
+  racers:  RacerConfig[]           // povinné, min. 1
+  assets?: { boardBackgroundImage?, racerImages? }
+  cards?:  { chance: GameCard[], finance: GameCard[] }
+  supportedBoards?: Array<"small" | "large">
+  tone?:   { style?: "neutral" | "funny" | "satirical" | "cute" | "dark" | "retro" }
+}
+```
+
+**Stávající themes nejsou přepsány.** Adapter `themeToManifest(theme)` převádí `Theme → ThemeManifest`:
+- `theme.labels.themeName` → `manifest.labels.gameName`
+- `theme.labels.legend.*` → `manifest.labels.gain/loss/hazard`
+- `getThemeRacers(theme)` → `manifest.racers` (respektuje horses fallback)
+- `theme.assets.horseImages` + `theme.assets.racerImages` → sloučeno do `manifest.assets.racerImages`
+- `theme.content?.cards` → `manifest.cards`
+
+**Použití:**
+```ts
+import { themeToManifest, getThemeById } from "@/lib/themes";
+const manifest = themeToManifest(getThemeById("default"));
+```
+
+---
+
+## BoardConfig v1
+
+`BoardConfig` odděluje strukturu desky od vizuálu a enginu.
+
+```ts
+interface BoardConfig {
+  id:               BoardPresetId           // "small" | "large"
+  fieldCount:       number                  // musí === fields.length
+  fields:           BoardFieldConfig[]      // pořadí = renderovací pořadí
+  racerSlotIndexes: number[]                // [3, 10, 17, 19] → mapuje na theme.racers[]
+}
+
+interface BoardFieldConfig {
+  index:   number
+  type:    BoardFieldType
+  label:   string
+  emoji:   string
+  amount?: number  // coins_gain: +100, coins_lose: -60, start: +200
+}
+```
+
+`buildFields(board, racers)` přečte BoardConfig a sestaví `Field[]` pro engine. Coin amounts, typy polí a racer sloty jsou v BoardConfig — ne hardcoded v engine.
+
+---
+
+## SMALL_BOARD — preset 21 polí
+
+```
+idx  type         label             amount
+0    start        START             +200
+1    coins_gain   Sponzor           +100
+2    coins_lose   Veterinář         -60
+3    racer        → racers[0]
+4    coins_gain   Vítěz dostihu     +150
+5    coins_lose   Daňový úřad       -80
+6    coins_gain   Zlaté podkůvky    +80
+7    coins_lose   Korupce           -120
+8    chance       Náhoda
+9    coins_gain   Dobrá sezona      +90
+10   racer        → racers[1]
+11   coins_lose   Krize na trhu     -50
+12   coins_gain   Bankéř            +40
+13   coins_lose   Zákeřný soupeř    -70
+14   finance      Finance
+15   coins_gain   Věrnostní bonus   +50
+16   coins_lose   Zloděj            -70
+17   racer        → racers[2]
+18   coins_lose   Veterinář         -60
+19   racer        → racers[3]
+20   chance       Náhoda
+```
+
+Racer sloty [3, 10, 17, 19] jsou mapovány 1:1 na `theme.racers[0..3]`.
+
+---
+
+## Theme loading a fallback
+
+```
+getThemeById(id)     → Theme (in-memory registr, fallback na defaultTheme)
+getBoardById(id)     → BoardConfig (in-memory registr, fallback na SMALL_BOARD)
+themeToManifest(t)   → ThemeManifest (adapter, vždy sync)
+```
+
+**board_id v DB:** Sloupec `games.board_id` zatím neexistuje. GameBoard.tsx používá `boardId = "small"` jako konstantu. Až bude sloupec přidán: číst `game.board_id ?? "small"` a předat do `getBoardById()`.
+
+---
+
+## Theme cards fallback
+
+```
+drawCard(type, theme.content?.cards)
+  ├─ theme má neprázdné cards.chance / cards.finance  → použij theme karty
+  └─ theme nemá karty nebo jsou prázdné               → fallback na globální CHANCE_CARDS / FINANCE_CARDS
+```
+
+Stávající card flow (`applyCardEffect`, `card_pending`, Realtime) se nemění.
+`drawCard` přijímá volitelný druhý argument — starý kód bez tohoto argumentu funguje dál.
+
+---
+
+## Validátor
+
+```ts
+import { validateBoardConfig, validateThemeManifest, crossCheckBoardAndTheme } from "@/lib/board";
+
+validateBoardConfig(SMALL_BOARD);              // true
+validateThemeManifest(themeToManifest(theme)); // true
+crossCheckBoardAndTheme(SMALL_BOARD, manifest); // true pokud theme.racers.length >= 4
+```
+
+Validátor loguje chyby přes `console.error` / `console.warn` ale **nevyhazuje exception**.
+Vrací `true` = valid, `false` = chyba nalezena.
+
+**Doporučení:** volat v dev buildu při startu hry nebo v unit testech.
+
+---
+
+## Build versioning
+
+Verze se mění automaticky při každém commitu / Vercel deployi — bez ruční úpravy.
+
+**Odkud se bere:**
+```
+Vercel build → VERCEL_GIT_COMMIT_SHA (system env)
+                    ↓
+             next.config.ts env block
+             NEXT_PUBLIC_BUILD_SHA = SHA ?? "dev"
+                    ↓
+             lib/build-info.ts
+             BUILD_SHA = first 7 chars
+             ENGINE_VERSION = "0.1+{BUILD_SHA}"
+                    ↓
+             BuildInfoBar.tsx  →  "Engine 0.1+abc1234"
+```
+
+**Format `0.1+abc1234`:**
+- `0.1` — major.minor prefix, mění se ručně jen při breaking change
+- `abc1234` — prvních 7 znaků commit SHA, mění se automaticky
+- lokálně: `Engine 0.1+dev`
+- na Vercel preview: `Engine 0.1+abc1234 (preview)`
+- na produkci: `Engine 0.1+abc1234`
+
+**Theme version:**
+Čte se z `ThemeManifest.meta.version` přes `themeToManifest(theme)`.
+Aktuálně hardcoded `"1.0.0"` v `themeToManifest()` — mění se až při změně theme schématu.
+
+**Kde se zobrazuje:**
+`BuildInfoBar` komponenta v patičce `GameBoard.tsx`:
+```
+Engine 0.1+abc1234  ·  Theme default v1.0.0  ·  Board small
+```
+
+**Soubory:**
+- `next.config.ts` — bake Vercel env vars do bundle
+- `lib/build-info.ts` — čisté konstanty (ENGINE_VERSION, BUILD_SHA, BUILD_ENV)
+- `app/components/BuildInfoBar.tsx` — UI komponenta
+
+---
+
+## board_id — end-to-end flow
+
+`board_id` funguje stejně jako `theme_id` — ukládá se do DB, načítá se při startu hry.
+
+**Create flow (online + local):**
+```
+uživatel vybere board preset z BOARD_PRESETS[]
+  ↓
+games.insert({ board_id: selectedBoardId, ... })
+  ↓
+games.board_id uloženo v DB (DEFAULT 'small' pro staré hry)
+```
+
+**Load flow (GameBoard):**
+```
+supabase: games.select() → game.board_id
+  ↓
+setBoardId(game.board_id ?? "small")   ← fallback pro staré hry
+  ↓
+board = getBoardById(boardId)
+FIELDS = buildFields(board, getThemeRacers(theme))
+fieldCount = FIELDS.length             ← žádné hardcoded 21
+```
+
+**Fallback:**
+- Staré hry bez `board_id` v DB: DB DEFAULT je `'small'`, navíc GameBoard fallbackuje na `"small"`.
+- Neznámý `board_id`: `getBoardById()` loguje warning + vrátí `SMALL_BOARD`.
+
+**Přidání nového presetu:**
+1. Vytvoř `LARGE_BOARD` v `lib/board/presets.ts`
+2. Přidej do `BOARD_REGISTRY` v `lib/board/index.ts`
+3. Odkomentuj záznam v `BOARD_PRESETS[]` (nastavit `available: true`)
+4. Přidej 42 CSS pozic do `FIELD_POSITIONS[]` v `GameBoard.tsx`
+
+---
+
+## Připraveno pro theme builder
+
+Proč je tato architektura připravena pro theme builder:
+
+1. **ThemeManifest** je samostatný JSON-serializovatelný typ — lze ho uložit do DB
+2. **themeToManifest()** dokazuje, že stávající themes jsou kompatibilní se schématem
+3. **getBoardById()** je připraveno na async variantu (board z DB)
+4. **validateThemeManifest()** + **crossCheckBoardAndTheme()** jsou ready pro server-side validaci
+5. **drawCard()** čte per-theme karty pokud existují — theme builder může přidat vlastní deck
+6. **assets.racerImages** je normalizovaný Record bez legacy alias — theme builder vyplní přímo
+
+**Další krok před theme builderem:**
+1. Přidat `games.board_id` do DB schématu + migraci
+2. Přidat GameBoard read: `setBoardId(game.board_id ?? "small")`
+3. Přidat UI výběr board presetu při create game (volitelné, lze přidat boardId do create flow)

@@ -163,6 +163,16 @@ export function getThemeRacers(theme: Theme): RacerConfig[] {
   return theme.racers ?? theme.horses ?? [];
 }
 
+// ─── ThemeManifest + validator ────────────────────────────────────────────────
+
+export type { ThemeManifest } from "./manifest";
+export { themeToManifest } from "./manifest";
+// Validátor — importuj z lib/themes/validator pro přímé použití
+// nebo z lib/themes (zde) pro convenience
+export { validateThemeManifest, crossCheckBoardAndTheme } from "./validator";
+// Loader — POZOR: importuj přímo z lib/themes/loader, ne odsud (circular dep)
+// import { loadThemeManifest } from "@/lib/themes/loader"
+
 // ─── Registr témat ────────────────────────────────────────────────────────────
 
 export const THEMES: Theme[] = [defaultTheme, darkTheme, classicRaceTheme];
