@@ -313,6 +313,62 @@ for (const manifest of valid) {
 
 ---
 
+## Interní Theme Dev Tool
+
+Rychlý workflow pro tvorbu a testování themes bez plnohodnotného UI.
+
+### URL
+
+```
+/admin/themes/dev
+```
+
+Vyžaduje Discord přihlášení (stejná admin ochrana jako `/admin`).
+
+### Workflow
+
+1. **Otevři** `/admin/themes/dev`
+2. **Uprav JSON** v textarea — defaultně je tam template ThemeManifest
+3. **Načíst existující theme:** zadej ID (např. `classic-race`) → klik "Načíst"
+4. **Validovat:** klik "Validovat" → zobrazí chyby i warningy
+5. **Preview:** klik "Preview" → zobrazí vizuální náhled (barvy polí, závodníci, labels)
+6. **Uložit do DB:** klik "Uložit do DB" → uloží/přepíše theme v `themes` tabulce
+7. **Použít ve hře:** při vytváření hry nastav `theme_id = manifest.meta.id`
+
+### Klávesové zkratky
+
+- "Formátovat JSON" — zarovná JSON v textarea
+- Enter v poli "Načíst theme z DB" — spustí load
+
+### Kde jsou soubory
+
+```
+app/admin/themes/dev/
+  page.tsx        ← route + AdminAuth wrapper
+  actions.ts      ← Server Actions: loadThemeAction, saveThemeAction
+
+app/components/
+  ThemeDevTool.tsx    ← hlavní client component
+  WithAdminAuth.tsx   ← generický auth wrapper (reusable)
+```
+
+### Seed built-in themes do DB (volitelné)
+
+Pokud chceš mít built-in themes přístupné přes `loadThemeManifestAsync`:
+
+```ts
+// Spusť jednou (např. v admin API route nebo manuálně)
+import { loadAllThemeManifests } from "@/lib/themes/loader";
+import { upsertThemeToDb } from "@/lib/repository";
+
+const { valid } = loadAllThemeManifests();
+for (const manifest of valid) {
+  await upsertThemeToDb(manifest, { isOfficial: true, isPublic: true });
+}
+```
+
+---
+
 ## Co bude dělat theme builder UI (v budoucnu)
 
 1. **Editor ThemeManifest** — formulářové UI pro vyplnění všech polí
