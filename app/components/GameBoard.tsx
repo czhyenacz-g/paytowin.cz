@@ -267,11 +267,13 @@ export default function GameBoard({ gameCode }: Props) {
     // Pojistka: pokud právě animujeme pohyb, nepřepíše Realtime pozici animující figurky
     // (stale closure v Realtime handleru by jinak skočila zpět na DB pozici)
     if (animatingPlayerIdRef.current !== null && animPositionRef.current !== null) {
-      normalized = normalized.map(p =>
-        p.id === animatingPlayerIdRef.current
-          ? { ...p, position: animPositionRef.current! }
-          : p
-      );
+      normalized = normalized.map(p => {
+        if (p.id !== animatingPlayerIdRef.current) return p;
+        if (p.position !== animPositionRef.current) {
+          console.log(`[turn-flow] refreshGame guard active — DB pos=${p.position} overridden with anim pos=${animPositionRef.current}`);
+        }
+        return { ...p, position: animPositionRef.current! };
+      });
     }
 
     setPlayers(normalized);
@@ -325,6 +327,8 @@ export default function GameBoard({ gameCode }: Props) {
     const currentPlayer = players[gameState.current_player_index];
     if (!currentPlayer) return;
 
+    console.log(`[turn-flow] roll start — player="${currentPlayer.name}" pos=${currentPlayer.position} roll=${roll}`);
+
     // ── 1. Animace kostky ─────────────────────────────────────────────────────
     setIsRolling(true);
     setDisplayRoll(null);
@@ -365,6 +369,8 @@ export default function GameBoard({ gameCode }: Props) {
     setIsMoving(false);
     // animatingPlayerIdx necháme nastavený až po zápisu do DB — jinak figurka
     // problikne na starou pozici (player.position v DB ještě není aktualizované)
+
+    console.log(`[turn-flow] animation done — targetPos=${newPosition} field="${FIELDS[newPosition]?.type}"`);
 
     // ── 3. Herní logika + zápis do Supabase ───────────────────────────────────
     const field = FIELDS[newPosition];
@@ -425,7 +431,12 @@ export default function GameBoard({ gameCode }: Props) {
       // ── Karta: lízni, zobraz všem, efekt se aplikuje automaticky po 2.5 s ──
       const card = drawCard(field.type, theme.content?.cards);
       const cardLabel = field.type === "chance" ? "🎴 Náhoda" : "💼 Finance";
+      // FIX pořadí: nejdřív uložíme finální pozici hráče, pak card_pending.
+      // applyCardEffect poběží ze stale closure (timer 2.5s) — position musí být
+      // v DB stabilní předtím, než se karta aplikuje.
+      console.log(`[turn-flow] card field — persisting position=${newPosition} before card_pending`);
       await supabase.from("players").update({ position: newPosition, coins: movedPlayer.coins }).eq("id", currentPlayer.id);
+      console.log(`[turn-flow] card_pending set — card="${card.id}" kind="${card.effect.kind}"`);
       await supabase.from("game_state").update({
         last_roll: roll,
         turn_count: newTurnCount,
@@ -450,6 +461,7 @@ export default function GameBoard({ gameCode }: Props) {
       const nextIndex = getNextActiveIndex(gameState.current_player_index, updatedPlayers);
 
       // Hráč aktualizován vždy (pozice, coins, koně)
+      console.log(`[turn-flow] normal field persist — pos=${finalPlayer.position} coins=${finalPlayer.coins} wentBankrupt=${wentBankrupt}`);
       await supabase.from("players").update({ position: finalPlayer.position, coins: finalPlayer.coins, horses: finalPlayer.horses }).eq("id", currentPlayer.id);
 
       // Nabídka rerollu: 25 % šance, jen pokud nešel do bankrotu a nejde o reroll
@@ -580,6 +592,12 @@ export default function GameBoard({ gameCode }: Props) {
   /**
    * Aplikuje efekt karty — volá POUZE aktivní hráčův klient (isMyTurn).
    * Ochrana cardAppliedRef zabrání dvojímu spuštění při re-renderu.
+   *
+   * FIX: playerUpdate záměrně NEobsahuje position pro coins/skip_turn karty.
+   * Důvod: applyCardEffect může být zavolán ze stale closure timeru (2.5s),
+   * kdy players state ještě nemá Realtime-aktualizovanou pozici po tahu.
+   * Zápis stale position by resetoval figurku zpět.
+   * Position se ukládá pouze tehdy, kdy ji karta skutečně mění (kind==="move").
    */
   const applyCardEffect = React.useCallback(async (card: GameCard, playerIndex: number) => {
     if (!gameState || !gameId) return;
@@ -589,6 +607,8 @@ export default function GameBoard({ gameCode }: Props) {
 
     const player = players[playerIndex];
     if (!player) return;
+
+    console.log(`[turn-flow] applyCardEffect start — player="${player.name}" pos=${player.position} card="${card.id}" kind="${card.effect.kind}"`);
 
     let updatedPlayer = { ...player };
     const logLines: string[] = [];
@@ -601,6 +621,7 @@ export default function GameBoard({ gameCode }: Props) {
     } else if (card.effect.kind === "move" && card.effect.value !== undefined) {
       const fc = fieldsRef.current.length;
       const newPos = ((updatedPlayer.position + card.effect.value) % fc + fc) % fc;
+      console.log(`[turn-flow] card move: from pos=${updatedPlayer.position} by ${card.effect.value} → pos=${newPos}`);
       updatedPlayer = { ...updatedPlayer, position: newPos };
       const sign = card.effect.value > 0 ? "+" : "";
       logLines.push(`${player.name}: ${card.text} (posun ${sign}${card.effect.value})`);
@@ -612,15 +633,14 @@ export default function GameBoard({ gameCode }: Props) {
     const wentBankrupt = updatedPlayer.coins <= 0 && player.coins > 0;
     if (wentBankrupt) logLines.push(`💀 ${player.name} zkrachoval!`);
 
-    // Updatuj hráče v DB
-    const playerUpdate: Record<string, unknown> = {
-      position: updatedPlayer.position,
-      coins: updatedPlayer.coins,
-    };
-    if (card.effect.kind === "skip_turn") {
-      // Příznak se aplikuje na TOHOTO hráče — příští tah ho auto-přeskočí (viz useEffect níže)
-      playerUpdate.skip_next_turn = true;
-    }
+    // FIX: position do DB jen pokud ji karta skutečně změnila (kind==="move").
+    // Coins a skip_turn karty pozici nemění — záměrně ji nezapisujeme,
+    // aby se nepřepsala správná pozice z rollDice (která mohla být v closure stale).
+    const playerUpdate: Record<string, unknown> = { coins: updatedPlayer.coins };
+    if (card.effect.kind === "move") playerUpdate.position = updatedPlayer.position;
+    if (card.effect.kind === "skip_turn") playerUpdate.skip_next_turn = true;
+
+    console.log(`[turn-flow] applyCardEffect persisting — pos=${updatedPlayer.position} coins=${updatedPlayer.coins} wentBankrupt=${wentBankrupt}`);
     await supabase.from("players").update(playerUpdate).eq("id", player.id);
 
     // Urči dalšího hráče
@@ -640,6 +660,12 @@ export default function GameBoard({ gameCode }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState, players, gameId]);
 
+  // Ref vždy ukazuje na nejnovější verzi applyCardEffect.
+  // Timer v useEffect níže zachytí closure — bez ref by volal stale verzi
+  // (players state nemusí mít aktualizovanou pozici v době setPendingCard).
+  const applyCardEffectRef = React.useRef(applyCardEffect);
+  React.useEffect(() => { applyCardEffectRef.current = applyCardEffect; });
+
   // Automaticky aplikuj efekt karty po 2.5 s — jen aktivní hráčův klient
   React.useEffect(() => {
     if (!pendingCard) return;
@@ -649,8 +675,10 @@ export default function GameBoard({ gameCode }: Props) {
         : (myPlayerId && players[pendingCard.playerIndex]?.id === myPlayerId);
     if (!isActivePlayerClient) return;
 
+    console.log(`[turn-flow] card pending timer start — card="${pendingCard.card.id}" kind="${pendingCard.card.effect.kind}"`);
     const timer = setTimeout(() => {
-      applyCardEffect(pendingCard.card, pendingCard.playerIndex);
+      console.log(`[turn-flow] card timer fired — calling applyCardEffect`);
+      applyCardEffectRef.current(pendingCard.card, pendingCard.playerIndex);
     }, 2500);
 
     return () => clearTimeout(timer);
