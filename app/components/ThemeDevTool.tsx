@@ -145,13 +145,13 @@ function ThemePreview({ manifest }: { manifest: ThemeManifest }) {
           ))}
         </div>
       </div>
-      <div>
-        <div className="mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">Labels</div>
+      <div className={`rounded-lg border ${colors.centerBorder} ${colors.centerBackground} p-4`}>
+        <div className={`mb-2 text-xs font-semibold uppercase tracking-wide ${colors.centerSubtitle}`}>Labels</div>
         <div className="grid grid-cols-2 gap-1 text-xs">
           {Object.entries(labels).map(([k, v]) => (
             <div key={k} className="flex gap-1">
-              <span className="font-mono text-slate-400 w-28 shrink-0">{k}:</span>
-              <span className="text-slate-700">{String(v)}</span>
+              <span className={`font-mono w-28 shrink-0 ${colors.centerSubtitle}`}>{k}:</span>
+              <span className={colors.centerTitle}>{String(v)}</span>
             </div>
           ))}
         </div>
