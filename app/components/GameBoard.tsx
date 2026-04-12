@@ -664,13 +664,16 @@ export default function GameBoard({ gameCode }: Props) {
     setGameStatus("cancelled");
   };
 
-  // Zkontroluj podmínky konce hry a nastav status na "finished" pokud vyhrál 1 hráč.
-  // Pravidlo: >=2 hráčů na začátku hry (players.length), přesně 1 aktivní zbývá.
-  // Solo hra (1 hráč) tímto pravidlem neskončí jako výhra.
+  // Zkontroluj podmínky konce hry a nastav status na "finished".
+  // Dvě pravidla:
+  //   Multiplayer výhra: >=2 hráčů celkem, přesně 1 aktivní zbývá.
+  //   Solo prohra:        1 hráč celkem,  0 aktivních (zbankrotoval).
   const checkAndFinishGame = async (updatedPlayers: Player[]) => {
     if (!gameId) return;
     const activePlayers = updatedPlayers.filter(p => !isBankrupt(p));
-    if (updatedPlayers.length >= 2 && activePlayers.length === 1) {
+    const multiplayerWin = updatedPlayers.length >= 2 && activePlayers.length === 1;
+    const soloLoss = updatedPlayers.length === 1 && activePlayers.length === 0;
+    if (multiplayerWin || soloLoss) {
       await supabase.from("games").update({ status: "finished" }).eq("id", gameId);
       // Realtime subscription (setGameStatus) propaguje stav všem klientům automaticky
     }
@@ -802,34 +805,44 @@ export default function GameBoard({ gameCode }: Props) {
   if (gameStatus === "finished") {
     const winner = players.find(p => !isBankrupt(p));
     const losers = players.filter(p => isBankrupt(p));
+    const isSoloLoss = players.length === 1 && !winner;
     return (
       <div className={`min-h-screen ${theme.colors.pageBackground} flex items-center justify-center p-6`}>
         <div className={`w-full max-w-md rounded-3xl ${theme.colors.cardBackground} p-8 shadow-lg space-y-5`}>
-          <div className="text-center space-y-1">
-            <div className="text-5xl">🏆</div>
-            <h2 className={`text-2xl font-bold ${theme.colors.textPrimary}`}>Hra skončila!</h2>
-          </div>
 
-          {winner ? (
-            <div className="rounded-2xl border-2 border-amber-400 bg-amber-50 p-5 text-center space-y-1">
-              <div className="text-3xl">👑</div>
-              <div className="text-xl font-bold text-amber-800">{winner.name}</div>
-              <div className="text-amber-600 text-sm">{winner.coins} 💰 na účtu</div>
+          {isSoloLoss ? (
+            /* ── Solo prohra ────────────────────────────────── */
+            <div className="text-center space-y-2">
+              <div className="text-5xl">💀</div>
+              <h2 className={`text-2xl font-bold ${theme.colors.textPrimary}`}>Zkrachoval jsi!</h2>
+              <p className={`text-sm ${theme.colors.textMuted}`}>Tréninková hra skončila porážkou.</p>
             </div>
           ) : (
-            <div className={`text-center text-sm ${theme.colors.textMuted}`}>Žádný vítěz nebyl nalezen.</div>
-          )}
-
-          {losers.length > 0 && (
-            <div className="space-y-2">
-              <div className={`text-xs font-semibold uppercase tracking-wide ${theme.colors.textMuted}`}>Zkrachovali</div>
-              {losers.map(p => (
-                <div key={p.id} className={`flex items-center justify-between rounded-xl border px-4 py-3 ${theme.colors.playerCardNormal}`}>
-                  <span className={`font-medium line-through ${theme.colors.textMuted}`}>{p.name}</span>
-                  <span className="text-xs text-red-400">💀 Zkrachoval</span>
+            /* ── Multiplayer výhra ──────────────────────────── */
+            <>
+              <div className="text-center space-y-1">
+                <div className="text-5xl">🏆</div>
+                <h2 className={`text-2xl font-bold ${theme.colors.textPrimary}`}>Hra skončila!</h2>
+              </div>
+              {winner && (
+                <div className="rounded-2xl border-2 border-amber-400 bg-amber-50 p-5 text-center space-y-1">
+                  <div className="text-3xl">👑</div>
+                  <div className="text-xl font-bold text-amber-800">{winner.name}</div>
+                  <div className="text-amber-600 text-sm">{winner.coins} 💰 na účtu</div>
                 </div>
-              ))}
-            </div>
+              )}
+              {losers.length > 0 && (
+                <div className="space-y-2">
+                  <div className={`text-xs font-semibold uppercase tracking-wide ${theme.colors.textMuted}`}>Zkrachovali</div>
+                  {losers.map(p => (
+                    <div key={p.id} className={`flex items-center justify-between rounded-xl border px-4 py-3 ${theme.colors.playerCardNormal}`}>
+                      <span className={`font-medium line-through ${theme.colors.textMuted}`}>{p.name}</span>
+                      <span className="text-xs text-red-400">💀 Zkrachoval</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
           )}
 
           <a href="/" className="block rounded-2xl bg-slate-900 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-slate-800 transition">
