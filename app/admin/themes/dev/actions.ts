@@ -17,6 +17,7 @@ export type ThemeMeta = {
   version: string;
   source: "built-in" | "db";
   isOfficial?: boolean;
+  isPublic?: boolean;
 };
 
 // ─── List ─────────────────────────────────────────────────────────────────────
@@ -40,7 +41,7 @@ export async function listThemesAction(): Promise<ThemeMeta[]> {
   try {
     const { data } = await supabase
       .from("themes")
-      .select("id, manifest, is_official")
+      .select("id, manifest, is_official, is_public")
       .eq("is_archived", false)
       .order("created_at", { ascending: false });
 
@@ -52,6 +53,7 @@ export async function listThemesAction(): Promise<ThemeMeta[]> {
         version: meta?.version ?? "?",
         source: "db",
         isOfficial: row.is_official,
+        isPublic: row.is_public,
       });
     }
   } catch {
@@ -157,6 +159,27 @@ export async function archiveThemeAction(
   const { error } = await supabase
     .from("themes")
     .update({ is_archived: true })
+    .eq("id", id);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
+// ─── Set public ───────────────────────────────────────────────────────────────
+
+/**
+ * setPublicAction — nastaví is_public na DB theme.
+ * Built-in themes nelze zveřejnit (jsou dostupné vždy jinak).
+ */
+export async function setPublicAction(
+  id: string,
+  isPublic: boolean
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (BUILTIN_IDS.has(id)) {
+    return { ok: false, error: `Theme "${id}" je zabudovaný — is_public nelze měnit.` };
+  }
+  const { error } = await supabase
+    .from("themes")
+    .update({ is_public: isPublic })
     .eq("id", id);
   if (error) return { ok: false, error: error.message };
   return { ok: true };

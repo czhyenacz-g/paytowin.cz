@@ -9,6 +9,7 @@ import {
   saveAsNewAction,
   archiveThemeAction,
   listThemesAction,
+  setPublicAction,
 } from "@/app/admin/themes/dev/actions";
 import type { ThemeMeta } from "@/app/admin/themes/dev/actions";
 
@@ -446,6 +447,14 @@ export default function ThemeDevTool() {
     }
   }, [themeList, currentId, notify]);
 
+  async function handleSetPublic(isPublic: boolean) {
+    if (!currentId) return;
+    const result = await setPublicAction(currentId, isPublic);
+    if (!result.ok) { notify("error", result.error); return; }
+    setThemeList(prev => prev.map(t => t.id === currentId ? { ...t, isPublic } : t));
+    notify("success", isPublic ? `"${currentId}" zveřejněno — viditelné v pikeru.` : `"${currentId}" skryto z pikeru.`);
+  }
+
   function handleFormat() {
     const manifest = parseJson();
     if (manifest) setJson(JSON.stringify(manifest, null, 2));
@@ -682,6 +691,36 @@ export default function ThemeDevTool() {
 
           {/* Validation result */}
           {validation && <StatusBadge ok={validation.ok} messages={validation.messages} />}
+
+          {/* Publish toggle — jen po úspěšné validaci a jen pro DB themes */}
+          {validation?.ok && currentSource === "db" && currentId && (() => {
+            const isPublic = themeList.find(t => t.id === currentId)?.isPublic ?? false;
+            return (
+              <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 flex items-center justify-between gap-4">
+                <div>
+                  <div className="text-sm font-semibold text-slate-700">Viditelnost v pikeru</div>
+                  <div className="text-xs text-slate-400 mt-0.5">
+                    {isPublic ? "Theme je veřejné — hráči ho vidí při výběru." : "Theme je skryté — hráči ho nevidí."}
+                  </div>
+                </div>
+                {isPublic ? (
+                  <button
+                    onClick={() => handleSetPublic(false)}
+                    className="shrink-0 rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                  >
+                    Skrýt
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleSetPublic(true)}
+                    className="shrink-0 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+                  >
+                    Zveřejnit
+                  </button>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Preview */}
           {showPreview && previewManifest && (
