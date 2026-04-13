@@ -45,7 +45,16 @@ export interface RaceOffer {
   scores: Record<string, number>;
 }
 
-export type OfferPending = RerollOffer | RaceOffer;
+export interface BankruptAnnouncement {
+  type: "bankrupt_announcement";
+  playerName: string;
+  playerId: string;
+  nextIndex: number;
+  turnCount: number;
+  lastRoll?: number;
+}
+
+export type OfferPending = RerollOffer | RaceOffer | BankruptAnnouncement;
 
 export interface GameState {
   game_id: string;

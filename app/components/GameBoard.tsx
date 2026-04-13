@@ -21,7 +21,7 @@ import {
 } from "@/lib/engine";
 import { drawCard } from "@/lib/cards";
 import type { GameCard } from "@/lib/cards";
-import type { Player, Horse, GameState, OfferPending, RerollOffer, RaceOffer } from "@/lib/types/game";
+import type { Player, Horse, GameState, OfferPending, RerollOffer, RaceOffer, BankruptAnnouncement } from "@/lib/types/game";
 import type { CenterEvent } from "@/lib/types/events";
 import CenterEventModal from "./modals/CenterEventModal";
 import RaceModal from "./RaceModal";
@@ -326,7 +326,8 @@ export default function GameBoard({ gameCode }: Props) {
 
   const rollDice = async () => {
     const activePendingRace = gameState?.offer_pending?.type === "race" ? gameState.offer_pending as RaceOffer : null;
-    if (!gameState || pendingRacer || pendingCard || pendingOffer || activePendingRace || isRolling || isMoving) return;
+    const activePendingBankrupt = gameState?.offer_pending?.type === "bankrupt_announcement";
+    if (!gameState || pendingRacer || pendingCard || pendingOffer || activePendingRace || activePendingBankrupt || isRolling || isMoving) return;
 
     const roll = Math.floor(Math.random() * 6) + 1;
     const currentPlayer = players[gameState.current_player_index];
@@ -447,11 +448,18 @@ export default function GameBoard({ gameCode }: Props) {
         const nextIndex = getNextActiveIndex(gameState.current_player_index, updatedPlayers);
 
         // Oba hráči se aktualizují najednou; game_state až potom
+        const activeAfterRent = updatedPlayers.filter(p => !isBankrupt(p));
+        const rentGameEnds = (updatedPlayers.length >= 2 && activeAfterRent.length === 1) ||
+                             (updatedPlayers.length === 1 && activeAfterRent.length === 0);
+
         await Promise.all([
           supabase.from("players").update({ position: rentedPlayer.position, coins: rentedPlayer.coins }).eq("id", rentedPlayer.id),
           supabase.from("players").update({ coins: paidOwner.coins }).eq("id", paidOwner.id),
         ]);
-        await finishTurn({ nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog], lastRoll: roll });
+        await finishTurn({
+          nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog], lastRoll: roll,
+          ...(wentBankrupt && !rentGameEnds ? { bankruptPlayer: { id: rentedPlayer.id, name: rentedPlayer.name } } : {}),
+        });
 
         if (wentBankrupt) await checkAndFinishGame(updatedPlayers);
       } else {
@@ -506,6 +514,10 @@ export default function GameBoard({ gameCode }: Props) {
       // Nabídka rerollu: 25 % šance, jen pokud nešel do bankrotu a nejde o reroll
       const triggerOffer = !canReroll && !wentBankrupt && Math.random() < REROLL_CHANCE;
 
+      const activeAfterNormal = updatedPlayers.filter(p => !isBankrupt(p));
+      const normalGameEnds = (updatedPlayers.length >= 2 && activeAfterNormal.length === 1) ||
+                             (updatedPlayers.length === 1 && activeAfterNormal.length === 0);
+
       if (triggerOffer) {
         const offer: OfferPending = { type: "reroll", playerId: currentPlayer.id, playerName: currentPlayer.name, cost: REROLL_COST };
         await supabase.from("game_state").update({
@@ -517,7 +529,10 @@ export default function GameBoard({ gameCode }: Props) {
         }).eq("game_id", gameId);
         setPendingOffer(offer);
       } else {
-        await finishTurn({ nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog], lastRoll: roll });
+        await finishTurn({
+          nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog], lastRoll: roll,
+          ...(wentBankrupt && !normalGameEnds ? { bankruptPlayer: { id: finalPlayer.id, name: finalPlayer.name } } : {}),
+        });
         if (canReroll) setCanReroll(false);
       }
 
@@ -561,8 +576,15 @@ export default function GameBoard({ gameCode }: Props) {
     );
     const nextIndex = getNextActiveIndex(playerIndex, updatedPlayers);
 
+    const activeAfterBuy = updatedPlayers.filter(p => !isBankrupt(p));
+    const buyGameEnds = (updatedPlayers.length >= 2 && activeAfterBuy.length === 1) ||
+                        (updatedPlayers.length === 1 && activeAfterBuy.length === 0);
+
     await supabase.from("players").update({ coins: updatedCoins, horses: updatedHorses }).eq("id", player.id);
-    await finishTurn({ nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog] });
+    await finishTurn({
+      nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog],
+      ...(wentBankrupt && !buyGameEnds ? { bankruptPlayer: { id: player.id, name: player.name } } : {}),
+    });
 
     if (wentBankrupt) await checkAndFinishGame(updatedPlayers);
     setPendingRacer(null);
@@ -679,7 +701,14 @@ export default function GameBoard({ gameCode }: Props) {
     const updatedPlayers = players.map((p, i) => i === playerIndex ? updatedPlayer : p);
     const nextIndex = getNextActiveIndex(playerIndex, updatedPlayers);
 
-    await finishTurn({ nextIndex, turnCount: gameState.turn_count + 1, log: [...logLines, ...newLog] });
+    const activeAfterCard = updatedPlayers.filter(p => !isBankrupt(p));
+    const cardGameEnds = (updatedPlayers.length >= 2 && activeAfterCard.length === 1) ||
+                         (updatedPlayers.length === 1 && activeAfterCard.length === 0);
+
+    await finishTurn({
+      nextIndex, turnCount: gameState.turn_count + 1, log: [...logLines, ...newLog],
+      ...(wentBankrupt && !cardGameEnds ? { bankruptPlayer: { id: updatedPlayer.id, name: updatedPlayer.name } } : {}),
+    });
 
     if (wentBankrupt) await checkAndFinishGame(updatedPlayers);
     setPendingCard(null);
@@ -743,8 +772,31 @@ export default function GameBoard({ gameCode }: Props) {
     turnCount: number;
     log: string[];
     lastRoll?: number;
+    bankruptPlayer?: { id: string; name: string };
   }) => {
     if (!gameId) return;
+
+    // POST-TURN HOOK — bankrupt announcement path
+    if (params.bankruptPlayer) {
+      const announcement: BankruptAnnouncement = {
+        type: "bankrupt_announcement",
+        playerName: params.bankruptPlayer.name,
+        playerId: params.bankruptPlayer.id,
+        nextIndex: params.nextIndex,
+        turnCount: params.turnCount,
+        ...(params.lastRoll !== undefined ? { lastRoll: params.lastRoll } : {}),
+      };
+      const announcementUpdate: Record<string, unknown> = {
+        horse_pending: false,
+        card_pending: null,
+        offer_pending: announcement as unknown as Record<string, unknown>,
+        log: params.log.slice(0, 20),
+      };
+      if (params.lastRoll !== undefined) announcementUpdate.last_roll = params.lastRoll;
+      await supabase.from("game_state").update(announcementUpdate).eq("game_id", gameId);
+      return;
+    }
+
     const update: Record<string, unknown> = {
       current_player_index: params.nextIndex,
       turn_count: params.turnCount,
@@ -756,6 +808,41 @@ export default function GameBoard({ gameCode }: Props) {
     if (params.lastRoll !== undefined) update.last_roll = params.lastRoll;
     await supabase.from("game_state").update(update).eq("game_id", gameId);
   };
+
+  const closeBankruptAnnouncement = async () => {
+    if (!gameId || !gameState) return;
+    const ann = gameState.offer_pending?.type === "bankrupt_announcement"
+      ? gameState.offer_pending as BankruptAnnouncement
+      : null;
+    if (!ann) return;
+    const update: Record<string, unknown> = {
+      current_player_index: ann.nextIndex,
+      turn_count: ann.turnCount,
+      offer_pending: null,
+    };
+    if (ann.lastRoll !== undefined) update.last_roll = ann.lastRoll;
+    await supabase.from("game_state").update(update).eq("game_id", gameId);
+  };
+
+  const closeBankruptAnnouncementRef = React.useRef(closeBankruptAnnouncement);
+  React.useEffect(() => { closeBankruptAnnouncementRef.current = closeBankruptAnnouncement; });
+
+  // Auto-zavři bankrot announcement po 3 s — jen triggerer klient
+  React.useEffect(() => {
+    if (gameState?.offer_pending?.type !== "bankrupt_announcement") return;
+    const ann = gameState.offer_pending as BankruptAnnouncement;
+    const isTriggerer = gameMode === "local"
+      ? viewerRole === "player"
+      : myPlayerId === ann.playerId;
+    if (!isTriggerer) return;
+    const timer = setTimeout(() => {
+      closeBankruptAnnouncementRef.current();
+    }, 3000);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState?.offer_pending?.type === "bankrupt_announcement"
+      ? (gameState.offer_pending as BankruptAnnouncement).playerId
+      : null]);
 
   // ── Závod (race miniGame) ──────────────────────────────────────────────────
 
@@ -907,6 +994,8 @@ export default function GameBoard({ gameCode }: Props) {
   const isLocalGame = gameMode === "local";
   // Závod — odvozeno z DB stavu
   const pendingRace = (gameState?.offer_pending?.type === "race") ? gameState.offer_pending as RaceOffer : null;
+  // Bankrot announcement — odvozeno z DB stavu
+  const bankruptAnn = (gameState?.offer_pending?.type === "bankrupt_announcement") ? gameState.offer_pending as BankruptAnnouncement : null;
   const isMyRaceTurn = !!(pendingRace?.phase === "racing" && (
     isLocalGame ? true : myPlayerId === pendingRace?.playerIds[pendingRace?.currentRacerIndex ?? -1]
   ));
@@ -1079,6 +1168,18 @@ export default function GameBoard({ gameCode }: Props) {
           onClose={closeRace}
           isHost={isHost}
         />
+      )}
+
+      {/* ── Bankrot announcement ─────────────────────────────────────────── */}
+      {bankruptAnn && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-8 shadow-2xl text-center space-y-4">
+            <div className="text-6xl">💀</div>
+            <h2 className="text-2xl font-bold text-slate-800">{bankruptAnn.playerName} zkrachoval!</h2>
+            <p className="text-sm text-slate-500">Hra pokračuje bez tohoto hráče.</p>
+            <div className="animate-pulse text-xs text-slate-400">Pokračujeme za chvíli…</div>
+          </div>
+        </div>
       )}
 
       <div className="bg-amber-100 border-b border-amber-300 px-4 py-2 text-center text-sm text-amber-800">
