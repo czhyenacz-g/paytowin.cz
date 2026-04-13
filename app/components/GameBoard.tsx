@@ -548,6 +548,14 @@ export default function GameBoard({ gameCode }: Props) {
     }
 
     // ── 4. Vyčisti animační stav, stopa zmizí po 1,5 s ──────────────────────
+    // Optimistický update pozice: nastav newPosition lokálně PŘED vymazáním refs.
+    // Bez toho by displayPlayers přepnulo zpět na starý players[i].position
+    // (Realtime refreshGame ještě nedorazil) a figurka by problikla zpět.
+    // Nová pozice je ve všech větvích zapsána do DB dřív, než sem dorazíme,
+    // takže optimistický update je konzistentní s DB stavem.
+    setPlayers(prev => prev.map(p =>
+      p.id === currentPlayer.id ? { ...p, position: newPosition } : p
+    ));
     setAnimatingPlayerIdx(null);
     animatingPlayerIdRef.current = null;
     animPositionRef.current = null;
