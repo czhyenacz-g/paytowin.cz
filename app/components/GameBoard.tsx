@@ -743,7 +743,11 @@ export default function GameBoard({ gameCode }: Props) {
   const cancelGame = async () => {
     if (!gameId) return;
     if (!window.confirm("Opravdu chceš zrušit hru? Ostatní hráči ji ztratí.")) return;
-    await supabase.from("games").update({ status: "cancelled" }).eq("id", gameId);
+    const { error } = await supabase.from("games").update({ status: "cancelled" }).eq("id", gameId);
+    if (error) {
+      alert(`Nepodařilo se zrušit hru: ${error.message}`);
+      return;
+    }
     setGameStatus("cancelled");
   };
 
