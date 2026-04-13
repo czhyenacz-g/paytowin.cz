@@ -73,6 +73,31 @@ export function isBankrupt(player: Player): boolean {
   return player.coins <= 0;
 }
 
+// ─── Racer ownership ──────────────────────────────────────────────────────────
+
+/**
+ * playerOwnsRacer — zkontroluje, zda hráč vlastní daného závodníka.
+ *
+ * Lookup priorita:
+ *   1. id-based   — když mají oba (horse v player.horses i racer) id → porovnání přes id
+ *   2. name-based — fallback pro stará data bez id (zakoupeno před přidáním id do modelu)
+ *
+ * Poznámka: `player.horses` je kanonické pole vlastnictví — žádné `player.racers` neexistuje.
+ */
+export function playerOwnsRacer(player: Player, racer: Horse): boolean {
+  return player.horses.some(h =>
+    (racer.id && h.id) ? h.id === racer.id : h.name === racer.name
+  );
+}
+
+/**
+ * racerOwnershipKey — vrátí klíč pro racerOwnership mapu: id ?? name.
+ * Konzistentní pro build i lookup.
+ */
+export function racerOwnershipKey(racer: Pick<Horse, "id" | "name">): string {
+  return racer.id ?? racer.name;
+}
+
 /** Vrátí index dalšího aktivního (neozkrachovalého) hráče. */
 export function getNextActiveIndex(currentIndex: number, players: Player[]): number {
   if (players.length === 0) return 0;

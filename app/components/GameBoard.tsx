@@ -14,6 +14,8 @@ import {
   getNextActiveIndex,
   normalizePlayer,
   normalizeState,
+  playerOwnsRacer,
+  racerOwnershipKey,
   REROLL_COST,
   REROLL_CHANCE,
 } from "@/lib/engine";
@@ -400,11 +402,13 @@ export default function GameBoard({ gameCode }: Props) {
     }
 
     if (field.type === "racer" && field.racer) {
-      const alreadyOwned = movedPlayer.horses.some(h => h.name === field.racer!.name);
-      // Vlastník = jiný hráč který má tohoto racera ve svém horses[]
+      const alreadyOwned = playerOwnsRacer(movedPlayer, field.racer);
+      // Vlastník = jiný hráč který má tohoto racera — id-first, name fallback pro stará data
       const ownerPlayer = players.find(
-        p => p.id !== currentPlayer.id && p.horses.some(h => h.name === field.racer!.name)
+        p => p.id !== currentPlayer.id && playerOwnsRacer(p, field.racer!)
       );
+      const lookupSource = (field.racer.id && ownerPlayer?.horses.some(h => h.id)) ? "id" : "name";
+      console.log(`[racer-rent] owner lookup via ${lookupSource} for racer "${field.racer.name}" (id=${field.racer.id ?? "none"}) — owner=${ownerPlayer?.name ?? "none"}`);
 
       if (alreadyOwned) {
         // Hráč tohoto závodníka už vlastní — přeskočíme nabídku, pokračujeme normálně
@@ -429,7 +433,7 @@ export default function GameBoard({ gameCode }: Props) {
         const rentedPlayer = { ...movedPlayer, coins: movedPlayer.coins - rent };
         const paidOwner = { ...ownerPlayer, coins: ownerPlayer.coins + rent };
 
-        console.log(`[racer-rent] ${currentPlayer.name} landed on "${field.racer.name}" owned by ${ownerPlayer.name} → rent=${rent}`);
+        console.log(`[racer-rent] ${currentPlayer.name} (id=${currentPlayer.id}) landed on "${field.racer.name}" (racer.id=${field.racer.id ?? "none"}) owned by ${ownerPlayer.name} (id=${ownerPlayer.id}) → rent=${rent}`);
         console.log(`[racer-rent] transfer: ${currentPlayer.name} ${movedPlayer.coins}→${rentedPlayer.coins}, ${ownerPlayer.name} ${ownerPlayer.coins}→${paidOwner.coins}`);
 
         const wentBankrupt = rentedPlayer.coins <= 0 && currentPlayer.coins > 0;
@@ -555,7 +559,7 @@ export default function GameBoard({ gameCode }: Props) {
     const { racer, playerIndex } = pendingRacer;
     const player = players[playerIndex];
     if (!player || player.coins < racer.price) return;
-    if (player.horses.some(h => h.name === racer.name)) return; // pojistka: už vlastní
+    if (playerOwnsRacer(player, racer)) return; // pojistka: už vlastní (id-first)
 
     const updatedCoins = player.coins - racer.price;
     const updatedHorses = [...player.horses, racer];
@@ -903,9 +907,9 @@ export default function GameBoard({ gameCode }: Props) {
     : (!!myPlayerId && currentPlayer?.id === myPlayerId && !isBankrupt(currentPlayer) && !isRolling && !isMoving && !isSpectator);
   const currentRound = gameState ? Math.floor(gameState.turn_count / Math.max(1, players.length)) + 1 : 1;
 
-  // Mapa racer.name → vlastník (pro zobrazení na herní desce)
+  // Mapa (racer.id ?? racer.name) → vlastník — id-first, name fallback pro stará data
   const racerOwnership: Record<string, Player> = {};
-  players.forEach(p => p.horses.forEach(h => { racerOwnership[h.name] = p; }));
+  players.forEach(p => p.horses.forEach(h => { racerOwnership[racerOwnershipKey(h)] = p; }));
 
   // Sestavení CenterEvent view modelu pro sjednocený modal
   const centerEvent = mapToCenterEvent(
@@ -1147,7 +1151,7 @@ export default function GameBoard({ gameCode }: Props) {
                 const isHoverHighlight = hoveredPlayerId
                   ? displayPlayers.some(p => p.id === hoveredPlayerId && p.position === field.index && !isBankrupt(p))
                   : false;
-                const owner = field.type === "racer" && field.racer ? racerOwnership[field.racer.name] ?? null : null;
+                const owner = field.type === "racer" && field.racer ? racerOwnership[racerOwnershipKey(field.racer)] ?? null : null;
                 return (
                   <div
                     key={field.index}
