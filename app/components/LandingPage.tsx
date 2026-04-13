@@ -175,9 +175,14 @@ export default function LandingPage() {
       return;
     }
 
-    // Zrušená hra
+    // Zrušená nebo dokončená hra
     if (game.status === "cancelled") {
       setError("Tato hra byla zrušena hostitelem.");
+      setLoading(false);
+      return;
+    }
+    if (game.status === "finished") {
+      setError("Tato hra již skončila.");
       setLoading(false);
       return;
     }

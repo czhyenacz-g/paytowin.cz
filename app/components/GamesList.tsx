@@ -110,11 +110,13 @@ export default function GamesList() {
           waiting: "Čeká na hráče",
           playing: "Probíhá",
           finished: "Dokončeno",
+          cancelled: "Zrušena",
         };
         const statusColor: Record<string, string> = {
           waiting: "bg-amber-100 text-amber-800",
           playing: "bg-emerald-100 text-emerald-800",
           finished: "bg-slate-100 text-slate-500",
+          cancelled: "bg-red-100 text-red-500",
         };
 
         return (
