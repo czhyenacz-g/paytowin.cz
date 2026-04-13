@@ -555,6 +555,17 @@ export default function GameBoard({ gameCode }: Props) {
     setTimeout(() => setTrailFields([]), 1500);
   };
 
+  /**
+   * Vrátí true pokud všichni aktivní hráči vlastní ≥1 racera — trigger pro závod.
+   * Voláno jen v buyRacer, protože ownership se mění pouze nákupem.
+   */
+  const shouldTriggerRacePending = (updatedPlayers: Player[]): boolean => {
+    if (gameStatus !== "playing") return false;
+    const activePlayers = updatedPlayers.filter(p => !isBankrupt(p));
+    if (activePlayers.length < 2) return false;
+    return activePlayers.every(p => p.horses.length > 0);
+  };
+
   const buyRacer = async () => {
     if (!pendingRacer || !gameState) return;
     const { racer, playerIndex } = pendingRacer;
@@ -571,9 +582,9 @@ export default function GameBoard({ gameCode }: Props) {
     const logLines = [`${player.name} koupil ${racer.emoji} ${racer.name} za ${racer.price} 💰`];
     if (wentBankrupt) logLines.push(`💀 ${player.name} zkrachoval!`);
 
-    // nextIndex s aktualizovaným hráčem — aby se přeskočil pokud zkrachoval koupí
+    // Zahrnuje nové koně — race trigger potřebuje vidět aktuální ownership
     const updatedPlayers = players.map((p, i) =>
-      i === playerIndex ? { ...player, coins: updatedCoins } : p
+      i === playerIndex ? { ...player, coins: updatedCoins, horses: updatedHorses } : p
     );
     const nextIndex = getNextActiveIndex(playerIndex, updatedPlayers);
 
@@ -581,10 +592,19 @@ export default function GameBoard({ gameCode }: Props) {
     const buyGameEnds = (updatedPlayers.length >= 2 && activeAfterBuy.length === 1) ||
                         (updatedPlayers.length === 1 && activeAfterBuy.length === 0);
 
+    // Priorita: bankrot announcement > race trigger
+    let postTurnEvent: PostTurnEvent | undefined;
+    if (wentBankrupt && !buyGameEnds) {
+      postTurnEvent = { kind: "announcement" as const, playerId: player.id, playerName: player.name };
+    } else if (shouldTriggerRacePending(updatedPlayers)) {
+      postTurnEvent = { kind: "race_pending" as const };
+      logLines.push("🏁 Závod se připravuje!");
+    }
+
     await supabase.from("players").update({ coins: updatedCoins, horses: updatedHorses }).eq("id", player.id);
     await finishTurn({
       nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog],
-      ...(wentBankrupt && !buyGameEnds ? { postTurnEvent: { kind: "announcement" as const, playerId: player.id, playerName: player.name } } : {}),
+      ...(postTurnEvent ? { postTurnEvent } : {}),
     });
 
     if (wentBankrupt) await checkAndFinishGame(updatedPlayers);
@@ -882,16 +902,6 @@ export default function GameBoard({ gameCode }: Props) {
     };
     if (evt.lastRoll !== undefined) update.last_roll = evt.lastRoll;
     await supabase.from("game_state").update(update).eq("game_id", gameId);
-  };
-
-  // DEV: test trigger pro race_pending placeholder — vymaž před release
-  const devTriggerRacePending = async () => {
-    if (!gameId || !gameState) return;
-    const nextIndex = getNextActiveIndex(gameState.current_player_index, players);
-    const evt: RacePendingEvent = { type: "race_pending", nextIndex, turnCount: gameState.turn_count + 1 };
-    await supabase.from("game_state").update({
-      offer_pending: evt as unknown as Record<string, unknown>,
-    }).eq("game_id", gameId);
   };
 
   // ── Závod (race miniGame) ──────────────────────────────────────────────────
@@ -1298,15 +1308,6 @@ export default function GameBoard({ gameCode }: Props) {
                         className="rounded-2xl bg-amber-500 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-600 transition"
                       >
                         🏁 Závod
-                      </button>
-                    )}
-                    {/* DEV: test race_pending placeholder — vymaž před release */}
-                    {!racePendingEvt && !pendingRace && !pendingCard && !pendingRacer && !pendingOffer && (
-                      <button
-                        onClick={devTriggerRacePending}
-                        className="rounded-2xl bg-slate-200 px-3 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-300 transition"
-                      >
-                        ⚙️ Test závod
                       </button>
                     )}
                     <button
