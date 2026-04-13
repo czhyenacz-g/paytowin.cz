@@ -56,6 +56,19 @@ export interface BankruptAnnouncement {
 
 export type OfferPending = RerollOffer | RaceOffer | BankruptAnnouncement;
 
+/**
+ * PostTurnEvent — caller-facing payload pro post-turn hook ve finishTurn.
+ * Zobrazí se všem klientům po dokončení tahu, před dalším tahem.
+ *
+ * Aktuálně podporovaný druh:
+ *   "announcement" — krátký informační overlay (bankrot, …)
+ *
+ * Připraveno pro budoucí rozšíření — přidej nový kind do union:
+ *   | { kind: "race_pending"; … }
+ */
+export type PostTurnEvent =
+  | { kind: "announcement"; playerName: string; playerId: string };
+
 export interface GameState {
   game_id: string;
   current_player_index: number;

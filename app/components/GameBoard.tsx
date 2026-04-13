@@ -21,7 +21,7 @@ import {
 } from "@/lib/engine";
 import { drawCard } from "@/lib/cards";
 import type { GameCard } from "@/lib/cards";
-import type { Player, Horse, GameState, OfferPending, RerollOffer, RaceOffer, BankruptAnnouncement } from "@/lib/types/game";
+import type { Player, Horse, GameState, OfferPending, RerollOffer, RaceOffer, BankruptAnnouncement, PostTurnEvent } from "@/lib/types/game";
 import type { CenterEvent } from "@/lib/types/events";
 import CenterEventModal from "./modals/CenterEventModal";
 import RaceModal from "./RaceModal";
@@ -458,7 +458,7 @@ export default function GameBoard({ gameCode }: Props) {
         ]);
         await finishTurn({
           nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog], lastRoll: roll,
-          ...(wentBankrupt && !rentGameEnds ? { bankruptPlayer: { id: rentedPlayer.id, name: rentedPlayer.name } } : {}),
+          ...(wentBankrupt && !rentGameEnds ? { postTurnEvent: { kind: "announcement" as const, playerId: rentedPlayer.id, playerName: rentedPlayer.name } } : {}),
         });
 
         if (wentBankrupt) await checkAndFinishGame(updatedPlayers);
@@ -531,7 +531,7 @@ export default function GameBoard({ gameCode }: Props) {
       } else {
         await finishTurn({
           nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog], lastRoll: roll,
-          ...(wentBankrupt && !normalGameEnds ? { bankruptPlayer: { id: finalPlayer.id, name: finalPlayer.name } } : {}),
+          ...(wentBankrupt && !normalGameEnds ? { postTurnEvent: { kind: "announcement" as const, playerId: finalPlayer.id, playerName: finalPlayer.name } } : {}),
         });
         if (canReroll) setCanReroll(false);
       }
@@ -583,7 +583,7 @@ export default function GameBoard({ gameCode }: Props) {
     await supabase.from("players").update({ coins: updatedCoins, horses: updatedHorses }).eq("id", player.id);
     await finishTurn({
       nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog],
-      ...(wentBankrupt && !buyGameEnds ? { bankruptPlayer: { id: player.id, name: player.name } } : {}),
+      ...(wentBankrupt && !buyGameEnds ? { postTurnEvent: { kind: "announcement" as const, playerId: player.id, playerName: player.name } } : {}),
     });
 
     if (wentBankrupt) await checkAndFinishGame(updatedPlayers);
@@ -707,7 +707,7 @@ export default function GameBoard({ gameCode }: Props) {
 
     await finishTurn({
       nextIndex, turnCount: gameState.turn_count + 1, log: [...logLines, ...newLog],
-      ...(wentBankrupt && !cardGameEnds ? { bankruptPlayer: { id: updatedPlayer.id, name: updatedPlayer.name } } : {}),
+      ...(wentBankrupt && !cardGameEnds ? { postTurnEvent: { kind: "announcement" as const, playerId: updatedPlayer.id, playerName: updatedPlayer.name } } : {}),
     });
 
     if (wentBankrupt) await checkAndFinishGame(updatedPlayers);
@@ -762,13 +762,12 @@ export default function GameBoard({ gameCode }: Props) {
    *
    * ┌──────────────────────────────────────────────────────────────────────────┐
    * │  POST-TURN HOOK                                                          │
-   * │  Budoucí napojovací bod pro post-turn eventy před dalším tahem:          │
-   * │    • spuštění závodu / globálního eventu                                 │
-   * │    • shared announcement viditelná pro všechny klienty                   │
-   * │    • pauza před dalším tahem                                             │
-   * │  Implementace: místo přímého advance zapsat post_turn_pending do DB,     │
-   * │  všichni klienti reagují na tento stav, po vyřešení se teprve advance.  │
-   * │  Zatím: vždy pokračuje přímo dalším tahem.                               │
+   * │  Volitelný postTurnEvent (PostTurnEvent) před dalším tahem:              │
+   * │    kind="announcement" → zapíše BankruptAnnouncement do offer_pending,  │
+   * │      všichni klienti zobrazí overlay, triggerer auto-advance za 3 s.    │
+   * │                                                                          │
+   * │  Budoucí rozšíření: přidej nový kind do PostTurnEvent a větev sem.      │
+   * │    Příklad: kind="race_pending" → spustí závod před dalším tahem.       │
    * └──────────────────────────────────────────────────────────────────────────┘
    */
   const finishTurn = async (params: {
@@ -776,16 +775,16 @@ export default function GameBoard({ gameCode }: Props) {
     turnCount: number;
     log: string[];
     lastRoll?: number;
-    bankruptPlayer?: { id: string; name: string };
+    postTurnEvent?: PostTurnEvent;
   }) => {
     if (!gameId) return;
 
-    // POST-TURN HOOK — bankrupt announcement path
-    if (params.bankruptPlayer) {
+    // POST-TURN HOOK — dispatch podle kind
+    if (params.postTurnEvent?.kind === "announcement") {
       const announcement: BankruptAnnouncement = {
         type: "bankrupt_announcement",
-        playerName: params.bankruptPlayer.name,
-        playerId: params.bankruptPlayer.id,
+        playerName: params.postTurnEvent.playerName,
+        playerId: params.postTurnEvent.playerId,
         nextIndex: params.nextIndex,
         turnCount: params.turnCount,
         ...(params.lastRoll !== undefined ? { lastRoll: params.lastRoll } : {}),
