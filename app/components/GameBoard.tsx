@@ -419,14 +419,7 @@ export default function GameBoard({ gameCode }: Props) {
         );
         const nextIndex = getNextActiveIndex(gameState.current_player_index, updatedPlayers);
         await supabase.from("players").update({ position: newPosition, coins: movedPlayer.coins }).eq("id", currentPlayer.id);
-        await supabase.from("game_state").update({
-          current_player_index: nextIndex,
-          last_roll: roll,
-          turn_count: newTurnCount,
-          horse_pending: false,
-          card_pending: null,
-          log: [...logLines, ...newLog].slice(0, 20),
-        }).eq("game_id", gameId);
+        await finishTurn({ nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog], lastRoll: roll });
       } else if (ownerPlayer) {
         // ── Rent: racer patří jinému hráči ────────────────────────────────────
         const rent = Math.round(field.racer.price * 0.2);
@@ -458,15 +451,7 @@ export default function GameBoard({ gameCode }: Props) {
           supabase.from("players").update({ position: rentedPlayer.position, coins: rentedPlayer.coins }).eq("id", rentedPlayer.id),
           supabase.from("players").update({ coins: paidOwner.coins }).eq("id", paidOwner.id),
         ]);
-        await supabase.from("game_state").update({
-          current_player_index: nextIndex,
-          last_roll: roll,
-          turn_count: newTurnCount,
-          horse_pending: false,
-          card_pending: null,
-          offer_pending: null,
-          log: [...logLines, ...newLog].slice(0, 20),
-        }).eq("game_id", gameId);
+        await finishTurn({ nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog], lastRoll: roll });
 
         if (wentBankrupt) await checkAndFinishGame(updatedPlayers);
       } else {
@@ -532,15 +517,7 @@ export default function GameBoard({ gameCode }: Props) {
         }).eq("game_id", gameId);
         setPendingOffer(offer);
       } else {
-        await supabase.from("game_state").update({
-          current_player_index: nextIndex,
-          last_roll: roll,
-          turn_count: newTurnCount,
-          horse_pending: false,
-          card_pending: null,
-          offer_pending: null,
-          log: [...logLines, ...newLog].slice(0, 20),
-        }).eq("game_id", gameId);
+        await finishTurn({ nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog], lastRoll: roll });
         if (canReroll) setCanReroll(false);
       }
 
@@ -585,12 +562,7 @@ export default function GameBoard({ gameCode }: Props) {
     const nextIndex = getNextActiveIndex(playerIndex, updatedPlayers);
 
     await supabase.from("players").update({ coins: updatedCoins, horses: updatedHorses }).eq("id", player.id);
-    await supabase.from("game_state").update({
-      current_player_index: nextIndex,
-      turn_count: newTurnCount,
-      horse_pending: false,
-      log: [...logLines, ...newLog].slice(0, 20),
-    }).eq("game_id", gameId);
+    await finishTurn({ nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog] });
 
     if (wentBankrupt) await checkAndFinishGame(updatedPlayers);
     setPendingRacer(null);
@@ -602,12 +574,11 @@ export default function GameBoard({ gameCode }: Props) {
     const nextIndex = getNextActiveIndex(pendingRacer.playerIndex, players);
     const newLog = gameState.log ?? [];
 
-    await supabase.from("game_state").update({
-      current_player_index: nextIndex,
-      turn_count: gameState.turn_count + 1,
-      horse_pending: false,
-      log: [`${player?.name ?? "?"} přeskočil nákup`, ...newLog].slice(0, 20),
-    }).eq("game_id", gameId);
+    await finishTurn({
+      nextIndex,
+      turnCount: gameState.turn_count + 1,
+      log: [`${player?.name ?? "?"} přeskočil nákup`, ...newLog],
+    });
 
     setPendingRacer(null);
   };
@@ -639,12 +610,11 @@ export default function GameBoard({ gameCode }: Props) {
     if (!pendingOffer || !gameState || !gameId) return;
     const newLog = gameState.log ?? [];
     const nextIndex = getNextActiveIndex(gameState.current_player_index, players);
-    await supabase.from("game_state").update({
-      offer_pending: null,
-      current_player_index: nextIndex,
-      turn_count: gameState.turn_count + 1,
-      log: [`${pendingOffer.playerName} odmítl nabídku`, ...newLog].slice(0, 20),
-    }).eq("game_id", gameId);
+    await finishTurn({
+      nextIndex,
+      turnCount: gameState.turn_count + 1,
+      log: [`${pendingOffer.playerName} odmítl nabídku`, ...newLog],
+    });
 
     setPendingOffer(null);
   };
@@ -709,13 +679,7 @@ export default function GameBoard({ gameCode }: Props) {
     const updatedPlayers = players.map((p, i) => i === playerIndex ? updatedPlayer : p);
     const nextIndex = getNextActiveIndex(playerIndex, updatedPlayers);
 
-    await supabase.from("game_state").update({
-      current_player_index: nextIndex,
-      turn_count: gameState.turn_count + 1,
-      horse_pending: false,
-      card_pending: null,
-      log: [...logLines, ...newLog].slice(0, 20),
-    }).eq("game_id", gameId);
+    await finishTurn({ nextIndex, turnCount: gameState.turn_count + 1, log: [...logLines, ...newLog] });
 
     if (wentBankrupt) await checkAndFinishGame(updatedPlayers);
     setPendingCard(null);
@@ -752,6 +716,45 @@ export default function GameBoard({ gameCode }: Props) {
     if (!window.confirm("Opravdu chceš zrušit hru? Ostatní hráči ji ztratí.")) return;
     await supabase.from("games").update({ status: "cancelled" }).eq("id", gameId);
     setGameStatus("cancelled");
+  };
+
+  // ── Post-turn hook ────────────────────────────────────────────────────────────
+
+  /**
+   * finishTurn — centralizuje posun na dalšího hráče po dokončení tahu.
+   *
+   * Volají všechny handlery, které ukončují tah:
+   *   rollDice (normální pole, racer rent, racer own),
+   *   buyRacer, skipRacer, declineOffer, applyCardEffect.
+   *
+   * ┌──────────────────────────────────────────────────────────────────────────┐
+   * │  POST-TURN HOOK                                                          │
+   * │  Budoucí napojovací bod pro post-turn eventy před dalším tahem:          │
+   * │    • spuštění závodu / globálního eventu                                 │
+   * │    • shared announcement viditelná pro všechny klienty                   │
+   * │    • pauza před dalším tahem                                             │
+   * │  Implementace: místo přímého advance zapsat post_turn_pending do DB,     │
+   * │  všichni klienti reagují na tento stav, po vyřešení se teprve advance.  │
+   * │  Zatím: vždy pokračuje přímo dalším tahem.                               │
+   * └──────────────────────────────────────────────────────────────────────────┘
+   */
+  const finishTurn = async (params: {
+    nextIndex: number;
+    turnCount: number;
+    log: string[];
+    lastRoll?: number;
+  }) => {
+    if (!gameId) return;
+    const update: Record<string, unknown> = {
+      current_player_index: params.nextIndex,
+      turn_count: params.turnCount,
+      horse_pending: false,
+      card_pending: null,
+      offer_pending: null,
+      log: params.log.slice(0, 20),
+    };
+    if (params.lastRoll !== undefined) update.last_roll = params.lastRoll;
+    await supabase.from("game_state").update(update).eq("game_id", gameId);
   };
 
   // ── Závod (race miniGame) ──────────────────────────────────────────────────
