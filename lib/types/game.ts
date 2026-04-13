@@ -54,7 +54,15 @@ export interface BankruptAnnouncement {
   lastRoll?: number;
 }
 
-export type OfferPending = RerollOffer | RaceOffer | BankruptAnnouncement;
+/** Placeholder před spuštěním závodu — zobrazí se všem, host potvrdí pokračování. */
+export interface RacePendingEvent {
+  type: "race_pending";
+  nextIndex: number;
+  turnCount: number;
+  lastRoll?: number;
+}
+
+export type OfferPending = RerollOffer | RaceOffer | BankruptAnnouncement | RacePendingEvent;
 
 /**
  * PostTurnEvent — caller-facing payload pro post-turn hook ve finishTurn.
@@ -67,7 +75,8 @@ export type OfferPending = RerollOffer | RaceOffer | BankruptAnnouncement;
  *   | { kind: "race_pending"; … }
  */
 export type PostTurnEvent =
-  | { kind: "announcement"; playerName: string; playerId: string };
+  | { kind: "announcement"; playerName: string; playerId: string }
+  | { kind: "race_pending" };
 
 export interface GameState {
   game_id: string;

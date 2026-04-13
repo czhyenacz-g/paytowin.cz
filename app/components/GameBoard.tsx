@@ -21,7 +21,7 @@ import {
 } from "@/lib/engine";
 import { drawCard } from "@/lib/cards";
 import type { GameCard } from "@/lib/cards";
-import type { Player, Horse, GameState, OfferPending, RerollOffer, RaceOffer, BankruptAnnouncement, PostTurnEvent } from "@/lib/types/game";
+import type { Player, Horse, GameState, OfferPending, RerollOffer, RaceOffer, BankruptAnnouncement, RacePendingEvent, PostTurnEvent } from "@/lib/types/game";
 import type { CenterEvent } from "@/lib/types/events";
 import CenterEventModal from "./modals/CenterEventModal";
 import RaceModal from "./RaceModal";
@@ -327,7 +327,8 @@ export default function GameBoard({ gameCode }: Props) {
   const rollDice = async () => {
     const activePendingRace = gameState?.offer_pending?.type === "race" ? gameState.offer_pending as RaceOffer : null;
     const activePendingBankrupt = gameState?.offer_pending?.type === "bankrupt_announcement";
-    if (!gameState || pendingRacer || pendingCard || pendingOffer || activePendingRace || activePendingBankrupt || isRolling || isMoving) return;
+    const activePendingRacePlaceholder = gameState?.offer_pending?.type === "race_pending";
+    if (!gameState || pendingRacer || pendingCard || pendingOffer || activePendingRace || activePendingBankrupt || activePendingRacePlaceholder || isRolling || isMoving) return;
 
     const roll = Math.floor(Math.random() * 6) + 1;
     const currentPlayer = players[gameState.current_player_index];
@@ -800,6 +801,25 @@ export default function GameBoard({ gameCode }: Props) {
       return;
     }
 
+    // POST-TURN HOOK — race_pending placeholder (budoucí závod)
+    if (params.postTurnEvent?.kind === "race_pending") {
+      const evt: RacePendingEvent = {
+        type: "race_pending",
+        nextIndex: params.nextIndex,
+        turnCount: params.turnCount,
+        ...(params.lastRoll !== undefined ? { lastRoll: params.lastRoll } : {}),
+      };
+      const evtUpdate: Record<string, unknown> = {
+        horse_pending: false,
+        card_pending: null,
+        offer_pending: evt as unknown as Record<string, unknown>,
+        log: params.log.slice(0, 20),
+      };
+      if (params.lastRoll !== undefined) evtUpdate.last_roll = params.lastRoll;
+      await supabase.from("game_state").update(evtUpdate).eq("game_id", gameId);
+      return;
+    }
+
     const update: Record<string, unknown> = {
       current_player_index: params.nextIndex,
       turn_count: params.turnCount,
@@ -846,6 +866,33 @@ export default function GameBoard({ gameCode }: Props) {
   }, [gameState?.offer_pending?.type === "bankrupt_announcement"
       ? (gameState.offer_pending as BankruptAnnouncement).playerId
       : null]);
+
+  // ── Race pending placeholder ─────────────────────────────────────────────
+
+  const closeRacePending = async () => {
+    if (!gameId || !gameState) return;
+    const evt = gameState.offer_pending?.type === "race_pending"
+      ? gameState.offer_pending as RacePendingEvent
+      : null;
+    if (!evt) return;
+    const update: Record<string, unknown> = {
+      current_player_index: evt.nextIndex,
+      turn_count: evt.turnCount,
+      offer_pending: null,
+    };
+    if (evt.lastRoll !== undefined) update.last_roll = evt.lastRoll;
+    await supabase.from("game_state").update(update).eq("game_id", gameId);
+  };
+
+  // DEV: test trigger pro race_pending placeholder — vymaž před release
+  const devTriggerRacePending = async () => {
+    if (!gameId || !gameState) return;
+    const nextIndex = getNextActiveIndex(gameState.current_player_index, players);
+    const evt: RacePendingEvent = { type: "race_pending", nextIndex, turnCount: gameState.turn_count + 1 };
+    await supabase.from("game_state").update({
+      offer_pending: evt as unknown as Record<string, unknown>,
+    }).eq("game_id", gameId);
+  };
 
   // ── Závod (race miniGame) ──────────────────────────────────────────────────
 
@@ -999,6 +1046,8 @@ export default function GameBoard({ gameCode }: Props) {
   const pendingRace = (gameState?.offer_pending?.type === "race") ? gameState.offer_pending as RaceOffer : null;
   // Bankrot announcement — odvozeno z DB stavu
   const bankruptAnn = (gameState?.offer_pending?.type === "bankrupt_announcement") ? gameState.offer_pending as BankruptAnnouncement : null;
+  // Race pending placeholder — odvozeno z DB stavu
+  const racePendingEvt = (gameState?.offer_pending?.type === "race_pending") ? gameState.offer_pending as RacePendingEvent : null;
   const isMyRaceTurn = !!(pendingRace?.phase === "racing" && (
     isLocalGame ? true : myPlayerId === pendingRace?.playerIds[pendingRace?.currentRacerIndex ?? -1]
   ));
@@ -1185,6 +1234,29 @@ export default function GameBoard({ gameCode }: Props) {
         </div>
       )}
 
+      {/* ── Race pending placeholder ─────────────────────────────────────── */}
+      {racePendingEvt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-8 shadow-2xl text-center space-y-4">
+            <div className="text-5xl">🏁</div>
+            <h2 className="text-xl font-bold text-slate-800">Závod se připravuje…</h2>
+            <p className="text-sm text-slate-400">Brzy odstartujeme závod.</p>
+            {(isHost || isLocalGame) ? (
+              <button
+                onClick={closeRacePending}
+                className="w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800 transition"
+              >
+                Pokračovat →
+              </button>
+            ) : (
+              <div className="rounded-2xl bg-slate-100 px-4 py-3 text-center text-sm text-slate-400">
+                Čeká na hostitele…
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="bg-amber-100 border-b border-amber-300 px-4 py-2 text-center text-sm text-amber-800">
         Experimentální projekt · kontakt:{" "}
         <a href="mailto:hynek@darbujan.cz" className="underline hover:text-amber-900">hynek@darbujan.cz</a>
@@ -1226,6 +1298,15 @@ export default function GameBoard({ gameCode }: Props) {
                         className="rounded-2xl bg-amber-500 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-600 transition"
                       >
                         🏁 Závod
+                      </button>
+                    )}
+                    {/* DEV: test race_pending placeholder — vymaž před release */}
+                    {!racePendingEvt && !pendingRace && !pendingCard && !pendingRacer && !pendingOffer && (
+                      <button
+                        onClick={devTriggerRacePending}
+                        className="rounded-2xl bg-slate-200 px-3 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-300 transition"
+                      >
+                        ⚙️ Test závod
                       </button>
                     )}
                     <button
