@@ -187,7 +187,7 @@ export default function LandingPage() {
       name: name.trim(),
       color: PLAYER_COLORS[0],
       position: 0,
-      coins: 500,
+      coins: 1000,
       horses: [],
       turn_order: 0,
     }).select().single();
@@ -273,7 +273,7 @@ export default function LandingPage() {
       name: name.trim(),
       color,
       position: 0,
-      coins: 500,
+      coins: 1000,
       horses: [],
       turn_order: turnOrder,
     }).select().single();

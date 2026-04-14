@@ -22,7 +22,7 @@
 - Tooltip na hover: rychlost, cena, kdo vlastní / "Na prodej"
 
 ### Ekonomika
-- Každý hráč začíná s 500 coins
+- Každý hráč začíná s 1 000 coins
 - Bankrot při ≤ 0 coins → figurka zmizí z desky, tahy se přeskakují
 - Hra pokračuje dokud nezůstane jediný aktivní hráč
 

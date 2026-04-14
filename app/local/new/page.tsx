@@ -101,7 +101,7 @@ export default function LocalNewPage() {
           name,
           color: PLAYER_COLORS[i % PLAYER_COLORS.length],
           position: 0,
-          coins: 500,
+          coins: 1000,
           horses: [],
           turn_order: i,
         }))
