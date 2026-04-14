@@ -17,14 +17,14 @@ export const horseClassicTheme: Theme = {
     centerSubtitle:     "text-green-300",
     fieldStyles: {
       start:      "h-20 w-20 border-red-700 bg-red-600 text-white",
-      coins_gain: "h-16 w-16 border-green-600 bg-amber-100 text-green-900",
-      coins_lose: "h-16 w-16 border-red-400 bg-red-100 text-red-900",
-      gamble:     "h-16 w-16 border-purple-500 bg-purple-100 text-purple-900",
-      racer:      "h-16 w-16 border-amber-600 bg-amber-200 text-amber-900",
-      horse:      "h-16 w-16 border-amber-600 bg-amber-200 text-amber-900", // @deprecated alias
-      neutral:    "h-16 w-16 border-stone-400 bg-stone-100 text-stone-700",
-      chance:     "h-16 w-16 border-sky-500 bg-sky-100 text-sky-900",
-      finance:    "h-16 w-16 border-teal-600 bg-teal-100 text-teal-900",
+      coins_gain: "h-[72px] w-[72px] border-green-600 bg-amber-100 text-green-900",
+      coins_lose: "h-[72px] w-[72px] border-red-400 bg-red-100 text-red-900",
+      gamble:     "h-[72px] w-[72px] border-purple-500 bg-purple-100 text-purple-900",
+      racer:      "h-[72px] w-[72px] border-amber-600 bg-amber-200 text-amber-900",
+      horse:      "h-[72px] w-[72px] border-amber-600 bg-amber-200 text-amber-900", // @deprecated alias
+      neutral:    "h-[72px] w-[72px] border-stone-400 bg-stone-100 text-stone-700",
+      chance:     "h-[72px] w-[72px] border-sky-500 bg-sky-100 text-sky-900",
+      finance:    "h-[72px] w-[72px] border-teal-600 bg-teal-100 text-teal-900",
     },
     activePlayerBadge: "bg-green-900 text-amber-200",
     rollPanelIdle:     "bg-amber-100",

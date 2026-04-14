@@ -17,14 +17,14 @@ export const horseNightTheme: Theme = {
     centerSubtitle:     "text-slate-400",
     fieldStyles: {
       start:      "h-20 w-20 border-red-500 bg-red-800 text-white",
-      coins_gain: "h-16 w-16 border-emerald-500 bg-emerald-900 text-emerald-300",
-      coins_lose: "h-16 w-16 border-red-600 bg-red-950 text-red-300",
-      gamble:     "h-16 w-16 border-violet-500 bg-violet-900 text-violet-300",
-      racer:      "h-16 w-16 border-amber-500 bg-amber-900 text-amber-300",
-      horse:      "h-16 w-16 border-amber-500 bg-amber-900 text-amber-300", // @deprecated alias
-      neutral:    "h-16 w-16 border-slate-600 bg-slate-700 text-slate-300",
-      chance:     "h-16 w-16 border-sky-500 bg-sky-900 text-sky-300",
-      finance:    "h-16 w-16 border-teal-500 bg-teal-900 text-teal-300",
+      coins_gain: "h-[72px] w-[72px] border-emerald-500 bg-emerald-900 text-emerald-300",
+      coins_lose: "h-[72px] w-[72px] border-red-600 bg-red-950 text-red-300",
+      gamble:     "h-[72px] w-[72px] border-violet-500 bg-violet-900 text-violet-300",
+      racer:      "h-[72px] w-[72px] border-amber-500 bg-amber-900 text-amber-300",
+      horse:      "h-[72px] w-[72px] border-amber-500 bg-amber-900 text-amber-300", // @deprecated alias
+      neutral:    "h-[72px] w-[72px] border-slate-600 bg-slate-700 text-slate-300",
+      chance:     "h-[72px] w-[72px] border-sky-500 bg-sky-900 text-sky-300",
+      finance:    "h-[72px] w-[72px] border-teal-500 bg-teal-900 text-teal-300",
     },
     activePlayerBadge: "bg-amber-400 text-slate-900",
     rollPanelIdle:     "bg-slate-700",

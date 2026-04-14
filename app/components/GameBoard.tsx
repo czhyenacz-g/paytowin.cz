@@ -1684,53 +1684,58 @@ export default function GameBoard({ gameCode }: Props) {
 
           {/* Herní plocha */}
           <div className={`rounded-3xl p-5 shadow-2xl ring-1 ring-black/[0.06] ${theme.colors.cardBackground}`}>
-            <div className="mb-3 flex items-center justify-between">
-              <div>
+            {/* HUD — 3 zóny: brand | stav hry | akce */}
+            <div className="mb-3 flex items-center gap-2">
+              {/* Levá zóna: brand + mode badges */}
+              <div className="flex items-center gap-2 shrink-0">
                 <h1
-                  className={`text-xl font-bold cursor-pointer hover:opacity-75 transition-opacity ${theme.colors.textPrimary}`}
+                  className={`text-lg font-bold cursor-pointer hover:opacity-75 transition-opacity ${theme.colors.textPrimary}`}
                   onClick={() => window.open("/", "_blank")}
                 >PayToWin.cz</h1>
-                <p className={`text-xs ${theme.colors.textMuted}`}>Dostihy, sázky a finanční chaos.</p>
-              </div>
-              <div className="flex items-center gap-3">
                 {isLocalGame && (
-                  <div className="rounded-2xl bg-orange-100 px-3 py-2 text-xs font-semibold text-orange-700">
+                  <div className="rounded-lg bg-orange-100 px-2 py-1 text-[11px] font-semibold text-orange-700">
                     🖥️ Lokální
                   </div>
                 )}
                 {isSpectator && (
-                  <div className="rounded-2xl bg-indigo-100 px-3 py-2 text-xs font-semibold text-indigo-700">
-                    👀 Pozorovatel
+                  <div className="rounded-lg bg-indigo-100 px-2 py-1 text-[11px] font-semibold text-indigo-700">
+                    👀 Divák
                   </div>
                 )}
-                {isHost && gameStatus !== "cancelled" && (
-                  <>
-                    {!pendingRace && !pendingCard && !pendingRacer && !pendingOffer && players.filter(p => !isBankrupt(p)).length >= 2 && (
-                      <button
-                        onClick={startRace}
-                        className="rounded-2xl bg-amber-500 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-600 transition"
-                      >
-                        🏁 Závod
-                      </button>
-                    )}
-                    <button
-                      onClick={cancelGame}
-                      className="rounded-2xl bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-100 transition"
-                    >
-                      Zrušit hru
-                    </button>
-                  </>
-                )}
-                <div className="rounded-2xl bg-slate-100 px-3 py-2 text-xs font-medium text-slate-500">
-                  Kolo <span className="font-bold text-slate-800">{currentRound}</span>
+              </div>
+
+              {/* Střední zóna: stav hry — roztáhne se */}
+              <div className="flex flex-1 items-center justify-center gap-2 overflow-hidden">
+                <div className="rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-500 shrink-0">
+                  Kolo <span className="font-bold text-slate-700">{currentRound}</span>
                   {getStartTax(currentRound) > 0 && (
-                    <span className="ml-1 text-red-500" title={`Daň za průchod STARTem: -${getStartTax(currentRound)} 💰 (roste každé kolo, max 500)`}>🏛️</span>
+                    <span className="ml-1 text-red-500" title={`Daň za průchod STARTem: -${getStartTax(currentRound)} 💰`}>🏛️</span>
                   )}
                 </div>
-                <div className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700">
-                  Na tahu: <span className="font-bold">{currentPlayer?.name ?? "-"}</span>
+                <div className="rounded-lg bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white shrink-0 max-w-[160px] truncate">
+                  ▶ {currentPlayer?.name ?? "—"}
                 </div>
               </div>
+
+              {/* Pravá zóna: hostitelské akce */}
+              {isHost && gameStatus !== "cancelled" && (
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {!pendingRace && !pendingCard && !pendingRacer && !pendingOffer && players.filter(p => !isBankrupt(p)).length >= 2 && (
+                    <button
+                      onClick={startRace}
+                      className="rounded-lg bg-amber-500 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-amber-600 transition"
+                    >
+                      🏁 Závod
+                    </button>
+                  )}
+                  <button
+                    onClick={cancelGame}
+                    className="rounded-lg bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-600 hover:bg-red-100 transition"
+                  >
+                    Zrušit
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="mb-2 flex flex-wrap gap-2 text-xs">
@@ -1762,7 +1767,7 @@ export default function GameBoard({ gameCode }: Props) {
                     style={pos}
                   >
                     <div className="text-base leading-none">{field.emoji}</div>
-                    <div className="text-[9px] font-bold leading-tight text-center px-0.5 mt-0.5">
+                    <div className="text-[10px] font-bold leading-tight text-center px-0.5 mt-0.5">
                       {field.type === "start" ? "START" : field.label}
                     </div>
                     {owner && (
@@ -1826,9 +1831,9 @@ export default function GameBoard({ gameCode }: Props) {
                 );
               })}
 
-              <div className={`absolute left-1/2 top-1/2 flex h-[42%] w-[42%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[32px] border-2 p-4 text-center shadow-sm ${theme.colors.centerBorder} ${theme.colors.centerBackground}`}>
+              <div className={`absolute left-1/2 top-1/2 flex h-[44%] w-[44%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-3xl border-2 p-4 text-center shadow-sm ${theme.colors.centerBorder} ${theme.colors.centerBackground}`}>
                 <div>
-                  <div className="text-2xl">🐎</div>
+                  <div className="text-4xl">🐎</div>
                   <div className={`mt-1 text-sm font-semibold ${theme.colors.centerTitle}`}>{theme.labels.centerTitle}</div>
                   <div className={`mt-1 text-xs ${theme.colors.centerSubtitle}`}>{theme.labels.centerSubtitle}</div>
                 </div>
@@ -2110,6 +2115,7 @@ export default function GameBoard({ gameCode }: Props) {
                 )}
 
                 {/* Hráči */}
+                <div className="border-t border-black/[0.06] my-1" />
                 <div>
                   <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">Hráči</div>
                   <div className="space-y-2">
