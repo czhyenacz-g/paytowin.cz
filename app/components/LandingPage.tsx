@@ -45,14 +45,8 @@ export default function LandingPage() {
   const [discordUser, setDiscordUser] = React.useState<DiscordUser | null>(null);
   const [selectedThemeId, setSelectedThemeId] = React.useState("horse-day");
   const [selectedBoardId, setSelectedBoardId] = React.useState("small");
-  const [showThemeModal, setShowThemeModal] = React.useState(false);
   const [maxPlayers, setMaxPlayers] = React.useState(6);
   const [activePanel, setActivePanel] = React.useState<string | null>(null);
-  const [dbThemes, setDbThemes] = React.useState<Array<{
-    id: string; name: string; description: string;
-    isPaid: boolean; priceCzk: number; boardBgImage?: string;
-  }>>([]);
-
   // Načti session + předvyplň ?join=KOD z URL
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -73,30 +67,6 @@ export default function LandingPage() {
       setDiscordUser({ id: discordId, name: fullName, avatar: avatarUrl });
       setName((prev) => prev || fullName);
     });
-  }, []);
-
-  React.useEffect(() => {
-    supabase
-      .from("themes")
-      .select("id, manifest")
-      .eq("is_archived", false)
-      .or("is_public.eq.true,is_official.eq.true")
-      .then(({ data }) => {
-        if (!data) return;
-        setDbThemes(data.map((row) => {
-          const m = row.manifest as Record<string, unknown>;
-          const meta = m?.meta as Record<string, unknown> | undefined;
-          const assets = m?.assets as Record<string, unknown> | undefined;
-          return {
-            id: row.id,
-            name: (meta?.name as string) ?? row.id,
-            description: (meta?.description as string) ?? "",
-            isPaid: (meta?.isPaid as boolean) ?? false,
-            priceCzk: (meta?.priceCzk as number) ?? 0,
-            boardBgImage: assets?.boardBackgroundImage as string | undefined,
-          };
-        }));
-      });
   }, []);
 
   const handleBack = () => {
@@ -410,7 +380,7 @@ export default function LandingPage() {
           <div className="flex min-h-full items-start justify-center p-6 pt-10">
             <div className="w-full max-w-md space-y-6">
 
-              {/* Zpět + název panelu */}
+              {/* Zpět + název panelu + aktivní theme */}
               <div className="flex items-center gap-3">
                 <button
                   onClick={handleBack}
@@ -418,14 +388,19 @@ export default function LandingPage() {
                 >
                   ← Zpět
                 </button>
-                <div>
+                <div className="flex-1 min-w-0">
                   <div className="text-xs text-white/55 uppercase tracking-wider">
                     {activePanel && PANEL_CONFIG[activePanel]?.available ? "Nová hra" : "Připravujeme"}
                   </div>
-                  <div className="text-base font-bold text-white leading-tight">
+                  <div className="text-base font-bold text-white leading-tight truncate">
                     {activePanel ? (PANEL_CONFIG[activePanel]?.label ?? activePanel) : ""}
                   </div>
                 </div>
+                {activePanel && PANEL_CONFIG[activePanel]?.available && (
+                  <div className="shrink-0 rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs font-medium text-white/80">
+                    {THEMES.find(t => t.id === selectedThemeId)?.name ?? selectedThemeId}
+                  </div>
+                )}
               </div>
 
               {activePanel && PANEL_CONFIG[activePanel]?.desc && (
@@ -556,7 +531,7 @@ export default function LandingPage() {
                     </button>
 
                     <button
-                      onClick={() => router.push("/local/new")}
+                      onClick={() => router.push(`/local/new?theme=${selectedThemeId}`)}
                       className="w-full rounded-2xl border-2 border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 hover:border-slate-400 hover:bg-white transition"
                     >
                       🖥️ Lokální hra (hot-seat)
@@ -570,97 +545,6 @@ export default function LandingPage() {
 
       </div>
 
-      {/* Modál: procházet všechna témata */}
-      {showThemeModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
-          onClick={(e) => { if (e.target === e.currentTarget) setShowThemeModal(false); }}
-        >
-          <div className="w-full max-w-lg rounded-3xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-              <div>
-                <h2 className="text-lg font-bold text-slate-800">Témata hry</h2>
-                <p className="text-xs text-slate-400 mt-0.5">Vyber vzhled pro svoji hru</p>
-              </div>
-              <button
-                onClick={() => setShowThemeModal(false)}
-                className="rounded-xl p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-3 p-6 max-h-[60vh] overflow-y-auto">
-              {[
-                ...THEMES.map(t => ({
-                  id: t.id,
-                  name: t.name,
-                  description: t.description,
-                  isPaid: t.isPaid ?? false,
-                  priceCzk: t.priceCzk ?? 0,
-                  boardBgImage: undefined as string | undefined,
-                  emoji: t.id === "horse-night" ? "🌙" : t.id === "car-night" ? "🌙" : t.id === "horse-classic" ? "🏇" : "☀️",
-                })),
-                ...dbThemes.map(t => ({ ...t, emoji: "🎨" })),
-              ].map((theme) => {
-                const isSelected = selectedThemeId === theme.id;
-                return (
-                  <button
-                    key={theme.id}
-                    type="button"
-                    onClick={() => { setSelectedThemeId(theme.id); setShowThemeModal(false); }}
-                    className={`w-full rounded-2xl border-2 p-4 text-left transition ${
-                      isSelected
-                        ? "border-slate-900 bg-slate-900"
-                        : "border-slate-200 bg-white hover:border-slate-400"
-                    }`}
-                  >
-                    <div className="flex gap-4">
-                      <div
-                        className={`h-16 w-24 shrink-0 rounded-xl border flex items-center justify-center text-2xl overflow-hidden ${
-                          isSelected ? "border-slate-700 bg-slate-800" : "border-slate-200 bg-slate-50"
-                        }`}
-                        style={theme.boardBgImage ? { backgroundImage: `url(${theme.boardBgImage})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
-                      >
-                        {!theme.boardBgImage && theme.emoji}
-                      </div>
-                      <div className="min-w-0">
-                        <div className={`font-semibold ${isSelected ? "text-white" : "text-slate-800"}`}>
-                          {theme.name}
-                        </div>
-                        <div className={`text-sm mt-0.5 ${isSelected ? "text-slate-300" : "text-slate-500"}`}>
-                          {theme.description}
-                        </div>
-                        {theme.isPaid ? (
-                          <div className="mt-1.5 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
-                            {theme.priceCzk} Kč
-                          </div>
-                        ) : (
-                          <div className={`mt-1.5 inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${isSelected ? "bg-slate-700 text-slate-300" : "bg-emerald-50 text-emerald-700"}`}>
-                            Zdarma
-                          </div>
-                        )}
-                      </div>
-                      {isSelected && (
-                        <div className="ml-auto shrink-0 self-center text-white text-lg">✓</div>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="border-t border-slate-100 px-6 py-4">
-              <button
-                onClick={() => setShowThemeModal(false)}
-                className="w-full rounded-2xl bg-slate-900 px-4 py-3 font-semibold text-white hover:bg-slate-800 transition"
-              >
-                Potvrdit výběr
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

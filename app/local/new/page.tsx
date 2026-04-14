@@ -21,9 +21,16 @@ export default function LocalNewPage() {
   const [selectedBoardId, setSelectedBoardId] = React.useState("small");
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
-  const [dbThemes, setDbThemes] = React.useState<Array<{
-    id: string; name: string; description: string;
-  }>>([]);
+
+  React.useEffect(() => {
+    const themeId = new URLSearchParams(window.location.search).get("theme");
+    if (!themeId) return;
+
+    const matchedTheme = THEMES.find((theme) => theme.id === themeId);
+    if (matchedTheme) {
+      setSelectedThemeId(matchedTheme.id);
+    }
+  }, []);
 
   React.useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -33,26 +40,6 @@ export default function LocalNewPage() {
       setDiscordName((user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? "") as string);
       setAuthState("ready");
     });
-  }, []);
-
-  React.useEffect(() => {
-    supabase
-      .from("themes")
-      .select("id, manifest")
-      .eq("is_archived", false)
-      .or("is_public.eq.true,is_official.eq.true")
-      .then(({ data }) => {
-        if (!data) return;
-        setDbThemes(data.map((row) => {
-          const m = row.manifest as Record<string, unknown>;
-          const meta = m?.meta as Record<string, unknown> | undefined;
-          return {
-            id: row.id,
-            name: (meta?.name as string) ?? row.id,
-            description: (meta?.description as string) ?? "",
-          };
-        }));
-      });
   }, []);
 
   const updatePlayerCount = (count: number) => {
@@ -131,6 +118,12 @@ export default function LocalNewPage() {
     router.push(`/game/${code}`);
   };
 
+  const selectedTheme = THEMES.find((theme) => theme.id === selectedThemeId);
+  const loginRedirectPath =
+    typeof window === "undefined"
+      ? "/local/new"
+      : `${window.location.pathname}${window.location.search}`;
+
   if (authState === "loading") {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center text-slate-400">
@@ -153,7 +146,7 @@ export default function LocalNewPage() {
               supabase.auth.signInWithOAuth({
                 provider: "discord",
                 options: {
-                  redirectTo: `${window.location.origin}/auth/callback?next=/local/new`,
+                  redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(loginRedirectPath)}`,
                 },
               })
             }
@@ -195,6 +188,18 @@ export default function LocalNewPage() {
               <span className="text-indigo-700">{discordName}</span>
             </div>
 
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Aktivní theme
+              </div>
+              <div className="mt-1 text-sm font-semibold text-slate-800">
+                {selectedTheme?.name ?? selectedThemeId}
+              </div>
+              <div className="mt-1 text-xs text-slate-500">
+                {selectedTheme?.description ?? "Theme byl vybrán z horního menu."}
+              </div>
+            </div>
+
             {/* Počet hráčů */}
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">
@@ -233,37 +238,6 @@ export default function LocalNewPage() {
                   />
                 </div>
               ))}
-            </div>
-
-            {/* Téma */}
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">Vzhled hry</label>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  ...THEMES.map(t => ({ id: t.id, name: t.name, description: t.description })),
-                  ...dbThemes,
-                ].map((theme) => (
-                  <button
-                    key={theme.id}
-                    type="button"
-                    onClick={() => setSelectedThemeId(theme.id)}
-                    className={`rounded-xl border-2 px-3 py-2.5 text-left transition ${
-                      selectedThemeId === theme.id
-                        ? "border-slate-900 bg-slate-900 text-white"
-                        : "border-slate-200 bg-white text-slate-700 hover:border-slate-400"
-                    }`}
-                  >
-                    <div className="text-sm font-semibold">{theme.name}</div>
-                    <div
-                      className={`mt-0.5 text-xs ${
-                        selectedThemeId === theme.id ? "text-slate-300" : "text-slate-400"
-                      }`}
-                    >
-                      {theme.description}
-                    </div>
-                  </button>
-                ))}
-              </div>
             </div>
 
             {/* Herní deska */}
