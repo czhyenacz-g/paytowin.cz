@@ -138,6 +138,7 @@ export function normalizeState(raw: unknown): GameState {
     horse_pending: Boolean(r.horse_pending ?? false),
     card_pending: (r.card_pending as GameCard | null) ?? null,
     offer_pending: (r.offer_pending as OfferPending | null) ?? null,
+    mass_race_done: Boolean(r.mass_race_done ?? false),
   };
 }
 

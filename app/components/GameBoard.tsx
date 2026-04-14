@@ -567,6 +567,7 @@ export default function GameBoard({ gameCode }: Props) {
    */
   const shouldTriggerRacePending = (updatedPlayers: Player[]): boolean => {
     if (gameStatus !== "playing") return false;
+    if (gameState?.mass_race_done) return false; // mass race už proběhl, nepouštět znovu
     const activePlayers = updatedPlayers.filter(p => !isBankrupt(p));
     if (activePlayers.length < 2) return false;
     return activePlayers.every(p => p.horses.length > 0);
@@ -976,6 +977,7 @@ export default function GameBoard({ gameCode }: Props) {
       current_player_index: evt.nextIndex,
       turn_count: evt.turnCount,
       offer_pending: null,
+      mass_race_done: true, // zabrání opakovanému spuštění automatického mass race
       log: [logLine, ...(gameState.log ?? [])].slice(0, 20),
     };
     if (evt.lastRoll !== undefined) stateUpdate.last_roll = evt.lastRoll;

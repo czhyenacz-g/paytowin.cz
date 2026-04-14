@@ -104,4 +104,5 @@ export interface GameState {
   horse_pending: boolean;
   card_pending: GameCard | null;
   offer_pending: OfferPending | null;
+  mass_race_done: boolean; // true po prvním automatickém mass race — trigger se pak nepustí znovu
 }
