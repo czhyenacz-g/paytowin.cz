@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { generateGameCode, PLAYER_COLORS } from "@/lib/game";
 import { THEMES } from "@/lib/themes";
 import { BOARD_PRESETS } from "@/lib/board";
+import MapMenuStrip from "./MapMenuStrip";
 
 interface DiscordUser {
   id: string;
@@ -236,6 +237,8 @@ export default function LandingPage() {
           hynek@darbujan.cz
         </a>
       </div>
+
+      <MapMenuStrip />
 
       <div className="flex min-h-[calc(100vh-40px)] items-center justify-center p-6">
         <div className="w-full max-w-md space-y-6">
