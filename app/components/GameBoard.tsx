@@ -1683,14 +1683,14 @@ export default function GameBoard({ gameCode }: Props) {
         <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 lg:grid-cols-[1fr_340px]">
 
           {/* Herní plocha */}
-          <div className={`rounded-3xl p-6 shadow-lg ${theme.colors.cardBackground}`}>
-            <div className="mb-4 flex items-center justify-between">
+          <div className={`rounded-3xl p-5 shadow-2xl ring-1 ring-black/[0.06] ${theme.colors.cardBackground}`}>
+            <div className="mb-3 flex items-center justify-between">
               <div>
                 <h1
-                  className={`text-3xl font-bold cursor-pointer hover:opacity-75 transition-opacity ${theme.colors.textPrimary}`}
+                  className={`text-xl font-bold cursor-pointer hover:opacity-75 transition-opacity ${theme.colors.textPrimary}`}
                   onClick={() => window.open("/", "_blank")}
                 >PayToWin.cz</h1>
-                <p className={`text-sm ${theme.colors.textMuted}`}>Dostihy, sázky a finanční chaos.</p>
+                <p className={`text-xs ${theme.colors.textMuted}`}>Dostihy, sázky a finanční chaos.</p>
               </div>
               <div className="flex items-center gap-3">
                 {isLocalGame && (
@@ -1733,7 +1733,7 @@ export default function GameBoard({ gameCode }: Props) {
               </div>
             </div>
 
-            <div className="mb-4 flex flex-wrap gap-3 text-xs">
+            <div className="mb-2 flex flex-wrap gap-2 text-xs">
               <span className="rounded-lg bg-emerald-100 px-2 py-1 text-emerald-800">🟢 {theme.labels.legend.gain}</span>
               <span className="rounded-lg bg-red-100 px-2 py-1 text-red-800">🔴 {theme.labels.legend.lose}</span>
               <span className="rounded-lg bg-violet-100 px-2 py-1 text-violet-800">🟣 {theme.labels.legend.gamble}</span>
@@ -1741,8 +1741,11 @@ export default function GameBoard({ gameCode }: Props) {
             </div>
 
             <div
-              className={`relative mx-auto aspect-square w-full max-w-[760px] rounded-[40px] border ${theme.colors.boardSurfaceBorder} ${theme.colors.boardSurface}`}
-              style={boardBgUrl ? { backgroundImage: `url(${boardBgUrl})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
+              className={`relative mx-auto aspect-square w-full max-w-[760px] rounded-[40px] border-2 ${theme.colors.boardSurfaceBorder} ${theme.colors.boardSurface}`}
+              style={{
+                ...(boardBgUrl ? { backgroundImage: `url(${boardBgUrl})`, backgroundSize: "cover", backgroundPosition: "center" } : {}),
+                boxShadow: "inset 0 2px 24px rgba(0,0,0,0.09), 0 4px 32px rgba(0,0,0,0.10)",
+              }}
             >
               {FIELDS.map((field) => {
                 const pos = FIELD_POSITIONS[field.index];
@@ -1823,7 +1826,7 @@ export default function GameBoard({ gameCode }: Props) {
                 );
               })}
 
-              <div className={`absolute left-1/2 top-1/2 flex h-[42%] w-[42%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[36px] border-2 border-dashed p-4 text-center ${theme.colors.centerBorder} ${theme.colors.centerBackground}`}>
+              <div className={`absolute left-1/2 top-1/2 flex h-[42%] w-[42%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[32px] border-2 p-4 text-center shadow-sm ${theme.colors.centerBorder} ${theme.colors.centerBackground}`}>
                 <div>
                   <div className="text-2xl">🐎</div>
                   <div className={`mt-1 text-sm font-semibold ${theme.colors.centerTitle}`}>{theme.labels.centerTitle}</div>
@@ -1834,19 +1837,19 @@ export default function GameBoard({ gameCode }: Props) {
           </div>
 
           {/* Pravý panel */}
-          <div className="flex flex-col gap-4">
-            <div className={`rounded-3xl p-6 shadow-lg ${theme.colors.cardBackground}`}>
-              <div className="flex items-center justify-between">
-                <h2 className={`text-2xl font-bold ${theme.colors.textPrimary}`}>Panel hry</h2>
+          <div className="flex flex-col gap-3">
+            <div className={`rounded-3xl p-5 shadow-xl ring-1 ring-black/[0.06] ${theme.colors.cardBackground}`}>
+              <div className="flex items-center justify-between mb-4">
+                <div className={`text-[10px] font-bold uppercase tracking-widest ${theme.colors.textMuted}`}>Herní panel</div>
                 <button
                   onClick={toggleSound}
                   title={soundEnabled ? "Vypnout zvuky" : "Zapnout zvuky"}
-                  className="rounded-xl px-2 py-1 text-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                  className="rounded-lg px-2 py-1 text-base text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
                 >
                   {soundEnabled ? "🔊" : "🔇"}
                 </button>
               </div>
-              <div className="mt-4 space-y-4">
+              <div className="space-y-3">
                 {shouldShowRacerGuide && (
                   <div className="relative overflow-hidden rounded-2xl border border-amber-300 bg-gradient-to-br from-amber-50 via-white to-amber-100 p-4 shadow-sm">
                     <div className="pointer-events-none absolute -right-4 -top-4 text-6xl opacity-10">🏇</div>
@@ -1934,8 +1937,8 @@ export default function GameBoard({ gameCode }: Props) {
                   </div>
                 )}
 
-                <div className={`rounded-2xl p-4 transition-colors ${isRolling ? theme.colors.rollPanelRolling : theme.colors.rollPanelIdle}`}>
-                  <div className="text-sm text-slate-500 mb-2">Poslední hod</div>
+                <div className={`rounded-2xl p-4 transition-colors border border-black/[0.06] ${isRolling ? theme.colors.rollPanelRolling : theme.colors.rollPanelIdle}`}>
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Poslední hod</div>
                   <div className="flex items-center gap-3">
                     <DiceFace
                       value={(isRolling || isMoving || hasPendingRollDecision) && displayRoll !== null ? displayRoll : (gameState?.last_roll ?? null)}
@@ -2108,7 +2111,7 @@ export default function GameBoard({ gameCode }: Props) {
 
                 {/* Hráči */}
                 <div>
-                  <div className={`mb-3 text-sm font-medium ${theme.colors.textPrimary}`}>Hráči</div>
+                  <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">Hráči</div>
                   <div className="space-y-2">
                     {players.map((player, index) => {
                       const isCurrent = gameState?.current_player_index === index;
@@ -2119,13 +2122,13 @@ export default function GameBoard({ gameCode }: Props) {
                           key={player.id}
                           onMouseEnter={() => !bankrupt && setHoveredPlayerId(player.id)}
                           onMouseLeave={() => setHoveredPlayerId(null)}
-                          className={`rounded-2xl border-2 p-3 transition-colors cursor-default ${
+                          className={`rounded-2xl border-2 p-3 transition-all cursor-default ${
                             bankrupt
-                              ? "border-red-300 bg-red-50 opacity-60"
+                              ? "border-red-200 bg-red-50/50 opacity-35"
                               : hoveredPlayerId === player.id
                               ? theme.colors.playerCardHover
                               : isCurrent
-                              ? theme.colors.playerCardActive
+                              ? `${theme.colors.playerCardActive} shadow-md`
                               : theme.colors.playerCardNormal
                           }`}
                         >
@@ -2228,11 +2231,11 @@ export default function GameBoard({ gameCode }: Props) {
 
             {/* Log */}
             {(gameState?.log?.length ?? 0) > 0 && (
-              <div className={`rounded-3xl p-6 shadow-lg ${theme.colors.cardBackground}`}>
-                <div className={`text-sm font-medium mb-3 ${theme.colors.textPrimary}`}>Log tahů</div>
-                <div className="space-y-1 max-h-52 overflow-y-auto">
+              <div className={`rounded-2xl px-4 py-3 shadow-sm ring-1 ring-black/[0.05] ${theme.colors.cardBackground}`}>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Log tahů</div>
+                <div className="space-y-1 max-h-36 overflow-y-auto">
                   {(gameState?.log ?? []).map((entry, i) => (
-                    <div key={i} className={`text-xs text-slate-600 ${i === 0 ? "font-semibold text-slate-900" : ""}`}>
+                    <div key={i} className={`text-[11px] leading-snug ${i === 0 ? "font-medium text-slate-700" : "text-slate-400"}`}>
                       {entry}
                     </div>
                   ))}
