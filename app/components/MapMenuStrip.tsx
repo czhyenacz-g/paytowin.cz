@@ -37,8 +37,8 @@ const PANELS: Panel[] = [
   { id: "mapa-1",  label: "Klasika",      emoji: "🏇", desc: "Základní mapa", index: "01", bgFrom: "from-slate-700",   bgTo: "to-slate-950",   bgImage: "/bg_horse_day.webp",    accentColor: "#f59e0b", available: true  },
   { id: "mapa-2",  label: "Mapa 2",       emoji: "🗺️", desc: "Klasický horse theme", index: "02", bgFrom: "from-blue-900",    bgTo: "to-blue-950",    bgImage: "/bg_horse_classic.webp", accentColor: "#60a5fa", available: true  },
   { id: "mapa-3",  label: "Mapa 3",       emoji: "🗺️", desc: "Noční horse theme", index: "03", bgFrom: "from-emerald-900", bgTo: "to-emerald-950", bgImage: "/bg_horse_night.webp",  accentColor: "#34d399", available: true  },
-  { id: "mapa-4",  label: "Mapa 4",       emoji: "🗺️", desc: "",              index: "04", bgFrom: "from-red-900",     bgTo: "to-red-950",     bgImage: "/bg_car_day.webp",      accentColor: "#f87171", available: false },
-  { id: "mapa-5",  label: "Mapa 5",       emoji: "🗺️", desc: "",              index: "05", bgFrom: "from-violet-900",  bgTo: "to-violet-950",  bgImage: "/bg_car_night.webp",    accentColor: "#a78bfa", available: false },
+  { id: "mapa-4",  label: "Pouštní sprint", emoji: "🏎️", desc: "Denní auto theme", index: "04", bgFrom: "from-red-900",     bgTo: "to-red-950",     bgImage: "/bg_car_day.webp",      accentColor: "#f87171", available: true  },
+  { id: "mapa-5",  label: "Noční ulice", emoji: "🌃", desc: "Noční auto theme", index: "05", bgFrom: "from-violet-900",  bgTo: "to-violet-950",  bgImage: "/bg_car_night.webp",    accentColor: "#a78bfa", available: true  },
   { id: "ostatni", label: "Komunitní mapy", emoji: "📦", desc: "",              index: "06", bgFrom: "from-teal-800",    bgTo: "to-teal-950",    bgImage: "/bg_other_maps.webp",   accentColor: "#2dd4bf", available: false },
   { id: "editor",  label: "Editor",       emoji: "🛠️", desc: "",              index: "07", bgFrom: "from-orange-900",  bgTo: "to-orange-950",  bgImage: "/bg_builder_yard.webp", accentColor: "#fb923c", available: false },
 ];
