@@ -14,14 +14,20 @@ interface DiscordUser {
   avatar: string | null;
 }
 
-const PANEL_LABELS: Record<string, string> = {
-  "mapa-1":  "Klasika",
-  "mapa-2":  "Mapa 2",
-  "mapa-3":  "Mapa 3",
-  "mapa-4":  "Mapa 4",
-  "mapa-5":  "Mapa 5",
-  "ostatni": "Ostatní mapy",
-  "editor":  "Editor",
+interface PanelConfig {
+  label: string;
+  desc: string;
+  available: boolean;
+}
+
+const PANEL_CONFIG: Record<string, PanelConfig> = {
+  "mapa-1":  { label: "Klasika",      desc: "Klasická mapa s 21 poli. Dostihy, sázky a finanční chaos.",  available: true  },
+  "mapa-2":  { label: "Mapa 2",       desc: "Tato mapa je ve vývoji.",                                    available: false },
+  "mapa-3":  { label: "Mapa 3",       desc: "Tato mapa je ve vývoji.",                                    available: false },
+  "mapa-4":  { label: "Mapa 4",       desc: "Tato mapa je ve vývoji.",                                    available: false },
+  "mapa-5":  { label: "Mapa 5",       desc: "Tato mapa je ve vývoji.",                                    available: false },
+  "ostatni": { label: "Ostatní mapy", desc: "Výběr z dalších herních map. Připravujeme.",                 available: false },
+  "editor":  { label: "Editor",       desc: "Tvorba vlastních map. Připravujeme.",                        available: false },
 };
 
 export default function LandingPage() {
@@ -394,17 +400,37 @@ export default function LandingPage() {
                   ← Zpět
                 </button>
                 <div>
-                  <div className="text-xs text-slate-400 uppercase tracking-wider">Nová hra</div>
+                  <div className="text-xs text-slate-400 uppercase tracking-wider">
+                    {activePanel && PANEL_CONFIG[activePanel]?.available ? "Nová hra" : "Připravujeme"}
+                  </div>
                   <div className="text-base font-bold text-slate-900 leading-tight">
-                    {activePanel ? (PANEL_LABELS[activePanel] ?? activePanel) : ""}
+                    {activePanel ? (PANEL_CONFIG[activePanel]?.label ?? activePanel) : ""}
                   </div>
                 </div>
               </div>
 
-              {/* Formulář — vytvoření hry */}
+              {activePanel && PANEL_CONFIG[activePanel]?.desc && (
+                <p className="text-sm text-slate-500 px-1">
+                  {PANEL_CONFIG[activePanel].desc}
+                </p>
+              )}
+
+              {/* Formulář — vytvoření hry nebo Brzy placeholder */}
               <div className="rounded-3xl bg-white p-6 shadow-lg space-y-4">
 
-                {shareCode ? (
+                {activePanel && !PANEL_CONFIG[activePanel]?.available ? (
+                  <div className="py-6 text-center space-y-3">
+                    <div className="text-4xl">🚧</div>
+                    <div className="text-base font-semibold text-slate-700">Mapa se připravuje</div>
+                    <div className="text-sm text-slate-400">Tato mapa ještě není dostupná. Zkus Klasiku nebo se vrať later.</div>
+                    <button
+                      onClick={handleBack}
+                      className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 transition"
+                    >
+                      ← Zpět na menu
+                    </button>
+                  </div>
+                ) : shareCode ? (
                   <div className="space-y-4">
                     <div className="rounded-2xl border-2 border-emerald-400 bg-emerald-50 p-4 space-y-3">
                       <div className="text-sm font-semibold text-emerald-800">✅ Hra vytvořena! Pošli kamarádům odkaz:</div>

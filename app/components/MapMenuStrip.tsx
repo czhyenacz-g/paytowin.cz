@@ -46,11 +46,13 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
     <div className="flex w-full overflow-hidden" style={{ height: "clamp(260px, 42vh, 480px)" }}>
       {PANELS.map((panel, idx) => {
         const isHovered = hovered === idx;
-        // Klikatelný = dostupný + existuje handler nebo href
-        const isClickable = panel.available && (!!onPanelClick || !!panel.href);
+        // isNavigable = má kam jít (otevře setup view nebo href)
+        const isNavigable = !!onPanelClick || !!panel.href;
+        // isAvailable = panel je plně funkční (zobrazí "→ Hrát")
+        const isAvailable = panel.available;
 
         const handleClick = () => {
-          if (!isClickable) return;
+          if (!isNavigable) return;
           if (onPanelClick) { onPanelClick(panel.id); return; }
           if (panel.href) { window.location.href = panel.href; }
         };
@@ -60,9 +62,9 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
             "group relative overflow-hidden bg-gradient-to-b",
             panel.bgFrom, panel.bgTo,
             "transition-[flex] duration-300 ease-in-out",
-            isClickable ? "cursor-pointer" : "cursor-default",
+            isNavigable ? "cursor-pointer" : "cursor-default",
           ].join(" "),
-          style: { flex: isHovered && isClickable ? 4 : 1 },
+          style: { flex: isHovered && isNavigable ? 4 : 1 },
           onMouseEnter: () => setHovered(idx),
           onMouseLeave: () => setHovered(null),
           onClick: handleClick,
@@ -73,14 +75,14 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
             {/* Idle: bg-black/48 opacity-100 → hover: opacity-20 = efektivně ~10% tmavý overlay */}
             <div className={[
               "absolute inset-0 transition-opacity duration-300",
-              isClickable ? "bg-black/48 group-hover:opacity-20" : "bg-black/62",
+              isNavigable ? "bg-black/48 group-hover:opacity-20" : "bg-black/62",
             ].join(" ")} />
 
             {/* Emoji — dekorativní pozadí */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none" style={{ paddingBottom: "60px" }}>
               <span className={[
                 "text-7xl transition-opacity duration-300",
-                isClickable ? "opacity-20 group-hover:opacity-55" : "opacity-8",
+                isNavigable ? "opacity-20 group-hover:opacity-55" : "opacity-8",
               ].join(" ")}>
                 {panel.emoji}
               </span>
@@ -91,39 +93,39 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
 
               <div className={[
                 "text-xs font-semibold leading-tight truncate transition-colors duration-300",
-                isClickable ? "text-white/80 group-hover:text-white" : "text-white/40",
+                isAvailable ? "text-white/80 group-hover:text-white" : "text-white/40 group-hover:text-white/65",
               ].join(" ")}>
                 {panel.label}
               </div>
 
-              {isClickable && panel.desc && (
+              {isAvailable && panel.desc && (
                 <div className="text-xs text-white/0 leading-tight truncate mt-0.5 transition-colors duration-300 group-hover:text-white/65">
                   {panel.desc}
                 </div>
               )}
 
-              {isClickable && (
+              {isAvailable && (
                 <div className="mt-1.5 text-xs font-semibold text-emerald-300/0 transition-colors duration-300 group-hover:text-emerald-300/90">
                   → Hrát
                 </div>
               )}
 
-              {!panel.available && (
+              {!isAvailable && (
                 <div className="mt-1.5 inline-block rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-400/75">
                   Brzy
                 </div>
               )}
             </div>
 
-            {/* Horní linka — vodítko pro dostupný panel */}
-            {isClickable && (
+            {/* Horní linka — vodítko pro navigovatelný panel */}
+            {isNavigable && (
               <div className="absolute top-0 left-0 right-0 h-px bg-white/20" />
             )}
           </>
         );
 
         return (
-          <div key={panel.id} role={isClickable ? "button" : undefined} {...sharedProps}>
+          <div key={panel.id} role={isNavigable ? "button" : undefined} {...sharedProps}>
             {inner}
           </div>
         );
