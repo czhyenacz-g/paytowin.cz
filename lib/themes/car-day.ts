@@ -9,10 +9,10 @@ export const carDayTheme: Theme = {
   colors: {
     pageBackground:     "bg-slate-100",
     cardBackground:     "bg-white",
-    boardSurface:       "bg-slate-200",
-    boardSurfaceBorder: "border-slate-300",
-    centerBackground:   "bg-slate-100",
-    centerBorder:       "border-slate-400",
+    boardSurface:       "bg-stone-200",
+    boardSurfaceBorder: "border-stone-300",
+    centerBackground:   "bg-stone-300",
+    centerBorder:       "border-stone-400",
     centerTitle:        "text-slate-700",
     centerSubtitle:     "text-slate-400",
     fieldStyles: {

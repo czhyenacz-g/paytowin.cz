@@ -11,8 +11,8 @@ export const horseNightTheme: Theme = {
     cardBackground:     "bg-slate-800",
     boardSurface:       "bg-slate-700",
     boardSurfaceBorder: "border-slate-600",
-    centerBackground:   "bg-slate-800",
-    centerBorder:       "border-slate-500",
+    centerBackground:   "bg-green-950",
+    centerBorder:       "border-green-800",
     centerTitle:        "text-slate-200",
     centerSubtitle:     "text-slate-400",
     fieldStyles: {

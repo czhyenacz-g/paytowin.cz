@@ -11,8 +11,8 @@ export const carNightTheme: Theme = {
     cardBackground:     "bg-slate-800",
     boardSurface:       "bg-slate-700",
     boardSurfaceBorder: "border-slate-600",
-    centerBackground:   "bg-slate-800",
-    centerBorder:       "border-slate-500",
+    centerBackground:   "bg-stone-950",
+    centerBorder:       "border-stone-700",
     centerTitle:        "text-slate-200",
     centerSubtitle:     "text-slate-400",
     fieldStyles: {

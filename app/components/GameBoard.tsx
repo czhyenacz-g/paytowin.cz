@@ -1752,6 +1752,18 @@ export default function GameBoard({ gameCode }: Props) {
                 boxShadow: "inset 0 2px 24px rgba(0,0,0,0.09), 0 4px 32px rgba(0,0,0,0.10)",
               }}
             >
+              {/* ── Okruhový pás — inner boundary of the racing lane ──────── */}
+              <div
+                className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                style={{
+                  width: "62%",
+                  height: "62%",
+                  borderRadius: "50%",
+                  border: "2px solid rgba(0,0,0,0.08)",
+                  boxShadow: "0 0 0 1.5px rgba(255,255,255,0.10), 0 2px 16px rgba(0,0,0,0.07), inset 0 0 16px rgba(0,0,0,0.05)",
+                }}
+              />
+
               {FIELDS.map((field) => {
                 const pos = FIELD_POSITIONS[field.index];
                 const playersHere = fieldPlayers(field.index);
@@ -1831,7 +1843,7 @@ export default function GameBoard({ gameCode }: Props) {
                 );
               })}
 
-              <div className={`absolute left-1/2 top-1/2 flex h-[44%] w-[44%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-3xl border-2 p-4 text-center shadow-sm ${theme.colors.centerBorder} ${theme.colors.centerBackground}`}>
+              <div className={`absolute left-1/2 top-1/2 flex h-[44%] w-[44%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[50%] border-2 p-4 text-center shadow-inner ${theme.colors.centerBorder} ${theme.colors.centerBackground}`}>
                 <div>
                   <div className="text-4xl">🐎</div>
                   <div className={`mt-1 text-sm font-semibold ${theme.colors.centerTitle}`}>{theme.labels.centerTitle}</div>
