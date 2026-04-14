@@ -1940,7 +1940,7 @@ export default function GameBoard({ gameCode }: Props) {
                                             {h.name}
                                           </span>
                                         </div>
-                                        <div className="mt-1.5 ml-6 flex flex-wrap items-center gap-1.5">
+                                        <div className="mt-1.5 ml-6 inline-flex max-w-full flex-wrap items-center gap-1.5">
                                           <span className="rounded bg-white/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
                                             Stamina {h.stamina ?? 100}%
                                           </span>
