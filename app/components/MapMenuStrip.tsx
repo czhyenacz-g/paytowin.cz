@@ -58,17 +58,17 @@ export default function MapMenuStrip() {
         const inner = (
           <>
             {/* Overlay — dostupný panel zesvětlí na hover, nedostupný zůstane tmavý */}
-            {/* Idle: bg-black/72 opacity-100 → hover: opacity-20 = efektivně ~14% tmavý overlay */}
+            {/* Idle: dostupný bg-black/48, nedostupný bg-black/62 → hover opacity-20 = ~10% tmavý */}
             <div className={[
               "absolute inset-0 transition-opacity duration-300",
-              isClickable ? "bg-black/72 group-hover:opacity-20" : "bg-black/80",
+              isClickable ? "bg-black/48 group-hover:opacity-20" : "bg-black/62",
             ].join(" ")} />
 
             {/* Emoji — dekorativní, výrazně větší, lépe čitelné na velkém panelu */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none" style={{ paddingBottom: "60px" }}>
               <span className={[
                 "text-7xl transition-opacity duration-300",
-                isClickable ? "opacity-10 group-hover:opacity-55" : "opacity-5",
+                isClickable ? "opacity-20 group-hover:opacity-55" : "opacity-8",
               ].join(" ")}>
                 {panel.emoji}
               </span>
@@ -80,7 +80,7 @@ export default function MapMenuStrip() {
               {/* Název */}
               <div className={[
                 "text-xs font-semibold leading-tight truncate transition-colors duration-300",
-                isClickable ? "text-white/50 group-hover:text-white" : "text-white/25",
+                isClickable ? "text-white/80 group-hover:text-white" : "text-white/40",
               ].join(" ")}>
                 {panel.label}
               </div>
@@ -101,7 +101,7 @@ export default function MapMenuStrip() {
 
               {/* Brzy pill — nedostupný panel, vždy viditelný */}
               {!panel.available && (
-                <div className="mt-1.5 inline-block rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-400/55">
+                <div className="mt-1.5 inline-block rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-400/75">
                   Brzy
                 </div>
               )}
