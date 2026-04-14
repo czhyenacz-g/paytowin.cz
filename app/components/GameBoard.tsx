@@ -154,6 +154,7 @@ export default function GameBoard({ gameCode }: Props) {
   const [soundEnabled, setSoundEnabled] = React.useState(true);
   const [racerGuideDismissed, setRacerGuideDismissed] = React.useState(false);
   const [staminaGuideDismissed, setStaminaGuideDismissed] = React.useState(false);
+  const [preferredGuideDismissed, setPreferredGuideDismissed] = React.useState(false);
   const audioCtxRef = React.useRef<AudioContext | null>(null);
   const soundEnabledRef = React.useRef(true);
   // Refs pro ochranu animace před Realtime přepsáním pozice
@@ -194,6 +195,7 @@ export default function GameBoard({ gameCode }: Props) {
     const scope = gameCode ?? "local";
     setRacerGuideDismissed(localStorage.getItem(`paytowin_guide_racer_${scope}`) === "dismissed");
     setStaminaGuideDismissed(localStorage.getItem(`paytowin_guide_stamina_${scope}`) === "dismissed");
+    setPreferredGuideDismissed(localStorage.getItem(`paytowin_guide_preferred_${scope}`) === "dismissed");
   }, [gameCode]);
 
   const toggleSound = () => {
@@ -213,6 +215,12 @@ export default function GameBoard({ gameCode }: Props) {
     const guideKey = `paytowin_guide_stamina_${gameCode ?? "local"}`;
     localStorage.setItem(guideKey, "dismissed");
     setStaminaGuideDismissed(true);
+  }, [gameCode]);
+
+  const dismissPreferredGuide = React.useCallback(() => {
+    const guideKey = `paytowin_guide_preferred_${gameCode ?? "local"}`;
+    localStorage.setItem(guideKey, "dismissed");
+    setPreferredGuideDismissed(true);
   }, [gameCode]);
 
   const playStepSound = React.useCallback(() => {
@@ -1311,6 +1319,15 @@ export default function GameBoard({ gameCode }: Props) {
     !isBankrupt(myPlayer) &&
     myPlayer.horses.length > 0 &&
     gameStatus === "playing";
+  const hasPreferredRacer = !!myPlayer?.horses.some((horse) => horse.isPreferred);
+  const shouldShowPreferredGuide =
+    viewerRole === "player" &&
+    !preferredGuideDismissed &&
+    !!myPlayer &&
+    !isBankrupt(myPlayer) &&
+    myPlayer.horses.length > 0 &&
+    !hasPreferredRacer &&
+    gameStatus === "playing";
 
   // Mapa (racer.id ?? racer.name) → vlastník — id-first, name fallback pro stará data
   const racerOwnership: Record<string, Player> = {};
@@ -1789,6 +1806,35 @@ export default function GameBoard({ gameCode }: Props) {
                       </div>
                       <button
                         onClick={dismissStaminaGuide}
+                        className="shrink-0 rounded-lg px-2 py-1 text-xs font-medium text-slate-400 transition hover:bg-white/70 hover:text-slate-700"
+                        title="Skrýt nápovědu"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {!shouldShowRacerGuide && !shouldShowStaminaGuide && shouldShowPreferredGuide && (
+                  <div className="relative overflow-hidden rounded-2xl border border-violet-300 bg-gradient-to-br from-violet-50 via-white to-fuchsia-100 p-4 shadow-sm">
+                    <div className="absolute -right-4 -top-4 text-6xl opacity-10">⭐</div>
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-violet-100 text-2xl">
+                        🎩
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-black uppercase tracking-[0.18em] text-violet-700">
+                          Průvodce žokeje
+                        </div>
+                        <div className="mt-1 text-sm font-semibold text-slate-800">
+                          Vyber si hlavního racera. Do dalších závodů se ti bude hodit jako první volba.
+                        </div>
+                        <p className="mt-1 text-xs leading-relaxed text-slate-600">
+                          Označený závodník je po ruce rychleji a usnadní ti výběr, když budeš chtít jít do dalšího závodu bez zdržení.
+                        </p>
+                      </div>
+                      <button
+                        onClick={dismissPreferredGuide}
                         className="shrink-0 rounded-lg px-2 py-1 text-xs font-medium text-slate-400 transition hover:bg-white/70 hover:text-slate-700"
                         title="Skrýt nápovědu"
                       >
