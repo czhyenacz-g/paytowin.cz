@@ -270,18 +270,18 @@ export default function LandingPage() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-100 overflow-x-hidden">
-      {/* Amber banner — pevně nahoře, mimo slider */}
-      <div className="bg-amber-100 border-b border-amber-300 px-4 py-2 text-center text-sm text-amber-800">
+    <div className="flex flex-col bg-slate-100 overflow-hidden" style={{ height: "100dvh" }}>
+      {/* Amber banner — shrink-0, bere svou přirozenou výšku */}
+      <div className="shrink-0 bg-amber-100 border-b border-amber-300 px-4 py-2 text-center text-sm text-amber-800">
         Experimentální projekt · kontakt:{" "}
         <a href="mailto:hynek@darbujan.cz" className="underline hover:text-amber-900">
           hynek@darbujan.cz
         </a>
       </div>
 
-      {/* Sliding container — 200% wide, posune se o 50% doleva při aktivním panelu */}
+      {/* Sliding container — flex-1 vyplní zbytek viewportu po banneru */}
       <div
-        className="flex transition-transform duration-500 ease-in-out"
+        className="flex-1 flex min-h-0 transition-transform duration-500 ease-in-out"
         style={{
           width: "200%",
           transform: activePanel ? "translateX(-50%)" : "translateX(0%)",
@@ -289,10 +289,10 @@ export default function LandingPage() {
       >
 
         {/* ── LEFT: landing view (50% = 100vw) ── */}
-        <div style={{ width: "50%" }} className="min-h-screen">
+        <div style={{ width: "50%" }} className="flex flex-col min-h-0">
           <MapMenuStrip onPanelClick={(id) => setActivePanel(id)} />
 
-          <div className="flex min-h-[calc(100vh-40px)] items-center justify-center p-6">
+          <div className="flex flex-1 min-h-0 items-center justify-center p-6 overflow-y-auto">
             <div className="w-full max-w-md space-y-6">
 
               {/* Titulek */}
@@ -381,8 +381,8 @@ export default function LandingPage() {
         </div>
 
         {/* ── RIGHT: setup view (50% = 100vw) ── */}
-        <div style={{ width: "50%" }} className="min-h-screen bg-slate-100">
-          <div className="flex min-h-screen items-start justify-center p-6 pt-10">
+        <div style={{ width: "50%" }} className="bg-slate-100 overflow-y-auto">
+          <div className="flex min-h-full items-start justify-center p-6 pt-10">
             <div className="w-full max-w-md space-y-6">
 
               {/* Zpět + název panelu */}
