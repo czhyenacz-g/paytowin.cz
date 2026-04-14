@@ -1941,28 +1941,35 @@ export default function GameBoard({ gameCode }: Props) {
                                           </span>
                                         </div>
                                         <div className="mt-1.5 ml-6 inline-flex max-w-full flex-wrap items-center gap-1.5">
-                                          <span className="rounded bg-white/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
+                                          <span className="whitespace-nowrap rounded bg-white/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
                                             Stamina {h.stamina ?? 100}%
                                           </span>
-                                          {h.isPreferred && (
-                                            <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600">
-                                              Hlavní
-                                            </span>
-                                          )}
                                           {isOwn ? (
-                                            <button
-                                              onClick={() => setPreferredRacer(player.id, h.isPreferred ? null : hKey)}
-                                              className={`shrink-0 text-sm leading-none transition-colors ${
-                                                h.isPreferred
-                                                  ? "text-amber-400 hover:text-slate-300"
-                                                  : "text-slate-300 hover:text-amber-400"
-                                              }`}
-                                              title={h.isPreferred ? "Odnastavit hlavního závodníka" : "Nastavit jako hlavního závodníka"}
-                                            >
-                                              {h.isPreferred ? "★" : "☆"}
-                                            </button>
+                                            <span className="inline-flex items-center gap-1 whitespace-nowrap">
+                                              {h.isPreferred && (
+                                                <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600">
+                                                  Hlavní
+                                                </span>
+                                              )}
+                                              <button
+                                                onClick={() => setPreferredRacer(player.id, h.isPreferred ? null : hKey)}
+                                                className={`shrink-0 text-sm leading-none transition-colors ${
+                                                  h.isPreferred
+                                                    ? "text-amber-400 hover:text-slate-300"
+                                                    : "text-slate-300 hover:text-amber-400"
+                                                }`}
+                                                title={h.isPreferred ? "Odnastavit hlavního závodníka" : "Nastavit jako hlavního závodníka"}
+                                              >
+                                                {h.isPreferred ? "★" : "☆"}
+                                              </button>
+                                            </span>
                                           ) : h.isPreferred ? (
-                                            <span className="shrink-0 text-sm leading-none text-amber-400">★</span>
+                                            <span className="inline-flex items-center gap-1 whitespace-nowrap">
+                                              <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600">
+                                                Hlavní
+                                              </span>
+                                              <span className="shrink-0 text-sm leading-none text-amber-400">★</span>
+                                            </span>
                                           ) : null}
                                         </div>
                                       </div>
