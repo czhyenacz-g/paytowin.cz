@@ -1530,7 +1530,7 @@ export default function GameBoard({ gameCode }: Props) {
 
       <div className="bg-amber-100 border-b border-amber-300 px-4 py-2 text-center text-sm text-amber-800">
         Experimentální projekt · kontakt:{" "}
-        <a href="mailto:hynek@darbujan.cz" className="underline hover:text-amber-900">hynek@darbujan.cz</a>
+        <a href="mailto:info@paytowin.cz" className="underline hover:text-amber-900">info@paytowin.cz</a>
         {gameCode && (
           <span className="ml-4 font-mono font-bold tracking-widest">
             🎮 hra: {gameCode}
@@ -2017,4 +2017,3 @@ export function resolveRacerDisplay(
   if (src) return { type: "image", src, alt: racer.name };
   return { type: "emoji", value: racer.emoji };
 }
-
