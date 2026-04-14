@@ -1292,7 +1292,7 @@ export default function GameBoard({ gameCode }: Props) {
     if (!isHost && !isLocalGame) return;
     const timer = setTimeout(() => {
       submitPendingRaceScoreRef.current(0);
-    }, 8000); // 5 s minihra + 3 s buffer
+    }, 11000); // 8 s minihra + 3 s buffer
     return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [racePendingEvt?.phase === "racing"

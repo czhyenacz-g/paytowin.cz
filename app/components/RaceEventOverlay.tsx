@@ -44,9 +44,20 @@ interface RaceEventOverlayProps {
   onCloseResult: () => void;
 }
 
-// ── Minihra: 5s tapování ─────────────────────────────────────────────────────
+// ── Minihra: 8s reaction pattern ──────────────────────────────────────────────
 
-const RACE_DURATION_MS = 5000;
+const RACE_DURATION_MS = 8000;
+
+// Šipky jako cílové klávesy; KEY_CODE_MAP mapuje e.code → symbol
+const RACE_KEYS = ["←", "→", "↑", "↓"] as const;
+type RaceKey = typeof RACE_KEYS[number];
+const KEY_CODE_MAP: Record<string, RaceKey> = {
+  ArrowLeft: "←", ArrowRight: "→", ArrowUp: "↑", ArrowDown: "↓",
+};
+function randomKey(exclude?: RaceKey): RaceKey {
+  const pool = RACE_KEYS.filter(k => k !== exclude) as RaceKey[];
+  return pool[Math.floor(Math.random() * pool.length)];
+}
 
 function RacingMinigame({
   racingPlayer,
@@ -66,55 +77,73 @@ function RacingMinigame({
   onSubmit: (score: number, finalStamina: number) => void;
 }) {
   const [timeLeft, setTimeLeft] = React.useState(RACE_DURATION_MS);
-  const [taps, setTaps] = React.useState(0);
+  const [inputs, setInputs] = React.useState(0);              // celkem stisků → stamina drain
+  const [score, setScore] = React.useState(0);                // čistý výsledek (správné − špatné, ≥0)
+  const [targetKey, setTargetKey] = React.useState<RaceKey>(() => randomKey());
+  const [lastResult, setLastResult] = React.useState<"hit" | "miss" | null>(null);
   const submittedRef = React.useRef(false);
 
-  // liveStamina je odvozena od taps — žádný nový state
-  const liveStamina = Math.max(0, initialStamina - taps * STAMINA_PER_TAP);
+  // liveStamina odvozena od počtu stisků — žádný extra state
+  const liveStamina = Math.max(0, initialStamina - inputs * STAMINA_PER_TAP);
   const burnedOut = liveStamina === 0;
 
-  const submit = React.useCallback((score: number) => {
+  const submit = React.useCallback((finalScore: number, totalInputs: number) => {
     if (submittedRef.current) return;
     submittedRef.current = true;
-    const finalStamina = Math.max(0, initialStamina - score * STAMINA_PER_TAP);
-    onSubmit(score, finalStamina);
+    const finalStamina = Math.max(0, initialStamina - totalInputs * STAMINA_PER_TAP);
+    onSubmit(finalScore, finalStamina);
   }, [onSubmit, initialStamina]);
 
   // Odpočet každých 100 ms
   React.useEffect(() => {
-    const interval = setInterval(() => {
-      setTimeLeft(prev => Math.max(0, prev - 100));
-    }, 100);
+    const interval = setInterval(() => setTimeLeft(prev => Math.max(0, prev - 100)), 100);
     return () => clearInterval(interval);
   }, []);
 
   // Auto-submit při vypršení času
   React.useEffect(() => {
-    if (timeLeft === 0) submit(taps);
-  }, [timeLeft, taps, submit]);
+    if (timeLeft === 0) submit(score, inputs);
+  }, [timeLeft, score, inputs, submit]);
 
-  // Klávesnice (Spacebar / Enter) — jen aktivní závodník
+  // Auto-rotace cíle každé 2 s — hráč nemůže čekat věčně
   React.useEffect(() => {
     if (!isMyTurn) return;
-    const handleKey = (e: KeyboardEvent) => {
-      if ((e.code === "Space" || e.code === "Enter") && !submittedRef.current && timeLeft > 0) {
+    const interval = setInterval(() => {
+      if (!submittedRef.current) setTargetKey(prev => randomKey(prev));
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [isMyTurn]);
+
+  // Input: správná klávesa +1, špatná −1 (min 0); cíl se vždy změní
+  const handleInput = (pressedKey: RaceKey) => {
+    if (!isMyTurn || submittedRef.current || timeLeft === 0) return;
+    const correct = pressedKey === targetKey;
+    setInputs(i => i + 1);
+    setScore(s => correct ? s + 1 : Math.max(0, s - 1));
+    setTargetKey(prev => randomKey(prev));
+    setLastResult(correct ? "hit" : "miss");
+    setTimeout(() => setLastResult(null), 300);
+  };
+
+  // Klávesnice: šipkové klávesy — jen aktivní závodník
+  React.useEffect(() => {
+    if (!isMyTurn) return;
+    const onKey = (e: KeyboardEvent) => {
+      const mapped = KEY_CODE_MAP[e.code];
+      if (mapped && !submittedRef.current && timeLeft > 0) {
         e.preventDefault();
-        setTaps(prev => prev + 1);
+        handleInput(mapped);
       }
     };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [isMyTurn, timeLeft]);
-
-  const handleTap = () => {
-    if (!isMyTurn || submittedRef.current || timeLeft === 0) return;
-    setTaps(prev => prev + 1);
-  };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMyTurn, targetKey, timeLeft]); // targetKey: čerstvý správný cíl při každém re-renderu
 
   const pct = timeLeft / RACE_DURATION_MS;
   const barColor = pct > 0.5 ? "#22c55e" : pct > 0.25 ? "#f59e0b" : "#ef4444";
 
-  // Čekání na jinéhe závodníka
+  // Čekání na jiného závodníka — view beze změny
   if (!isMyTurn) {
     return (
       <div className="text-center space-y-4 py-2">
@@ -133,21 +162,44 @@ function RacingMinigame({
   }
 
   // Aktivní minihra
+  const btnClass = (k: RaceKey) =>
+    `rounded-xl py-4 text-2xl font-black transition-colors select-none disabled:opacity-40 ${
+      targetKey === k
+        ? "bg-indigo-600 text-white shadow-md"
+        : "bg-slate-100 text-slate-400 hover:bg-slate-200"
+    }`;
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="text-center">
         <span className="text-3xl">{racingHorse?.emoji ?? "🏇"}</span>
         <p className="text-sm font-semibold text-slate-700 mt-1">{racingHorse?.name ?? "Závodník"}</p>
       </div>
 
-      {/* Progress bar */}
+      {/* Timer bar */}
       <div className="h-3 w-full rounded-full bg-slate-100 overflow-hidden">
         <div className="h-3 rounded-full transition-none" style={{ width: `${pct * 100}%`, background: barColor }} />
       </div>
 
+      {/* Čas + skóre */}
       <div className="flex items-center justify-between px-1">
         <span className="text-sm text-slate-500">{Math.ceil(timeLeft / 1000)} s</span>
-        <span className="text-3xl font-black text-slate-800 tabular-nums">{taps}</span>
+        <span className={`text-3xl font-black tabular-nums ${
+          lastResult === "hit" ? "text-green-500" : lastResult === "miss" ? "text-red-500" : "text-slate-800"
+        }`}>{score}</span>
+      </div>
+
+      {/* Směrové tlačítka: kříž ↑ / ← → / ↓ */}
+      <div className="grid grid-cols-3 gap-2">
+        <div />
+        <button onClick={() => handleInput("↑")} disabled={timeLeft === 0} className={btnClass("↑")}>↑</button>
+        <div />
+        <button onClick={() => handleInput("←")} disabled={timeLeft === 0} className={btnClass("←")}>←</button>
+        <div />
+        <button onClick={() => handleInput("→")} disabled={timeLeft === 0} className={btnClass("→")}>→</button>
+        <div />
+        <button onClick={() => handleInput("↓")} disabled={timeLeft === 0} className={btnClass("↓")}>↓</button>
+        <div />
       </div>
 
       {/* Live stamina */}
@@ -163,14 +215,7 @@ function RacingMinigame({
         <StaminaBar value={liveStamina} />
       </div>
 
-      <button
-        onClick={handleTap}
-        disabled={timeLeft === 0}
-        className="w-full rounded-2xl bg-indigo-600 px-4 py-7 text-2xl font-black text-white hover:bg-indigo-700 active:scale-95 transition-transform select-none disabled:opacity-40"
-      >
-        🏇 TAP!
-      </button>
-      <p className="text-center text-xs text-slate-400">nebo Spacebar / Enter</p>
+      <p className="text-center text-xs text-slate-400">šipkové klávesy nebo tlačítka</p>
     </div>
   );
 }
