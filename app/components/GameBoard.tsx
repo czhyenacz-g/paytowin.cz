@@ -155,6 +155,7 @@ export default function GameBoard({ gameCode }: Props) {
   const [racerGuideDismissed, setRacerGuideDismissed] = React.useState(false);
   const [staminaGuideDismissed, setStaminaGuideDismissed] = React.useState(false);
   const [preferredGuideDismissed, setPreferredGuideDismissed] = React.useState(false);
+  const [guideDismissedTurn, setGuideDismissedTurn] = React.useState<number | null>(null);
   const audioCtxRef = React.useRef<AudioContext | null>(null);
   const soundEnabledRef = React.useRef(true);
   // Refs pro ochranu animace před Realtime přepsáním pozice
@@ -209,19 +210,22 @@ export default function GameBoard({ gameCode }: Props) {
     const guideKey = `paytowin_guide_racer_${gameCode ?? "local"}`;
     localStorage.setItem(guideKey, "dismissed");
     setRacerGuideDismissed(true);
-  }, [gameCode]);
+    setGuideDismissedTurn(gameState?.turn_count ?? null);
+  }, [gameCode, gameState?.turn_count]);
 
   const dismissStaminaGuide = React.useCallback(() => {
     const guideKey = `paytowin_guide_stamina_${gameCode ?? "local"}`;
     localStorage.setItem(guideKey, "dismissed");
     setStaminaGuideDismissed(true);
-  }, [gameCode]);
+    setGuideDismissedTurn(gameState?.turn_count ?? null);
+  }, [gameCode, gameState?.turn_count]);
 
   const dismissPreferredGuide = React.useCallback(() => {
     const guideKey = `paytowin_guide_preferred_${gameCode ?? "local"}`;
     localStorage.setItem(guideKey, "dismissed");
     setPreferredGuideDismissed(true);
-  }, [gameCode]);
+    setGuideDismissedTurn(gameState?.turn_count ?? null);
+  }, [gameCode, gameState?.turn_count]);
 
   const playStepSound = React.useCallback(() => {
     if (!soundEnabledRef.current) return;
@@ -375,7 +379,6 @@ export default function GameBoard({ gameCode }: Props) {
 
     console.log(`[turn-flow] roll start — player="${currentPlayer.name}" pos=${currentPlayer.position} roll=${roll}`);
 
-    // ── 1. Animace kostky ─────────────────────────────────────────────────────
     setIsRolling(true);
     setDisplayRoll(null);
     const animDuration = 800 + Math.random() * 400;
@@ -1298,6 +1301,7 @@ export default function GameBoard({ gameCode }: Props) {
     isLocalGame ? true : myPlayerId === pendingRace?.playerIds[pendingRace?.currentRacerIndex ?? -1]
   ));
   const isSpectator = viewerRole === "spectator";
+  const suppressGuideThisTurn = guideDismissedTurn !== null && guideDismissedTurn === (gameState?.turn_count ?? null);
   // Local: kdokoliv "player" může hodit za aktuálního hráče (hot-seat)
   // Online: jen hráč jehož ID sedí s localStorage
   const isMyTurn = isLocalGame
@@ -1307,6 +1311,7 @@ export default function GameBoard({ gameCode }: Props) {
   const myPlayer = players.find((player) => player.id === myPlayerId) ?? null;
   const shouldShowRacerGuide =
     viewerRole === "player" &&
+    !suppressGuideThisTurn &&
     !racerGuideDismissed &&
     !!myPlayer &&
     !isBankrupt(myPlayer) &&
@@ -1314,6 +1319,7 @@ export default function GameBoard({ gameCode }: Props) {
     gameStatus === "playing";
   const shouldShowStaminaGuide =
     viewerRole === "player" &&
+    !suppressGuideThisTurn &&
     !staminaGuideDismissed &&
     !!myPlayer &&
     !isBankrupt(myPlayer) &&
@@ -1322,6 +1328,7 @@ export default function GameBoard({ gameCode }: Props) {
   const hasPreferredRacer = !!myPlayer?.horses.some((horse) => horse.isPreferred);
   const shouldShowPreferredGuide =
     viewerRole === "player" &&
+    !suppressGuideThisTurn &&
     !preferredGuideDismissed &&
     !!myPlayer &&
     !isBankrupt(myPlayer) &&
