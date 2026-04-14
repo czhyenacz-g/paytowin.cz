@@ -123,7 +123,7 @@ interface Props {
 
 export default function GameBoard({ gameCode }: Props) {
   const [gameId, setGameId] = React.useState<string | null>(null);
-  const [themeId, setThemeId] = React.useState<string>("default");
+  const [themeId, setThemeId] = React.useState<string>("horse-day");
   const [boardId, setBoardId] = React.useState<string>("small");
   const [gameMode, setGameMode] = React.useState<"online" | "local">("online");
   const [isHost, setIsHost] = React.useState(false);
@@ -237,7 +237,7 @@ export default function GameBoard({ gameCode }: Props) {
 
       if (!game) { setLoading(false); return; }
       setGameId(game.id);
-      setThemeId(game.theme_id ?? "default");
+      setThemeId(game.theme_id ?? "horse-day");
       setBoardId(game.board_id ?? "small");
       setGameMode((game.game_mode ?? "online") as "online" | "local");
       setGameStatus(game.status);

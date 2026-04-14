@@ -21,16 +21,17 @@ interface PanelConfig {
   teaser:    string;       // text v placeholder kartě (co panel bude)
   available: boolean;
   bgImage?:  string;       // background obrázek pro setup view (z /public)
+  themeId?:  string;       // theme id automaticky vybrané při kliknutí na panel
 }
 
 const PANEL_CONFIG: Record<string, PanelConfig> = {
-  "mapa-1":  { label: "Klasika",      emoji: "🏇", desc: "Klasická mapa s 21 poli. Dostihy, sázky a finanční chaos.", teaser: "",                                                                              bgImage: "/bg_horse_day.webp",    available: true  },
-  "mapa-2":  { label: "Mapa 2",       emoji: "🗺️", desc: "Druhá herní mapa — nové rozvržení polí a jiná ekonomika.",  teaser: "Nová mapa s odlišným rozvržením polí, více hazardními událostmi a jinými koňmi.", bgImage: "/bg_horse_meadow.webp", available: false },
-  "mapa-3":  { label: "Mapa 3",       emoji: "🗺️", desc: "Třetí herní mapa — experimentální pravidla.",               teaser: "Experimentální mapa s upravenými pravidly a vyšším rizikem.",                     bgImage: "/bg_horse_night.webp",  available: false },
-  "mapa-4":  { label: "Mapa 4",       emoji: "🗺️", desc: "Čtvrtá herní mapa.",                                        teaser: "Připravujeme další herní prostředí.",                                            bgImage: "/bg_car_day.webp",      available: false },
-  "mapa-5":  { label: "Mapa 5",       emoji: "🗺️", desc: "Pátá herní mapa.",                                          teaser: "Připravujeme další herní prostředí.",                                            bgImage: "/bg_car_night.webp",    available: false },
-  "ostatni": { label: "Ostatní mapy", emoji: "📦", desc: "Komunita, user-made a speciální mapy.",                     teaser: "Výběr z dalších map od komunity i od nás. Fan-made, sezónní a event mapy.",      bgImage: "/bg_other_maps.webp",   available: false },
-  "editor":  { label: "Editor",       emoji: "🛠️", desc: "Tvorba a editace vlastních herních map.",                   teaser: "Navrhni vlastní mapu — rozmísti pole, nastav ekonomiku a sdílej s přáteli.",    bgImage: "/bg_builder_yard.webp", available: false },
+  "mapa-1":  { label: "Klasika",      emoji: "🏇", desc: "Klasická mapa s 21 poli. Dostihy, sázky a finanční chaos.", teaser: "",                                                                              bgImage: "/bg_horse_day.webp",     themeId: "horse-day",     available: true  },
+  "mapa-2":  { label: "Mapa 2",       emoji: "🗺️", desc: "Druhá herní mapa — nové rozvržení polí a jiná ekonomika.",  teaser: "Nová mapa s odlišným rozvržením polí, více hazardními událostmi a jinými koňmi.", bgImage: "/bg_horse_classic.webp", themeId: "horse-classic", available: false },
+  "mapa-3":  { label: "Mapa 3",       emoji: "🗺️", desc: "Třetí herní mapa — experimentální pravidla.",               teaser: "Experimentální mapa s upravenými pravidly a vyšším rizikem.",                     bgImage: "/bg_horse_night.webp",   themeId: "horse-night",   available: false },
+  "mapa-4":  { label: "Mapa 4",       emoji: "🗺️", desc: "Čtvrtá herní mapa.",                                        teaser: "Připravujeme další herní prostředí.",                                            bgImage: "/bg_car_day.webp",       themeId: "car-day",       available: false },
+  "mapa-5":  { label: "Mapa 5",       emoji: "🗺️", desc: "Pátá herní mapa.",                                          teaser: "Připravujeme další herní prostředí.",                                            bgImage: "/bg_car_night.webp",     themeId: "car-night",     available: false },
+  "ostatni": { label: "Ostatní mapy", emoji: "📦", desc: "Komunita, user-made a speciální mapy.",                     teaser: "Výběr z dalších map od komunity i od nás. Fan-made, sezónní a event mapy.",      bgImage: "/bg_other_maps.webp",                              available: false },
+  "editor":  { label: "Editor",       emoji: "🛠️", desc: "Tvorba a editace vlastních herních map.",                   teaser: "Navrhni vlastní mapu — rozmísti pole, nastav ekonomiku a sdílej s přáteli.",    bgImage: "/bg_builder_yard.webp",                            available: false },
 };
 
 export default function LandingPage() {
@@ -42,7 +43,7 @@ export default function LandingPage() {
   const [shareCode, setShareCode] = React.useState<string | null>(null);
   const [copied, setCopied] = React.useState(false);
   const [discordUser, setDiscordUser] = React.useState<DiscordUser | null>(null);
-  const [selectedThemeId, setSelectedThemeId] = React.useState("default");
+  const [selectedThemeId, setSelectedThemeId] = React.useState("horse-day");
   const [selectedBoardId, setSelectedBoardId] = React.useState("small");
   const [showThemeModal, setShowThemeModal] = React.useState(false);
   const [maxPlayers, setMaxPlayers] = React.useState(6);
@@ -299,7 +300,11 @@ export default function LandingPage() {
 
         {/* ── LEFT: landing view (50% = 100vw) ── */}
         <div style={{ width: "50%" }} className="flex flex-col min-h-0">
-          <MapMenuStrip onPanelClick={(id) => setActivePanel(id)} />
+          <MapMenuStrip onPanelClick={(id) => {
+            setActivePanel(id);
+            const themeId = PANEL_CONFIG[id]?.themeId;
+            if (themeId) setSelectedThemeId(themeId);
+          }} />
 
           <div className="flex flex-1 min-h-0 items-center justify-center p-6 overflow-y-auto">
             <div className="w-full max-w-md space-y-6">
@@ -594,7 +599,7 @@ export default function LandingPage() {
                   isPaid: t.isPaid ?? false,
                   priceCzk: t.priceCzk ?? 0,
                   boardBgImage: undefined as string | undefined,
-                  emoji: t.id === "dark" ? "🌙" : t.id === "classic-race" ? "🏇" : "☀️",
+                  emoji: t.id === "horse-night" ? "🌙" : t.id === "car-night" ? "🌙" : t.id === "horse-classic" ? "🏇" : "☀️",
                 })),
                 ...dbThemes.map(t => ({ ...t, emoji: "🎨" })),
               ].map((theme) => {

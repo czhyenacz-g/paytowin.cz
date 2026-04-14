@@ -1,7 +1,7 @@
 import type { Theme } from ".";
 
-export const classicRaceTheme: Theme = {
-  id: "classic-race",
+export const horseClassicTheme: Theme = {
+  id: "horse-classic",
   name: "Klasické dostihy",
   description: "Zelené závodiště, krémová pole — autentický boardgame zážitek.",
   isPaid: false,

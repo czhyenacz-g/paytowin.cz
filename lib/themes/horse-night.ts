@@ -1,9 +1,9 @@
 import type { Theme } from ".";
 
-export const darkTheme: Theme = {
-  id: "dark",
-  name: "Noční závody",
-  description: "Tmavý vzhled pro noční herní session.",
+export const horseNightTheme: Theme = {
+  id: "horse-night",
+  name: "Dostihy — Noc",
+  description: "Tmavý vzhled, koňské dostihy za noci.",
   isPaid: false,
   priceCzk: 0,
   colors: {
@@ -36,7 +36,7 @@ export const darkTheme: Theme = {
     playerCardHover:   "border-blue-400 bg-slate-600 shadow-sm",
   },
   labels: {
-    themeName:      "Noční závody",
+    themeName:      "Dostihy — Noc",
     centerTitle:    "Dostihiště",
     centerSubtitle: "Přijdou závody.",
     legend: {

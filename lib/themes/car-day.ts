@@ -1,0 +1,58 @@
+import type { Theme } from ".";
+
+export const carDayTheme: Theme = {
+  id: "car-day",
+  name: "Závody aut — Den",
+  description: "Světlý vzhled, asfaltové závodiště, automobilové závody.",
+  isPaid: false,
+  priceCzk: 0,
+  colors: {
+    pageBackground:     "bg-slate-100",
+    cardBackground:     "bg-white",
+    boardSurface:       "bg-slate-200",
+    boardSurfaceBorder: "border-slate-300",
+    centerBackground:   "bg-slate-100",
+    centerBorder:       "border-slate-400",
+    centerTitle:        "text-slate-700",
+    centerSubtitle:     "text-slate-400",
+    fieldStyles: {
+      start:      "h-20 w-20 border-red-400 bg-red-500 text-white",
+      coins_gain: "h-16 w-16 border-emerald-400 bg-emerald-100 text-emerald-800",
+      coins_lose: "h-16 w-16 border-red-300 bg-red-100 text-red-800",
+      gamble:     "h-16 w-16 border-violet-400 bg-violet-100 text-violet-800",
+      racer:      "h-16 w-16 border-sky-400 bg-sky-100 text-sky-800",
+      horse:      "h-16 w-16 border-sky-400 bg-sky-100 text-sky-800", // @deprecated alias
+      neutral:    "h-16 w-16 border-slate-300 bg-white text-slate-700",
+      chance:     "h-16 w-16 border-amber-400 bg-amber-100 text-amber-800",
+      finance:    "h-16 w-16 border-teal-400 bg-teal-100 text-teal-800",
+    },
+    activePlayerBadge: "bg-slate-900 text-white",
+    rollPanelIdle:     "bg-slate-100",
+    rollPanelRolling:  "bg-sky-100",
+    textPrimary:       "text-slate-800",
+    textMuted:         "text-slate-500",
+    playerCardActive:  "border-slate-900 bg-slate-50 shadow-sm",
+    playerCardNormal:  "border-slate-200 bg-white",
+    playerCardHover:   "border-sky-400 bg-sky-50 shadow-sm",
+  },
+  labels: {
+    themeName:      "Závody aut — Den",
+    centerTitle:    "Závodiště",
+    centerSubtitle: "Připravte motory.",
+    legend: {
+      gain:   "zisk",
+      lose:   "ztráta",
+      gamble: "hazard",
+      horse:  "auto",
+    },
+    racer:      "Auto",
+    racers:     "Auta",
+    racerField: "Garáž",
+  },
+  racers: [
+    { id: "stary_mustang",  name: "Starý Mustang",  speed: 2, price: 80,  emoji: "🚗" },
+    { id: "modra_strela",   name: "Modrá střela",   speed: 3, price: 150, emoji: "🏎️" },
+    { id: "zlaty_blesk",    name: "Zlatý blesk",    speed: 4, price: 250, emoji: "🟡" },
+    { id: "rychly_demon",   name: "Rychlý démon",   speed: 5, price: 400, emoji: "🔥" },
+  ],
+};

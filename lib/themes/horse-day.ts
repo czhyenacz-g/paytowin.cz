@@ -1,9 +1,9 @@
 import type { Theme } from ".";
 
-export const defaultTheme: Theme = {
-  id: "default",
-  name: "Klasika",
-  description: "Světlý vzhled, zelené závodiště.",
+export const horseDayTheme: Theme = {
+  id: "horse-day",
+  name: "Dostihy — Den",
+  description: "Světlý vzhled, zelené závodiště, koňské dostihy.",
   isPaid: false,
   priceCzk: 0,
   colors: {
@@ -36,7 +36,7 @@ export const defaultTheme: Theme = {
     playerCardHover:   "border-blue-400 bg-blue-50 shadow-sm",
   },
   labels: {
-    themeName:      "Klasika",
+    themeName:      "Dostihy — Den",
     centerTitle:    "Dostihiště",
     centerSubtitle: "Přijdou závody.",
     legend: {

@@ -48,9 +48,9 @@ export function loadThemeManifest(id: string | null | undefined): ThemeManifest 
   }
 
   // Validace selhala — fallback na default pokud to není already default
-  if (theme.id !== "default") {
-    console.warn(`[loadThemeManifest] Theme "${theme.id}" neprojde validací, fallback na default.`);
-    const fallbackTheme = getThemeById("default");
+  if (theme.id !== "horse-day") {
+    console.warn(`[loadThemeManifest] Theme "${theme.id}" neprojde validací, fallback na horse-day.`);
+    const fallbackTheme = getThemeById("horse-day");
     const fallbackManifest = themeToManifest(fallbackTheme);
     validateThemeManifest(fallbackManifest); // loguj případné problémy i s defaultem
     return fallbackManifest;
@@ -74,7 +74,7 @@ export function loadThemeManifest(id: string | null | undefined): ThemeManifest 
  * Nikdy nevyhazuje výjimku.
  */
 export async function loadThemeManifestAsync(id: string | null | undefined): Promise<ThemeManifest> {
-  const resolvedId = id ?? "default";
+  const resolvedId = id ?? "horse-day";
 
   // 1. Zkus DB
   try {

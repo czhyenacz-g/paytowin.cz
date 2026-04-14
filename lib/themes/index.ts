@@ -1,6 +1,8 @@
-import { defaultTheme } from "./default";
-import { darkTheme } from "./dark";
-import { classicRaceTheme } from "./classic-race";
+import { horseDayTheme } from "./horse-day";
+import { horseNightTheme } from "./horse-night";
+import { horseClassicTheme } from "./horse-classic";
+import { carDayTheme } from "./car-day";
+import { carNightTheme } from "./car-night";
 import type { GameCard } from "@/lib/cards";
 
 // ─── Field style keys ─────────────────────────────────────────────────────────
@@ -175,9 +177,9 @@ export { validateThemeManifest, crossCheckBoardAndTheme } from "./validator";
 
 // ─── Registr témat ────────────────────────────────────────────────────────────
 
-export const THEMES: Theme[] = [defaultTheme, darkTheme, classicRaceTheme];
+export const THEMES: Theme[] = [horseDayTheme, horseNightTheme, horseClassicTheme, carDayTheme, carNightTheme];
 
-/** Vrátí theme podle id; pokud není nalezeno nebo id je null, vrátí default. */
+/** Vrátí theme podle id; pokud není nalezeno nebo id je null, vrátí horse-day. */
 export function getThemeById(id: string | null | undefined): Theme {
-  return THEMES.find((t) => t.id === id) ?? defaultTheme;
+  return THEMES.find((t) => t.id === id) ?? horseDayTheme;
 }
