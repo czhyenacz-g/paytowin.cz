@@ -1938,7 +1938,7 @@ export default function GameBoard({ gameCode }: Props) {
                                               {isOwn ? (
                                                 <button
                                                   onClick={() => setPreferredRacer(player.id, h.isPreferred ? null : hKey)}
-                                                  className={`ml-auto shrink-0 text-sm leading-none transition-colors ${
+                                                  className={`shrink-0 text-sm leading-none transition-colors ${
                                                     h.isPreferred
                                                       ? "text-amber-400 hover:text-slate-300"
                                                       : "text-slate-300 hover:text-amber-400"
