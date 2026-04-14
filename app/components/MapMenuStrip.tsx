@@ -81,10 +81,11 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
             ].join(" ")}
             style={{
               flex: isHovered && isNavigable ? 4 : 1,
-              // Tmavý řez jako separátor — čitelný na jakémkoliv obrázku
-              borderRight: !isLast ? "3px solid rgba(0,0,0,0.65)" : undefined,
-              // Vnitřní světlý frame — dává každému panelu "slot box" tvar
-              boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.10)",
+              // Dual-line bevel separátor: bílá 1px highlight + tmavá 3px stín
+              // Čitelné na světlém i tmavém obrázku
+              boxShadow: !isLast
+                ? "inset -1px 0 0 rgba(255,255,255,0.28), inset -4px 0 0 rgba(0,0,0,0.80)"
+                : "none",
               ...(panel.bgImage ? {
                 backgroundImage: `url(${panel.bgImage})`,
                 backgroundSize: "cover",

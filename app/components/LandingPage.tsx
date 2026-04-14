@@ -20,16 +20,17 @@ interface PanelConfig {
   desc:      string;       // krátký popis pod headerem setup view
   teaser:    string;       // text v placeholder kartě (co panel bude)
   available: boolean;
+  bgImage?:  string;       // background obrázek pro setup view (z /public)
 }
 
 const PANEL_CONFIG: Record<string, PanelConfig> = {
-  "mapa-1":  { label: "Klasika",      emoji: "🏇", desc: "Klasická mapa s 21 poli. Dostihy, sázky a finanční chaos.", teaser: "",                                                                             available: true  },
-  "mapa-2":  { label: "Mapa 2",       emoji: "🗺️", desc: "Druhá herní mapa — nové rozvržení polí a jiná ekonomika.",  teaser: "Nová mapa s odlišným rozvržením polí, více hazardními událostmi a jinými koňmi.", available: false },
-  "mapa-3":  { label: "Mapa 3",       emoji: "🗺️", desc: "Třetí herní mapa — experimentální pravidla.",               teaser: "Experimentální mapa s upravenými pravidly a vyšším rizikem.",                     available: false },
-  "mapa-4":  { label: "Mapa 4",       emoji: "🗺️", desc: "Čtvrtá herní mapa.",                                        teaser: "Připravujeme další herní prostředí.",                                            available: false },
-  "mapa-5":  { label: "Mapa 5",       emoji: "🗺️", desc: "Pátá herní mapa.",                                          teaser: "Připravujeme další herní prostředí.",                                            available: false },
-  "ostatni": { label: "Ostatní mapy", emoji: "📦", desc: "Komunita, user-made a speciální mapy.",                     teaser: "Výběr z dalších map od komunity i od nás. Fan-made, sezónní a event mapy.",      available: false },
-  "editor":  { label: "Editor",       emoji: "🛠️", desc: "Tvorba a editace vlastních herních map.",                   teaser: "Navrhni vlastní mapu — rozmísti pole, nastav ekonomiku a sdílej s přáteli.",    available: false },
+  "mapa-1":  { label: "Klasika",      emoji: "🏇", desc: "Klasická mapa s 21 poli. Dostihy, sázky a finanční chaos.", teaser: "",                                                                              bgImage: "/bg_horse_day.webp",    available: true  },
+  "mapa-2":  { label: "Mapa 2",       emoji: "🗺️", desc: "Druhá herní mapa — nové rozvržení polí a jiná ekonomika.",  teaser: "Nová mapa s odlišným rozvržením polí, více hazardními událostmi a jinými koňmi.", bgImage: "/bg_horse_meadow.webp", available: false },
+  "mapa-3":  { label: "Mapa 3",       emoji: "🗺️", desc: "Třetí herní mapa — experimentální pravidla.",               teaser: "Experimentální mapa s upravenými pravidly a vyšším rizikem.",                     bgImage: "/bg_horse_night.webp",  available: false },
+  "mapa-4":  { label: "Mapa 4",       emoji: "🗺️", desc: "Čtvrtá herní mapa.",                                        teaser: "Připravujeme další herní prostředí.",                                            bgImage: "/bg_car_day.webp",      available: false },
+  "mapa-5":  { label: "Mapa 5",       emoji: "🗺️", desc: "Pátá herní mapa.",                                          teaser: "Připravujeme další herní prostředí.",                                            bgImage: "/bg_car_night.webp",    available: false },
+  "ostatni": { label: "Ostatní mapy", emoji: "📦", desc: "Komunita, user-made a speciální mapy.",                     teaser: "Výběr z dalších map od komunity i od nás. Fan-made, sezónní a event mapy.",      bgImage: "/bg_other_maps.webp",   available: false },
+  "editor":  { label: "Editor",       emoji: "🛠️", desc: "Tvorba a editace vlastních herních map.",                   teaser: "Navrhni vlastní mapu — rozmísti pole, nastav ekonomiku a sdílej s přáteli.",    bgImage: "/bg_builder_yard.webp", available: false },
 };
 
 export default function LandingPage() {
@@ -389,7 +390,18 @@ export default function LandingPage() {
         </div>
 
         {/* ── RIGHT: setup view (50% = 100vw) ── */}
-        <div style={{ width: "50%" }} className="bg-slate-100 overflow-y-auto">
+        {/* Background = obrázek vybraného panelu s tmavým overlay přes CSS gradient */}
+        <div
+          style={{
+            width: "50%",
+            ...(activePanel && PANEL_CONFIG[activePanel]?.bgImage ? {
+              backgroundImage: `linear-gradient(rgba(0,0,0,0.62), rgba(0,0,0,0.62)), url(${PANEL_CONFIG[activePanel].bgImage})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            } : { backgroundColor: "#f1f5f9" /* slate-100 fallback */ }),
+          }}
+          className="overflow-y-auto"
+        >
           <div className="flex min-h-full items-start justify-center p-6 pt-10">
             <div className="w-full max-w-md space-y-6">
 
@@ -397,22 +409,22 @@ export default function LandingPage() {
               <div className="flex items-center gap-3">
                 <button
                   onClick={handleBack}
-                  className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition"
+                  className="flex items-center gap-2 rounded-xl border border-white/30 bg-white/15 backdrop-blur-sm px-4 py-2.5 text-sm font-semibold text-white hover:bg-white/25 transition"
                 >
                   ← Zpět
                 </button>
                 <div>
-                  <div className="text-xs text-slate-400 uppercase tracking-wider">
+                  <div className="text-xs text-white/55 uppercase tracking-wider">
                     {activePanel && PANEL_CONFIG[activePanel]?.available ? "Nová hra" : "Připravujeme"}
                   </div>
-                  <div className="text-base font-bold text-slate-900 leading-tight">
+                  <div className="text-base font-bold text-white leading-tight">
                     {activePanel ? (PANEL_CONFIG[activePanel]?.label ?? activePanel) : ""}
                   </div>
                 </div>
               </div>
 
               {activePanel && PANEL_CONFIG[activePanel]?.desc && (
-                <p className="text-sm text-slate-500 px-1">
+                <p className="text-sm text-white/65 px-1">
                   {PANEL_CONFIG[activePanel].desc}
                 </p>
               )}
