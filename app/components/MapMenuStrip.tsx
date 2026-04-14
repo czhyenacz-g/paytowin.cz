@@ -3,52 +3,59 @@
 import React from "react";
 
 /**
- * MapMenuStrip — 7 svislých panelů jako hlavní menu landing page.
+ * MapMenuStrip — 7 vertikálních panelů jako game-mode select / hlavní menu landing page.
  *
- * Pořadí: 5 map + Ostatní mapy + Editor.
- * Hover: aktivní panel se rozšíří (flex 1→4), overlay zesvětlí, CTA vypluje.
- * Placeholder: gradient pozadí bez obrázků — připraveno pro budoucí art.
+ * Každý panel má:
+ *   - accentColor: barevný identifikační proužek nahoře (CSS color string)
+ *   - index: číslo slotu "01"–"07"
+ *   - Hover: flex 1→4, overlay zesvětlí, accent se rozzáří
  *
  * Jak přidat reálný obrázek: doplň `bgImage` do panelu a nastav backgroundImage ve style.
- * Jak aktivovat panel: nastav available: true; navigaci řeší onPanelClick prop (nebo href jako fallback).
+ * Jak aktivovat panel: nastav available: true.
  */
 
 interface Panel {
-  id:        string;
-  label:     string;
-  emoji:     string;
-  desc:      string;
-  bgFrom:    string;   // Tailwind gradient top barva
-  bgTo:      string;   // Tailwind gradient bottom barva
-  available: boolean;
-  href?:     string;   // fallback href; použije se jen pokud onPanelClick není poskytnut
+  id:          string;
+  label:       string;
+  emoji:       string;
+  desc:        string;
+  index:       string;       // číslo slotu "01"–"07"
+  bgFrom:      string;       // Tailwind gradient top
+  bgTo:        string;       // Tailwind gradient bottom
+  accentColor: string;       // CSS color — horní barevný proužek + index text
+  available:   boolean;
+  href?:       string;
 }
 
 interface MapMenuStripProps {
-  /** Callback pro klik na dostupný panel — nahradí href navigaci. */
+  /** Callback pro klik na panel — nahradí href navigaci. */
   onPanelClick?: (panelId: string) => void;
 }
 
 const PANELS: Panel[] = [
-  { id: "mapa-1",  label: "Klasika",      emoji: "🏇", desc: "Základní mapa", bgFrom: "from-slate-700",   bgTo: "to-slate-900",   available: true  },
-  { id: "mapa-2",  label: "Mapa 2",       emoji: "🗺️", desc: "",             bgFrom: "from-zinc-700",    bgTo: "to-zinc-950",    available: false },
-  { id: "mapa-3",  label: "Mapa 3",       emoji: "🗺️", desc: "",             bgFrom: "from-stone-700",   bgTo: "to-stone-950",   available: false },
-  { id: "mapa-4",  label: "Mapa 4",       emoji: "🗺️", desc: "",             bgFrom: "from-neutral-700", bgTo: "to-neutral-950", available: false },
-  { id: "mapa-5",  label: "Mapa 5",       emoji: "🗺️", desc: "",             bgFrom: "from-slate-600",   bgTo: "to-slate-900",   available: false },
-  { id: "ostatni", label: "Ostatní mapy", emoji: "📦", desc: "",             bgFrom: "from-slate-600",   bgTo: "to-slate-900",   available: false },
-  { id: "editor",  label: "Editor",       emoji: "🛠️", desc: "",             bgFrom: "from-slate-500",   bgTo: "to-slate-800",   available: false },
+  { id: "mapa-1",  label: "Klasika",      emoji: "🏇", desc: "Základní mapa", index: "01", bgFrom: "from-slate-700",   bgTo: "to-slate-950",   accentColor: "#f59e0b", available: true  },
+  { id: "mapa-2",  label: "Mapa 2",       emoji: "🗺️", desc: "",              index: "02", bgFrom: "from-blue-900",    bgTo: "to-blue-950",    accentColor: "#60a5fa", available: false },
+  { id: "mapa-3",  label: "Mapa 3",       emoji: "🗺️", desc: "",              index: "03", bgFrom: "from-emerald-900", bgTo: "to-emerald-950", accentColor: "#34d399", available: false },
+  { id: "mapa-4",  label: "Mapa 4",       emoji: "🗺️", desc: "",              index: "04", bgFrom: "from-red-900",     bgTo: "to-red-950",     accentColor: "#f87171", available: false },
+  { id: "mapa-5",  label: "Mapa 5",       emoji: "🗺️", desc: "",              index: "05", bgFrom: "from-violet-900",  bgTo: "to-violet-950",  accentColor: "#a78bfa", available: false },
+  { id: "ostatni", label: "Ostatní mapy", emoji: "📦", desc: "",              index: "06", bgFrom: "from-teal-800",    bgTo: "to-teal-950",    accentColor: "#2dd4bf", available: false },
+  { id: "editor",  label: "Editor",       emoji: "🛠️", desc: "",              index: "07", bgFrom: "from-orange-900",  bgTo: "to-orange-950",  accentColor: "#fb923c", available: false },
 ];
 
 export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
   const [hovered, setHovered] = React.useState<number | null>(null);
 
   return (
-    <div className="flex w-full overflow-hidden" style={{ height: "clamp(260px, 42vh, 480px)" }}>
+    <div
+      className="flex w-full overflow-hidden border-b-2 border-white/10 shadow-2xl"
+      style={{ height: "clamp(280px, 44vh, 520px)" }}
+    >
       {PANELS.map((panel, idx) => {
         const isHovered = hovered === idx;
+        const isLast = idx === PANELS.length - 1;
         // isNavigable = má kam jít (otevře setup view nebo href)
         const isNavigable = !!onPanelClick || !!panel.href;
-        // isAvailable = panel je plně funkční (zobrazí "→ Hrát")
+        // isAvailable = panel je plně funkční
         const isAvailable = panel.available;
 
         const handleClick = () => {
@@ -57,76 +64,130 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
           if (panel.href) { window.location.href = panel.href; }
         };
 
-        const sharedProps = {
-          className: [
-            "group relative overflow-hidden bg-gradient-to-b",
-            panel.bgFrom, panel.bgTo,
-            "transition-[flex] duration-300 ease-in-out",
-            isNavigable ? "cursor-pointer" : "cursor-default",
-          ].join(" "),
-          style: { flex: isHovered && isNavigable ? 4 : 1 },
-          onMouseEnter: () => setHovered(idx),
-          onMouseLeave: () => setHovered(null),
-          onClick: handleClick,
-        };
+        return (
+          <div
+            key={panel.id}
+            role={isNavigable ? "button" : undefined}
+            className={[
+              "group relative overflow-hidden bg-gradient-to-b flex-shrink-0",
+              panel.bgFrom, panel.bgTo,
+              "transition-[flex] duration-300 ease-in-out",
+              isNavigable ? "cursor-pointer" : "cursor-default",
+              !isLast ? "border-r border-white/10" : "",
+            ].join(" ")}
+            style={{ flex: isHovered && isNavigable ? 4 : 1 }}
+            onMouseEnter={() => setHovered(idx)}
+            onMouseLeave={() => setHovered(null)}
+            onClick={handleClick}
+          >
+            {/* ── Horní barevný accent proužek ── */}
+            <div
+              className="absolute top-0 left-0 right-0 h-[3px] transition-opacity duration-300 z-10"
+              style={{
+                background: panel.accentColor,
+                opacity: isHovered ? 1 : (isAvailable ? 0.65 : 0.3),
+              }}
+            />
 
-        const inner = (
-          <>
-            {/* Idle: bg-black/48 opacity-100 → hover: opacity-20 = efektivně ~10% tmavý overlay */}
-            <div className={[
-              "absolute inset-0 transition-opacity duration-300",
-              isNavigable ? "bg-black/48 group-hover:opacity-20" : "bg-black/62",
-            ].join(" ")} />
+            {/* ── Diagonální textura — subtilní racing feel ── */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                backgroundImage:
+                  "repeating-linear-gradient(45deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 14px)",
+              }}
+            />
 
-            {/* Emoji — dekorativní pozadí */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none" style={{ paddingBottom: "60px" }}>
-              <span className={[
-                "text-7xl transition-opacity duration-300",
-                isNavigable ? "opacity-20 group-hover:opacity-55" : "opacity-8",
-              ].join(" ")}>
+            {/* ── Tmavý overlay — zesvětlí na hover ── */}
+            <div
+              className="absolute inset-0 transition-opacity duration-300 bg-black"
+              style={{
+                opacity: isHovered ? 0.08 : (isAvailable ? 0.35 : 0.65),
+              }}
+            />
+
+            {/* ── Číslo slotu (top-left) ── */}
+            <div
+              className="absolute top-3 left-3 text-[10px] font-black tracking-[0.2em] transition-opacity duration-300 select-none z-10"
+              style={{
+                color: panel.accentColor,
+                opacity: isHovered ? 0.95 : 0.35,
+              }}
+            >
+              {panel.index}
+            </div>
+
+            {/* ── Emoji — dekorativní pozadí ── */}
+            <div
+              className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
+              style={{ paddingBottom: "64px" }}
+            >
+              <span
+                className="text-7xl transition-opacity duration-300"
+                style={{
+                  opacity: isHovered ? 0.5 : (isAvailable ? 0.18 : 0.07),
+                }}
+              >
                 {panel.emoji}
               </span>
             </div>
 
-            {/* Bottom: gradient + label + desc + CTA / Brzy badge */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent px-3 pt-8 pb-4">
+            {/* ── Bottom: label + CTA / Brzy ── */}
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 via-black/55 to-transparent px-3 pt-10 pb-4 z-10">
 
-              <div className={[
-                "text-xs font-semibold leading-tight truncate transition-colors duration-300",
-                isAvailable ? "text-white/80 group-hover:text-white" : "text-white/40 group-hover:text-white/65",
-              ].join(" ")}>
+              {/* Label */}
+              <div
+                className="text-sm font-bold leading-tight truncate transition-opacity duration-300 tracking-wide"
+                style={{
+                  color: "#fff",
+                  opacity: isHovered ? 1 : (isAvailable ? 0.85 : 0.38),
+                }}
+              >
                 {panel.label}
               </div>
 
+              {/* Desc — jen na hover pro available */}
               {isAvailable && panel.desc && (
-                <div className="text-xs text-white/0 leading-tight truncate mt-0.5 transition-colors duration-300 group-hover:text-white/65">
+                <div
+                  className="text-xs leading-tight truncate mt-0.5 transition-opacity duration-300 text-white/70"
+                  style={{ opacity: isHovered ? 1 : 0 }}
+                >
                   {panel.desc}
                 </div>
               )}
 
+              {/* CTA → Hrát — jen pro available, na hover */}
               {isAvailable && (
-                <div className="mt-1.5 text-xs font-semibold text-emerald-300/0 transition-colors duration-300 group-hover:text-emerald-300/90">
-                  → Hrát
+                <div
+                  className="mt-2 transition-opacity duration-300"
+                  style={{ opacity: isHovered ? 1 : 0 }}
+                >
+                  <span
+                    className="inline-block rounded px-2 py-0.5 text-[11px] font-black tracking-widest uppercase"
+                    style={{
+                      background: panel.accentColor,
+                      color: "#000",
+                    }}
+                  >
+                    Hrát →
+                  </span>
                 </div>
               )}
 
+              {/* Brzy badge — pro unavailable */}
               {!isAvailable && (
-                <div className="mt-1.5 inline-block rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-400/75">
+                <div
+                  className="mt-1.5 inline-block rounded-sm px-1.5 py-0.5 text-[9px] font-black tracking-widest uppercase transition-opacity duration-300"
+                  style={{
+                    border: `1px solid ${panel.accentColor}55`,
+                    color: panel.accentColor,
+                    opacity: isHovered ? 0.9 : 0.5,
+                  }}
+                >
                   Brzy
                 </div>
               )}
             </div>
-
-            {/* Horní linka — vodítko pro navigovatelný panel */}
-            {isNavigable && (
-              <div className="absolute top-0 left-0 right-0 h-px bg-white/20" />
-            )}
-          </>
-        );
-
-        return (
-          <div key={panel.id} role={isNavigable ? "button" : undefined} {...sharedProps}>
-            {inner}
           </div>
         );
       })}
