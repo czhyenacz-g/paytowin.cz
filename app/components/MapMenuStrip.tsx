@@ -26,6 +26,7 @@ interface Panel {
   accentColor: string;       // CSS color — horní barevný proužek + index text
   available:   boolean;
   idleOverlayOpacity?: number;
+  bgPosition?: string;
   href?:       string;
 }
 
@@ -42,7 +43,7 @@ const PANELS: Panel[] = [
   { id: "mapa-5",  label: "Noční ulice", emoji: "🌃", desc: "Noční auto theme", index: "05", bgFrom: "from-violet-900",  bgTo: "to-violet-950",  bgImage: "/bg_car_night.webp",    accentColor: "#a78bfa", available: true  },
   { id: "ostatni", label: "Komunitní mapy", emoji: "📦", desc: "Další veřejné mapy", index: "06", bgFrom: "from-teal-800",    bgTo: "to-teal-950",    bgImage: "/bg_other_maps.webp",   accentColor: "#2dd4bf", available: true  },
   { id: "editor",  label: "Editor",       emoji: "🛠️", desc: "Tvorba a editace map", index: "07", bgFrom: "from-orange-900",  bgTo: "to-orange-950",  bgImage: "/bg_builder_yard.webp", accentColor: "#fb923c", available: true  },
-  { id: "profil",  label: "Tvůj profil",  emoji: "🛡️", desc: "Účet, profil a achievementy", index: "08", bgFrom: "from-slate-500", bgTo: "to-slate-800", bgImage: "/bg_dark_racer.webp", accentColor: "#f8fafc", available: true, idleOverlayOpacity: 0.22 },
+  { id: "profil",  label: "Tvůj profil",  emoji: "🛡️", desc: "Účet, profil a achievementy", index: "08", bgFrom: "from-slate-500", bgTo: "to-slate-800", bgImage: "/bg_dark_racer.webp", accentColor: "#f8fafc", available: true, idleOverlayOpacity: 0.22, bgPosition: "42% 18%" },
 ];
 
 export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
@@ -91,7 +92,7 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
               ...(panel.bgImage ? {
                 backgroundImage: `url(${panel.bgImage})`,
                 backgroundSize: "cover",
-                backgroundPosition: "center center",
+                backgroundPosition: panel.bgPosition ?? "center center",
               } : {}),
             }}
             onMouseEnter={() => setHovered(idx)}
