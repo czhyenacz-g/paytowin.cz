@@ -230,7 +230,7 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className="min-h-screen bg-slate-950">
       <div className="bg-amber-100 border-b border-amber-300 px-4 py-2 text-center text-sm text-amber-800">
         Experimentální projekt · kontakt:{" "}
         <a href="mailto:hynek@darbujan.cz" className="underline hover:text-amber-900">
@@ -478,12 +478,12 @@ export default function LandingPage() {
             )}
           </div>
 
-          <div className="flex items-center justify-center gap-4 text-xs text-slate-400">
-            <a href="/pravidla" className="hover:text-slate-600 underline">Pravidla</a>
+          <div className="flex items-center justify-center gap-4 text-xs text-slate-500">
+            <a href="/pravidla" className="hover:text-slate-300 underline">Pravidla</a>
             <span>·</span>
-            <a href="/o-nas" className="hover:text-slate-600 underline">O nás</a>
+            <a href="/o-nas" className="hover:text-slate-300 underline">O nás</a>
             <span>·</span>
-            <a href="mailto:info@paytowin.cz" className="hover:text-slate-600 underline">info@paytowin.cz</a>
+            <a href="mailto:info@paytowin.cz" className="hover:text-slate-300 underline">info@paytowin.cz</a>
           </div>
         </div>
       </div>
