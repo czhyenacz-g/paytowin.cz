@@ -48,8 +48,12 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
 
   return (
     <div
-      className="flex w-full overflow-hidden border-y-[3px] border-slate-800/60 shadow-2xl"
-      style={{ height: "clamp(280px, 44vh, 520px)" }}
+      className="flex w-full overflow-hidden shadow-2xl"
+      style={{
+        height: "clamp(280px, 44vh, 520px)",
+        borderTop: "4px solid rgba(0,0,0,0.75)",
+        borderBottom: "4px solid rgba(0,0,0,0.75)",
+      }}
     >
       {PANELS.map((panel, idx) => {
         const isHovered = hovered === idx;
@@ -74,10 +78,13 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
               panel.bgFrom, panel.bgTo,
               "transition-[flex] duration-300 ease-in-out",
               isNavigable ? "cursor-pointer" : "cursor-default",
-              !isLast ? "border-r-2 border-white/20" : "",
             ].join(" ")}
             style={{
               flex: isHovered && isNavigable ? 4 : 1,
+              // Tmavý řez jako separátor — čitelný na jakémkoliv obrázku
+              borderRight: !isLast ? "3px solid rgba(0,0,0,0.65)" : undefined,
+              // Vnitřní světlý frame — dává každému panelu "slot box" tvar
+              boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.10)",
               ...(panel.bgImage ? {
                 backgroundImage: `url(${panel.bgImage})`,
                 backgroundSize: "cover",
