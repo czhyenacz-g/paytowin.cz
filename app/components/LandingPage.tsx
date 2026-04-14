@@ -342,6 +342,11 @@ export default function LandingPage() {
         {/* ── LEFT: landing view (50% = 100vw) ── */}
         <div style={{ width: "50%" }} className="flex flex-col min-h-0">
           <MapMenuStrip onPanelClick={(id) => {
+            if (id === "editor") {
+              router.push("/admin/themes/dev");
+              return;
+            }
+
             setActivePanel(id);
             setShareCode(null);
             setError("");
