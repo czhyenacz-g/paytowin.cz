@@ -6,6 +6,10 @@
 
 import type { GameCard } from "@/lib/cards";
 
+// Stamina cost per tap during racing minigame.
+// Keep in sync with RaceEventOverlay.tsx if defined there separately.
+export const STAMINA_PER_TAP = 2;
+
 // ─── Hráč ─────────────────────────────────────────────────────────────────────
 
 export interface Horse {
@@ -14,6 +18,8 @@ export interface Horse {
   speed: number;
   price: number;
   emoji: string;
+  stamina?: number;    // 0–100, výchozí 100; snižuje se závodem (−30), regeneruje se po tahu (+10)
+  isPreferred?: boolean; // označen hráčem jako preferovaný pro příští závod
 }
 
 export interface Player {
@@ -54,12 +60,23 @@ export interface BankruptAnnouncement {
   lastRoll?: number;
 }
 
-/** Placeholder před spuštěním závodu — zobrazí se všem, host potvrdí pokračování. */
+/**
+ * Výběr závodníků před startem závodu.
+ * Každý aktivní hráč postupně vybere svého závodníka (currentSelectorIndex → playerIds[i]).
+ * Po výběru posledního se přejde na dalšího hráče (nextIndex/turnCount).
+ */
 export interface RacePendingEvent {
   type: "race_pending";
   nextIndex: number;
   turnCount: number;
   lastRoll?: number;
+  playerIds: string[];
+  currentSelectorIndex: number;
+  selections: Record<string, string>; // playerId → racerOwnershipKey
+  phase?: "selecting" | "countdown" | "racing" | "results";
+  currentRacerIndex?: number;         // kdo právě závodí (racing fáze)
+  scores?: Record<string, number>;    // playerId → počet tapů
+  finalStaminas?: Record<string, number>; // playerId → stamina po závodě (0 = kůň vyřazen)
 }
 
 export type OfferPending = RerollOffer | RaceOffer | BankruptAnnouncement | RacePendingEvent;
@@ -76,7 +93,7 @@ export type OfferPending = RerollOffer | RaceOffer | BankruptAnnouncement | Race
  */
 export type PostTurnEvent =
   | { kind: "announcement"; playerName: string; playerId: string }
-  | { kind: "race_pending" };
+  | { kind: "race_pending"; playerIds: string[] };
 
 export interface GameState {
   game_id: string;

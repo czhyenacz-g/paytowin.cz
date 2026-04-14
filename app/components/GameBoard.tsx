@@ -19,12 +19,15 @@ import {
   REROLL_COST,
   REROLL_CHANCE,
 } from "@/lib/engine";
+
+const RACE_WINNER_REWARD = 50; // fixní odměna za 1. místo v závodu
 import { drawCard } from "@/lib/cards";
 import type { GameCard } from "@/lib/cards";
 import type { Player, Horse, GameState, OfferPending, RerollOffer, RaceOffer, BankruptAnnouncement, RacePendingEvent, PostTurnEvent } from "@/lib/types/game";
 import type { CenterEvent } from "@/lib/types/events";
 import CenterEventModal from "./modals/CenterEventModal";
 import RaceModal from "./RaceModal";
+import RaceEventOverlay from "./RaceEventOverlay";
 import BuildInfoBar from "./BuildInfoBar";
 
 // Styly polí jsou součástí theme systému (lib/themes/*)
@@ -131,6 +134,9 @@ export default function GameBoard({ gameCode }: Props) {
   // Ochrana: klíč nabídky, kterou jsme už potvrdili — zabrání dvojímu spuštění
   const offerAcceptedRef = React.useRef<string | null>(null);
   const raceSubmittedRef = React.useRef<string | null>(null);
+  const selectionSubmittedRef = React.useRef<string | null>(null);
+  const pendingRaceScoreRef = React.useRef<string | null>(null);
+  const [countdownNum, setCountdownNum] = React.useState<number | null>(null);
   const [myPlayerId, setMyPlayerId] = React.useState<string | null>(null);
   const [viewerRole, setViewerRole] = React.useState<"loading" | "player" | "spectator" | "login_required">("loading");
   const [isRolling, setIsRolling] = React.useState(false);
@@ -597,7 +603,7 @@ export default function GameBoard({ gameCode }: Props) {
     if (wentBankrupt && !buyGameEnds) {
       postTurnEvent = { kind: "announcement" as const, playerId: player.id, playerName: player.name };
     } else if (shouldTriggerRacePending(updatedPlayers)) {
-      postTurnEvent = { kind: "race_pending" as const };
+      postTurnEvent = { kind: "race_pending" as const, playerIds: activeAfterBuy.map(p => p.id) };
       logLines.push("🏁 Závod se připravuje!");
     }
 
@@ -609,6 +615,17 @@ export default function GameBoard({ gameCode }: Props) {
 
     if (wentBankrupt) await checkAndFinishGame(updatedPlayers);
     setPendingRacer(null);
+  };
+
+  // Označí jednoho koně jako preferred (ostatní se odznačí); racerKey=null = zrušit výběr
+  const setPreferredRacer = async (playerId: string, racerKey: string | null) => {
+    const player = players.find(p => p.id === playerId);
+    if (!player) return;
+    const updatedHorses = player.horses.map(h => ({
+      ...h,
+      isPreferred: racerKey !== null && racerOwnershipKey(h) === racerKey,
+    }));
+    await supabase.from("players").update({ horses: updatedHorses }).eq("id", playerId);
   };
 
   const skipRacer = async () => {
@@ -821,12 +838,16 @@ export default function GameBoard({ gameCode }: Props) {
       return;
     }
 
-    // POST-TURN HOOK — race_pending placeholder (budoucí závod)
+    // POST-TURN HOOK — race_pending: sekvenční výběr závodníků
     if (params.postTurnEvent?.kind === "race_pending") {
+      const raceEvtParam = params.postTurnEvent as { kind: "race_pending"; playerIds: string[] };
       const evt: RacePendingEvent = {
         type: "race_pending",
         nextIndex: params.nextIndex,
         turnCount: params.turnCount,
+        playerIds: raceEvtParam.playerIds,
+        currentSelectorIndex: 0,
+        selections: {},
         ...(params.lastRoll !== undefined ? { lastRoll: params.lastRoll } : {}),
       };
       const evtUpdate: Record<string, unknown> = {
@@ -849,7 +870,18 @@ export default function GameBoard({ gameCode }: Props) {
       log: params.log.slice(0, 20),
     };
     if (params.lastRoll !== undefined) update.last_roll = params.lastRoll;
-    await supabase.from("game_state").update(update).eq("game_id", gameId);
+
+    // Regen staminy pro aktuálního hráče (+10 za tah, max 100)
+    const playerForRegen = gameState ? players[gameState.current_player_index] : null;
+    const regenHorses = playerForRegen?.horses?.length
+      ? playerForRegen.horses.map(h => ({ ...h, stamina: Math.min(100, (h.stamina ?? 100) + 10) }))
+      : null;
+    await Promise.all([
+      supabase.from("game_state").update(update).eq("game_id", gameId),
+      ...(regenHorses
+        ? [supabase.from("players").update({ horses: regenHorses }).eq("id", playerForRegen!.id)]
+        : []),
+    ]);
   };
 
   const closeBankruptAnnouncement = async () => {
@@ -903,6 +935,131 @@ export default function GameBoard({ gameCode }: Props) {
     if (evt.lastRoll !== undefined) update.last_roll = evt.lastRoll;
     await supabase.from("game_state").update(update).eq("game_id", gameId);
   };
+
+  // Uzavře výsledky závodu, vyplatí vítězi reward a posune tah dál
+  const closeRaceResult = async () => {
+    if (!gameId || !gameState) return;
+    const evt = gameState.offer_pending?.type === "race_pending"
+      ? gameState.offer_pending as RacePendingEvent
+      : null;
+    if (!evt || evt.phase !== "results") return;
+
+    // Urči vítěze: effective score = tapy * (finalStamina/100), tiebreak: speed
+    const raceEntries = (evt.playerIds ?? []).map(pid => {
+      const player = players.find(p => p.id === pid);
+      const horseKey = evt.selections?.[pid];
+      const horse = player?.horses.find(h => racerOwnershipKey(h) === horseKey);
+      const rawScore = evt.scores?.[pid] ?? 0;
+      const finalStamina = evt.finalStaminas?.[pid] ?? horse?.stamina ?? 100;
+      return { player, horse, horseKey, rawScore, effectiveScore: rawScore * (finalStamina / 100), speed: horse?.speed ?? 0, finalStamina };
+    });
+    const winnerEntry = [...raceEntries].sort((a, b) => b.effectiveScore - a.effectiveScore || b.speed - a.speed)[0];
+
+    const winner = winnerEntry?.player ?? null;
+    const logLine = winner
+      ? `🏁 Závod: ${winner.name} vyhrál! +${RACE_WINNER_REWARD} 💰 (${winnerEntry.horse?.emoji ?? ""} ${winnerEntry.horse?.name ?? ""})`
+      : "🏁 Závod skončil.";
+
+    // Aplikuj finalStamina na závodního koně; kůň s 0 staminou se vyřadí z inventáře
+    const staminaUpdates = raceEntries
+      .filter(e => e.player && e.horse)
+      .map(e => {
+        const updatedHorses = e.finalStamina === 0
+          ? e.player!.horses.filter(h => racerOwnershipKey(h) !== e.horseKey)
+          : e.player!.horses.map(h =>
+              racerOwnershipKey(h) === e.horseKey ? { ...h, stamina: e.finalStamina } : h
+            );
+        return supabase.from("players").update({ horses: updatedHorses }).eq("id", e.player!.id);
+      });
+
+    const stateUpdate: Record<string, unknown> = {
+      current_player_index: evt.nextIndex,
+      turn_count: evt.turnCount,
+      offer_pending: null,
+      log: [logLine, ...(gameState.log ?? [])].slice(0, 20),
+    };
+    if (evt.lastRoll !== undefined) stateUpdate.last_roll = evt.lastRoll;
+
+    await Promise.all([
+      supabase.from("game_state").update(stateUpdate).eq("game_id", gameId),
+      ...(winner
+        ? [supabase.from("players").update({ coins: winner.coins + RACE_WINNER_REWARD }).eq("id", winner.id)]
+        : []),
+      ...staminaUpdates,
+    ]);
+  };
+
+  // ── Výběr závodníků před závodem ─────────────────────────────────────────
+
+  const submitRaceSelection = async (racerKey: string) => {
+    if (!gameId || !gameState) return;
+    const evt = gameState.offer_pending?.type === "race_pending"
+      ? gameState.offer_pending as RacePendingEvent
+      : null;
+    if (!evt?.playerIds?.length) return;
+    const key = `${evt.playerIds[evt.currentSelectorIndex]}_${evt.currentSelectorIndex}`;
+    if (selectionSubmittedRef.current === key) return;
+    selectionSubmittedRef.current = key;
+
+    const currentSelectorId = evt.playerIds[evt.currentSelectorIndex];
+    const newSelections = { ...evt.selections, [currentSelectorId]: racerKey };
+    const isLast = evt.currentSelectorIndex >= evt.playerIds.length - 1;
+
+    if (isLast) {
+      // Všechny výběry hotové — přejdi na countdown fázi závodu
+      const updatedEvt: RacePendingEvent = { ...evt, selections: newSelections, phase: "countdown" };
+      await supabase.from("game_state").update({
+        offer_pending: updatedEvt as unknown as Record<string, unknown>,
+      }).eq("game_id", gameId);
+    } else {
+      const updatedEvt: RacePendingEvent = {
+        ...evt,
+        selections: newSelections,
+        currentSelectorIndex: evt.currentSelectorIndex + 1,
+      };
+      await supabase.from("game_state").update({
+        offer_pending: updatedEvt as unknown as Record<string, unknown>,
+      }).eq("game_id", gameId);
+    }
+  };
+
+  // Zapíše skóre aktuálního závodníka a posune na dalšího (nebo results).
+  // finalStamina: stamina závodníka po závodě (0 = kůň bude vyřazen).
+  // Pokud není předána (watchdog), zachová aktuální staminu koně (žádný drain).
+  const submitPendingRaceScore = async (score: number, finalStamina?: number) => {
+    if (!gameId || !gameState) return;
+    const evt = gameState.offer_pending?.type === "race_pending"
+      ? gameState.offer_pending as RacePendingEvent
+      : null;
+    if (!evt || evt.phase !== "racing") return;
+    const idx = evt.currentRacerIndex ?? 0;
+    const currentRacerId = evt.playerIds[idx];
+    const key = `${currentRacerId}_${idx}`;
+    if (pendingRaceScoreRef.current === key) return;
+    if (evt.scores?.[currentRacerId] !== undefined) return; // score už přišlo, nepřepisuj
+    pendingRaceScoreRef.current = key;
+
+    // Pokud watchdog nezná finalStamina, zachovej aktuální staminu koně
+    const player = players.find(p => p.id === currentRacerId);
+    const horseKey = evt.selections?.[currentRacerId];
+    const horse = player?.horses.find(h => racerOwnershipKey(h) === horseKey);
+    const actualFinalStamina = finalStamina ?? (horse?.stamina ?? 100);
+
+    const newScores = { ...(evt.scores ?? {}), [currentRacerId]: score };
+    const newFinalStaminas = { ...(evt.finalStaminas ?? {}), [currentRacerId]: actualFinalStamina };
+    const isLast = idx >= evt.playerIds.length - 1;
+
+    const updatedEvt: RacePendingEvent = isLast
+      ? { ...evt, scores: newScores, finalStaminas: newFinalStaminas, phase: "results" }
+      : { ...evt, scores: newScores, finalStaminas: newFinalStaminas, currentRacerIndex: idx + 1 };
+    await supabase.from("game_state").update({
+      offer_pending: updatedEvt as unknown as Record<string, unknown>,
+    }).eq("game_id", gameId);
+  };
+
+  // Ref pro watchdog — vždy ukazuje na nejnovější verzi funkce (čerstvý gameState)
+  const submitPendingRaceScoreRef = React.useRef(submitPendingRaceScore);
+  React.useEffect(() => { submitPendingRaceScoreRef.current = submitPendingRaceScore; });
 
   // ── Závod (race miniGame) ──────────────────────────────────────────────────
 
@@ -1056,8 +1213,34 @@ export default function GameBoard({ gameCode }: Props) {
   const pendingRace = (gameState?.offer_pending?.type === "race") ? gameState.offer_pending as RaceOffer : null;
   // Bankrot announcement — odvozeno z DB stavu
   const bankruptAnn = (gameState?.offer_pending?.type === "bankrupt_announcement") ? gameState.offer_pending as BankruptAnnouncement : null;
-  // Race pending placeholder — odvozeno z DB stavu
+  // Race pending (výběr závodníků) — odvozeno z DB stavu
   const racePendingEvt = (gameState?.offer_pending?.type === "race_pending") ? gameState.offer_pending as RacePendingEvent : null;
+  const raceSelectorPlayer = racePendingEvt?.playerIds?.length
+    ? players.find(p => p.id === racePendingEvt.playerIds[racePendingEvt.currentSelectorIndex]) ?? null
+    : null;
+  const isMySelectionTurn = !!(racePendingEvt?.playerIds?.length && (
+    isLocalGame ? true : raceSelectorPlayer?.id === myPlayerId
+  ));
+  // Kdo aktuálně závodí (racing fáze)
+  const raceCurrentPlayer = racePendingEvt?.phase === "racing" && racePendingEvt.playerIds?.length
+    ? players.find(p => p.id === racePendingEvt.playerIds[racePendingEvt.currentRacerIndex ?? 0]) ?? null
+    : null;
+  const isMyRacingTurn = !!(racePendingEvt?.phase === "racing" && (
+    isLocalGame ? true : raceCurrentPlayer?.id === myPlayerId
+  ));
+  // Výsledky závodu: effective score = raw tapy × (finalStamina/100), tiebreak speed
+  // Řazení odpovídá winner logice v closeRaceResult
+  const raceResults = racePendingEvt?.phase === "results"
+    ? (racePendingEvt.playerIds ?? []).map(pid => {
+        const player = players.find(p => p.id === pid);
+        const horseKey = racePendingEvt.selections?.[pid];
+        const horse = player?.horses.find(h => racerOwnershipKey(h) === horseKey);
+        const score = racePendingEvt.scores?.[pid] ?? 0;
+        const finalStamina = racePendingEvt.finalStaminas?.[pid] ?? horse?.stamina ?? 100;
+        const effectiveScore = score * (finalStamina / 100);
+        return { player, horse, speed: horse?.speed ?? 0, score, effectiveScore, finalStamina };
+      }).sort((a, b) => b.effectiveScore - a.effectiveScore || b.speed - a.speed)
+    : null;
   const isMyRaceTurn = !!(pendingRace?.phase === "racing" && (
     isLocalGame ? true : myPlayerId === pendingRace?.playerIds[pendingRace?.currentRacerIndex ?? -1]
   ));
@@ -1072,6 +1255,62 @@ export default function GameBoard({ gameCode }: Props) {
   // Mapa (racer.id ?? racer.name) → vlastník — id-first, name fallback pro stará data
   const racerOwnership: Record<string, Player> = {};
   players.forEach(p => p.horses.forEach(h => { racerOwnership[racerOwnershipKey(h)] = p; }));
+
+  // Auto-posuň countdown → racing (po 3,5 s) a inicializuj racing stav.
+  // Jen triggerer (host / local). Racing → results řídí submitPendingRaceScore.
+  React.useEffect(() => {
+    if (racePendingEvt?.phase !== "countdown") return;
+    if (!isHost && !isLocalGame) return;
+    const timer = setTimeout(async () => {
+      if (!gameId || !gameState) return;
+      const current = gameState.offer_pending?.type === "race_pending"
+        ? gameState.offer_pending as RacePendingEvent
+        : null;
+      if (!current || current.phase !== "countdown") return;
+      await supabase.from("game_state").update({
+        offer_pending: { ...current, phase: "racing", currentRacerIndex: 0, scores: {} } as unknown as Record<string, unknown>,
+      }).eq("game_id", gameId);
+    }, 3500);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [racePendingEvt?.phase]);
+
+  // Lokální countdown číslo (kosmetika — každý klient animuje sám)
+  React.useEffect(() => {
+    if (racePendingEvt?.phase !== "countdown") { setCountdownNum(null); return; }
+    setCountdownNum(3);
+    const t1 = setTimeout(() => setCountdownNum(2), 1000);
+    const t2 = setTimeout(() => setCountdownNum(1), 2000);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [racePendingEvt?.phase]);
+
+  // Watchdog: pokud závodník neodešle score do limitu, host zapíše 0 a pokračuje dál.
+  // Jen host/local. Resetuje se pro každého závodníka (dependency na currentRacerIndex).
+  React.useEffect(() => {
+    if (racePendingEvt?.phase !== "racing") return;
+    if (!isHost && !isLocalGame) return;
+    const timer = setTimeout(() => {
+      submitPendingRaceScoreRef.current(0);
+    }, 8000); // 5 s minihra + 3 s buffer
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [racePendingEvt?.phase === "racing"
+      ? `racing_${racePendingEvt.currentRacerIndex ?? 0}`
+      : null]);
+
+  // Auto-confirm preferred racera — pokud má aktuální selektor validního preferred koně,
+  // potvrdí ho automaticky bez zobrazení selection overlay.
+  // Fallback ruční selection nastane pouze tehdy, když preferred neexistuje / hráč ho nevlastní.
+  // Nízká nebo nulová stamina auto-confirm NEBLOKUJE (hráč nese důsledek své volby).
+  React.useEffect(() => {
+    if (!racePendingEvt || (racePendingEvt.phase && racePendingEvt.phase !== "selecting")) return;
+    if (!isMySelectionTurn || !raceSelectorPlayer) return;
+    const preferred = raceSelectorPlayer.horses.find(h => h.isPreferred);
+    if (!preferred) return;
+    submitRaceSelection(racerOwnershipKey(preferred));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [racePendingEvt?.currentSelectorIndex, isMySelectionTurn]);
 
   // Sestavení CenterEvent view modelu pro sjednocený modal
   const centerEvent = mapToCenterEvent(
@@ -1244,27 +1483,24 @@ export default function GameBoard({ gameCode }: Props) {
         </div>
       )}
 
-      {/* ── Race pending placeholder ─────────────────────────────────────── */}
-      {racePendingEvt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-sm rounded-3xl bg-white p-8 shadow-2xl text-center space-y-4">
-            <div className="text-5xl">🏁</div>
-            <h2 className="text-xl font-bold text-slate-800">Závod se připravuje…</h2>
-            <p className="text-sm text-slate-400">Brzy odstartujeme závod.</p>
-            {(isHost || isLocalGame) ? (
-              <button
-                onClick={closeRacePending}
-                className="w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800 transition"
-              >
-                Pokračovat →
-              </button>
-            ) : (
-              <div className="rounded-2xl bg-slate-100 px-4 py-3 text-center text-sm text-slate-400">
-                Čeká na hostitele…
-              </div>
-            )}
-          </div>
-        </div>
+      {/* ── Race flow: výběr → countdown → závod → výsledky ────────────────── */}
+      {racePendingEvt && racePendingEvt.playerIds?.length > 0 && (
+        <RaceEventOverlay
+          event={racePendingEvt}
+          players={players}
+          countdownNum={countdownNum}
+          selectorPlayer={raceSelectorPlayer}
+          isMySelectionTurn={isMySelectionTurn}
+          racingPlayer={raceCurrentPlayer}
+          isMyRacingTurn={isMyRacingTurn}
+          raceResults={raceResults}
+          isHost={isHost}
+          isLocalGame={isLocalGame}
+          onSelectRacer={submitRaceSelection}
+          onSkip={closeRacePending}
+          onSubmitScore={submitPendingRaceScore}
+          onCloseResult={closeRaceResult}
+        />
       )}
 
       <div className="bg-amber-100 border-b border-amber-300 px-4 py-2 text-center text-sm text-amber-800">
@@ -1596,8 +1832,27 @@ export default function GameBoard({ gameCode }: Props) {
                                   <div className={`text-xs truncate ${theme.colors.textMuted}`}>{field?.emoji} {field?.label}</div>
                                 )}
                                 {!bankrupt && player.horses.length > 0 && (
-                                  <div className="text-xs text-amber-500 mt-0.5">
-                                    {player.horses.map((h) => `${h.emoji} ${h.name}`).join(", ")}
+                                  <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
+                                    {player.horses.map((h) => {
+                                      const hKey = racerOwnershipKey(h);
+                                      const isOwn = isLocalGame ? viewerRole === "player" : player.id === myPlayerId;
+                                      return (
+                                        <span key={hKey} className="flex items-center gap-0.5 text-xs text-amber-500">
+                                          {h.emoji} {h.name}
+                                          {isOwn ? (
+                                            <button
+                                              onClick={() => setPreferredRacer(player.id, h.isPreferred ? null : hKey)}
+                                              className={`text-[11px] leading-none transition ${h.isPreferred ? "text-yellow-400" : "text-slate-300 hover:text-yellow-400"}`}
+                                              title={h.isPreferred ? "Zrušit preferred" : "Nastavit jako preferred"}
+                                            >
+                                              {h.isPreferred ? "⭐" : "☆"}
+                                            </button>
+                                          ) : h.isPreferred ? (
+                                            <span className="text-[11px] leading-none text-yellow-400">⭐</span>
+                                          ) : null}
+                                        </span>
+                                      );
+                                    })}
                                   </div>
                                 )}
                               </div>

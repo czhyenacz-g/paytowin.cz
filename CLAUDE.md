@@ -211,3 +211,34 @@ Obsahuje příklady:
 - GoatCounter + Vercel Analytics
 - QR kód generování
 - LocalStorage pro uložení nastavení
+
+# CLAUDE.md
+
+## Pravidla pro práci na tomto projektu
+
+- Dělej pouze minimální nutné změny.
+- Nic nerozbít.
+- Zachovej existující funkcionalitu.
+- Nedělej velký refactor bez explicitního zadání.
+- Nesahej na nesouvisející části kódu.
+- Neopravuj bokem další věci, které nesouvisí s úkolem.
+- Preferuj malé, bezpečné a dobře reviewovatelné změny.
+- Po změně vždy spusť relevantní validaci.
+
+## Kvalita kódu
+
+- Kód musí zůstat čitelný, udržitelný a rozšiřitelný.
+- Změny musí být snadno pochopitelné pro dalšího programátora.
+- Nevytvářej zbytečný technický dluh.
+- Preferuj jednoduché řešení před zbytečně složitým.
+- Mysli i na budoucí monetizaci aplikace a případný prodej projektu.
+
+## Požadovaný výstup po každém úkolu
+
+Na konci vždy napiš:
+
+1. Jaké soubory jsi změnil
+2. Co jsi změnil
+3. Jak jsi změnu validoval
+4. Výsledek validace
+5. Případná rizika nebo co nešlo ověřit
