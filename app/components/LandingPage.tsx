@@ -240,7 +240,7 @@ export default function LandingPage() {
 
       <MapMenuStrip />
 
-      <div className="flex min-h-[calc(100vh-40px)] items-center justify-center p-6">
+      <div id="game-form" className="flex min-h-[calc(100vh-40px)] items-center justify-center p-6">
         <div className="w-full max-w-md space-y-6">
           <div className="text-center">
             <div className="text-5xl">🐎</div>
