@@ -1921,16 +1921,26 @@ export default function GameBoard({ gameCode }: Props) {
                                             }`}
                                           >
                                             <div className="flex items-start gap-2">
-                                              <span className="mt-0.5 shrink-0 text-sm">{h.emoji}</span>
+                                              <span className="mt-0.5 shrink-0 text-base">{h.emoji}</span>
                                               <div className="min-w-0 flex-1">
-                                                <div className="flex items-start justify-between gap-2">
-                                                  <span className={`block font-medium leading-tight ${h.isPreferred ? "text-amber-700" : "text-slate-700"}`}>
+                                                <div className={`block text-sm font-semibold leading-snug break-words ${h.isPreferred ? "text-amber-700" : "text-slate-700"}`}>
+                                                  <span className="block pr-1">
                                                     {h.name}
                                                   </span>
+                                                </div>
+                                                <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                                                  <span className="rounded bg-white/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
+                                                    Stamina {h.stamina ?? 100}%
+                                                  </span>
+                                                  {h.isPreferred && (
+                                                    <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600">
+                                                      Hlavní
+                                                    </span>
+                                                  )}
                                                   {isOwn ? (
                                                     <button
                                                       onClick={() => setPreferredRacer(player.id, h.isPreferred ? null : hKey)}
-                                                      className={`shrink-0 text-sm leading-none transition-colors ${
+                                                      className={`ml-auto shrink-0 text-sm leading-none transition-colors ${
                                                         h.isPreferred
                                                           ? "text-amber-400 hover:text-slate-300"
                                                           : "text-slate-300 hover:text-amber-400"
@@ -1942,16 +1952,6 @@ export default function GameBoard({ gameCode }: Props) {
                                                   ) : h.isPreferred ? (
                                                     <span className="shrink-0 text-sm leading-none text-amber-400">★</span>
                                                   ) : null}
-                                                </div>
-                                                <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                                                  <span className="rounded bg-white/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
-                                                    Stamina {h.stamina ?? 100}%
-                                                  </span>
-                                                  {h.isPreferred && (
-                                                    <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600">
-                                                      Hlavní
-                                                    </span>
-                                                  )}
                                                 </div>
                                               </div>
                                             </div>
