@@ -20,10 +20,15 @@ import {
   REROLL_CHANCE,
 } from "@/lib/engine";
 
-const RACE_WINNER_REWARD = 50; // fixní odměna za 1. místo v závodu
+const RACE_WINNER_REWARD = 50; // fixní odměna za 1. místo v mass_race
+
+/** Vrátí true pokud oba hráči mají aspoň jednoho závodníka — stejná podmínka jako race flow. */
+function canTriggerRivalsRace(p1: Player, p2: Player): boolean {
+  return p1.horses.length > 0 && p2.horses.length > 0;
+}
 import { drawCard } from "@/lib/cards";
 import type { GameCard } from "@/lib/cards";
-import type { Player, Horse, GameState, OfferPending, RerollOffer, RaceOffer, BankruptAnnouncement, RacePendingEvent, PostTurnEvent } from "@/lib/types/game";
+import type { Player, Horse, GameState, OfferPending, RerollOffer, RaceOffer, BankruptAnnouncement, RacePendingEvent, PostTurnEvent, RaceType } from "@/lib/types/game";
 import type { CenterEvent } from "@/lib/types/events";
 import CenterEventModal from "./modals/CenterEventModal";
 import RaceModal from "./RaceModal";
@@ -429,46 +434,59 @@ export default function GameBoard({ gameCode }: Props) {
         await supabase.from("players").update({ position: newPosition, coins: movedPlayer.coins }).eq("id", currentPlayer.id);
         await finishTurn({ nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog], lastRoll: roll });
       } else if (ownerPlayer) {
-        // ── Rent: racer patří jinému hráči ────────────────────────────────────
-        const rent = Math.round(field.racer.price * 0.2);
-        const rentedPlayer = { ...movedPlayer, coins: movedPlayer.coins - rent };
-        const paidOwner = { ...ownerPlayer, coins: ownerPlayer.coins + rent };
+        if (canTriggerRivalsRace(movedPlayer, ownerPlayer)) {
+          // ── Rivals race: oba hráči mají závodníky → duel místo rentu ──────────
+          const reward = Math.round(field.racer.price * 0.2);
+          const logLines = [`⚔️ ${currentPlayer.name} vstoupil na stáj ${ownerPlayer.name} — čeká je souboj!`, ...extraLog];
+          const updatedPlayersForNext = players.map(p => p.id === currentPlayer.id ? movedPlayer : p);
+          const nextIndex = getNextActiveIndex(gameState.current_player_index, updatedPlayersForNext);
+          await supabase.from("players").update({ position: newPosition, coins: movedPlayer.coins }).eq("id", currentPlayer.id);
+          await finishTurn({
+            nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog], lastRoll: roll,
+            postTurnEvent: { kind: "race_pending", raceType: "rivals_race", playerIds: [currentPlayer.id, ownerPlayer.id], reward },
+          });
+        } else {
+          // ── Rent fallback: jeden nebo oba hráči nemají závodníka ──────────────
+          const rent = Math.round(field.racer.price * 0.2);
+          const rentedPlayer = { ...movedPlayer, coins: movedPlayer.coins - rent };
+          const paidOwner = { ...ownerPlayer, coins: ownerPlayer.coins + rent };
 
-        console.log(`[racer-rent] ${currentPlayer.name} (id=${currentPlayer.id}) landed on "${field.racer.name}" (racer.id=${field.racer.id ?? "none"}) owned by ${ownerPlayer.name} (id=${ownerPlayer.id}) → rent=${rent}`);
-        console.log(`[racer-rent] transfer: ${currentPlayer.name} ${movedPlayer.coins}→${rentedPlayer.coins}, ${ownerPlayer.name} ${ownerPlayer.coins}→${paidOwner.coins}`);
+          console.log(`[racer-rent] ${currentPlayer.name} (id=${currentPlayer.id}) landed on "${field.racer.name}" (racer.id=${field.racer.id ?? "none"}) owned by ${ownerPlayer.name} (id=${ownerPlayer.id}) → rent=${rent}`);
+          console.log(`[racer-rent] transfer: ${currentPlayer.name} ${movedPlayer.coins}→${rentedPlayer.coins}, ${ownerPlayer.name} ${ownerPlayer.coins}→${paidOwner.coins}`);
 
-        const wentBankrupt = rentedPlayer.coins <= 0 && currentPlayer.coins > 0;
-        const logLines = [
-          `${currentPlayer.name} zaplatil ${rent} 💰 hráči ${ownerPlayer.name} za ${field.racer.emoji} ${field.racer.name}`,
-          ...extraLog,
-        ];
-        if (wentBankrupt) {
-          logLines.push(`💀 ${rentedPlayer.name} zkrachoval!`);
-          console.log(`[racer-rent] ${rentedPlayer.name} went bankrupt after paying rent`);
+          const wentBankrupt = rentedPlayer.coins <= 0 && currentPlayer.coins > 0;
+          const logLines = [
+            `${currentPlayer.name} zaplatil ${rent} 💰 hráči ${ownerPlayer.name} za ${field.racer.emoji} ${field.racer.name}`,
+            ...extraLog,
+          ];
+          if (wentBankrupt) {
+            logLines.push(`💀 ${rentedPlayer.name} zkrachoval!`);
+            console.log(`[racer-rent] ${rentedPlayer.name} went bankrupt after paying rent`);
+          }
+
+          const updatedPlayers = players.map(p => {
+            if (p.id === rentedPlayer.id) return rentedPlayer;
+            if (p.id === paidOwner.id) return paidOwner;
+            return p;
+          });
+          const nextIndex = getNextActiveIndex(gameState.current_player_index, updatedPlayers);
+
+          // Oba hráči se aktualizují najednou; game_state až potom
+          const activeAfterRent = updatedPlayers.filter(p => !isBankrupt(p));
+          const rentGameEnds = (updatedPlayers.length >= 2 && activeAfterRent.length === 1) ||
+                               (updatedPlayers.length === 1 && activeAfterRent.length === 0);
+
+          await Promise.all([
+            supabase.from("players").update({ position: rentedPlayer.position, coins: rentedPlayer.coins }).eq("id", rentedPlayer.id),
+            supabase.from("players").update({ coins: paidOwner.coins }).eq("id", paidOwner.id),
+          ]);
+          await finishTurn({
+            nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog], lastRoll: roll,
+            ...(wentBankrupt && !rentGameEnds ? { postTurnEvent: { kind: "announcement" as const, playerId: rentedPlayer.id, playerName: rentedPlayer.name } } : {}),
+          });
+
+          if (wentBankrupt) await checkAndFinishGame(updatedPlayers);
         }
-
-        const updatedPlayers = players.map(p => {
-          if (p.id === rentedPlayer.id) return rentedPlayer;
-          if (p.id === paidOwner.id) return paidOwner;
-          return p;
-        });
-        const nextIndex = getNextActiveIndex(gameState.current_player_index, updatedPlayers);
-
-        // Oba hráči se aktualizují najednou; game_state až potom
-        const activeAfterRent = updatedPlayers.filter(p => !isBankrupt(p));
-        const rentGameEnds = (updatedPlayers.length >= 2 && activeAfterRent.length === 1) ||
-                             (updatedPlayers.length === 1 && activeAfterRent.length === 0);
-
-        await Promise.all([
-          supabase.from("players").update({ position: rentedPlayer.position, coins: rentedPlayer.coins }).eq("id", rentedPlayer.id),
-          supabase.from("players").update({ coins: paidOwner.coins }).eq("id", paidOwner.id),
-        ]);
-        await finishTurn({
-          nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog], lastRoll: roll,
-          ...(wentBankrupt && !rentGameEnds ? { postTurnEvent: { kind: "announcement" as const, playerId: rentedPlayer.id, playerName: rentedPlayer.name } } : {}),
-        });
-
-        if (wentBankrupt) await checkAndFinishGame(updatedPlayers);
       } else {
         // Čekáme na rozhodnutí hráče. horse_pending = true v DB (DB sloupec zachován).
         await supabase.from("players").update({ position: newPosition, coins: movedPlayer.coins }).eq("id", currentPlayer.id);
@@ -841,16 +859,17 @@ export default function GameBoard({ gameCode }: Props) {
 
     // POST-TURN HOOK — race_pending: sekvenční výběr závodníků
     if (params.postTurnEvent?.kind === "race_pending") {
-      const raceEvtParam = params.postTurnEvent as { kind: "race_pending"; playerIds: string[] };
+      const raceEvtParam = params.postTurnEvent as { kind: "race_pending"; playerIds: string[]; raceType?: RaceType; reward?: number };
       const evt: RacePendingEvent = {
         type: "race_pending",
-        raceType: "mass_race",
+        raceType: raceEvtParam.raceType ?? "mass_race",
         nextIndex: params.nextIndex,
         turnCount: params.turnCount,
         playerIds: raceEvtParam.playerIds,
         currentSelectorIndex: 0,
         selections: {},
         ...(params.lastRoll !== undefined ? { lastRoll: params.lastRoll } : {}),
+        ...(raceEvtParam.reward !== undefined ? { reward: raceEvtParam.reward } : {}),
       };
       const evtUpdate: Record<string, unknown> = {
         horse_pending: false,
@@ -958,9 +977,11 @@ export default function GameBoard({ gameCode }: Props) {
     const winnerEntry = [...raceEntries].sort((a, b) => b.effectiveScore - a.effectiveScore || b.speed - a.speed)[0];
 
     const winner = winnerEntry?.player ?? null;
+    const reward = evt.reward ?? RACE_WINNER_REWARD;
+    const raceLabel = evt.raceType === "rivals_race" ? "Souboj" : "Závod";
     const logLine = winner
-      ? `🏁 Závod: ${winner.name} vyhrál! +${RACE_WINNER_REWARD} 💰 (${winnerEntry.horse?.emoji ?? ""} ${winnerEntry.horse?.name ?? ""})`
-      : "🏁 Závod skončil.";
+      ? `🏁 ${raceLabel}: ${winner.name} vyhrál! +${reward} 💰 (${winnerEntry.horse?.emoji ?? ""} ${winnerEntry.horse?.name ?? ""})`
+      : `🏁 ${raceLabel} skončil.`;
 
     // Aplikuj finalStamina na závodního koně; kůň s 0 staminou se vyřadí z inventáře
     const staminaUpdates = raceEntries
@@ -978,7 +999,8 @@ export default function GameBoard({ gameCode }: Props) {
       current_player_index: evt.nextIndex,
       turn_count: evt.turnCount,
       offer_pending: null,
-      mass_race_done: true, // zabrání opakovanému spuštění automatického mass race
+      // mass_race_done jen pro mass_race — rivals_race tuto vlajku nemění
+      ...(evt.raceType !== "rivals_race" ? { mass_race_done: true } : {}),
       log: [logLine, ...(gameState.log ?? [])].slice(0, 20),
     };
     if (evt.lastRoll !== undefined) stateUpdate.last_roll = evt.lastRoll;
@@ -986,7 +1008,7 @@ export default function GameBoard({ gameCode }: Props) {
     await Promise.all([
       supabase.from("game_state").update(stateUpdate).eq("game_id", gameId),
       ...(winner
-        ? [supabase.from("players").update({ coins: winner.coins + RACE_WINNER_REWARD }).eq("id", winner.id)]
+        ? [supabase.from("players").update({ coins: winner.coins + reward }).eq("id", winner.id)]
         : []),
       ...staminaUpdates,
     ]);

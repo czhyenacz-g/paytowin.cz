@@ -86,6 +86,7 @@ export interface RacePendingEvent {
   currentRacerIndex?: number;         // kdo právě závodí (racing fáze)
   scores?: Record<string, number>;    // playerId → počet tapů
   finalStaminas?: Record<string, number>; // playerId → stamina po závodě (0 = kůň vyřazen)
+  reward?: number;    // výhra pro vítěze; rivals_race = % z ceny pole, mass_race použije RACE_WINNER_REWARD
 }
 
 export type OfferPending = RerollOffer | RaceOffer | BankruptAnnouncement | RacePendingEvent;
@@ -102,7 +103,7 @@ export type OfferPending = RerollOffer | RaceOffer | BankruptAnnouncement | Race
  */
 export type PostTurnEvent =
   | { kind: "announcement"; playerName: string; playerId: string }
-  | { kind: "race_pending"; playerIds: string[] };
+  | { kind: "race_pending"; playerIds: string[]; raceType?: RaceType; reward?: number };
 
 export interface GameState {
   game_id: string;
