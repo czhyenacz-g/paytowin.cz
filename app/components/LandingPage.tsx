@@ -14,6 +14,16 @@ interface DiscordUser {
   avatar: string | null;
 }
 
+const PANEL_LABELS: Record<string, string> = {
+  "mapa-1":  "Klasika",
+  "mapa-2":  "Mapa 2",
+  "mapa-3":  "Mapa 3",
+  "mapa-4":  "Mapa 4",
+  "mapa-5":  "Mapa 5",
+  "ostatni": "Ostatní mapy",
+  "editor":  "Editor",
+};
+
 export default function LandingPage() {
   const router = useRouter();
   const [name, setName] = React.useState("");
@@ -27,6 +37,7 @@ export default function LandingPage() {
   const [selectedBoardId, setSelectedBoardId] = React.useState("small");
   const [showThemeModal, setShowThemeModal] = React.useState(false);
   const [maxPlayers, setMaxPlayers] = React.useState(6);
+  const [activePanel, setActivePanel] = React.useState<string | null>(null);
   const [dbThemes, setDbThemes] = React.useState<Array<{
     id: string; name: string; description: string;
     isPaid: boolean; priceCzk: number; boardBgImage?: string;
@@ -46,12 +57,10 @@ export default function LandingPage() {
       const fullName = (user.user_metadata?.full_name ?? user.user_metadata?.name ?? "") as string;
       const avatarUrl = user.user_metadata?.avatar_url as string | null ?? null;
 
-      // Ulož Discord ID do localStorage pro budoucí napojení
       localStorage.setItem("paytowin_discord_id", discordId);
       localStorage.setItem("paytowin_discord_name", fullName);
 
       setDiscordUser({ id: discordId, name: fullName, avatar: avatarUrl });
-      // Předvyplň jméno jen pokud ho hráč ještě nezadal
       setName((prev) => prev || fullName);
     });
   }, []);
@@ -79,6 +88,12 @@ export default function LandingPage() {
         }));
       });
   }, []);
+
+  const handleBack = () => {
+    setActivePanel(null);
+    setShareCode(null);
+    setError("");
+  };
 
   const loginWithDiscord = async () => {
     await supabase.auth.signInWithOAuth({
@@ -169,14 +184,12 @@ export default function LandingPage() {
       return;
     }
 
-    // Lokální hra — nelze se připojit online
     if ((game.game_mode ?? "online") === "local") {
       setError("Tato hra je lokální (hot-seat) a nelze se k ní připojit online.");
       setLoading(false);
       return;
     }
 
-    // Zrušená nebo dokončená hra
     if (game.status === "cancelled") {
       setError("Tato hra byla zrušena hostitelem.");
       setLoading(false);
@@ -193,7 +206,6 @@ export default function LandingPage() {
       supabase.from("game_state").select("turn_count").eq("game_id", game.id).single(),
     ]);
 
-    // Kapacita hry
     const maxP = game.max_players ?? 32;
     if ((existingPlayers?.length ?? 0) >= maxP) {
       setError(`Hra je plná (max. ${maxP} hráčů).`);
@@ -201,7 +213,6 @@ export default function LandingPage() {
       return;
     }
 
-    // Omezení joinu po prvním kole: turn_count >= počet hráčů → kolo 2 začalo
     const turnCount = stateData?.turn_count ?? 0;
     const currentPlayerCount = existingPlayers?.length ?? 0;
     if (currentPlayerCount > 0 && turnCount >= currentPlayerCount) {
@@ -229,8 +240,38 @@ export default function LandingPage() {
     router.push(`/game/${game.code}`);
   };
 
+  /* ── Discord block — sdílený mezi oběma view ── */
+  const discordBlock = discordUser ? (
+    <div className="flex items-center justify-between rounded-2xl bg-indigo-50 border border-indigo-200 px-4 py-3">
+      <div className="flex items-center gap-3">
+        {discordUser.avatar ? (
+          <img src={discordUser.avatar} alt="" className="h-8 w-8 rounded-full" />
+        ) : (
+          <div className="h-8 w-8 rounded-full bg-indigo-300 flex items-center justify-center text-white text-sm font-bold">
+            {discordUser.name.charAt(0).toUpperCase()}
+          </div>
+        )}
+        <div>
+          <div className="text-sm font-semibold text-indigo-900">{discordUser.name}</div>
+          <div className="text-xs text-indigo-400">přihlášen přes Discord</div>
+        </div>
+      </div>
+      <button onClick={logoutDiscord} className="text-xs text-indigo-400 hover:text-indigo-700 underline">
+        Odhlásit
+      </button>
+    </div>
+  ) : (
+    <button
+      onClick={loginWithDiscord}
+      className="w-full rounded-2xl border-2 border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100"
+    >
+      🎮 Přihlásit přes Discord <span className="font-normal text-indigo-400">(vyplní jméno automaticky)</span>
+    </button>
+  );
+
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-slate-950 overflow-x-hidden">
+      {/* Amber banner — pevně nahoře, mimo slider */}
       <div className="bg-amber-100 border-b border-amber-300 px-4 py-2 text-center text-sm text-amber-800">
         Experimentální projekt · kontakt:{" "}
         <a href="mailto:hynek@darbujan.cz" className="underline hover:text-amber-900">
@@ -238,206 +279,57 @@ export default function LandingPage() {
         </a>
       </div>
 
-      <MapMenuStrip />
+      {/* Sliding container — 200% wide, posune se o 50% doleva při aktivním panelu */}
+      <div
+        className="flex transition-transform duration-500 ease-in-out"
+        style={{
+          width: "200%",
+          transform: activePanel ? "translateX(-50%)" : "translateX(0%)",
+        }}
+      >
 
-      <div id="game-form" className="flex min-h-[calc(100vh-40px)] items-center justify-center p-6">
-        <div className="w-full max-w-md space-y-6">
-          <div className="text-center">
-            <div className="text-5xl">🐎</div>
-            <h1
-              className="mt-3 text-4xl font-bold text-slate-800 cursor-pointer hover:opacity-75 transition-opacity"
-              onClick={() => window.open("/", "_blank")}
-            >PayToWin.cz</h1>
-            <p className="mt-2 text-slate-500">Dostihy, sázky a finanční chaos.</p>
-            <a href="/hry" className="mt-3 inline-block rounded-xl bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100">
-              👀 Sledovat aktivní hry
-            </a>
-          </div>
+        {/* ── LEFT: landing view (50% = 100vw) ── */}
+        <div style={{ width: "50%" }} className="min-h-screen">
+          <MapMenuStrip onPanelClick={(id) => setActivePanel(id)} />
 
-          <div className="rounded-3xl bg-white p-6 shadow-lg space-y-4">
+          <div className="flex min-h-[calc(100vh-40px)] items-center justify-center p-6">
+            <div className="w-full max-w-md space-y-6">
 
-            {shareCode ? (
-              <div className="space-y-4">
-                <div className="rounded-2xl border-2 border-emerald-400 bg-emerald-50 p-4 space-y-3">
-                  <div className="text-sm font-semibold text-emerald-800">✅ Hra vytvořena! Pošli kamarádům odkaz:</div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 rounded-xl bg-white border border-emerald-200 px-3 py-2 font-mono text-sm text-slate-700 truncate select-all">
-                      {typeof window !== "undefined" ? `${window.location.origin}/?join=${shareCode}` : `/?join=${shareCode}`}
-                    </div>
-                    <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(`${window.location.origin}/?join=${shareCode}`);
-                        setCopied(true);
-                        setTimeout(() => setCopied(false), 2000);
-                      }}
-                      className="shrink-0 rounded-xl bg-emerald-500 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-600"
-                    >
-                      {copied ? "✓" : "Kopírovat"}
-                    </button>
-                  </div>
-                </div>
-                <button
-                  onClick={() => router.push(`/game/${shareCode}`)}
-                  className="w-full rounded-2xl bg-slate-900 px-4 py-4 text-lg font-semibold text-white shadow transition hover:bg-slate-800"
-                >
-                  Vstoupit do hry →
-                </button>
+              {/* Titulek */}
+              <div className="text-center">
+                <div className="text-5xl">🐎</div>
+                <h1
+                  className="mt-3 text-4xl font-bold text-white cursor-pointer hover:opacity-75 transition-opacity"
+                  onClick={() => window.open("/", "_blank")}
+                >PayToWin.cz</h1>
+                <p className="mt-2 text-slate-400">Dostihy, sázky a finanční chaos.</p>
+                <a href="/hry" className="mt-3 inline-block rounded-xl bg-indigo-900/60 border border-indigo-700 px-4 py-2 text-sm font-semibold text-indigo-300 hover:bg-indigo-900">
+                  👀 Sledovat aktivní hry
+                </a>
               </div>
-            ) : (
-              <>
-                {/* Discord session info / login */}
-                {discordUser ? (
-                  <div className="flex items-center justify-between rounded-2xl bg-indigo-50 border border-indigo-200 px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      {discordUser.avatar ? (
-                        <img src={discordUser.avatar} alt="" className="h-8 w-8 rounded-full" />
-                      ) : (
-                        <div className="h-8 w-8 rounded-full bg-indigo-300 flex items-center justify-center text-white text-sm font-bold">
-                          {discordUser.name.charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                      <div>
-                        <div className="text-sm font-semibold text-indigo-900">{discordUser.name}</div>
-                        <div className="text-xs text-indigo-400">přihlášen přes Discord</div>
-                      </div>
-                    </div>
-                    <button onClick={logoutDiscord} className="text-xs text-indigo-400 hover:text-indigo-700 underline">
-                      Odhlásit
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={loginWithDiscord}
-                    className="w-full rounded-2xl border-2 border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100"
-                  >
-                    🎮 Přihlásit přes Discord <span className="font-normal text-indigo-400">(vyplní jméno automaticky)</span>
-                  </button>
-                )}
+
+              {/* Join sekce */}
+              <div className="rounded-3xl bg-slate-900 p-6 shadow-lg space-y-4">
+                {discordBlock}
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-700">Tvoje jméno</label>
+                  <label className="mb-1 block text-sm font-medium text-slate-300">Tvoje jméno</label>
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="např. Hynek"
-                    className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-800 outline-none focus:border-slate-500"
+                    className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white outline-none focus:border-slate-500 placeholder:text-slate-500"
                   />
                 </div>
 
-                {/* Výběr tématu — pouze při vytváření nové hry */}
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">Vzhled hry</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {THEMES.map((theme) => (
-                      <button
-                        key={theme.id}
-                        type="button"
-                        onClick={() => setSelectedThemeId(theme.id)}
-                        className={`rounded-xl border-2 px-3 py-2.5 text-left transition ${
-                          selectedThemeId === theme.id
-                            ? "border-slate-900 bg-slate-900 text-white"
-                            : "border-slate-200 bg-white text-slate-700 hover:border-slate-400"
-                        }`}
-                      >
-                        <div className="text-sm font-semibold">{theme.name}</div>
-                        <div className={`text-xs mt-0.5 ${selectedThemeId === theme.id ? "text-slate-300" : "text-slate-400"}`}>
-                          {theme.description}
-                        </div>
-                      </button>
-                    ))}
-                    {dbThemes.map((theme) => (
-                      <button
-                        key={theme.id}
-                        type="button"
-                        onClick={() => setSelectedThemeId(theme.id)}
-                        className={`rounded-xl border-2 px-3 py-2.5 text-left transition ${
-                          selectedThemeId === theme.id
-                            ? "border-slate-900 bg-slate-900 text-white"
-                            : "border-slate-200 bg-white text-slate-700 hover:border-slate-400"
-                        }`}
-                      >
-                        <div className="text-sm font-semibold">{theme.name}</div>
-                        <div className={`text-xs mt-0.5 ${selectedThemeId === theme.id ? "text-slate-300" : "text-slate-400"}`}>
-                          {theme.description}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowThemeModal(true)}
-                    className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition"
-                  >
-                    Procházet všechna témata →
-                  </button>
-                </div>
-
-                {/* Výběr herní desky */}
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">Herní deska</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {BOARD_PRESETS.map((preset) => (
-                      <button
-                        key={preset.id}
-                        type="button"
-                        disabled={!preset.available}
-                        onClick={() => preset.available && setSelectedBoardId(preset.id)}
-                        className={`rounded-xl border-2 px-3 py-2.5 text-left transition ${
-                          !preset.available
-                            ? "border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed"
-                            : selectedBoardId === preset.id
-                            ? "border-slate-900 bg-slate-900 text-white"
-                            : "border-slate-200 bg-white text-slate-700 hover:border-slate-400"
-                        }`}
-                      >
-                        <div className="text-sm font-semibold">{preset.name}</div>
-                        <div className={`text-xs mt-0.5 ${
-                          !preset.available ? "text-slate-300" : selectedBoardId === preset.id ? "text-slate-300" : "text-slate-400"
-                        }`}>
-                          {preset.available ? preset.description : "Brzy k dispozici"}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Max počet hráčů pro online hru */}
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-700">Max. hráčů</label>
-                  <select
-                    value={maxPlayers}
-                    onChange={(e) => setMaxPlayers(Number(e.target.value))}
-                    className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-800 outline-none focus:border-slate-500 bg-white"
-                  >
-                    {[2,3,4,5,6,8,10,12,16,20,24,32].map(n => (
-                      <option key={n} value={n}>{n} hráčů</option>
-                    ))}
-                  </select>
-                </div>
-
-                {error && <p className="text-sm text-red-600">{error}</p>}
-
-                <button
-                  onClick={createGame}
-                  disabled={loading}
-                  className="w-full rounded-2xl bg-slate-900 px-4 py-4 text-lg font-semibold text-white shadow transition hover:bg-slate-800 disabled:bg-slate-400"
-                >
-                  🌐 Vytvořit online hru
-                </button>
-
-                <button
-                  onClick={() => router.push("/local/new")}
-                  className="w-full rounded-2xl border-2 border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 hover:border-slate-400 hover:bg-white transition"
-                >
-                  🖥️ Lokální hra (hot-seat)
-                </button>
-
                 <div className="relative flex items-center gap-3">
-                  <div className="flex-1 border-t border-slate-200" />
-                  <span className="text-sm text-slate-400">nebo</span>
-                  <div className="flex-1 border-t border-slate-200" />
+                  <div className="flex-1 border-t border-slate-700" />
+                  <span className="text-sm text-slate-500">Připojit se ke hře</span>
+                  <div className="flex-1 border-t border-slate-700" />
                 </div>
+
+                {error && <p className="text-sm text-red-400">{error}</p>}
 
                 <div className="flex gap-2">
                   <input
@@ -446,16 +338,17 @@ export default function LandingPage() {
                     onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                     placeholder="Kód hry (např. XK9F2)"
                     maxLength={5}
-                    className="flex-1 rounded-xl border border-slate-300 px-4 py-3 text-slate-800 uppercase tracking-widest outline-none focus:border-slate-500"
+                    className="flex-1 rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white uppercase tracking-widest outline-none focus:border-slate-500 placeholder:text-slate-500"
                   />
                   <button
                     onClick={joinGame}
                     disabled={loading}
-                    className="rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white hover:bg-emerald-700 disabled:bg-slate-400"
+                    className="rounded-xl bg-emerald-700 px-4 py-3 font-semibold text-white hover:bg-emerald-600 disabled:bg-slate-600"
                   >
-                    Připojit jako hráč
+                    Připojit
                   </button>
                 </div>
+
                 <button
                   onClick={() => {
                     if (!joinCode.trim()) return setError("Zadej kód hry.");
@@ -469,23 +362,200 @@ export default function LandingPage() {
                     }
                   }}
                   disabled={loading}
-                  className="w-full rounded-xl border-2 border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 disabled:opacity-50"
+                  className="w-full rounded-xl border-2 border-indigo-800 bg-indigo-950/50 px-4 py-3 text-sm font-semibold text-indigo-400 hover:bg-indigo-900/50 disabled:opacity-50"
                 >
                   👀 Sledovat jako divák
-                  {!discordUser && <span className="ml-1 font-normal text-indigo-400">(vyžaduje Discord)</span>}
+                  {!discordUser && <span className="ml-1 font-normal text-indigo-500">(vyžaduje Discord)</span>}
                 </button>
-              </>
-            )}
-          </div>
+              </div>
 
-          <div className="flex items-center justify-center gap-4 text-xs text-slate-500">
-            <a href="/pravidla" className="hover:text-slate-300 underline">Pravidla</a>
-            <span>·</span>
-            <a href="/o-nas" className="hover:text-slate-300 underline">O nás</a>
-            <span>·</span>
-            <a href="mailto:info@paytowin.cz" className="hover:text-slate-300 underline">info@paytowin.cz</a>
+              <div className="flex items-center justify-center gap-4 text-xs text-slate-500">
+                <a href="/pravidla" className="hover:text-slate-300 underline">Pravidla</a>
+                <span>·</span>
+                <a href="/o-nas" className="hover:text-slate-300 underline">O nás</a>
+                <span>·</span>
+                <a href="mailto:info@paytowin.cz" className="hover:text-slate-300 underline">info@paytowin.cz</a>
+              </div>
+            </div>
           </div>
         </div>
+
+        {/* ── RIGHT: setup view (50% = 100vw) ── */}
+        <div style={{ width: "50%" }} className="min-h-screen bg-slate-950">
+          <div className="flex min-h-screen items-start justify-center p-6 pt-10">
+            <div className="w-full max-w-md space-y-6">
+
+              {/* Zpět + název panelu */}
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleBack}
+                  className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition"
+                >
+                  ← Zpět
+                </button>
+                <div>
+                  <div className="text-xs text-slate-500 uppercase tracking-wider">Nová hra</div>
+                  <div className="text-base font-bold text-white leading-tight">
+                    {activePanel ? (PANEL_LABELS[activePanel] ?? activePanel) : ""}
+                  </div>
+                </div>
+              </div>
+
+              {/* Formulář — vytvoření hry */}
+              <div className="rounded-3xl bg-slate-900 p-6 shadow-lg space-y-4">
+
+                {shareCode ? (
+                  <div className="space-y-4">
+                    <div className="rounded-2xl border-2 border-emerald-500/40 bg-emerald-950/50 p-4 space-y-3">
+                      <div className="text-sm font-semibold text-emerald-400">✅ Hra vytvořena! Pošli kamarádům odkaz:</div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 rounded-xl bg-slate-800 border border-slate-700 px-3 py-2 font-mono text-sm text-slate-300 truncate select-all">
+                          {typeof window !== "undefined" ? `${window.location.origin}/?join=${shareCode}` : `/?join=${shareCode}`}
+                        </div>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(`${window.location.origin}/?join=${shareCode}`);
+                            setCopied(true);
+                            setTimeout(() => setCopied(false), 2000);
+                          }}
+                          className="shrink-0 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+                        >
+                          {copied ? "✓" : "Kopírovat"}
+                        </button>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => router.push(`/game/${shareCode}`)}
+                      className="w-full rounded-2xl bg-white px-4 py-4 text-lg font-semibold text-slate-900 shadow transition hover:bg-slate-100"
+                    >
+                      Vstoupit do hry →
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    {discordBlock}
+
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-slate-300">Tvoje jméno</label>
+                      <input
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="např. Hynek"
+                        className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white outline-none focus:border-slate-500 placeholder:text-slate-500"
+                      />
+                    </div>
+
+                    {/* Výběr tématu */}
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-300">Vzhled hry</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {THEMES.map((theme) => (
+                          <button
+                            key={theme.id}
+                            type="button"
+                            onClick={() => setSelectedThemeId(theme.id)}
+                            className={`rounded-xl border-2 px-3 py-2.5 text-left transition ${
+                              selectedThemeId === theme.id
+                                ? "border-white bg-white text-slate-900"
+                                : "border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-500"
+                            }`}
+                          >
+                            <div className="text-sm font-semibold">{theme.name}</div>
+                            <div className={`text-xs mt-0.5 ${selectedThemeId === theme.id ? "text-slate-500" : "text-slate-500"}`}>
+                              {theme.description}
+                            </div>
+                          </button>
+                        ))}
+                        {dbThemes.map((theme) => (
+                          <button
+                            key={theme.id}
+                            type="button"
+                            onClick={() => setSelectedThemeId(theme.id)}
+                            className={`rounded-xl border-2 px-3 py-2.5 text-left transition ${
+                              selectedThemeId === theme.id
+                                ? "border-white bg-white text-slate-900"
+                                : "border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-500"
+                            }`}
+                          >
+                            <div className="text-sm font-semibold">{theme.name}</div>
+                            <div className="text-xs mt-0.5 text-slate-500">{theme.description}</div>
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowThemeModal(true)}
+                        className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-medium text-slate-400 hover:bg-slate-700 hover:text-slate-200 transition"
+                      >
+                        Procházet všechna témata →
+                      </button>
+                    </div>
+
+                    {/* Výběr herní desky */}
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-300">Herní deska</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {BOARD_PRESETS.map((preset) => (
+                          <button
+                            key={preset.id}
+                            type="button"
+                            disabled={!preset.available}
+                            onClick={() => preset.available && setSelectedBoardId(preset.id)}
+                            className={`rounded-xl border-2 px-3 py-2.5 text-left transition ${
+                              !preset.available
+                                ? "border-slate-800 bg-slate-900 text-slate-600 cursor-not-allowed"
+                                : selectedBoardId === preset.id
+                                ? "border-white bg-white text-slate-900"
+                                : "border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-500"
+                            }`}
+                          >
+                            <div className="text-sm font-semibold">{preset.name}</div>
+                            <div className="text-xs mt-0.5 text-slate-500">
+                              {preset.available ? preset.description : "Brzy k dispozici"}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Max počet hráčů */}
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-slate-300">Max. hráčů</label>
+                      <select
+                        value={maxPlayers}
+                        onChange={(e) => setMaxPlayers(Number(e.target.value))}
+                        className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white outline-none focus:border-slate-500"
+                      >
+                        {[2,3,4,5,6,8,10,12,16,20,24,32].map(n => (
+                          <option key={n} value={n}>{n} hráčů</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {error && <p className="text-sm text-red-400">{error}</p>}
+
+                    <button
+                      onClick={createGame}
+                      disabled={loading}
+                      className="w-full rounded-2xl bg-white px-4 py-4 text-lg font-semibold text-slate-900 shadow transition hover:bg-slate-100 disabled:bg-slate-600 disabled:text-slate-400"
+                    >
+                      🌐 Vytvořit online hru
+                    </button>
+
+                    <button
+                      onClick={() => router.push("/local/new")}
+                      className="w-full rounded-2xl border-2 border-slate-700 bg-slate-800 px-4 py-3 text-sm font-semibold text-slate-300 hover:border-slate-500 hover:bg-slate-700 transition"
+                    >
+                      🖥️ Lokální hra (hot-seat)
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       {/* Modál: procházet všechna témata */}
@@ -495,7 +565,6 @@ export default function LandingPage() {
           onClick={(e) => { if (e.target === e.currentTarget) setShowThemeModal(false); }}
         >
           <div className="w-full max-w-lg rounded-3xl bg-white shadow-2xl">
-            {/* Hlavička */}
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
               <div>
                 <h2 className="text-lg font-bold text-slate-800">Témata hry</h2>
@@ -509,7 +578,6 @@ export default function LandingPage() {
               </button>
             </div>
 
-            {/* Seznam témat */}
             <div className="space-y-3 p-6 max-h-[60vh] overflow-y-auto">
               {[
                 ...THEMES.map(t => ({
@@ -570,7 +638,6 @@ export default function LandingPage() {
               })}
             </div>
 
-            {/* Patička */}
             <div className="border-t border-slate-100 px-6 py-4">
               <button
                 onClick={() => setShowThemeModal(false)}
