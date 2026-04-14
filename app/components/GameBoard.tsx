@@ -121,6 +121,15 @@ interface Props {
   gameCode?: string;
 }
 
+type RollAdjustment = -1 | 0 | 1;
+
+interface PendingRollDecision {
+  playerId: string;
+  playerIndex: number;
+  baseRoll: number;
+  basePosition: number;
+}
+
 export default function GameBoard({ gameCode }: Props) {
   const [gameId, setGameId] = React.useState<string | null>(null);
   const [themeId, setThemeId] = React.useState<string>("horse-day");
@@ -147,6 +156,7 @@ export default function GameBoard({ gameCode }: Props) {
   const [isRolling, setIsRolling] = React.useState(false);
   const [isMoving, setIsMoving] = React.useState(false);
   const [displayRoll, setDisplayRoll] = React.useState<number | null>(null);
+  const [pendingRollDecision, setPendingRollDecision] = React.useState<PendingRollDecision | null>(null);
   const [animPosition, setAnimPosition] = React.useState<number | null>(null);
   const [animatingPlayerIdx, setAnimatingPlayerIdx] = React.useState<number | null>(null);
   const [trailFields, setTrailFields] = React.useState<number[]>([]);
@@ -158,6 +168,9 @@ export default function GameBoard({ gameCode }: Props) {
   const [guideDismissedTurn, setGuideDismissedTurn] = React.useState<number | null>(null);
   const audioCtxRef = React.useRef<AudioContext | null>(null);
   const soundEnabledRef = React.useRef(true);
+  const rollDecisionTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rollDecisionResolvedRef = React.useRef(false);
+  const pendingRollResolverRef = React.useRef<((adjustment: RollAdjustment) => void) | null>(null);
   // Refs pro ochranu animace před Realtime přepsáním pozice
   const animatingPlayerIdRef = React.useRef<string | null>(null);
   const animPositionRef = React.useRef<number | null>(null);
@@ -190,6 +203,12 @@ export default function GameBoard({ gameCode }: Props) {
     const enabled = stored !== "off";
     setSoundEnabled(enabled);
     soundEnabledRef.current = enabled;
+  }, []);
+
+  React.useEffect(() => {
+    return () => {
+      if (rollDecisionTimerRef.current) clearTimeout(rollDecisionTimerRef.current);
+    };
   }, []);
 
   React.useEffect(() => {
@@ -226,6 +245,23 @@ export default function GameBoard({ gameCode }: Props) {
     setPreferredGuideDismissed(true);
     setGuideDismissedTurn(gameState?.turn_count ?? null);
   }, [gameCode, gameState?.turn_count]);
+
+  const clearRollDecisionTimer = React.useCallback(() => {
+    if (rollDecisionTimerRef.current) {
+      clearTimeout(rollDecisionTimerRef.current);
+      rollDecisionTimerRef.current = null;
+    }
+  }, []);
+
+  const resolveRollDecision = React.useCallback((adjustment: RollAdjustment) => {
+    if (rollDecisionResolvedRef.current) return;
+    rollDecisionResolvedRef.current = true;
+    clearRollDecisionTimer();
+    const resolver = pendingRollResolverRef.current;
+    pendingRollResolverRef.current = null;
+    setPendingRollDecision(null);
+    if (resolver) resolver(adjustment);
+  }, [clearRollDecisionTimer]);
 
   const playStepSound = React.useCallback(() => {
     if (!soundEnabledRef.current) return;
@@ -371,7 +407,7 @@ export default function GameBoard({ gameCode }: Props) {
     const activePendingRace = gameState?.offer_pending?.type === "race" ? gameState.offer_pending as RaceOffer : null;
     const activePendingBankrupt = gameState?.offer_pending?.type === "bankrupt_announcement";
     const activePendingRacePlaceholder = gameState?.offer_pending?.type === "race_pending";
-    if (!gameState || pendingRacer || pendingCard || pendingOffer || activePendingRace || activePendingBankrupt || activePendingRacePlaceholder || isRolling || isMoving) return;
+    if (!gameState || pendingRacer || pendingCard || pendingOffer || pendingRollDecision || activePendingRace || activePendingBankrupt || activePendingRacePlaceholder || isRolling || isMoving) return;
 
     const roll = Math.floor(Math.random() * 6) + 1;
     const currentPlayer = players[gameState.current_player_index];
@@ -391,10 +427,33 @@ export default function GameBoard({ gameCode }: Props) {
     await sleep(300);
     setIsRolling(false);
 
+    const selectedAdjustment = await new Promise<RollAdjustment>((resolve) => {
+      const decision: PendingRollDecision = {
+        playerId: currentPlayer.id,
+        playerIndex: gameState.current_player_index,
+        baseRoll: roll,
+        basePosition: currentPlayer.position,
+      };
+      rollDecisionResolvedRef.current = false;
+      pendingRollResolverRef.current = resolve;
+      setPendingRollDecision(decision);
+      clearRollDecisionTimer();
+      rollDecisionTimerRef.current = setTimeout(() => {
+        resolveRollDecision(0);
+      }, 2000);
+    });
+
+    const adjustmentAllowed = selectedAdjustment !== 0 &&
+      currentPlayer.coins >= 100 &&
+      (roll + selectedAdjustment) >= 1;
+    const finalAdjustment = adjustmentAllowed ? selectedAdjustment : 0;
+    const finalRoll = roll + finalAdjustment;
+    const adjustmentCost = finalAdjustment === 0 ? 0 : 100;
+
     // ── 2. Animace pohybu pole po poli ────────────────────────────────────────
     const oldPosition = currentPlayer.position;
     const fieldCount = FIELDS.length;
-    const newPosition = (oldPosition + roll) % fieldCount;
+    const newPosition = (oldPosition + finalRoll) % fieldCount;
 
     setIsMoving(true);
     setAnimatingPlayerIdx(gameState.current_player_index);
@@ -405,7 +464,7 @@ export default function GameBoard({ gameCode }: Props) {
     animPositionRef.current = oldPosition;
 
     const trail: number[] = [];
-    for (let step = 1; step <= roll; step++) {
+    for (let step = 1; step <= finalRoll; step++) {
       const pos = (oldPosition + step) % fieldCount;
       trail.push(pos);
       setAnimPosition(pos);
@@ -428,10 +487,15 @@ export default function GameBoard({ gameCode }: Props) {
     const currentRound = Math.floor(gameState.turn_count / Math.max(1, players.length));
 
     // Průchod STARTem bez přistání (přeskočení pole 0)
-    const passedStart = newPosition !== 0 && (oldPosition + roll) >= fieldCount;
+    const passedStart = newPosition !== 0 && (oldPosition + finalRoll) >= fieldCount;
 
-    let movedPlayer = { ...currentPlayer, position: newPosition };
+    let movedPlayer = { ...currentPlayer, position: newPosition, coins: currentPlayer.coins - adjustmentCost };
     const extraLog: string[] = [];
+
+    if (finalAdjustment !== 0) {
+      const signed = finalAdjustment > 0 ? `+${finalAdjustment}` : `${finalAdjustment}`;
+      extraLog.push(`${currentPlayer.name} upravil hod o ${signed} krok za ${adjustmentCost} 💰`);
+    }
 
     if (passedStart) {
       movedPlayer = { ...movedPlayer, coins: movedPlayer.coins + 200 };
@@ -1301,12 +1365,16 @@ export default function GameBoard({ gameCode }: Props) {
     isLocalGame ? true : myPlayerId === pendingRace?.playerIds[pendingRace?.currentRacerIndex ?? -1]
   ));
   const isSpectator = viewerRole === "spectator";
+  const hasPendingRollDecision = !!pendingRollDecision;
+  const isMyPendingRollDecisionTurn = !!(pendingRollDecision && (
+    isLocalGame ? viewerRole === "player" : myPlayerId === pendingRollDecision.playerId
+  ));
   const suppressGuideThisTurn = guideDismissedTurn !== null && guideDismissedTurn === (gameState?.turn_count ?? null);
   // Local: kdokoliv "player" může hodit za aktuálního hráče (hot-seat)
   // Online: jen hráč jehož ID sedí s localStorage
   const isMyTurn = isLocalGame
-    ? (viewerRole === "player" && !!currentPlayer && !isBankrupt(currentPlayer) && !isRolling && !isMoving)
-    : (!!myPlayerId && currentPlayer?.id === myPlayerId && !isBankrupt(currentPlayer) && !isRolling && !isMoving && !isSpectator);
+    ? (viewerRole === "player" && !!currentPlayer && !isBankrupt(currentPlayer) && !isRolling && !isMoving && !hasPendingRollDecision)
+    : (!!myPlayerId && currentPlayer?.id === myPlayerId && !isBankrupt(currentPlayer) && !isRolling && !isMoving && !isSpectator && !hasPendingRollDecision);
   const currentRound = gameState ? Math.floor(gameState.turn_count / Math.max(1, players.length)) + 1 : 1;
   const myPlayer = players.find((player) => player.id === myPlayerId) ?? null;
   const shouldShowRacerGuide =
@@ -1335,6 +1403,21 @@ export default function GameBoard({ gameCode }: Props) {
     myPlayer.horses.length > 0 &&
     !hasPreferredRacer &&
     gameStatus === "playing";
+  const rollDecisionOptions = pendingRollDecision
+    ? ([-1, 0, 1] as RollAdjustment[]).map((adjustment) => {
+        const finalRoll = pendingRollDecision.baseRoll + adjustment;
+        const isAffordable = adjustment === 0 || (currentPlayer?.coins ?? 0) >= 100;
+        const isValid = finalRoll >= 1;
+        const targetField = isValid ? FIELDS[(pendingRollDecision.basePosition + finalRoll) % FIELDS.length] : null;
+        return {
+          adjustment,
+          finalRoll,
+          cost: adjustment === 0 ? 0 : 100,
+          isDisabled: !isValid || !isAffordable,
+          targetField,
+        };
+      })
+    : [];
 
   // Mapa (racer.id ?? racer.name) → vlastník — id-first, name fallback pro stará data
   const racerOwnership: Record<string, Player> = {};
@@ -1855,13 +1938,13 @@ export default function GameBoard({ gameCode }: Props) {
                   <div className="text-sm text-slate-500 mb-2">Poslední hod</div>
                   <div className="flex items-center gap-3">
                     <DiceFace
-                      value={(isRolling || isMoving) && displayRoll !== null ? displayRoll : (gameState?.last_roll ?? null)}
+                      value={(isRolling || isMoving || hasPendingRollDecision) && displayRoll !== null ? displayRoll : (gameState?.last_roll ?? null)}
                       size={72}
                       rolling={isRolling}
                     />
-                    {((isRolling || isMoving) && displayRoll !== null ? displayRoll : gameState?.last_roll) && (
+                    {((isRolling || isMoving || hasPendingRollDecision) && displayRoll !== null ? displayRoll : gameState?.last_roll) && (
                       <span className={`text-3xl font-bold ${isRolling ? "text-amber-600" : "text-slate-700"}`}>
-                        {(isRolling || isMoving) && displayRoll !== null ? displayRoll : gameState?.last_roll}
+                        {(isRolling || isMoving || hasPendingRollDecision) && displayRoll !== null ? displayRoll : gameState?.last_roll}
                       </span>
                     )}
                   </div>
@@ -1928,6 +2011,65 @@ export default function GameBoard({ gameCode }: Props) {
                     ) : (
                       <div className="rounded-xl bg-slate-100 px-3 py-2 text-center text-sm text-slate-500">
                         Čeká na rozhodnutí {players[pendingRacer.playerIndex]?.name}…
+                      </div>
+                    )}
+                  </div>
+                ) : pendingRollDecision ? (
+                  <div className="rounded-2xl border border-slate-300 bg-white p-4 shadow-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">
+                          Korekce tahu
+                        </div>
+                        <div className="mt-1 text-sm font-semibold text-slate-800">
+                          Padlo <span className="text-base">{pendingRollDecision.baseRoll}</span>. Vyber finální tah.
+                        </div>
+                      </div>
+                      <div className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-500">
+                        2 s
+                      </div>
+                    </div>
+                    {isMyPendingRollDecisionTurn ? (
+                      <>
+                        <div className="mt-3 grid grid-cols-3 gap-2">
+                          {rollDecisionOptions.map((option) => {
+                            const signedLabel = option.adjustment > 0 ? `+${option.adjustment}` : `${option.adjustment}`;
+                            return (
+                              <button
+                                key={option.adjustment}
+                                onClick={() => resolveRollDecision(option.adjustment)}
+                                disabled={option.isDisabled}
+                                className={`rounded-xl border px-3 py-3 text-left transition ${
+                                  option.adjustment === 0
+                                    ? "border-slate-300 bg-slate-50 hover:bg-slate-100"
+                                    : "border-amber-200 bg-amber-50 hover:bg-amber-100"
+                                } disabled:cursor-not-allowed disabled:opacity-45`}
+                              >
+                                <div className="text-xs font-black uppercase tracking-wide text-slate-500">
+                                  {option.adjustment === 0 ? "Normál" : `${signedLabel} krok`}
+                                </div>
+                                <div className="mt-1 text-lg font-bold text-slate-800">
+                                  {option.finalRoll}
+                                </div>
+                                <div className="mt-1 text-[11px] font-medium text-slate-500">
+                                  {option.cost === 0 ? "Zdarma" : `-${option.cost} 💰`}
+                                </div>
+                                {option.targetField && (
+                                  <div className="mt-2 text-[11px] leading-snug text-slate-600">
+                                    {option.targetField.emoji} {option.targetField.label}
+                                  </div>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <div className="mt-2 text-[11px] text-slate-400">
+                          Když nic nevybereš, za chvíli se provede normální tah.
+                        </div>
+                      </>
+                    ) : (
+                      <div className="mt-3 rounded-xl bg-slate-100 px-3 py-3 text-center text-sm text-slate-500">
+                        Čeká se na volbu hráče {currentPlayer?.name ?? "…"}…
                       </div>
                     )}
                   </div>
