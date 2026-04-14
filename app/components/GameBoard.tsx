@@ -152,6 +152,7 @@ export default function GameBoard({ gameCode }: Props) {
   const [trailFields, setTrailFields] = React.useState<number[]>([]);
   const [hoveredPlayerId, setHoveredPlayerId] = React.useState<string | null>(null);
   const [soundEnabled, setSoundEnabled] = React.useState(true);
+  const [guideDismissed, setGuideDismissed] = React.useState(false);
   const audioCtxRef = React.useRef<AudioContext | null>(null);
   const soundEnabledRef = React.useRef(true);
   // Refs pro ochranu animace před Realtime přepsáním pozice
@@ -188,12 +189,23 @@ export default function GameBoard({ gameCode }: Props) {
     soundEnabledRef.current = enabled;
   }, []);
 
+  React.useEffect(() => {
+    const guideKey = `paytowin_guide_racer_${gameCode ?? "local"}`;
+    setGuideDismissed(localStorage.getItem(guideKey) === "dismissed");
+  }, [gameCode]);
+
   const toggleSound = () => {
     const next = !soundEnabled;
     setSoundEnabled(next);
     soundEnabledRef.current = next;
     localStorage.setItem("paytowin_sound", next ? "on" : "off");
   };
+
+  const dismissRacerGuide = React.useCallback(() => {
+    const guideKey = `paytowin_guide_racer_${gameCode ?? "local"}`;
+    localStorage.setItem(guideKey, "dismissed");
+    setGuideDismissed(true);
+  }, [gameCode]);
 
   const playStepSound = React.useCallback(() => {
     if (!soundEnabledRef.current) return;
@@ -1276,6 +1288,14 @@ export default function GameBoard({ gameCode }: Props) {
     ? (viewerRole === "player" && !!currentPlayer && !isBankrupt(currentPlayer) && !isRolling && !isMoving)
     : (!!myPlayerId && currentPlayer?.id === myPlayerId && !isBankrupt(currentPlayer) && !isRolling && !isMoving && !isSpectator);
   const currentRound = gameState ? Math.floor(gameState.turn_count / Math.max(1, players.length)) + 1 : 1;
+  const myPlayer = players.find((player) => player.id === myPlayerId) ?? null;
+  const shouldShowRacerGuide =
+    viewerRole === "player" &&
+    !guideDismissed &&
+    !!myPlayer &&
+    !isBankrupt(myPlayer) &&
+    myPlayer.horses.length === 0 &&
+    gameStatus === "playing";
 
   // Mapa (racer.id ?? racer.name) → vlastník — id-first, name fallback pro stará data
   const racerOwnership: Record<string, Player> = {};
@@ -1705,6 +1725,34 @@ export default function GameBoard({ gameCode }: Props) {
                 </button>
               </div>
               <div className="mt-4 space-y-4">
+                {shouldShowRacerGuide && (
+                  <div className="relative overflow-hidden rounded-2xl border border-amber-300 bg-gradient-to-br from-amber-50 via-white to-amber-100 p-4 shadow-sm">
+                    <div className="absolute -right-4 -top-4 text-6xl opacity-10">🏇</div>
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-2xl">
+                        🎩
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">
+                          Průvodce žokeje
+                        </div>
+                        <div className="mt-1 text-sm font-semibold text-slate-800">
+                          Chceš závodit? Nejdřív si pořiď racera.
+                        </div>
+                        <p className="mt-1 text-xs leading-relaxed text-slate-600">
+                          Bez vlastního závodníka se do většiny závodních akcí nedostaneš. Sleduj pole s racerem a kup prvního, který ti sedne do strategie.
+                        </p>
+                      </div>
+                      <button
+                        onClick={dismissRacerGuide}
+                        className="shrink-0 rounded-lg px-2 py-1 text-xs font-medium text-slate-400 transition hover:bg-white/70 hover:text-slate-700"
+                        title="Skrýt nápovědu"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <div className={`rounded-2xl p-4 transition-colors ${isRolling ? theme.colors.rollPanelRolling : theme.colors.rollPanelIdle}`}>
                   <div className="text-sm text-slate-500 mb-2">Poslední hod</div>
@@ -1857,7 +1905,7 @@ export default function GameBoard({ gameCode }: Props) {
                                   <div className={`text-xs truncate ${theme.colors.textMuted}`}>{field?.emoji} {field?.label}</div>
                                 )}
                                 {!bankrupt && player.horses.length > 0 && (
-                                  <div className="mt-1 space-y-0.5">
+                                  <div className="mt-2 space-y-1.5 pl-2">
                                     {[...player.horses]
                                       .sort((a, b) => (b.isPreferred ? 1 : 0) - (a.isPreferred ? 1 : 0))
                                       .map((h) => {
@@ -1866,39 +1914,47 @@ export default function GameBoard({ gameCode }: Props) {
                                         return (
                                           <div
                                             key={hKey}
-                                            className={`flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs ${
+                                            className={`rounded-xl px-2.5 py-2 text-xs ${
                                               h.isPreferred
-                                                ? "bg-yellow-50 border border-yellow-200"
+                                                ? "border border-yellow-200 bg-yellow-50"
                                                 : "bg-slate-50"
                                             }`}
                                           >
-                                            <span>{h.emoji}</span>
-                                            <span className={`font-medium truncate ${h.isPreferred ? "text-amber-700" : "text-slate-600"}`}>
-                                              {h.name}
-                                            </span>
-                                            {h.isPreferred && (
-                                              <span className="shrink-0 text-[10px] font-semibold text-amber-500 bg-amber-100 rounded px-1">
-                                                Hlavní
-                                              </span>
-                                            )}
-                                            <span className="shrink-0 text-slate-300 ml-0.5">
-                                              {h.stamina ?? 100}%
-                                            </span>
-                                            {isOwn ? (
-                                              <button
-                                                onClick={() => setPreferredRacer(player.id, h.isPreferred ? null : hKey)}
-                                                className={`ml-auto shrink-0 text-sm leading-none transition-colors ${
-                                                  h.isPreferred
-                                                    ? "text-amber-400 hover:text-slate-300"
-                                                    : "text-slate-300 hover:text-amber-400"
-                                                }`}
-                                                title={h.isPreferred ? "Odnastavit hlavního závodníka" : "Nastavit jako hlavního závodníka"}
-                                              >
-                                                {h.isPreferred ? "★" : "☆"}
-                                              </button>
-                                            ) : h.isPreferred ? (
-                                              <span className="ml-auto shrink-0 text-sm leading-none text-amber-400">★</span>
-                                            ) : null}
+                                            <div className="flex items-start gap-2">
+                                              <span className="mt-0.5 shrink-0 text-sm">{h.emoji}</span>
+                                              <div className="min-w-0 flex-1">
+                                                <div className="flex items-start justify-between gap-2">
+                                                  <span className={`block font-medium leading-tight ${h.isPreferred ? "text-amber-700" : "text-slate-700"}`}>
+                                                    {h.name}
+                                                  </span>
+                                                  {isOwn ? (
+                                                    <button
+                                                      onClick={() => setPreferredRacer(player.id, h.isPreferred ? null : hKey)}
+                                                      className={`shrink-0 text-sm leading-none transition-colors ${
+                                                        h.isPreferred
+                                                          ? "text-amber-400 hover:text-slate-300"
+                                                          : "text-slate-300 hover:text-amber-400"
+                                                      }`}
+                                                      title={h.isPreferred ? "Odnastavit hlavního závodníka" : "Nastavit jako hlavního závodníka"}
+                                                    >
+                                                      {h.isPreferred ? "★" : "☆"}
+                                                    </button>
+                                                  ) : h.isPreferred ? (
+                                                    <span className="shrink-0 text-sm leading-none text-amber-400">★</span>
+                                                  ) : null}
+                                                </div>
+                                                <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                                                  <span className="rounded bg-white/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
+                                                    Stamina {h.stamina ?? 100}%
+                                                  </span>
+                                                  {h.isPreferred && (
+                                                    <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600">
+                                                      Hlavní
+                                                    </span>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            </div>
                                           </div>
                                         );
                                       })}
