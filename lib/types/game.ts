@@ -61,12 +61,21 @@ export interface BankruptAnnouncement {
 }
 
 /**
+ * Typ závodu — rozlišuje varianty race flow.
+ *
+ * mass_race   — všichni aktivní hráči závodí najednou (současná implementace)
+ * rivals_race — zatím neimplementováno; vyhrazeno pro budoucí variantu
+ */
+export type RaceType = "mass_race" | "rivals_race";
+
+/**
  * Výběr závodníků před startem závodu.
  * Každý aktivní hráč postupně vybere svého závodníka (currentSelectorIndex → playerIds[i]).
  * Po výběru posledního se přejde na dalšího hráče (nextIndex/turnCount).
  */
 export interface RacePendingEvent {
   type: "race_pending";
+  raceType?: RaceType;                // výchozí: "mass_race" (optional pro zpětnou kompatibilitu)
   nextIndex: number;
   turnCount: number;
   lastRoll?: number;

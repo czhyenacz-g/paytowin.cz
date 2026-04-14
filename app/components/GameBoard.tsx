@@ -844,6 +844,7 @@ export default function GameBoard({ gameCode }: Props) {
       const raceEvtParam = params.postTurnEvent as { kind: "race_pending"; playerIds: string[] };
       const evt: RacePendingEvent = {
         type: "race_pending",
+        raceType: "mass_race",
         nextIndex: params.nextIndex,
         turnCount: params.turnCount,
         playerIds: raceEvtParam.playerIds,
@@ -1834,27 +1835,51 @@ export default function GameBoard({ gameCode }: Props) {
                                   <div className={`text-xs truncate ${theme.colors.textMuted}`}>{field?.emoji} {field?.label}</div>
                                 )}
                                 {!bankrupt && player.horses.length > 0 && (
-                                  <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
-                                    {player.horses.map((h) => {
-                                      const hKey = racerOwnershipKey(h);
-                                      const isOwn = isLocalGame ? viewerRole === "player" : player.id === myPlayerId;
-                                      return (
-                                        <span key={hKey} className="flex items-center gap-0.5 text-xs text-amber-500">
-                                          {h.emoji} {h.name}
-                                          {isOwn ? (
-                                            <button
-                                              onClick={() => setPreferredRacer(player.id, h.isPreferred ? null : hKey)}
-                                              className={`text-[11px] leading-none transition ${h.isPreferred ? "text-yellow-400" : "text-slate-300 hover:text-yellow-400"}`}
-                                              title={h.isPreferred ? "Zrušit preferred" : "Nastavit jako preferred"}
-                                            >
-                                              {h.isPreferred ? "⭐" : "☆"}
-                                            </button>
-                                          ) : h.isPreferred ? (
-                                            <span className="text-[11px] leading-none text-yellow-400">⭐</span>
-                                          ) : null}
-                                        </span>
-                                      );
-                                    })}
+                                  <div className="mt-1 space-y-0.5">
+                                    {[...player.horses]
+                                      .sort((a, b) => (b.isPreferred ? 1 : 0) - (a.isPreferred ? 1 : 0))
+                                      .map((h) => {
+                                        const hKey = racerOwnershipKey(h);
+                                        const isOwn = isLocalGame ? viewerRole === "player" : player.id === myPlayerId;
+                                        return (
+                                          <div
+                                            key={hKey}
+                                            className={`flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs ${
+                                              h.isPreferred
+                                                ? "bg-yellow-50 border border-yellow-200"
+                                                : "bg-slate-50"
+                                            }`}
+                                          >
+                                            <span>{h.emoji}</span>
+                                            <span className={`font-medium truncate ${h.isPreferred ? "text-amber-700" : "text-slate-600"}`}>
+                                              {h.name}
+                                            </span>
+                                            {h.isPreferred && (
+                                              <span className="shrink-0 text-[10px] font-semibold text-amber-500 bg-amber-100 rounded px-1">
+                                                Hlavní
+                                              </span>
+                                            )}
+                                            <span className="shrink-0 text-slate-300 ml-0.5">
+                                              {h.stamina ?? 100}%
+                                            </span>
+                                            {isOwn ? (
+                                              <button
+                                                onClick={() => setPreferredRacer(player.id, h.isPreferred ? null : hKey)}
+                                                className={`ml-auto shrink-0 text-sm leading-none transition-colors ${
+                                                  h.isPreferred
+                                                    ? "text-amber-400 hover:text-slate-300"
+                                                    : "text-slate-300 hover:text-amber-400"
+                                                }`}
+                                                title={h.isPreferred ? "Odnastavit hlavního závodníka" : "Nastavit jako hlavního závodníka"}
+                                              >
+                                                {h.isPreferred ? "★" : "☆"}
+                                              </button>
+                                            ) : h.isPreferred ? (
+                                              <span className="ml-auto shrink-0 text-sm leading-none text-amber-400">★</span>
+                                            ) : null}
+                                          </div>
+                                        );
+                                      })}
                                   </div>
                                 )}
                               </div>
