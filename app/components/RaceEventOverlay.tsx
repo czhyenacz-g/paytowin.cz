@@ -3,7 +3,18 @@
 import React from "react";
 import { racerOwnershipKey } from "@/lib/engine";
 import { STAMINA_PER_TAP } from "@/lib/types/game";
-import type { Player, Horse, RacePendingEvent } from "@/lib/types/game";
+import type { Player, Horse, RacePendingEvent, RaceType } from "@/lib/types/game";
+
+// Texty pro každý typ závodu — přidej sem řádek pro nový raceType
+const RACE_TYPE_LABELS: Record<RaceType, {
+  selectingTitle: string;
+  countdownSub:   string;
+  racingTitle:    string;
+  resultsTitle:   string;
+}> = {
+  mass_race:   { selectingTitle: "Výběr závodníků",  countdownSub: "Závod začíná!",   racingTitle: "🏇 Závod!",   resultsTitle: "Výsledky závodu"  },
+  rivals_race: { selectingTitle: "Výběr závodníků",  countdownSub: "Souboj začíná!",  racingTitle: "⚔️ Souboj!", resultsTitle: "Výsledky souboje" },
+};
 
 interface RaceResult {
   player: Player | undefined;
@@ -261,6 +272,7 @@ export default function RaceEventOverlay({
   onCloseResult,
 }: RaceEventOverlayProps) {
   const phase = event.phase;
+  const labels = RACE_TYPE_LABELS[event.raceType ?? "mass_race"];
 
   // Preferred závodník pro aktuálního výběrčího
   const preferredHorse = selectorPlayer?.horses.find(h => h.isPreferred) ?? null;
@@ -279,7 +291,7 @@ export default function RaceEventOverlay({
         {(!phase || phase === "selecting") && (<>
           <div className="text-center space-y-1">
             <div className="text-4xl">🏁</div>
-            <h2 className="text-xl font-bold text-slate-800">Výběr závodníků</h2>
+            <h2 className="text-xl font-bold text-slate-800">{labels.selectingTitle}</h2>
             <p className="text-sm text-slate-400">
               {event.currentSelectorIndex + 1} / {event.playerIds.length}
             </p>
@@ -370,7 +382,7 @@ export default function RaceEventOverlay({
             <div className="text-8xl font-black text-slate-800 tabular-nums leading-none">
               {countdownNum ?? "…"}
             </div>
-            <p className="text-sm text-slate-400">Závod začíná!</p>
+            <p className="text-sm text-slate-400">{labels.countdownSub}</p>
           </div>
         )}
 
@@ -378,7 +390,7 @@ export default function RaceEventOverlay({
         {phase === "racing" && racingPlayer && (
           <div className="space-y-3">
             <div className="text-center space-y-1">
-              <h2 className="text-lg font-bold text-slate-800">🏇 Závod!</h2>
+              <h2 className="text-lg font-bold text-slate-800">{labels.racingTitle}</h2>
               <p className="text-sm text-slate-400">
                 {(event.currentRacerIndex ?? 0) + 1} / {event.playerIds.length}
               </p>
@@ -401,7 +413,7 @@ export default function RaceEventOverlay({
           <div className="space-y-4">
             <div className="text-center space-y-1">
               <div className="text-4xl">🏆</div>
-              <h2 className="text-xl font-bold text-slate-800">Výsledky závodu</h2>
+              <h2 className="text-xl font-bold text-slate-800">{labels.resultsTitle}</h2>
             </div>
             <div className="space-y-2">
               {raceResults.map(({ player, horse, score, effectiveScore, finalStamina }, idx) => player && horse ? (
