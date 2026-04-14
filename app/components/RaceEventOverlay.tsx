@@ -7,13 +7,15 @@ import type { Player, Horse, RacePendingEvent, RaceType } from "@/lib/types/game
 
 // Texty pro každý typ závodu — přidej sem řádek pro nový raceType
 const RACE_TYPE_LABELS: Record<RaceType, {
-  selectingTitle: string;
-  countdownSub:   string;
-  racingTitle:    string;
-  resultsTitle:   string;
+  selectingTitle:  string;
+  selectingEmoji:  string;
+  selectingPrompt: string;
+  countdownSub:    string;
+  racingTitle:     string;
+  resultsTitle:    string;
 }> = {
-  mass_race:   { selectingTitle: "Výběr závodníků",  countdownSub: "Závod začíná!",   racingTitle: "🏇 Závod!",   resultsTitle: "Výsledky závodu"  },
-  rivals_race: { selectingTitle: "Výběr závodníků",  countdownSub: "Souboj začíná!",  racingTitle: "⚔️ Souboj!", resultsTitle: "Výsledky souboje" },
+  mass_race:   { selectingTitle: "Výběr závodníků", selectingEmoji: "🏁", selectingPrompt: "Vyber závodníka pro závod",  countdownSub: "Závod začíná!",  racingTitle: "🏇 Závod!",   resultsTitle: "Výsledky závodu"  },
+  rivals_race: { selectingTitle: "Souboj o stáj",   selectingEmoji: "⚔️", selectingPrompt: "Vyber závodníka pro souboj", countdownSub: "Souboj začíná!", racingTitle: "⚔️ Souboj!", resultsTitle: "Výsledky souboje" },
 };
 
 interface RaceResult {
@@ -278,6 +280,11 @@ export default function RaceEventOverlay({
   const preferredHorse = selectorPlayer?.horses.find(h => h.isPreferred) ?? null;
   const preferredKey = preferredHorse ? racerOwnershipKey(preferredHorse) : null;
 
+  // Identita rivalů — zobrazí se jako "Hráč A ⚔️ Hráč B" v rivals_race selecting fázi
+  const rivals = event.raceType === "rivals_race" && event.playerIds.length === 2
+    ? (event.playerIds.map(id => players.find(p => p.id === id)).filter(Boolean) as Player[])
+    : null;
+
   // Závodníkův kůň v racing fázi
   const racingHorse = racingPlayer
     ? racingPlayer.horses.find(h => racerOwnershipKey(h) === event.selections?.[racingPlayer.id])
@@ -290,17 +297,23 @@ export default function RaceEventOverlay({
         {/* ── Výběr závodníka ── */}
         {(!phase || phase === "selecting") && (<>
           <div className="text-center space-y-1">
-            <div className="text-4xl">🏁</div>
+            <div className="text-4xl">{labels.selectingEmoji}</div>
             <h2 className="text-xl font-bold text-slate-800">{labels.selectingTitle}</h2>
-            <p className="text-sm text-slate-400">
-              {event.currentSelectorIndex + 1} / {event.playerIds.length}
-            </p>
+            {rivals ? (
+              <p className="text-sm font-semibold text-slate-600">
+                {rivals[0].name} <span className="text-slate-300">⚔️</span> {rivals[1].name}
+              </p>
+            ) : (
+              <p className="text-sm text-slate-400">
+                {event.currentSelectorIndex + 1} / {event.playerIds.length}
+              </p>
+            )}
           </div>
 
           {isMySelectionTurn && selectorPlayer ? (
             <div className="space-y-3">
               <p className="text-center text-sm font-semibold text-slate-700">
-                {isLocalGame ? `${selectorPlayer.name}: ` : ""}Vyber závodníka pro závod
+                {isLocalGame ? `${selectorPlayer.name}: ` : ""}{labels.selectingPrompt}
               </p>
               {preferredHorse && preferredKey && (
                 <div className="space-y-1">
