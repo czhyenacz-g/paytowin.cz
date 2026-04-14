@@ -6,7 +6,7 @@ import React from "react";
  * MapMenuStrip — 7 svislých panelů jako hlavní menu landing page.
  *
  * Pořadí: 5 map + Ostatní mapy + Editor.
- * Hover: aktivní panel se rozšíří (flex 1→2.5), overlay zesvětlí, CTA vypluje.
+ * Hover: aktivní panel se rozšíří (flex 1→4), overlay zesvětlí, CTA vypluje.
  * Placeholder: gradient pozadí bez obrázků — připraveno pro budoucí art.
  *
  * Jak přidat reálný obrázek: doplň `bgImage` do panelu a nastav backgroundImage ve style.
@@ -38,7 +38,7 @@ export default function MapMenuStrip() {
   const [hovered, setHovered] = React.useState<number | null>(null);
 
   return (
-    <div className="flex w-full overflow-hidden" style={{ height: "clamp(320px, 50vh, 580px)" }}>
+    <div className="flex w-full overflow-hidden" style={{ height: "clamp(260px, 42vh, 480px)" }}>
       {PANELS.map((panel, idx) => {
         const isHovered = hovered === idx;
         const isClickable = panel.available && !!panel.href;
@@ -50,7 +50,7 @@ export default function MapMenuStrip() {
             "transition-[flex] duration-300 ease-in-out",
             isClickable ? "cursor-pointer" : "cursor-default",
           ].join(" "),
-          style: { flex: isHovered && isClickable ? 2.5 : 1 },
+          style: { flex: isHovered && isClickable ? 4 : 1 },
           onMouseEnter: () => setHovered(idx),
           onMouseLeave: () => setHovered(null),
         };
@@ -58,16 +58,17 @@ export default function MapMenuStrip() {
         const inner = (
           <>
             {/* Overlay — dostupný panel zesvětlí na hover, nedostupný zůstane tmavý */}
+            {/* Idle: bg-black/72 opacity-100 → hover: opacity-20 = efektivně ~14% tmavý overlay */}
             <div className={[
               "absolute inset-0 transition-opacity duration-300",
-              isClickable ? "bg-black/35 group-hover:opacity-0" : "bg-black/65",
+              isClickable ? "bg-black/72 group-hover:opacity-20" : "bg-black/80",
             ].join(" ")} />
 
             {/* Emoji — dekorativní, výrazně větší, lépe čitelné na velkém panelu */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none" style={{ paddingBottom: "60px" }}>
               <span className={[
                 "text-7xl transition-opacity duration-300",
-                isClickable ? "opacity-20 group-hover:opacity-50" : "opacity-5",
+                isClickable ? "opacity-10 group-hover:opacity-55" : "opacity-5",
               ].join(" ")}>
                 {panel.emoji}
               </span>
@@ -78,8 +79,8 @@ export default function MapMenuStrip() {
 
               {/* Název */}
               <div className={[
-                "text-sm font-bold leading-tight truncate",
-                isClickable ? "text-white" : "text-white/35",
+                "text-xs font-semibold leading-tight truncate transition-colors duration-300",
+                isClickable ? "text-white/50 group-hover:text-white" : "text-white/25",
               ].join(" ")}>
                 {panel.label}
               </div>
