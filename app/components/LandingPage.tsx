@@ -284,32 +284,31 @@ export default function LandingPage() {
     router.push(`/game/${game.code}`);
   };
 
-  /* ── Discord block — sdílený mezi oběma view ── */
-  const discordBlock = discordUser ? (
-    <div className="flex items-center justify-between rounded-2xl bg-indigo-50 border border-indigo-200 px-4 py-3">
-      <div className="flex items-center gap-3">
+  const utilityDiscordBlock = discordUser ? (
+    <div className="flex items-center justify-between gap-3 rounded-2xl border border-white/12 bg-white/8 px-3 py-2.5">
+      <div className="flex min-w-0 items-center gap-3">
         {discordUser.avatar ? (
           <img src={discordUser.avatar} alt="" className="h-8 w-8 rounded-full" />
         ) : (
-          <div className="h-8 w-8 rounded-full bg-indigo-300 flex items-center justify-center text-white text-sm font-bold">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-400 text-sm font-bold text-white">
             {discordUser.name.charAt(0).toUpperCase()}
           </div>
         )}
-        <div>
-          <div className="text-sm font-semibold text-indigo-900">{discordUser.name}</div>
-          <div className="text-xs text-indigo-400">přihlášen přes Discord</div>
+        <div className="min-w-0">
+          <div className="truncate text-sm font-semibold text-white">{discordUser.name}</div>
+          <div className="text-[11px] text-white/55">Discord připojen</div>
         </div>
       </div>
-      <button onClick={logoutDiscord} className="text-xs text-indigo-400 hover:text-indigo-700 underline">
+      <button onClick={logoutDiscord} className="shrink-0 text-xs font-medium text-white/55 transition hover:text-white">
         Odhlásit
       </button>
     </div>
   ) : (
     <button
       onClick={loginWithDiscord}
-      className="w-full rounded-2xl border-2 border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100"
+      className="rounded-2xl border border-indigo-400/40 bg-indigo-500/12 px-4 py-2.5 text-sm font-semibold text-indigo-100 transition hover:bg-indigo-500/20"
     >
-      🎮 Přihlásit přes Discord <span className="font-normal text-indigo-400">(vyplní jméno automaticky)</span>
+      🎮 Přihlásit přes Discord
     </button>
   );
 
@@ -343,106 +342,90 @@ export default function LandingPage() {
 
         {/* ── LEFT: landing view (50% = 100vw) ── */}
         <div style={{ width: "50%" }} className="flex flex-col min-h-0">
-          <MapMenuStrip onPanelClick={(id) => {
-            if (id === "editor") {
-              router.push("/admin/themes/dev");
-              return;
-            }
+          <div className="flex flex-1 min-h-0 overflow-y-auto">
+            <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-6 py-8">
 
-            setActivePanel(id);
-            setShareCode(null);
-            setError("");
-            const themeId = PANEL_CONFIG[id]?.themeId;
-            if (themeId) setSelectedThemeId(themeId);
-            if (id === "ostatni") {
-              const firstCommunityTheme = communityThemes[0];
-              if (firstCommunityTheme) setSelectedThemeId(firstCommunityTheme.id);
-            }
-          }} />
-
-          <div className="flex flex-1 min-h-0 items-center justify-center p-6 overflow-y-auto">
-            <div className="w-full max-w-md space-y-6">
-
-              {/* Titulek */}
-              <div className="text-center">
+              <div className="mb-6 text-center">
                 <div className="text-5xl">🐎</div>
                 <h1
                   className="mt-3 text-4xl font-bold text-slate-900 cursor-pointer hover:opacity-75 transition-opacity"
                   onClick={() => window.open("/", "_blank")}
                 >PayToWin.cz</h1>
                 <p className="mt-2 text-slate-500">Dostihy, sázky a finanční chaos.</p>
-                <a href="/hry" className="mt-3 inline-block rounded-xl bg-indigo-50 border border-indigo-200 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100">
-                  👀 Sledovat aktivní hry
-                </a>
               </div>
 
-              {/* Join sekce */}
-              <div className="rounded-3xl bg-white p-6 shadow-lg space-y-4">
-                {discordBlock}
+              <MapMenuStrip onPanelClick={(id) => {
+                if (id === "editor") {
+                  router.push("/admin/themes/dev");
+                  return;
+                }
 
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-700">Tvoje jméno</label>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="např. Hynek"
-                    className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-800 outline-none focus:border-slate-500 placeholder:text-slate-400"
-                  />
+                setActivePanel(id);
+                setShareCode(null);
+                setError("");
+                const themeId = PANEL_CONFIG[id]?.themeId;
+                if (themeId) setSelectedThemeId(themeId);
+                if (id === "ostatni") {
+                  const firstCommunityTheme = communityThemes[0];
+                  if (firstCommunityTheme) setSelectedThemeId(firstCommunityTheme.id);
+                }
+              }} />
+
+              <div className="mx-auto mt-5 w-full max-w-5xl space-y-3">
+                <div className="rounded-[28px] border border-slate-800 bg-slate-900/95 p-3 shadow-2xl">
+                  <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
+                    <div className="xl:w-[280px]">
+                      {utilityDiscordBlock}
+                    </div>
+
+                    <div className="flex flex-1 flex-col gap-2 lg:flex-row">
+                      <input
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Tvoje jméno"
+                        className="h-11 min-w-0 rounded-2xl border border-white/12 bg-white/8 px-4 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/30"
+                      />
+
+                      <div className="flex flex-1 gap-2">
+                        <input
+                          type="text"
+                          value={joinCode}
+                          onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                          placeholder="Kód hry"
+                          maxLength={5}
+                          className="h-11 min-w-0 flex-1 rounded-2xl border border-white/12 bg-white/8 px-4 text-sm uppercase tracking-[0.2em] text-white outline-none placeholder:tracking-normal placeholder:text-white/35 focus:border-white/30"
+                        />
+                        <button
+                          onClick={joinGame}
+                          disabled={loading}
+                          className="h-11 shrink-0 rounded-2xl bg-emerald-500 px-4 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 disabled:bg-slate-600 disabled:text-white/50"
+                        >
+                          Připojit
+                        </button>
+                      </div>
+                    </div>
+
+                    <a
+                      href="/hry"
+                      className="inline-flex h-11 shrink-0 items-center justify-center rounded-2xl border border-white/12 bg-white/8 px-4 text-sm font-semibold text-white transition hover:bg-white/12"
+                    >
+                      👀 Sledovat aktivní hry
+                    </a>
+                  </div>
                 </div>
 
-                <div className="relative flex items-center gap-3">
-                  <div className="flex-1 border-t border-slate-200" />
-                  <span className="text-sm text-slate-400">Připojit se ke hře</span>
-                  <div className="flex-1 border-t border-slate-200" />
+                {error && (
+                  <p className="text-center text-sm text-red-600">{error}</p>
+                )}
+
+                <div className="flex items-center justify-center gap-4 text-xs text-slate-500">
+                  <a href="/pravidla" className="hover:text-slate-700 underline">Pravidla</a>
+                  <span>·</span>
+                  <a href="/o-nas" className="hover:text-slate-700 underline">O nás</a>
+                  <span>·</span>
+                  <a href="mailto:info@paytowin.cz" className="hover:text-slate-700 underline">info@paytowin.cz</a>
                 </div>
-
-                {error && <p className="text-sm text-red-600">{error}</p>}
-
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={joinCode}
-                    onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                    placeholder="Kód hry (např. XK9F2)"
-                    maxLength={5}
-                    className="flex-1 rounded-xl border border-slate-300 px-4 py-3 text-slate-800 uppercase tracking-widest outline-none focus:border-slate-500 placeholder:text-slate-400"
-                  />
-                  <button
-                    onClick={joinGame}
-                    disabled={loading}
-                    className="rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white hover:bg-emerald-700 disabled:bg-slate-400"
-                  >
-                    Připojit
-                  </button>
-                </div>
-
-                <button
-                  onClick={() => {
-                    if (!joinCode.trim()) return setError("Zadej kód hry.");
-                    if (discordUser) {
-                      router.push(`/game/${joinCode.trim().toUpperCase()}`);
-                    } else {
-                      supabase.auth.signInWithOAuth({
-                        provider: "discord",
-                        options: { redirectTo: `${window.location.origin}/auth/callback?next=/game/${joinCode.trim().toUpperCase()}` },
-                      });
-                    }
-                  }}
-                  disabled={loading}
-                  className="w-full rounded-xl border-2 border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 disabled:opacity-50"
-                >
-                  👀 Sledovat jako divák
-                  {!discordUser && <span className="ml-1 font-normal text-indigo-400">(vyžaduje Discord)</span>}
-                </button>
-              </div>
-
-              <div className="flex items-center justify-center gap-4 text-xs text-slate-500">
-                <a href="/pravidla" className="hover:text-slate-700 underline">Pravidla</a>
-                <span>·</span>
-                <a href="/o-nas" className="hover:text-slate-700 underline">O nás</a>
-                <span>·</span>
-                <a href="mailto:info@paytowin.cz" className="hover:text-slate-700 underline">info@paytowin.cz</a>
               </div>
             </div>
           </div>
