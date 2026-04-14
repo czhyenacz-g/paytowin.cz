@@ -1905,7 +1905,7 @@ export default function GameBoard({ gameCode }: Props) {
                                   <div className={`text-xs truncate ${theme.colors.textMuted}`}>{field?.emoji} {field?.label}</div>
                                 )}
                                 {!bankrupt && player.horses.length > 0 && (
-                                  <div className="mt-2 space-y-1.5 pl-2">
+                                  <div className="mt-2 border-t border-black/8 pt-2">
                                     {[...player.horses]
                                       .sort((a, b) => (b.isPreferred ? 1 : 0) - (a.isPreferred ? 1 : 0))
                                       .map((h) => {
@@ -1920,40 +1920,36 @@ export default function GameBoard({ gameCode }: Props) {
                                                 : "bg-slate-50"
                                             }`}
                                           >
-                                            <div className="flex items-start gap-2">
+                                            <div className={`flex items-start gap-2 text-sm font-semibold leading-snug ${h.isPreferred ? "text-amber-700" : "text-slate-700"}`}>
                                               <span className="mt-0.5 shrink-0 text-base">{h.emoji}</span>
-                                              <div className="min-w-0 flex-1">
-                                                <div className={`block text-sm font-semibold leading-snug break-words ${h.isPreferred ? "text-amber-700" : "text-slate-700"}`}>
-                                                  <span className="block pr-1">
-                                                    {h.name}
-                                                  </span>
-                                                </div>
-                                                <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                                                  <span className="rounded bg-white/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
-                                                    Stamina {h.stamina ?? 100}%
-                                                  </span>
-                                                  {h.isPreferred && (
-                                                    <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600">
-                                                      Hlavní
-                                                    </span>
-                                                  )}
-                                                  {isOwn ? (
-                                                    <button
-                                                      onClick={() => setPreferredRacer(player.id, h.isPreferred ? null : hKey)}
-                                                      className={`ml-auto shrink-0 text-sm leading-none transition-colors ${
-                                                        h.isPreferred
-                                                          ? "text-amber-400 hover:text-slate-300"
-                                                          : "text-slate-300 hover:text-amber-400"
-                                                      }`}
-                                                      title={h.isPreferred ? "Odnastavit hlavního závodníka" : "Nastavit jako hlavního závodníka"}
-                                                    >
-                                                      {h.isPreferred ? "★" : "☆"}
-                                                    </button>
-                                                  ) : h.isPreferred ? (
-                                                    <span className="shrink-0 text-sm leading-none text-amber-400">★</span>
-                                                  ) : null}
-                                                </div>
-                                              </div>
+                                              <span className="min-w-0 flex-1 break-words">
+                                                {h.name}
+                                              </span>
+                                            </div>
+                                            <div className="mt-1.5 ml-6 flex flex-wrap items-center gap-1.5">
+                                              <span className="rounded bg-white/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
+                                                Stamina {h.stamina ?? 100}%
+                                              </span>
+                                              {h.isPreferred && (
+                                                <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600">
+                                                  Hlavní
+                                                </span>
+                                              )}
+                                              {isOwn ? (
+                                                <button
+                                                  onClick={() => setPreferredRacer(player.id, h.isPreferred ? null : hKey)}
+                                                  className={`ml-auto shrink-0 text-sm leading-none transition-colors ${
+                                                    h.isPreferred
+                                                      ? "text-amber-400 hover:text-slate-300"
+                                                      : "text-slate-300 hover:text-amber-400"
+                                                  }`}
+                                                  title={h.isPreferred ? "Odnastavit hlavního závodníka" : "Nastavit jako hlavního závodníka"}
+                                                >
+                                                  {h.isPreferred ? "★" : "☆"}
+                                                </button>
+                                              ) : h.isPreferred ? (
+                                                <span className="shrink-0 text-sm leading-none text-amber-400">★</span>
+                                              ) : null}
                                             </div>
                                           </div>
                                         );
