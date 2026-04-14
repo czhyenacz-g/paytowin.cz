@@ -20,7 +20,7 @@ interface PanelConfig {
   desc:      string;       // krátký popis pod headerem setup view
   teaser:    string;       // text v placeholder kartě (co panel bude)
   available: boolean;
-  view?:     "launcher" | "catalog" | "placeholder";
+  view?:     "launcher" | "catalog" | "account" | "placeholder";
   bgImage?:  string;       // background obrázek pro setup view (z /public)
   themeId?:  string;       // theme id automaticky vybrané při kliknutí na panel
 }
@@ -33,6 +33,7 @@ const PANEL_CONFIG: Record<string, PanelConfig> = {
   "mapa-5":  { label: "Noční ulice", emoji: "🌃", desc: "Noční auto varianta s městskou atmosférou a ostrými světly.", teaser: "Temnější auto mapa pro noční jízdu mezi světly města a kontrastními barvami.", bgImage: "/bg_car_night.webp",     themeId: "car-night",     available: true,  view: "launcher" },
   "ostatni": { label: "Komunitní mapy", emoji: "📦", desc: "Komunita, user-made a speciální mapy.",                     teaser: "Výběr z dalších map od komunity i od nás. Fan-made, sezónní a event mapy.",      bgImage: "/bg_other_maps.webp",                              available: true,  view: "catalog" },
   "editor":  { label: "Editor",       emoji: "🛠️", desc: "Tvorba a editace vlastních herních map.",                   teaser: "Navrhni vlastní mapu — rozmísti pole, nastav ekonomiku a sdílej s přáteli.",    bgImage: "/bg_builder_yard.webp",                            available: false, view: "placeholder" },
+  "profil":  { label: "Tvůj profil",  emoji: "🛡️", desc: "Přehled účtu, dosažené úspěchy a budoucí správa profilu.", teaser: "Osobní sekce pro účet, profil, achievementy a další systémové funkce, které sem postupně přibydou.", bgImage: "/bg_dark_racer.webp", available: true, view: "account" },
 };
 
 type CommunityThemeSummary = {
@@ -314,6 +315,7 @@ export default function LandingPage() {
 
   const activeConfig = activePanel ? PANEL_CONFIG[activePanel] : null;
   const isCommunityPanel = activePanel === "ostatni";
+  const isProfilePanel = activePanel === "profil";
   const isLauncherPanel = !!(activeConfig?.available && activeConfig?.view === "launcher");
   const selectedBuiltinTheme = THEMES.find((theme) => theme.id === selectedThemeId);
   const selectedCommunityTheme = communityThemes.find((theme) => theme.id === selectedThemeId);
@@ -472,7 +474,7 @@ export default function LandingPage() {
                 </button>
                 <div className="flex-1 min-w-0">
                   <div className="text-xs text-white/55 uppercase tracking-wider">
-                    {isCommunityPanel ? "Komunitní výběr" : activePanel && PANEL_CONFIG[activePanel]?.available ? "Nová hra" : "Připravujeme"}
+                    {isCommunityPanel ? "Komunitní výběr" : isProfilePanel ? "Osobní sekce" : activePanel && PANEL_CONFIG[activePanel]?.available ? "Nová hra" : "Připravujeme"}
                   </div>
                   <div className="text-base font-bold text-white leading-tight truncate">
                     {activePanel ? (PANEL_CONFIG[activePanel]?.label ?? activePanel) : ""}
@@ -486,6 +488,11 @@ export default function LandingPage() {
                 {isCommunityPanel && (
                   <div className="shrink-0 rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs font-medium text-white/80">
                     {communityLoading ? "Načítám" : selectedCommunityCountLabel}
+                  </div>
+                )}
+                {isProfilePanel && (
+                  <div className="shrink-0 rounded-full border border-white/25 bg-white/20 px-3 py-1 text-xs font-medium text-white/85">
+                    Přehled účtu
                   </div>
                 )}
               </div>
@@ -668,6 +675,79 @@ export default function LandingPage() {
                         )}
                       </>
                     )}
+                  </div>
+                ) : isProfilePanel ? (
+                  <div className="space-y-4">
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
+                      <div className="text-sm font-semibold text-slate-800">Osobní sekce hráče</div>
+                      <p className="mt-1 text-sm leading-relaxed text-slate-500">
+                        Tady bude tvoje budoucí systémová zóna mimo samotné mapy: přehled účtu, profil, dosažené úspěchy a další osobní nastavení.
+                      </p>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      {[
+                        {
+                          title: "Přehled účtu",
+                          text: "Shrnutí přihlášení, identity a základních systémových informací.",
+                        },
+                        {
+                          title: "Dosažené úspěchy",
+                          text: "Místo pro achievementy, odemčené milníky a dlouhodobý progres.",
+                        },
+                        {
+                          title: "Budoucí správa",
+                          text: "Později sem přidáme úpravy profilu, historii a další osobní volby.",
+                        },
+                      ].map((item) => (
+                        <div key={item.title} className="rounded-2xl border border-slate-200 bg-white p-4">
+                          <div className="text-sm font-semibold text-slate-800">{item.title}</div>
+                          <p className="mt-1 text-xs leading-relaxed text-slate-500">{item.text}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-4">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-white text-lg">
+                          {discordUser?.avatar ? (
+                            <img src={discordUser.avatar} alt="" className="h-11 w-11 rounded-2xl object-cover" />
+                          ) : (
+                            <span>{discordUser?.name?.charAt(0).toUpperCase() ?? "?"}</span>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Aktuální profil</div>
+                          <div className="mt-1 text-sm font-semibold text-slate-800">
+                            {discordUser?.name || "Nepřihlášený hráč"}
+                          </div>
+                          <div className="mt-1 text-xs text-slate-500">
+                            {discordUser
+                              ? "Připojení přes Discord je aktivní. Později sem přibydou další osobní nastavení."
+                              : "Pro plný profil později přidáme osobní nastavení a trvalý přehled účtu."}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                        Tohle je vstupní detail view pro budoucí account sekci. Zatím neobsahuje backend profilu ani achievement systém, ale už vytváří jasné místo, kam se tyto funkce přidají.
+                      </div>
+
+                      <div className="flex flex-col gap-3 sm:flex-row">
+                        <button
+                          onClick={() => router.push("/hry")}
+                          className="flex-1 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                        >
+                          👀 Přehled aktivních her
+                        </button>
+                        <button
+                          onClick={handleBack}
+                          className="flex-1 rounded-2xl border-2 border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                        >
+                          ← Zpět na menu
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 ) : shareCode ? (
                   <div className="space-y-4">

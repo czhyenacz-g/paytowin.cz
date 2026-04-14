@@ -3,7 +3,7 @@
 import React from "react";
 
 /**
- * MapMenuStrip — 7 vertikálních panelů jako game-mode select / hlavní menu landing page.
+ * MapMenuStrip — 8 vertikálních panelů jako game-mode select / hlavní menu landing page.
  *
  * Každý panel má:
  *   - accentColor: barevný identifikační proužek nahoře (CSS color string)
@@ -25,6 +25,7 @@ interface Panel {
   bgImage?:    string;       // cesta k obrázku v /public (např. "/bg_horse_sun.webp")
   accentColor: string;       // CSS color — horní barevný proužek + index text
   available:   boolean;
+  idleOverlayOpacity?: number;
   href?:       string;
 }
 
@@ -41,6 +42,7 @@ const PANELS: Panel[] = [
   { id: "mapa-5",  label: "Noční ulice", emoji: "🌃", desc: "Noční auto theme", index: "05", bgFrom: "from-violet-900",  bgTo: "to-violet-950",  bgImage: "/bg_car_night.webp",    accentColor: "#a78bfa", available: true  },
   { id: "ostatni", label: "Komunitní mapy", emoji: "📦", desc: "Další veřejné mapy", index: "06", bgFrom: "from-teal-800",    bgTo: "to-teal-950",    bgImage: "/bg_other_maps.webp",   accentColor: "#2dd4bf", available: true  },
   { id: "editor",  label: "Editor",       emoji: "🛠️", desc: "Tvorba a editace map", index: "07", bgFrom: "from-orange-900",  bgTo: "to-orange-950",  bgImage: "/bg_builder_yard.webp", accentColor: "#fb923c", available: true  },
+  { id: "profil",  label: "Tvůj profil",  emoji: "🛡️", desc: "Účet, profil a achievementy", index: "08", bgFrom: "from-slate-500", bgTo: "to-slate-800", bgImage: "/bg_dark_racer.webp", accentColor: "#f8fafc", available: true, idleOverlayOpacity: 0.22 },
 ];
 
 export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
@@ -121,7 +123,7 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
               style={{
                 opacity: isHovered
                   ? 0.10
-                  : (isAvailable ? 0.38 : 0.58),
+                  : (isAvailable ? (panel.idleOverlayOpacity ?? 0.38) : 0.58),
               }}
             />
 
@@ -177,7 +179,7 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
                 </div>
               )}
 
-              {/* CTA → Hrát — jen pro available, na hover */}
+              {/* CTA → Otevřít/Hrát — jen pro available, na hover */}
               {isAvailable && (
                 <div
                   className="mt-2 transition-opacity duration-300"
@@ -187,10 +189,10 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
                     className="inline-block rounded px-2 py-0.5 text-[11px] font-black tracking-widest uppercase"
                     style={{
                       background: panel.accentColor,
-                      color: "#000",
+                      color: panel.id === "profil" ? "#0f172a" : "#000",
                     }}
                   >
-                    Hrát →
+                    {panel.id === "profil" ? "Otevřít →" : "Hrát →"}
                   </span>
                 </div>
               )}
