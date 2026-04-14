@@ -20,8 +20,9 @@ interface Panel {
   emoji:       string;
   desc:        string;
   index:       string;       // číslo slotu "01"–"07"
-  bgFrom:      string;       // Tailwind gradient top
-  bgTo:        string;       // Tailwind gradient bottom
+  bgFrom:      string;       // Tailwind gradient — fallback pokud bgImage chybí
+  bgTo:        string;
+  bgImage?:    string;       // cesta k obrázku v /public (např. "/bg_horse_sun.png")
   accentColor: string;       // CSS color — horní barevný proužek + index text
   available:   boolean;
   href?:       string;
@@ -33,13 +34,13 @@ interface MapMenuStripProps {
 }
 
 const PANELS: Panel[] = [
-  { id: "mapa-1",  label: "Klasika",      emoji: "🏇", desc: "Základní mapa", index: "01", bgFrom: "from-slate-700",   bgTo: "to-slate-950",   accentColor: "#f59e0b", available: true  },
-  { id: "mapa-2",  label: "Mapa 2",       emoji: "🗺️", desc: "",              index: "02", bgFrom: "from-blue-900",    bgTo: "to-blue-950",    accentColor: "#60a5fa", available: false },
-  { id: "mapa-3",  label: "Mapa 3",       emoji: "🗺️", desc: "",              index: "03", bgFrom: "from-emerald-900", bgTo: "to-emerald-950", accentColor: "#34d399", available: false },
-  { id: "mapa-4",  label: "Mapa 4",       emoji: "🗺️", desc: "",              index: "04", bgFrom: "from-red-900",     bgTo: "to-red-950",     accentColor: "#f87171", available: false },
-  { id: "mapa-5",  label: "Mapa 5",       emoji: "🗺️", desc: "",              index: "05", bgFrom: "from-violet-900",  bgTo: "to-violet-950",  accentColor: "#a78bfa", available: false },
-  { id: "ostatni", label: "Ostatní mapy", emoji: "📦", desc: "",              index: "06", bgFrom: "from-teal-800",    bgTo: "to-teal-950",    accentColor: "#2dd4bf", available: false },
-  { id: "editor",  label: "Editor",       emoji: "🛠️", desc: "",              index: "07", bgFrom: "from-orange-900",  bgTo: "to-orange-950",  accentColor: "#fb923c", available: false },
+  { id: "mapa-1",  label: "Klasika",      emoji: "🏇", desc: "Základní mapa", index: "01", bgFrom: "from-slate-700",   bgTo: "to-slate-950",   bgImage: "/bg_horse_day.png",    accentColor: "#f59e0b", available: true  },
+  { id: "mapa-2",  label: "Mapa 2",       emoji: "🗺️", desc: "",              index: "02", bgFrom: "from-blue-900",    bgTo: "to-blue-950",    bgImage: "/bg_horse_meadow.png", accentColor: "#60a5fa", available: false },
+  { id: "mapa-3",  label: "Mapa 3",       emoji: "🗺️", desc: "",              index: "03", bgFrom: "from-emerald-900", bgTo: "to-emerald-950", bgImage: "/bg_horse_night.png",  accentColor: "#34d399", available: false },
+  { id: "mapa-4",  label: "Mapa 4",       emoji: "🗺️", desc: "",              index: "04", bgFrom: "from-red-900",     bgTo: "to-red-950",     bgImage: "/bg_car_day.png",      accentColor: "#f87171", available: false },
+  { id: "mapa-5",  label: "Mapa 5",       emoji: "🗺️", desc: "",              index: "05", bgFrom: "from-violet-900",  bgTo: "to-violet-950",  bgImage: "/bg_car_night.png",    accentColor: "#a78bfa", available: false },
+  { id: "ostatni", label: "Ostatní mapy", emoji: "📦", desc: "",              index: "06", bgFrom: "from-teal-800",    bgTo: "to-teal-950",    bgImage: "/bg_other_maps.png",   accentColor: "#2dd4bf", available: false },
+  { id: "editor",  label: "Editor",       emoji: "🛠️", desc: "",              index: "07", bgFrom: "from-orange-900",  bgTo: "to-orange-950",  bgImage: "/bg_builder_yard.png", accentColor: "#fb923c", available: false },
 ];
 
 export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
@@ -47,7 +48,7 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
 
   return (
     <div
-      className="flex w-full overflow-hidden border-b-2 border-white/10 shadow-2xl"
+      className="flex w-full overflow-hidden border-y-[3px] border-slate-800/60 shadow-2xl"
       style={{ height: "clamp(280px, 44vh, 520px)" }}
     >
       {PANELS.map((panel, idx) => {
@@ -73,9 +74,16 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
               panel.bgFrom, panel.bgTo,
               "transition-[flex] duration-300 ease-in-out",
               isNavigable ? "cursor-pointer" : "cursor-default",
-              !isLast ? "border-r border-white/10" : "",
+              !isLast ? "border-r-2 border-white/20" : "",
             ].join(" ")}
-            style={{ flex: isHovered && isNavigable ? 4 : 1 }}
+            style={{
+              flex: isHovered && isNavigable ? 4 : 1,
+              ...(panel.bgImage ? {
+                backgroundImage: `url(${panel.bgImage})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center center",
+              } : {}),
+            }}
             onMouseEnter={() => setHovered(idx)}
             onMouseLeave={() => setHovered(null)}
             onClick={handleClick}
@@ -99,10 +107,13 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
             />
 
             {/* ── Tmavý overlay — zesvětlí na hover ── */}
+            {/* S bgImage: mírnější idle ztmavení (obrázek musí být vidět) */}
             <div
               className="absolute inset-0 transition-opacity duration-300 bg-black"
               style={{
-                opacity: isHovered ? 0.08 : (isAvailable ? 0.35 : 0.65),
+                opacity: isHovered
+                  ? 0.10
+                  : (isAvailable ? 0.38 : 0.58),
               }}
             />
 
@@ -117,20 +128,22 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
               {panel.index}
             </div>
 
-            {/* ── Emoji — dekorativní pozadí ── */}
-            <div
-              className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
-              style={{ paddingBottom: "64px" }}
-            >
-              <span
-                className="text-7xl transition-opacity duration-300"
-                style={{
-                  opacity: isHovered ? 0.5 : (isAvailable ? 0.18 : 0.07),
-                }}
+            {/* ── Emoji — dekorativní pozadí (pouze bez bgImage) ── */}
+            {!panel.bgImage && (
+              <div
+                className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
+                style={{ paddingBottom: "64px" }}
               >
-                {panel.emoji}
-              </span>
-            </div>
+                <span
+                  className="text-7xl transition-opacity duration-300"
+                  style={{
+                    opacity: isHovered ? 0.5 : (isAvailable ? 0.18 : 0.07),
+                  }}
+                >
+                  {panel.emoji}
+                </span>
+              </div>
+            )}
 
             {/* ── Bottom: label + CTA / Brzy ── */}
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 via-black/55 to-transparent px-3 pt-10 pb-4 z-10">
