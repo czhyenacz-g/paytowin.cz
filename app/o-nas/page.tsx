@@ -12,8 +12,9 @@ export default function ONasPage() {
             <div className="text-4xl mb-3">🐎</div>
             <h2 className="text-xl font-bold text-slate-800">PayToWin.cz</h2>
             <p className="mt-2">
-              Webová multiplayer hra inspirovaná klasickými Dostihy a sázkami.
-              Hráči závodí o přežití na herní desce, kupují koně a snaží se nepřijít o všechny coins.
+              Webová multiplayer hra inspirovaná atmosférou dostihového světa, napětím Velké pardubické
+              a směsí rizika, taktiky a závodního chaosu. Každá partie staví hráče před rozhodnutí,
+              kdy vsadit, kdy zariskovat a kdy se jen pokusit udržet ve hře.
             </p>
           </div>
 
