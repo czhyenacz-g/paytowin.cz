@@ -15,19 +15,21 @@ interface DiscordUser {
 }
 
 interface PanelConfig {
-  label: string;
-  desc: string;
+  label:     string;
+  emoji:     string;
+  desc:      string;       // krátký popis pod headerem setup view
+  teaser:    string;       // text v placeholder kartě (co panel bude)
   available: boolean;
 }
 
 const PANEL_CONFIG: Record<string, PanelConfig> = {
-  "mapa-1":  { label: "Klasika",      desc: "Klasická mapa s 21 poli. Dostihy, sázky a finanční chaos.",  available: true  },
-  "mapa-2":  { label: "Mapa 2",       desc: "Tato mapa je ve vývoji.",                                    available: false },
-  "mapa-3":  { label: "Mapa 3",       desc: "Tato mapa je ve vývoji.",                                    available: false },
-  "mapa-4":  { label: "Mapa 4",       desc: "Tato mapa je ve vývoji.",                                    available: false },
-  "mapa-5":  { label: "Mapa 5",       desc: "Tato mapa je ve vývoji.",                                    available: false },
-  "ostatni": { label: "Ostatní mapy", desc: "Výběr z dalších herních map. Připravujeme.",                 available: false },
-  "editor":  { label: "Editor",       desc: "Tvorba vlastních map. Připravujeme.",                        available: false },
+  "mapa-1":  { label: "Klasika",      emoji: "🏇", desc: "Klasická mapa s 21 poli. Dostihy, sázky a finanční chaos.", teaser: "",                                                                             available: true  },
+  "mapa-2":  { label: "Mapa 2",       emoji: "🗺️", desc: "Druhá herní mapa — nové rozvržení polí a jiná ekonomika.",  teaser: "Nová mapa s odlišným rozvržením polí, více hazardními událostmi a jinými koňmi.", available: false },
+  "mapa-3":  { label: "Mapa 3",       emoji: "🗺️", desc: "Třetí herní mapa — experimentální pravidla.",               teaser: "Experimentální mapa s upravenými pravidly a vyšším rizikem.",                     available: false },
+  "mapa-4":  { label: "Mapa 4",       emoji: "🗺️", desc: "Čtvrtá herní mapa.",                                        teaser: "Připravujeme další herní prostředí.",                                            available: false },
+  "mapa-5":  { label: "Mapa 5",       emoji: "🗺️", desc: "Pátá herní mapa.",                                          teaser: "Připravujeme další herní prostředí.",                                            available: false },
+  "ostatni": { label: "Ostatní mapy", emoji: "📦", desc: "Komunita, user-made a speciální mapy.",                     teaser: "Výběr z dalších map od komunity i od nás. Fan-made, sezónní a event mapy.",      available: false },
+  "editor":  { label: "Editor",       emoji: "🛠️", desc: "Tvorba a editace vlastních herních map.",                   teaser: "Navrhni vlastní mapu — rozmísti pole, nastav ekonomiku a sdílej s přáteli.",    available: false },
 };
 
 export default function LandingPage() {
@@ -419,13 +421,28 @@ export default function LandingPage() {
               <div className="rounded-3xl bg-white p-6 shadow-lg space-y-4">
 
                 {activePanel && !PANEL_CONFIG[activePanel]?.available ? (
-                  <div className="py-6 text-center space-y-3">
-                    <div className="text-4xl">🚧</div>
-                    <div className="text-base font-semibold text-slate-700">Mapa se připravuje</div>
-                    <div className="text-sm text-slate-400">Tato mapa ještě není dostupná. Zkus Klasiku nebo se vrať later.</div>
+                  <div className="space-y-4">
+                    {/* Vizuální hlavička panelu */}
+                    <div className="rounded-2xl bg-slate-50 border border-slate-200 px-5 py-6 flex items-center gap-4">
+                      <span className="text-5xl leading-none shrink-0">{PANEL_CONFIG[activePanel]?.emoji}</span>
+                      <div>
+                        <div className="text-base font-bold text-slate-800">{PANEL_CONFIG[activePanel]?.label}</div>
+                        <div className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
+                          🚧 Připravujeme
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Teaser popis */}
+                    {PANEL_CONFIG[activePanel]?.teaser && (
+                      <p className="text-sm text-slate-500 leading-relaxed">
+                        {PANEL_CONFIG[activePanel].teaser}
+                      </p>
+                    )}
+
                     <button
                       onClick={handleBack}
-                      className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 transition"
+                      className="w-full rounded-2xl border-2 border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600 hover:bg-white hover:border-slate-300 transition"
                     >
                       ← Zpět na menu
                     </button>
