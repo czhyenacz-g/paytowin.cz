@@ -440,7 +440,7 @@ export default function GameBoard({ gameCode }: Props) {
       clearRollDecisionTimer();
       rollDecisionTimerRef.current = setTimeout(() => {
         resolveRollDecision(0);
-      }, 2000);
+      }, 6000); // DEBUG: dočasně 6 s pro testování +1/-1 (prod: 2000)
     });
 
     const adjustmentAllowed = selectedAdjustment !== 0 &&
@@ -1849,7 +1849,7 @@ export default function GameBoard({ gameCode }: Props) {
               <div className="mt-4 space-y-4">
                 {shouldShowRacerGuide && (
                   <div className="relative overflow-hidden rounded-2xl border border-amber-300 bg-gradient-to-br from-amber-50 via-white to-amber-100 p-4 shadow-sm">
-                    <div className="absolute -right-4 -top-4 text-6xl opacity-10">🏇</div>
+                    <div className="pointer-events-none absolute -right-4 -top-4 text-6xl opacity-10">🏇</div>
                     <div className="flex items-start gap-3">
                       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-2xl">
                         🎩
@@ -1878,7 +1878,7 @@ export default function GameBoard({ gameCode }: Props) {
 
                 {!shouldShowRacerGuide && shouldShowStaminaGuide && (
                   <div className="relative overflow-hidden rounded-2xl border border-sky-300 bg-gradient-to-br from-sky-50 via-white to-cyan-100 p-4 shadow-sm">
-                    <div className="absolute -right-4 -top-4 text-6xl opacity-10">🐎</div>
+                    <div className="pointer-events-none absolute -right-4 -top-4 text-6xl opacity-10">🐎</div>
                     <div className="flex items-start gap-3">
                       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-sky-100 text-2xl">
                         🎩
@@ -1907,7 +1907,7 @@ export default function GameBoard({ gameCode }: Props) {
 
                 {!shouldShowRacerGuide && !shouldShowStaminaGuide && shouldShowPreferredGuide && (
                   <div className="relative overflow-hidden rounded-2xl border border-violet-300 bg-gradient-to-br from-violet-50 via-white to-fuchsia-100 p-4 shadow-sm">
-                    <div className="absolute -right-4 -top-4 text-6xl opacity-10">⭐</div>
+                    <div className="pointer-events-none absolute -right-4 -top-4 text-6xl opacity-10">⭐</div>
                     <div className="flex items-start gap-3">
                       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-violet-100 text-2xl">
                         🎩
@@ -2026,7 +2026,7 @@ export default function GameBoard({ gameCode }: Props) {
                         </div>
                       </div>
                       <div className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-500">
-                        2 s
+                        6 s
                       </div>
                     </div>
                     {isMyPendingRollDecisionTurn ? (
