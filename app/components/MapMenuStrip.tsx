@@ -22,7 +22,7 @@ interface Panel {
   index:       string;       // číslo slotu "01"–"07"
   bgFrom:      string;       // Tailwind gradient — fallback pokud bgImage chybí
   bgTo:        string;
-  bgImage?:    string;       // cesta k obrázku v /public (např. "/bg_horse_sun.png")
+  bgImage?:    string;       // cesta k obrázku v /public (např. "/bg_horse_sun.webp")
   accentColor: string;       // CSS color — horní barevný proužek + index text
   available:   boolean;
   href?:       string;
@@ -34,13 +34,13 @@ interface MapMenuStripProps {
 }
 
 const PANELS: Panel[] = [
-  { id: "mapa-1",  label: "Klasika",      emoji: "🏇", desc: "Základní mapa", index: "01", bgFrom: "from-slate-700",   bgTo: "to-slate-950",   bgImage: "/bg_horse_day.png",    accentColor: "#f59e0b", available: true  },
-  { id: "mapa-2",  label: "Mapa 2",       emoji: "🗺️", desc: "",              index: "02", bgFrom: "from-blue-900",    bgTo: "to-blue-950",    bgImage: "/bg_horse_meadow.png", accentColor: "#60a5fa", available: false },
-  { id: "mapa-3",  label: "Mapa 3",       emoji: "🗺️", desc: "",              index: "03", bgFrom: "from-emerald-900", bgTo: "to-emerald-950", bgImage: "/bg_horse_night.png",  accentColor: "#34d399", available: false },
-  { id: "mapa-4",  label: "Mapa 4",       emoji: "🗺️", desc: "",              index: "04", bgFrom: "from-red-900",     bgTo: "to-red-950",     bgImage: "/bg_car_day.png",      accentColor: "#f87171", available: false },
-  { id: "mapa-5",  label: "Mapa 5",       emoji: "🗺️", desc: "",              index: "05", bgFrom: "from-violet-900",  bgTo: "to-violet-950",  bgImage: "/bg_car_night.png",    accentColor: "#a78bfa", available: false },
-  { id: "ostatni", label: "Ostatní mapy", emoji: "📦", desc: "",              index: "06", bgFrom: "from-teal-800",    bgTo: "to-teal-950",    bgImage: "/bg_other_maps.png",   accentColor: "#2dd4bf", available: false },
-  { id: "editor",  label: "Editor",       emoji: "🛠️", desc: "",              index: "07", bgFrom: "from-orange-900",  bgTo: "to-orange-950",  bgImage: "/bg_builder_yard.png", accentColor: "#fb923c", available: false },
+  { id: "mapa-1",  label: "Klasika",      emoji: "🏇", desc: "Základní mapa", index: "01", bgFrom: "from-slate-700",   bgTo: "to-slate-950",   bgImage: "/bg_horse_day.webp",    accentColor: "#f59e0b", available: true  },
+  { id: "mapa-2",  label: "Mapa 2",       emoji: "🗺️", desc: "",              index: "02", bgFrom: "from-blue-900",    bgTo: "to-blue-950",    bgImage: "/bg_horse_meadow.webp", accentColor: "#60a5fa", available: false },
+  { id: "mapa-3",  label: "Mapa 3",       emoji: "🗺️", desc: "",              index: "03", bgFrom: "from-emerald-900", bgTo: "to-emerald-950", bgImage: "/bg_horse_night.webp",  accentColor: "#34d399", available: false },
+  { id: "mapa-4",  label: "Mapa 4",       emoji: "🗺️", desc: "",              index: "04", bgFrom: "from-red-900",     bgTo: "to-red-950",     bgImage: "/bg_car_day.webp",      accentColor: "#f87171", available: false },
+  { id: "mapa-5",  label: "Mapa 5",       emoji: "🗺️", desc: "",              index: "05", bgFrom: "from-violet-900",  bgTo: "to-violet-950",  bgImage: "/bg_car_night.webp",    accentColor: "#a78bfa", available: false },
+  { id: "ostatni", label: "Ostatní mapy", emoji: "📦", desc: "",              index: "06", bgFrom: "from-teal-800",    bgTo: "to-teal-950",    bgImage: "/bg_other_maps.webp",   accentColor: "#2dd4bf", available: false },
+  { id: "editor",  label: "Editor",       emoji: "🛠️", desc: "",              index: "07", bgFrom: "from-orange-900",  bgTo: "to-orange-950",  bgImage: "/bg_builder_yard.webp", accentColor: "#fb923c", available: false },
 ];
 
 export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
