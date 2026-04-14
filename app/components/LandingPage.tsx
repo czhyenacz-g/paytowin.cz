@@ -20,18 +20,27 @@ interface PanelConfig {
   desc:      string;       // krátký popis pod headerem setup view
   teaser:    string;       // text v placeholder kartě (co panel bude)
   available: boolean;
+  view?:     "launcher" | "catalog" | "placeholder";
   bgImage?:  string;       // background obrázek pro setup view (z /public)
   themeId?:  string;       // theme id automaticky vybrané při kliknutí na panel
 }
 
 const PANEL_CONFIG: Record<string, PanelConfig> = {
-  "mapa-1":  { label: "Klasika",      emoji: "🏇", desc: "Klasická mapa s 21 poli. Dostihy, sázky a finanční chaos.", teaser: "",                                                                              bgImage: "/bg_horse_day.webp",     themeId: "horse-day",     available: true  },
-  "mapa-2":  { label: "Mapa 2",       emoji: "🗺️", desc: "Druhá herní mapa — nové rozvržení polí a jiná ekonomika.",  teaser: "Nová mapa s odlišným rozvržením polí, více hazardními událostmi a jinými koňmi.", bgImage: "/bg_horse_classic.webp", themeId: "horse-classic", available: true  },
-  "mapa-3":  { label: "Mapa 3",       emoji: "🗺️", desc: "Třetí herní mapa — experimentální pravidla.",               teaser: "Experimentální mapa s upravenými pravidly a vyšším rizikem.",                     bgImage: "/bg_horse_night.webp",   themeId: "horse-night",   available: true  },
-  "mapa-4":  { label: "Pouštní sprint", emoji: "🏎️", desc: "Rychlá denní auto varianta s motivem rozpálené trati.",     teaser: "Svižná auto mapa s denní atmosférou, otevřenou tratí a jiným vizuálním rytmem.", bgImage: "/bg_car_day.webp",       themeId: "car-day",       available: true  },
-  "mapa-5":  { label: "Noční ulice", emoji: "🌃", desc: "Noční auto varianta s městskou atmosférou a ostrými světly.", teaser: "Temnější auto mapa pro noční jízdu mezi světly města a kontrastními barvami.", bgImage: "/bg_car_night.webp",     themeId: "car-night",     available: true  },
-  "ostatni": { label: "Komunitní mapy", emoji: "📦", desc: "Komunita, user-made a speciální mapy.",                     teaser: "Výběr z dalších map od komunity i od nás. Fan-made, sezónní a event mapy.",      bgImage: "/bg_other_maps.webp",                              available: false },
-  "editor":  { label: "Editor",       emoji: "🛠️", desc: "Tvorba a editace vlastních herních map.",                   teaser: "Navrhni vlastní mapu — rozmísti pole, nastav ekonomiku a sdílej s přáteli.",    bgImage: "/bg_builder_yard.webp",                            available: false },
+  "mapa-1":  { label: "Denní dostihy", emoji: "🏇", desc: "Denní dostihová varianta s lehčí atmosférou a klasickým flow.", teaser: "",                                                                              bgImage: "/bg_horse_day.webp",     themeId: "horse-day",     available: true,  view: "launcher" },
+  "mapa-2":  { label: "Klasické dostihy", emoji: "🏇", desc: "Tradiční dostihová varianta s klasickým vizuálním stylem.",  teaser: "Známá dostihová atmosféra v klasickém stylu pro hráče, kteří chtějí tradiční look.", bgImage: "/bg_horse_classic.webp", themeId: "horse-classic", available: true,  view: "launcher" },
+  "mapa-3":  { label: "Noční dostihy", emoji: "🌙", desc: "Noční dostihová varianta s tmavší atmosférou a ostřejším kontrastem.", teaser: "Temnější dostihová mapa pro večerní atmosféru, světla a výraznější kontrast.",                     bgImage: "/bg_horse_night.webp",   themeId: "horse-night",   available: true,  view: "launcher" },
+  "mapa-4":  { label: "Pouštní sprint", emoji: "🏎️", desc: "Rychlá denní auto varianta s motivem rozpálené trati.",     teaser: "Svižná auto mapa s denní atmosférou, otevřenou tratí a jiným vizuálním rytmem.", bgImage: "/bg_car_day.webp",       themeId: "car-day",       available: true,  view: "launcher" },
+  "mapa-5":  { label: "Noční ulice", emoji: "🌃", desc: "Noční auto varianta s městskou atmosférou a ostrými světly.", teaser: "Temnější auto mapa pro noční jízdu mezi světly města a kontrastními barvami.", bgImage: "/bg_car_night.webp",     themeId: "car-night",     available: true,  view: "launcher" },
+  "ostatni": { label: "Komunitní mapy", emoji: "📦", desc: "Komunita, user-made a speciální mapy.",                     teaser: "Výběr z dalších map od komunity i od nás. Fan-made, sezónní a event mapy.",      bgImage: "/bg_other_maps.webp",                              available: true,  view: "catalog" },
+  "editor":  { label: "Editor",       emoji: "🛠️", desc: "Tvorba a editace vlastních herních map.",                   teaser: "Navrhni vlastní mapu — rozmísti pole, nastav ekonomiku a sdílej s přáteli.",    bgImage: "/bg_builder_yard.webp",                            available: false, view: "placeholder" },
+};
+
+type CommunityThemeSummary = {
+  id: string;
+  name: string;
+  description: string;
+  author: string;
+  isOfficial: boolean;
 };
 
 export default function LandingPage() {
@@ -47,6 +56,8 @@ export default function LandingPage() {
   const [selectedBoardId, setSelectedBoardId] = React.useState("small");
   const [maxPlayers, setMaxPlayers] = React.useState(6);
   const [activePanel, setActivePanel] = React.useState<string | null>(null);
+  const [communityThemes, setCommunityThemes] = React.useState<CommunityThemeSummary[]>([]);
+  const [communityLoading, setCommunityLoading] = React.useState(false);
   // Načti session + předvyplň ?join=KOD z URL
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -67,6 +78,58 @@ export default function LandingPage() {
       setDiscordUser({ id: discordId, name: fullName, avatar: avatarUrl });
       setName((prev) => prev || fullName);
     });
+  }, []);
+
+  React.useEffect(() => {
+    let isMounted = true;
+
+    const loadCommunityThemes = async () => {
+      setCommunityLoading(true);
+
+      try {
+        const { data } = await supabase
+          .from("themes")
+          .select("id, manifest, created_by, is_official")
+          .eq("is_archived", false)
+          .or("is_public.eq.true,is_official.eq.true");
+
+        if (!isMounted) return;
+
+        if (!data) {
+          setCommunityThemes([]);
+          return;
+        }
+
+        const builtinIds = new Set(THEMES.map((theme) => theme.id));
+        const nextThemes = data
+          .filter((row) => !builtinIds.has(row.id))
+          .map((row) => {
+            const manifest = row.manifest as Record<string, unknown>;
+            const meta = manifest.meta as Record<string, unknown> | undefined;
+            return {
+              id: row.id,
+              name: typeof meta?.name === "string" ? meta.name : row.id,
+              description: typeof meta?.description === "string" ? meta.description : "Komunitní mapa bez doplněného popisu.",
+              author: typeof row.created_by === "string" && row.created_by.trim() ? row.created_by : "Komunita",
+              isOfficial: row.is_official,
+            };
+          });
+
+        setCommunityThemes(nextThemes);
+      } catch {
+        if (!isMounted) return;
+        setCommunityThemes([]);
+      } finally {
+        if (!isMounted) return;
+        setCommunityLoading(false);
+      }
+    };
+
+    loadCommunityThemes();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleBack = () => {
@@ -249,6 +312,14 @@ export default function LandingPage() {
     </button>
   );
 
+  const activeConfig = activePanel ? PANEL_CONFIG[activePanel] : null;
+  const isCommunityPanel = activePanel === "ostatni";
+  const isLauncherPanel = !!(activeConfig?.available && activeConfig?.view === "launcher");
+  const selectedBuiltinTheme = THEMES.find((theme) => theme.id === selectedThemeId);
+  const selectedCommunityTheme = communityThemes.find((theme) => theme.id === selectedThemeId);
+  const selectedThemeLabel = selectedBuiltinTheme?.name ?? selectedCommunityTheme?.name ?? selectedThemeId;
+  const selectedCommunityCountLabel = `${communityThemes.length} map${communityThemes.length === 1 ? "a" : communityThemes.length < 5 ? "y" : ""}`;
+
   return (
     <div className="flex flex-col bg-slate-100 overflow-hidden" style={{ height: "100dvh" }}>
       {/* Amber banner — shrink-0, bere svou přirozenou výšku */}
@@ -272,8 +343,14 @@ export default function LandingPage() {
         <div style={{ width: "50%" }} className="flex flex-col min-h-0">
           <MapMenuStrip onPanelClick={(id) => {
             setActivePanel(id);
+            setShareCode(null);
+            setError("");
             const themeId = PANEL_CONFIG[id]?.themeId;
             if (themeId) setSelectedThemeId(themeId);
+            if (id === "ostatni") {
+              const firstCommunityTheme = communityThemes[0];
+              if (firstCommunityTheme) setSelectedThemeId(firstCommunityTheme.id);
+            }
           }} />
 
           <div className="flex flex-1 min-h-0 items-center justify-center p-6 overflow-y-auto">
@@ -390,15 +467,20 @@ export default function LandingPage() {
                 </button>
                 <div className="flex-1 min-w-0">
                   <div className="text-xs text-white/55 uppercase tracking-wider">
-                    {activePanel && PANEL_CONFIG[activePanel]?.available ? "Nová hra" : "Připravujeme"}
+                    {isCommunityPanel ? "Komunitní výběr" : activePanel && PANEL_CONFIG[activePanel]?.available ? "Nová hra" : "Připravujeme"}
                   </div>
                   <div className="text-base font-bold text-white leading-tight truncate">
                     {activePanel ? (PANEL_CONFIG[activePanel]?.label ?? activePanel) : ""}
                   </div>
                 </div>
-                {activePanel && PANEL_CONFIG[activePanel]?.available && (
+                {isLauncherPanel && (
                   <div className="shrink-0 rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs font-medium text-white/80">
-                    {THEMES.find(t => t.id === selectedThemeId)?.name ?? selectedThemeId}
+                    {selectedThemeLabel}
+                  </div>
+                )}
+                {isCommunityPanel && (
+                  <div className="shrink-0 rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs font-medium text-white/80">
+                    {communityLoading ? "Načítám" : selectedCommunityCountLabel}
                   </div>
                 )}
               </div>
@@ -412,7 +494,7 @@ export default function LandingPage() {
               {/* Formulář — vytvoření hry nebo Brzy placeholder */}
               <div className="rounded-3xl bg-white p-6 shadow-lg space-y-4">
 
-                {activePanel && !PANEL_CONFIG[activePanel]?.available ? (
+                {activePanel && activeConfig?.view === "placeholder" ? (
                   <div className="space-y-4">
                     {/* Vizuální hlavička panelu */}
                     <div className="rounded-2xl bg-slate-50 border border-slate-200 px-5 py-6 flex items-center gap-4">
@@ -438,6 +520,149 @@ export default function LandingPage() {
                     >
                       ← Zpět na menu
                     </button>
+                  </div>
+                ) : isCommunityPanel ? (
+                  <div className="space-y-4">
+                    <div className="rounded-2xl bg-slate-50 border border-slate-200 px-5 py-4">
+                      <div className="text-sm font-semibold text-slate-800">Další veřejné mapy</div>
+                      <p className="mt-1 text-sm leading-relaxed text-slate-500">
+                        Tady jsou community a speciální mapy mimo hlavní pětici launcherů. Vyber jednu z nich a pak ji spusť online nebo lokálně.
+                      </p>
+                    </div>
+
+                    {communityLoading ? (
+                      <div className="rounded-2xl border border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">
+                        Načítám komunitní mapy…
+                      </div>
+                    ) : communityThemes.length === 0 ? (
+                      <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-sm text-slate-500">
+                        Zatím tu nejsou žádné veřejné komunitní mapy. Jakmile se nějaké objeví, půjdou spouštět odsud.
+                      </div>
+                    ) : (
+                      <>
+                        <div className="space-y-3">
+                          {communityThemes.map((theme) => {
+                            const isSelected = selectedThemeId === theme.id;
+                            return (
+                              <button
+                                key={theme.id}
+                                type="button"
+                                onClick={() => setSelectedThemeId(theme.id)}
+                                className={`w-full rounded-2xl border-2 p-4 text-left transition ${
+                                  isSelected
+                                    ? "border-slate-900 bg-slate-900 text-white"
+                                    : "border-slate-200 bg-white text-slate-700 hover:border-slate-400"
+                                }`}
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="min-w-0">
+                                    <div className="text-sm font-semibold">{theme.name}</div>
+                                    <div className={`mt-1 text-xs ${isSelected ? "text-slate-300" : "text-slate-500"}`}>
+                                      {theme.description}
+                                    </div>
+                                  </div>
+                                  <div className={`shrink-0 rounded-full px-2 py-1 text-[11px] font-semibold ${
+                                    isSelected
+                                      ? "bg-white/15 text-white"
+                                      : theme.isOfficial
+                                      ? "bg-indigo-50 text-indigo-700"
+                                      : "bg-emerald-50 text-emerald-700"
+                                  }`}>
+                                    {theme.isOfficial ? "Official" : "Komunita"}
+                                  </div>
+                                </div>
+                                <div className={`mt-3 text-[11px] ${isSelected ? "text-slate-300" : "text-slate-400"}`}>
+                                  ID: {theme.id} · Autor: {theme.author}
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {selectedCommunityTheme && (
+                          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-4">
+                            <div>
+                              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                Vybraná mapa
+                              </div>
+                              <div className="mt-1 text-sm font-semibold text-slate-800">
+                                {selectedCommunityTheme.name}
+                              </div>
+                              <div className="mt-1 text-xs text-slate-500">
+                                {selectedCommunityTheme.description}
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="mb-1 block text-sm font-medium text-slate-700">Tvoje jméno</label>
+                              <input
+                                type="text"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                placeholder="např. Hynek"
+                                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-800 outline-none focus:border-slate-500 placeholder:text-slate-400"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="mb-2 block text-sm font-medium text-slate-700">Herní deska</label>
+                              <div className="grid grid-cols-2 gap-2">
+                                {BOARD_PRESETS.map((preset) => (
+                                  <button
+                                    key={preset.id}
+                                    type="button"
+                                    disabled={!preset.available}
+                                    onClick={() => preset.available && setSelectedBoardId(preset.id)}
+                                    className={`rounded-xl border-2 px-3 py-2.5 text-left transition ${
+                                      !preset.available
+                                        ? "border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed"
+                                        : selectedBoardId === preset.id
+                                        ? "border-slate-900 bg-slate-900 text-white"
+                                        : "border-slate-200 bg-white text-slate-700 hover:border-slate-400"
+                                    }`}
+                                  >
+                                    <div className="text-sm font-semibold">{preset.name}</div>
+                                    <div className={`text-xs mt-0.5 ${!preset.available ? "text-slate-300" : selectedBoardId === preset.id ? "text-slate-300" : "text-slate-400"}`}>
+                                      {preset.available ? preset.description : "Brzy k dispozici"}
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="mb-1 block text-sm font-medium text-slate-700">Max. hráčů</label>
+                              <select
+                                value={maxPlayers}
+                                onChange={(e) => setMaxPlayers(Number(e.target.value))}
+                                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-800 outline-none focus:border-slate-500"
+                              >
+                                {[2,3,4,5,6,8,10,12,16,20,24,32].map(n => (
+                                  <option key={n} value={n}>{n} hráčů</option>
+                                ))}
+                              </select>
+                            </div>
+
+                            {error && <p className="text-sm text-red-600">{error}</p>}
+
+                            <button
+                              onClick={createGame}
+                              disabled={loading}
+                              className="w-full rounded-2xl bg-slate-900 px-4 py-4 text-lg font-semibold text-white shadow transition hover:bg-slate-800 disabled:bg-slate-400"
+                            >
+                              🌐 Vytvořit online hru
+                            </button>
+
+                            <button
+                              onClick={() => router.push(`/local/new?theme=${selectedThemeId}`)}
+                              className="w-full rounded-2xl border-2 border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:border-slate-400 hover:bg-slate-50 transition"
+                            >
+                              🖥️ Lokální hra s vybranou mapou
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
                 ) : shareCode ? (
                   <div className="space-y-4">
