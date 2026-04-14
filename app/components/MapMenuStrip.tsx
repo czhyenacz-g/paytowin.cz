@@ -25,13 +25,13 @@ interface Panel {
 }
 
 const PANELS: Panel[] = [
-  { id: "klasika",    label: "Klasika",       emoji: "🏇", desc: "Základní mapa",      bgFrom: "from-slate-700",   bgTo: "to-slate-900",    available: true,  href: "#game-form" },
-  { id: "metropolis", label: "Metropolis",    emoji: "🏙️", desc: "Městská džungle",   bgFrom: "from-zinc-600",    bgTo: "to-zinc-900",     available: false },
-  { id: "divocina",   label: "Divočina",      emoji: "🌿", desc: "Lesní steeplechase", bgFrom: "from-emerald-800", bgTo: "to-emerald-950",  available: false },
-  { id: "casino",     label: "Casino Royale", emoji: "🎰", desc: "Hazard a přepych",   bgFrom: "from-amber-800",   bgTo: "to-amber-950",    available: false },
-  { id: "vesmir",     label: "Vesmír",        emoji: "🚀", desc: "Galaktické dostihy", bgFrom: "from-indigo-800",  bgTo: "to-indigo-950",   available: false },
-  { id: "ostatni",    label: "Ostatní mapy",  emoji: "🗺️", desc: "Více světů",        bgFrom: "from-slate-600",   bgTo: "to-slate-800",    available: false },
-  { id: "editor",     label: "Editor",        emoji: "🛠️", desc: "Vytvoř svoji mapu", bgFrom: "from-slate-500",   bgTo: "to-slate-700",    available: false },
+  { id: "mapa-1",   label: "Klasika",      emoji: "🏇", desc: "Základní mapa", bgFrom: "from-slate-700",   bgTo: "to-slate-900",   available: true,  href: "#game-form" },
+  { id: "mapa-2",   label: "Mapa 2",       emoji: "🗺️", desc: "",             bgFrom: "from-zinc-600",    bgTo: "to-zinc-900",    available: false },
+  { id: "mapa-3",   label: "Mapa 3",       emoji: "🗺️", desc: "",             bgFrom: "from-stone-700",   bgTo: "to-stone-900",   available: false },
+  { id: "mapa-4",   label: "Mapa 4",       emoji: "🗺️", desc: "",             bgFrom: "from-neutral-700", bgTo: "to-neutral-900", available: false },
+  { id: "mapa-5",   label: "Mapa 5",       emoji: "🗺️", desc: "",             bgFrom: "from-slate-600",   bgTo: "to-slate-800",   available: false },
+  { id: "ostatni",  label: "Ostatní mapy", emoji: "📦", desc: "",             bgFrom: "from-slate-600",   bgTo: "to-slate-800",   available: false },
+  { id: "editor",   label: "Editor",       emoji: "🛠️", desc: "",             bgFrom: "from-slate-500",   bgTo: "to-slate-700",   available: false },
 ];
 
 export default function MapMenuStrip() {
