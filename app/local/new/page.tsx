@@ -9,6 +9,14 @@ import { BOARD_PRESETS } from "@/lib/board";
 
 type AuthState = "loading" | "unauthenticated" | "ready";
 
+const THEME_BACKGROUNDS: Record<string, string> = {
+  "horse-day": "/bg_horse_day.webp",
+  "horse-classic": "/bg_horse_classic.webp",
+  "horse-night": "/bg_horse_night.webp",
+  "car-day": "/bg_car_day.webp",
+  "car-night": "/bg_car_night.webp",
+};
+
 export default function LocalNewPage() {
   const router = useRouter();
   const [authState, setAuthState] = React.useState<AuthState>("loading");
@@ -119,6 +127,7 @@ export default function LocalNewPage() {
   };
 
   const selectedTheme = THEMES.find((theme) => theme.id === selectedThemeId);
+  const pageBackgroundImage = THEME_BACKGROUNDS[selectedThemeId] ?? THEME_BACKGROUNDS["horse-day"];
   const loginRedirectPath =
     typeof window === "undefined"
       ? "/local/new"
@@ -134,11 +143,18 @@ export default function LocalNewPage() {
 
   if (authState === "unauthenticated") {
     return (
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-6">
+      <div
+        className="min-h-screen flex items-center justify-center p-6"
+        style={{
+          backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.72), rgba(15, 23, 42, 0.72)), url(${pageBackgroundImage})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
         <div className="w-full max-w-sm text-center space-y-4">
           <div className="text-4xl">🔒</div>
-          <h2 className="text-xl font-bold text-slate-800">Přihlášení nutné</h2>
-          <p className="text-sm text-slate-500">
+          <h2 className="text-xl font-bold text-white">Přihlášení nutné</h2>
+          <p className="text-sm text-white/75">
             Pro vytvoření lokální hry se přihlas přes Discord.
           </p>
           <button
@@ -154,7 +170,7 @@ export default function LocalNewPage() {
           >
             🎮 Přihlásit přes Discord
           </button>
-          <a href="/" className="block text-xs text-slate-400 underline hover:text-slate-600">
+          <a href="/" className="block text-xs text-white/60 underline hover:text-white">
             ← Zpět na úvod
           </a>
         </div>
@@ -163,7 +179,14 @@ export default function LocalNewPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div
+      className="min-h-screen"
+      style={{
+        backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.68), rgba(15, 23, 42, 0.68)), url(${pageBackgroundImage})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
       <div className="bg-amber-100 border-b border-amber-300 px-4 py-2 text-center text-sm text-amber-800">
         Experimentální projekt ·{" "}
         <a href="mailto:info@paytowin.cz" className="underline hover:text-amber-900">
