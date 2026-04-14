@@ -285,7 +285,7 @@ export default function LandingPage() {
   };
 
   const utilityDiscordBlock = discordUser ? (
-    <div className="flex items-center justify-between gap-3 rounded-2xl border border-white/12 bg-white/8 px-3 py-2.5">
+    <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-700 bg-slate-800 px-3 py-2.5 shadow-inner">
       <div className="flex min-w-0 items-center gap-3">
         {discordUser.avatar ? (
           <img src={discordUser.avatar} alt="" className="h-8 w-8 rounded-full" />
@@ -295,18 +295,18 @@ export default function LandingPage() {
           </div>
         )}
         <div className="min-w-0">
-          <div className="truncate text-sm font-semibold text-white">{discordUser.name}</div>
-          <div className="text-[11px] text-white/55">Discord připojen</div>
+          <div className="truncate text-sm font-semibold text-slate-100">{discordUser.name}</div>
+          <div className="text-[11px] text-slate-400">Discord připojen</div>
         </div>
       </div>
-      <button onClick={logoutDiscord} className="shrink-0 text-xs font-medium text-white/55 transition hover:text-white">
+      <button onClick={logoutDiscord} className="shrink-0 text-xs font-medium text-slate-400 transition hover:text-white">
         Odhlásit
       </button>
     </div>
   ) : (
     <button
       onClick={loginWithDiscord}
-      className="rounded-2xl border border-indigo-400/40 bg-indigo-500/12 px-4 py-2.5 text-sm font-semibold text-indigo-100 transition hover:bg-indigo-500/20"
+      className="rounded-2xl border border-indigo-500/40 bg-indigo-500/18 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500/28"
     >
       🎮 Přihlásit přes Discord
     </button>
@@ -346,9 +346,8 @@ export default function LandingPage() {
             <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-6 py-8">
 
               <div className="mb-6 text-center">
-                <div className="text-5xl">🐎</div>
                 <h1
-                  className="mt-3 text-4xl font-bold text-slate-900 cursor-pointer hover:opacity-75 transition-opacity"
+                  className="text-4xl font-bold text-slate-900 cursor-pointer hover:opacity-75 transition-opacity"
                   onClick={() => window.open("/", "_blank")}
                 >PayToWin.cz</h1>
                 <p className="mt-2 text-slate-500">Dostihy, sázky a finanční chaos.</p>
@@ -384,7 +383,7 @@ export default function LandingPage() {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="Tvoje jméno"
-                        className="h-11 min-w-0 rounded-2xl border border-white/12 bg-white/8 px-4 text-sm text-white outline-none placeholder:text-white/35 focus:border-white/30"
+                        className="h-11 min-w-0 rounded-2xl border border-slate-700 bg-slate-800 px-4 text-sm text-slate-100 outline-none placeholder:text-slate-400 focus:border-slate-500"
                       />
 
                       <div className="flex flex-1 gap-2">
@@ -394,7 +393,7 @@ export default function LandingPage() {
                           onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                           placeholder="Kód hry"
                           maxLength={5}
-                          className="h-11 min-w-0 flex-1 rounded-2xl border border-white/12 bg-white/8 px-4 text-sm uppercase tracking-[0.2em] text-white outline-none placeholder:tracking-normal placeholder:text-white/35 focus:border-white/30"
+                          className="h-11 min-w-0 flex-1 rounded-2xl border border-slate-700 bg-slate-800 px-4 text-sm uppercase tracking-[0.2em] text-slate-100 outline-none placeholder:tracking-normal placeholder:text-slate-400 focus:border-slate-500"
                         />
                         <button
                           onClick={joinGame}
@@ -408,7 +407,7 @@ export default function LandingPage() {
 
                     <a
                       href="/hry"
-                      className="inline-flex h-11 shrink-0 items-center justify-center rounded-2xl border border-white/12 bg-white/8 px-4 text-sm font-semibold text-white transition hover:bg-white/12"
+                      className="inline-flex h-11 shrink-0 items-center justify-center rounded-2xl border border-slate-700 bg-slate-800 px-4 text-sm font-semibold text-slate-100 transition hover:bg-slate-700"
                     >
                       👀 Sledovat aktivní hry
                     </a>
