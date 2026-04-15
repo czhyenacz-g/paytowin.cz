@@ -135,6 +135,25 @@ function getFieldDetail(field: Field, ownerName: string | null): string | null {
   return field.description || null;
 }
 
+function getFieldTone(field: Field, themeId: string) {
+  const usesDarkSurface = field.type === "start" || themeId.endsWith("night");
+  return usesDarkSurface
+    ? {
+        cardOverlay: "bg-gradient-to-b from-black/24 via-black/10 to-black/32",
+        titleText: "text-slate-50",
+        detailPanel: "border border-white/12 bg-black/42 text-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
+        detailText: "text-slate-100",
+        ownerText: "text-slate-200/85",
+      }
+    : {
+        cardOverlay: "bg-gradient-to-b from-white/20 via-white/8 to-white/26",
+        titleText: "text-slate-900",
+        detailPanel: "border border-black/8 bg-white/78 text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]",
+        detailText: "text-slate-700",
+        ownerText: "text-slate-700/75",
+      };
+}
+
 // ─── Komponenta ───────────────────────────────────────────────────────────────
 
 interface Props {
@@ -1814,6 +1833,7 @@ export default function GameBoard({ gameCode }: Props) {
                   const owner = field.type === "racer" && field.racer ? racerOwnership[racerOwnershipKey(field.racer)] ?? null : null;
                   const detail = getFieldDetail(field, owner?.name ?? null);
                   const isHovered = hoveredFieldIdx === field.index;
+                  const tone = getFieldTone(field, themeId);
 
                   // Rotace segmentu: 0° = RIGHT, segment „spodek" míří ven od středu
                   const rotDeg = field.index * (360 / 21) - 90;
@@ -1834,7 +1854,7 @@ export default function GameBoard({ gameCode }: Props) {
                   return (
                     <div
                       key={field.index}
-                      className={`absolute flex flex-col items-center justify-center overflow-hidden rounded-[18px] border-2 shadow-[0_8px_18px_rgba(15,23,42,0.18)] backdrop-blur-[1.5px] ${theme.colors.fieldStyles[field.type]}`}
+                      className={`absolute flex flex-col items-center justify-center overflow-hidden rounded-[10px] border-2 ring-1 ring-black/10 shadow-[0_10px_18px_rgba(15,23,42,0.16)] ${theme.colors.fieldStyles[field.type]}`}
                       style={{
                         top: pos.top,
                         left: pos.left,
@@ -1854,6 +1874,8 @@ export default function GameBoard({ gameCode }: Props) {
                       onMouseEnter={() => setHoveredFieldIdx(field.index)}
                       onMouseLeave={() => setHoveredFieldIdx(null)}
                     >
+                      <div className={`pointer-events-none absolute inset-0 ${tone.cardOverlay}`} />
+
                       {/* Content wrapper — relative z-10 zajišťuje, že content zůstane nad bg image
                           a budoucím overlay layerem (bude přidán spolu s reálnými assety). */}
                       <div
@@ -1861,18 +1883,18 @@ export default function GameBoard({ gameCode }: Props) {
                         style={{ transform: `rotate(${-rotDeg}deg)` }}
                       >
                         <div className={`leading-none ${isHovered ? "text-2xl" : "text-lg"}`}>{field.emoji}</div>
-                        <div className={`font-bold uppercase leading-tight text-center tracking-[0.08em] ${isHovered ? "text-[10px] max-w-[100px]" : "text-[9px] max-w-[60px]"}`}>
+                        <div className={`font-bold uppercase leading-tight text-center tracking-[0.08em] ${tone.titleText} ${isHovered ? "text-[10px] max-w-[100px]" : "text-[9px] max-w-[60px]"}`}>
                           {field.type === "start" ? "START" : field.label}
                         </div>
                         {isHovered && detail && (
-                          <div className="max-w-[104px] rounded-xl bg-white/72 px-2 py-1 text-[9px] leading-tight text-center text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] line-clamp-4">
+                          <div className={`max-w-[104px] rounded-[6px] px-2 py-1 text-[9px] leading-tight text-center line-clamp-4 ${tone.detailPanel} ${tone.detailText}`}>
                             {detail}
                           </div>
                         )}
                         {owner && (
                           <div className="flex items-center gap-1">
                             <div className={`h-1.5 w-1.5 rounded-full ${owner.color}`} />
-                            {isHovered && <span className="max-w-[84px] truncate text-[7px] font-semibold opacity-75">{owner.name}</span>}
+                            {isHovered && <span className={`max-w-[84px] truncate text-[7px] font-semibold ${tone.ownerText}`}>{owner.name}</span>}
                           </div>
                         )}
                       </div>
