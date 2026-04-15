@@ -38,28 +38,32 @@ import BuildInfoBar from "./BuildInfoBar";
 // Styly polí jsou součástí theme systému (lib/themes/*)
 // Přistupuj přes: theme.colors.fieldStyles[field.type]
 
+// Pozice polí — 21 bodů rovnoměrně rozmístěných na kružnici r=42 % (center 50 %/50 %).
+// Úhel pole i: α = 180° − i × (360°/21), kde 0° = vpravo, 90° = nahoru (CSS y je inverzní).
+// Vzorec: left = 50 + 42·cos(α), top = 50 − 42·sin(α).
+// Mezera mezi sousedními poli ≈ 24 px (na boardu max-w 760 px) — rovnoměrná po celém okruhu.
 const FIELD_POSITIONS: React.CSSProperties[] = [
-  { top: "50%", left: "8%",  transform: "translate(-50%, -50%)" },
-  { top: "35%", left: "10%", transform: "translate(-50%, -50%)" },
-  { top: "22%", left: "15%", transform: "translate(-50%, -50%)" },
-  { top: "12%", left: "24%", transform: "translate(-50%, -50%)" },
-  { top: "8%",  left: "38%", transform: "translate(-50%, -50%)" },
-  { top: "8%",  left: "50%", transform: "translate(-50%, -50%)" },
-  { top: "8%",  left: "62%", transform: "translate(-50%, -50%)" },
-  { top: "12%", left: "76%", transform: "translate(-50%, -50%)" },
-  { top: "22%", left: "85%", transform: "translate(-50%, -50%)" },
-  { top: "35%", left: "90%", transform: "translate(-50%, -50%)" },
-  { top: "50%", left: "92%", transform: "translate(-50%, -50%)" },
-  { top: "65%", left: "90%", transform: "translate(-50%, -50%)" },
-  { top: "78%", left: "85%", transform: "translate(-50%, -50%)" },
-  { top: "88%", left: "76%", transform: "translate(-50%, -50%)" },
-  { top: "92%", left: "62%", transform: "translate(-50%, -50%)" },
-  { top: "92%", left: "50%", transform: "translate(-50%, -50%)" },
-  { top: "92%", left: "38%", transform: "translate(-50%, -50%)" },
-  { top: "88%", left: "24%", transform: "translate(-50%, -50%)" },
-  { top: "78%", left: "15%", transform: "translate(-50%, -50%)" },
-  { top: "65%", left: "10%", transform: "translate(-50%, -50%)" },
-  { top: "50%", left: "16%", transform: "translate(-50%, -50%)" },
+  { top: "50.0%", left: "8.0%",  transform: "translate(-50%, -50%)" },  //  0 START
+  { top: "37.7%", left: "9.8%",  transform: "translate(-50%, -50%)" },  //  1
+  { top: "26.4%", left: "15.3%", transform: "translate(-50%, -50%)" },  //  2
+  { top: "17.2%", left: "23.7%", transform: "translate(-50%, -50%)" },  //  3
+  { top: "10.9%", left: "34.8%", transform: "translate(-50%, -50%)" },  //  4
+  { top: "8.1%",  left: "46.9%", transform: "translate(-50%, -50%)" },  //  5
+  { top: "9.1%",  left: "59.4%", transform: "translate(-50%, -50%)" },  //  6
+  { top: "13.6%", left: "71.0%", transform: "translate(-50%, -50%)" },  //  7
+  { top: "21.4%", left: "80.8%", transform: "translate(-50%, -50%)" },  //  8
+  { top: "31.8%", left: "87.8%", transform: "translate(-50%, -50%)" },  //  9
+  { top: "43.8%", left: "91.5%", transform: "translate(-50%, -50%)" },  // 10
+  { top: "56.2%", left: "91.5%", transform: "translate(-50%, -50%)" },  // 11
+  { top: "68.2%", left: "87.8%", transform: "translate(-50%, -50%)" },  // 12
+  { top: "78.6%", left: "80.8%", transform: "translate(-50%, -50%)" },  // 13
+  { top: "86.4%", left: "71.0%", transform: "translate(-50%, -50%)" },  // 14
+  { top: "91.0%", left: "59.4%", transform: "translate(-50%, -50%)" },  // 15
+  { top: "91.9%", left: "46.9%", transform: "translate(-50%, -50%)" },  // 16
+  { top: "89.1%", left: "34.8%", transform: "translate(-50%, -50%)" },  // 17
+  { top: "82.8%", left: "23.7%", transform: "translate(-50%, -50%)" },  // 18
+  { top: "73.7%", left: "15.3%", transform: "translate(-50%, -50%)" },  // 19
+  { top: "62.3%", left: "9.8%",  transform: "translate(-50%, -50%)" },  // 20
 ];
 
 // ─── Kostka ───────────────────────────────────────────────────────────────────
@@ -1769,17 +1773,31 @@ export default function GameBoard({ gameCode }: Props) {
                 boxShadow: "inset 0 2px 24px rgba(0,0,0,0.09), 0 4px 32px rgba(0,0,0,0.10)",
               }}
             >
-              {/* ── Okruhový pás — inner boundary of the racing lane ──────── */}
+              {/* ── Vnitřní hranice tratě — lícuje s vnitřní hranou SVG pásu ── */}
               <div
                 className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
                 style={{
-                  width: "62%",
-                  height: "62%",
+                  width: "72%",
+                  height: "72%",
                   borderRadius: "50%",
-                  border: "2px solid rgba(0,0,0,0.08)",
-                  boxShadow: "0 0 0 1.5px rgba(255,255,255,0.10), 0 2px 16px rgba(0,0,0,0.07), inset 0 0 16px rgba(0,0,0,0.05)",
+                  border: "1.5px solid rgba(0,0,0,0.09)",
+                  boxShadow: "0 0 0 1px rgba(255,255,255,0.09), inset 0 0 16px rgba(0,0,0,0.05)",
                 }}
               />
+
+              {/* ── SVG traťový pás — vizuální podklad spojující pole do okruhu ── */}
+              <svg
+                className="pointer-events-none absolute inset-0 w-full h-full"
+                viewBox="0 0 100 100"
+                style={{ zIndex: 0 }}
+              >
+                {/* Tmavý pás — viditelný na světlých tématech */}
+                <ellipse cx="50" cy="50" rx="42" ry="42"
+                  fill="none" stroke="rgba(0,0,0,0.07)" strokeWidth="11" />
+                {/* Bílý přesah — subtilní hrana na tmavých tématech */}
+                <ellipse cx="50" cy="50" rx="42" ry="42"
+                  fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="11" />
+              </svg>
 
               {FIELDS.map((field) => {
                 const pos = FIELD_POSITIONS[field.index];
@@ -1793,7 +1811,7 @@ export default function GameBoard({ gameCode }: Props) {
                 return (
                   <div
                     key={field.index}
-                    className={`group absolute flex flex-col items-center justify-center rounded-xl border-2 transition-all duration-150 hover:z-50 hover:scale-[1.4] hover:shadow-xl hover:shadow-black/20 ${theme.colors.fieldStyles[field.type]} ${isTrail ? "ring-2 ring-amber-400 ring-offset-1 brightness-110" : ""} ${isHoverHighlight ? "ring-2 ring-blue-400 ring-offset-2 brightness-110" : ""} ${owner ? "ring-2 ring-indigo-500 ring-offset-1" : ""}`}
+                    className={`group absolute flex flex-col items-center justify-center rounded-lg border-2 transition-all duration-150 hover:z-50 hover:scale-[1.4] hover:shadow-xl hover:shadow-black/20 ${theme.colors.fieldStyles[field.type]} ${isTrail ? "ring-2 ring-amber-400 ring-offset-1 brightness-110" : ""} ${isHoverHighlight ? "ring-2 ring-blue-400 ring-offset-2 brightness-110" : ""} ${owner ? "ring-2 ring-indigo-500 ring-offset-1" : ""}`}
                     style={pos}
                   >
                     {/* Default state — stručný */}
