@@ -1918,9 +1918,9 @@ export default function GameBoard({ gameCode }: Props) {
                       style={{
                         top: pos.top,
                         left: pos.left,
-                        width: "82px",
-                        height: "112px",
-                        transform: `translate(-50%, -50%) rotate(${rotDeg}deg) scale(${isHovered ? 2.8 : 1.0})`,
+                        width: "60px",
+                        height: "180px",
+                        transform: `translate(-50%, -50%) rotate(${rotDeg}deg) scale(${isHovered ? 2.15 : 1.0})`,
                         transition: "transform 0.18s ease-out, box-shadow 0.18s ease-out",
                         zIndex: isHovered ? 100 : 2,
                         filter: glows.length > 0 ? glows.join(" ") : undefined,
@@ -1955,15 +1955,15 @@ export default function GameBoard({ gameCode }: Props) {
                       {isHovered && (
                         <>
                           <div
-                            className="pointer-events-none absolute top-1/2 right-full z-[120] w-[148px]"
+                            className="pointer-events-none absolute top-1/2 right-full z-[120] w-[84px]"
                             style={{ transform: `translateY(-50%) translateX(-8px) rotate(${-rotDeg}deg)` }}
                           >
-                            <div className={`rounded-[6px] px-3 py-2.5 ${tone.hoverPanel}`}>
-                              <div className={`text-[11px] font-black uppercase tracking-[0.12em] ${tone.hoverPanelAccent}`}>
+                            <div className={`rounded-[6px] px-2 py-2 ${tone.hoverPanel}`}>
+                              <div className={`text-[9px] font-black uppercase tracking-[0.1em] ${tone.hoverPanelAccent}`}>
                                 {field.type === "start" ? "START" : field.label}
                               </div>
                               {hoverSummary && (
-                                <div className={`mt-1 text-[10px] leading-snug ${tone.hoverPanelMuted}`}>
+                                <div className={`mt-1 text-[9px] leading-snug ${tone.hoverPanelMuted}`}>
                                   {hoverSummary}
                                 </div>
                               )}
@@ -1971,14 +1971,14 @@ export default function GameBoard({ gameCode }: Props) {
                           </div>
 
                           <div
-                            className="pointer-events-none absolute top-1/2 left-full z-[120] w-[132px]"
+                            className="pointer-events-none absolute top-1/2 left-full z-[120] w-[74px]"
                             style={{ transform: `translateY(-50%) translateX(8px) rotate(${-rotDeg}deg)` }}
                           >
-                            <div className={`rounded-[6px] px-3 py-2.5 ${tone.hoverPanel}`}>
-                              <div className={`text-[9px] font-black uppercase tracking-[0.18em] ${tone.hoverPanelMuted}`}>
+                            <div className={`rounded-[6px] px-2 py-2 ${tone.hoverPanel}`}>
+                              <div className={`text-[8px] font-black uppercase tracking-[0.14em] ${tone.hoverPanelMuted}`}>
                                 {metaLabel || "efekt"}
                               </div>
-                              <div className={`mt-1 text-[11px] font-bold leading-snug ${tone.hoverPanelAccent}`}>
+                              <div className={`mt-1 text-[10px] font-bold leading-snug ${tone.hoverPanelAccent}`}>
                                 {hoverEffect || detail || "bez efektu"}
                               </div>
                             </div>
