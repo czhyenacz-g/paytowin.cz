@@ -13,7 +13,9 @@ import {
 } from "@/app/admin/themes/dev/actions";
 import type { ThemeMeta } from "@/app/admin/themes/dev/actions";
 import { SMALL_BOARD } from "@/lib/board/presets";
+import type { BoardConfig, BoardFieldConfig } from "@/lib/board/types";
 import BoardEditorPreview from "@/app/components/editor/BoardEditorPreview";
+import FieldEditorPanel from "@/app/components/editor/FieldEditorPanel";
 
 // ─── Default template ─────────────────────────────────────────────────────────
 
@@ -286,6 +288,12 @@ export default function ThemeDevTool() {
   const [previewManifest, setPreviewManifest] = React.useState<ThemeManifest | null>(null);
   const [showBoardPreview, setShowBoardPreview] = React.useState(false);
   const [boardPreviewManifest, setBoardPreviewManifest] = React.useState<ThemeManifest | null>(null);
+  // Editovatelná kopie board configu — živá jen v local state, nezapisuje se do presets.ts
+  const [editableBoard, setEditableBoard] = React.useState<BoardConfig>(() => ({
+    ...SMALL_BOARD,
+    fields: SMALL_BOARD.fields.map((f) => ({ ...f })),
+  }));
+  const [selectedFieldIndex, setSelectedFieldIndex] = React.useState<number | null>(null);
 
   // Actions
   const [saving, setSaving] = React.useState(false);
@@ -410,6 +418,12 @@ export default function ThemeDevTool() {
     if (!manifest) return;
     setBoardPreviewManifest(manifest);
     setShowBoardPreview(true);
+    setSelectedFieldIndex(null);
+    // Resetuj board na čistou kopii SMALL_BOARD při každém otevření preview
+    setEditableBoard({
+      ...SMALL_BOARD,
+      fields: SMALL_BOARD.fields.map((f) => ({ ...f })),
+    });
   }
 
   async function handleSave() {
@@ -750,31 +764,90 @@ export default function ThemeDevTool() {
             </div>
           )}
 
-          {/* Board Preview */}
+          {/* Board Preview + Field Editor */}
           {showBoardPreview && boardPreviewManifest && (
-            <div className="space-y-2">
+            <div className="space-y-4">
+
+              {/* Header */}
               <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-slate-700">Board Preview</span>
+                <span className="text-sm font-semibold text-slate-700">Board Editor</span>
                 <div className="flex items-center gap-3">
                   <span className="text-[11px] text-slate-400">
-                    preset: <code className="font-mono">{SMALL_BOARD.id}</code> · {SMALL_BOARD.fieldCount} polí
+                    preset: <code className="font-mono">{editableBoard.id}</code> · {editableBoard.fieldCount} polí
+                    {selectedFieldIndex !== null && (
+                      <span className="ml-2 text-indigo-500">· pole #{selectedFieldIndex} vybráno</span>
+                    )}
                   </span>
                   <button
-                    onClick={() => setShowBoardPreview(false)}
+                    onClick={() => { setShowBoardPreview(false); setSelectedFieldIndex(null); }}
                     className="text-xs text-slate-400 hover:text-slate-600 underline"
                   >
                     Zavřít
                   </button>
                 </div>
               </div>
-              <BoardEditorPreview
-                board={SMALL_BOARD}
-                manifest={boardPreviewManifest}
-                onFieldClick={(field) => {
-                  // Fáze 1: log — fáze 2 otevře FieldEditorPanel
-                  console.log("[BoardEditorPreview] field clicked:", field);
-                }}
-              />
+
+              {/* Board + panel vedle sebe na větších obrazovkách, pod sebou na malých */}
+              <div className="flex flex-col xl:flex-row gap-6 items-start">
+
+                {/* Board preview */}
+                <div className="w-full xl:w-auto xl:flex-1 xl:max-w-[560px]">
+                  <BoardEditorPreview
+                    board={editableBoard}
+                    manifest={boardPreviewManifest}
+                    selectedIndex={selectedFieldIndex}
+                    onFieldClick={(field) => setSelectedFieldIndex(field.index)}
+                  />
+                </div>
+
+                {/* Field editor — zobrazí se po kliknutí na pole */}
+                <div className="w-full xl:w-[360px] xl:shrink-0">
+                  {selectedFieldIndex !== null ? (() => {
+                    const fieldConfig = editableBoard.fields.find(
+                      (f) => f.index === selectedFieldIndex,
+                    );
+                    if (!fieldConfig) return null;
+                    return (
+                      <FieldEditorPanel
+                        field={fieldConfig}
+                        onChange={(updated: BoardFieldConfig) =>
+                          setEditableBoard((prev) => ({
+                            ...prev,
+                            fields: prev.fields.map((f) =>
+                              f.index === selectedFieldIndex ? updated : f,
+                            ),
+                          }))
+                        }
+                      />
+                    );
+                  })() : (
+                    <div className="rounded-xl border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-400">
+                      <div className="text-2xl mb-2">👈</div>
+                      Klikni na pole pro editaci
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* JSON export — lokální state, pro ruční commit do presets.ts */}
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                    Export board JSON
+                  </span>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(JSON.stringify(editableBoard, null, 2));
+                    }}
+                    className="text-xs text-indigo-600 hover:text-indigo-800 underline"
+                  >
+                    Zkopírovat do schránky
+                  </button>
+                </div>
+                <pre className="text-[10px] font-mono text-slate-500 leading-relaxed max-h-32 overflow-y-auto whitespace-pre-wrap break-all">
+                  {JSON.stringify(editableBoard, null, 2)}
+                </pre>
+              </div>
             </div>
           )}
         </main>

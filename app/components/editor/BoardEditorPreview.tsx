@@ -6,17 +6,21 @@
  * Záměrně NEZÁVISÍ na GameBoard.tsx — editor a gameplay board musí zůstat oddělené.
  * Bez game state, Realtime, animací, tahů, hráčů.
  *
- * Použití:
- *   <BoardEditorPreview board={SMALL_BOARD} manifest={myManifest} onFieldClick={handleClick} />
+ * Použití — uncontrolled (standalone):
+ *   <BoardEditorPreview board={board} manifest={manifest} />
  *
- * Fáze 1 MVP:
- *   - renderuje reálnou hrací plochu z board + manifest
- *   - pole jsou klikatelná
- *   - klik vrací Field přes onFieldClick a zobrazí detail pod boardem
+ * Použití — controlled (ThemeDevTool):
+ *   <BoardEditorPreview
+ *     board={editableBoard}
+ *     manifest={manifest}
+ *     selectedIndex={selectedFieldIndex}
+ *     onFieldClick={(field) => setSelectedFieldIndex(field.index)}
+ *   />
  *
- * Budoucí fáze:
- *   - onFieldClick otevře FieldEditorPanel (formulář + raw JSON)
- *   - upload assetů per pole
+ * selectedIndex: pokud je předán (i null), komponenta je v controlled módu — parent
+ * drží vybraný stav. Jinak komponenta drží vlastní interní stav.
+ *
+ * Detail vybraného pole se zobrazuje externě přes FieldEditorPanel v parentu.
  */
 
 import React from "react";
@@ -73,14 +77,28 @@ const FIELD_POSITIONS: React.CSSProperties[] = [
 interface Props {
   board: BoardConfig;
   manifest: ThemeManifest;
-  /** Callback při kliknutí na pole. Budoucí fáze: otevře FieldEditorPanel. */
+  /**
+   * Vybraný index pole. Pokud je předán (i jako null), komponenta je controlled —
+   * parent drží výběr. Pokud je undefined, komponenta drží vlastní interní stav.
+   */
+  selectedIndex?: number | null;
+  /** Callback při kliknutí na pole. */
   onFieldClick?: (field: Field) => void;
 }
 
 // ─── Komponenta ───────────────────────────────────────────────────────────────
 
-export default function BoardEditorPreview({ board, manifest, onFieldClick }: Props) {
-  const [selectedIndex, setSelectedIndex] = React.useState<number | null>(null);
+export default function BoardEditorPreview({
+  board,
+  manifest,
+  selectedIndex: controlledIndex,
+  onFieldClick,
+}: Props) {
+  // Interní stav — použije se jen pokud není předán controlledIndex (uncontrolled mód)
+  const [internalIndex, setInternalIndex] = React.useState<number | null>(null);
+
+  const isControlled = controlledIndex !== undefined;
+  const selectedIndex = isControlled ? controlledIndex : internalIndex;
 
   const themeId = manifest.meta.id;
   const fields = React.useMemo(
@@ -91,166 +109,131 @@ export default function BoardEditorPreview({ board, manifest, onFieldClick }: Pr
   const boardBgImage = manifest.assets?.boardBackgroundImage;
 
   function handleFieldClick(field: Field) {
-    setSelectedIndex(field.index);
+    if (!isControlled) setInternalIndex(field.index);
     onFieldClick?.(field);
   }
 
-  const selectedField = selectedIndex !== null ? fields[selectedIndex] ?? null : null;
-
   return (
-    <div className="space-y-4">
+    <div className="relative mx-auto aspect-square w-full max-w-[600px] overflow-visible">
 
-      {/* ── Board ── */}
-      <div className="relative mx-auto aspect-square w-full max-w-[600px] overflow-visible">
-
-        {/* Pozadí a SVG pásy — vizuálně identické s GameBoard */}
+      {/* Pozadí a SVG pásy — vizuálně identické s GameBoard */}
+      <div
+        className={`absolute inset-0 overflow-hidden rounded-[4px] border-2 ${manifest.colors.boardSurfaceBorder} ${manifest.colors.boardSurface}`}
+        style={{
+          ...(boardBgImage
+            ? { backgroundImage: `url("${boardBgImage}")`, backgroundSize: "cover", backgroundPosition: "center" }
+            : {}),
+          boxShadow: "inset 0 2px 24px rgba(0,0,0,0.09), 0 4px 32px rgba(0,0,0,0.10)",
+        }}
+      >
+        {/* Vnitřní hranice tratě */}
         <div
-          className={`absolute inset-0 overflow-hidden rounded-[4px] border-2 ${manifest.colors.boardSurfaceBorder} ${manifest.colors.boardSurface}`}
+          className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
           style={{
-            ...(boardBgImage
-              ? { backgroundImage: `url("${boardBgImage}")`, backgroundSize: "cover", backgroundPosition: "center" }
-              : {}),
-            boxShadow: "inset 0 2px 24px rgba(0,0,0,0.09), 0 4px 32px rgba(0,0,0,0.10)",
+            width: "72%",
+            height: "72%",
+            borderRadius: "50%",
+            border: "1.5px solid rgba(0,0,0,0.09)",
+            boxShadow: "0 0 0 1px rgba(255,255,255,0.09), inset 0 0 16px rgba(0,0,0,0.05)",
           }}
+        />
+        {/* SVG traťový pás */}
+        <svg
+          className="pointer-events-none absolute inset-0 h-full w-full"
+          viewBox="0 0 100 100"
+          style={{ zIndex: 0 }}
         >
-          {/* Vnitřní hranice tratě */}
-          <div
-            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-            style={{
-              width: "72%",
-              height: "72%",
-              borderRadius: "50%",
-              border: "1.5px solid rgba(0,0,0,0.09)",
-              boxShadow: "0 0 0 1px rgba(255,255,255,0.09), inset 0 0 16px rgba(0,0,0,0.05)",
-            }}
-          />
-          {/* SVG traťový pás */}
-          <svg
-            className="pointer-events-none absolute inset-0 h-full w-full"
-            viewBox="0 0 100 100"
-            style={{ zIndex: 0 }}
-          >
-            <ellipse cx="50" cy="50" rx="42" ry="42" fill="none" stroke="rgba(0,0,0,0.07)" strokeWidth="11" />
-            <ellipse cx="50" cy="50" rx="42" ry="42" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="11" />
-          </svg>
-        </div>
+          <ellipse cx="50" cy="50" rx="42" ry="42" fill="none" stroke="rgba(0,0,0,0.07)" strokeWidth="11" />
+          <ellipse cx="50" cy="50" rx="42" ry="42" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="11" />
+        </svg>
+      </div>
 
-        {/* Pole */}
-        <div className="absolute inset-0 overflow-visible">
-          {fields.map((field) => {
-            const pos = FIELD_POSITIONS[field.index];
-            if (!pos) return null;
+      {/* Pole */}
+      <div className="absolute inset-0 overflow-visible">
+        {fields.map((field) => {
+          const pos = FIELD_POSITIONS[field.index];
+          if (!pos) return null;
 
-            const isSelected = selectedIndex === field.index;
-            const rotDeg = field.index * (360 / 21) - 90;
+          const isSelected = selectedIndex === field.index;
+          const rotDeg = field.index * (360 / 21) - 90;
 
-            const fieldStyleKey = (field.type === "horse" ? "racer" : field.type) as FieldStyleKey;
-            const fieldStyleCls = manifest.colors.fieldStyles[fieldStyleKey] ?? "";
+          const fieldStyleKey = (field.type === "horse" ? "racer" : field.type) as FieldStyleKey;
+          const fieldStyleCls = manifest.colors.fieldStyles[fieldStyleKey] ?? "";
 
-            const primaryPath =
-              field.type === "racer"
-                ? resolveRacerCardImagePath(
-                    themeId,
-                    field.racer?.id,
-                    field.racer?.id ? manifest.assets?.racerImages?.[field.racer.id] : undefined,
-                  )
-                : resolveFieldCardImagePath(
-                    themeId,
-                    field.type,
-                    manifest.assets?.fieldTextures?.[field.type],
-                  );
+          const primaryPath =
+            field.type === "racer"
+              ? resolveRacerCardImagePath(
+                  themeId,
+                  field.racer?.id,
+                  field.racer?.id ? manifest.assets?.racerImages?.[field.racer.id] : undefined,
+                )
+              : resolveFieldCardImagePath(
+                  themeId,
+                  field.type,
+                  manifest.assets?.fieldTextures?.[field.type],
+                );
 
-            const bgImage = buildCardBackgroundImageValue(primaryPath);
+          const bgImage = buildCardBackgroundImageValue(primaryPath);
 
-            return (
+          return (
+            <div
+              key={field.index}
+              className={`absolute flex flex-col items-center justify-center overflow-hidden rounded-[2px] border-2 ring-1 shadow-[0_10px_18px_rgba(15,23,42,0.16)] cursor-pointer transition-all duration-150 ${fieldStyleCls} ${isSelected ? "ring-2 ring-indigo-400 ring-offset-1" : "ring-black/10"}`}
+              style={{
+                top: pos.top,
+                left: pos.left,
+                width: "82px",
+                height: "112px",
+                transform: `translate(-50%, -50%) rotate(${rotDeg}deg) scale(${isSelected ? 1.15 : 1.0})`,
+                zIndex: isSelected ? 10 : 2,
+                backgroundImage: bgImage,
+                backgroundSize: "cover, cover",
+                backgroundPosition: "center, center",
+              }}
+              onClick={() => handleFieldClick(field)}
+              title={`Pole #${field.index} — ${field.label} (${field.type})`}
+            >
+              {/* Content — counter-rotovaný zpět do normálu */}
               <div
-                key={field.index}
-                className={`absolute flex flex-col items-center justify-center overflow-hidden rounded-[2px] border-2 ring-1 shadow-[0_10px_18px_rgba(15,23,42,0.16)] cursor-pointer transition-all duration-150 ${fieldStyleCls} ${isSelected ? "ring-indigo-400 ring-offset-1 ring-2" : "ring-black/10"}`}
-                style={{
-                  top: pos.top,
-                  left: pos.left,
-                  width: "82px",
-                  height: "112px",
-                  transform: `translate(-50%, -50%) rotate(${rotDeg}deg) scale(${isSelected ? 1.15 : 1.0})`,
-                  zIndex: isSelected ? 10 : 2,
-                  backgroundImage: bgImage,
-                  backgroundSize: "cover, cover",
-                  backgroundPosition: "center, center",
-                }}
-                onClick={() => handleFieldClick(field)}
-                title={`Pole #${field.index} — ${field.label} (${field.type})`}
+                className="relative z-10 flex w-full flex-col items-center gap-0.5 px-2 py-2"
+                style={{ transform: `rotate(${-rotDeg}deg)` }}
               >
-                {/* Content — counter-rotovaný zpět do normálu */}
+                <div className="leading-none text-lg">{field.emoji}</div>
+                <div className="font-bold uppercase leading-tight text-center tracking-[0.08em] text-[9px] max-w-[60px]">
+                  {field.type === "start" ? "START" : field.label}
+                </div>
+                {/* Index badge — jen v editoru */}
+                <div className="mt-0.5 font-mono text-[7px] opacity-40">#{field.index}</div>
+              </div>
+
+              {/* Vybrané pole — checkmark */}
+              {isSelected && (
                 <div
-                  className="relative z-10 flex w-full flex-col items-center gap-0.5 px-2 py-2"
+                  className="absolute -top-1.5 -right-1.5 z-20 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-500 text-[8px] font-bold text-white shadow"
                   style={{ transform: `rotate(${-rotDeg}deg)` }}
                 >
-                  <div className="leading-none text-lg">{field.emoji}</div>
-                  <div className="font-bold uppercase leading-tight text-center tracking-[0.08em] text-[9px] max-w-[60px]">
-                    {field.type === "start" ? "START" : field.label}
-                  </div>
-                  {/* Index badge — jen v editoru, hráči ho nevidí */}
-                  <div className="mt-0.5 font-mono text-[7px] opacity-40">#{field.index}</div>
+                  ✓
                 </div>
+              )}
+            </div>
+          );
+        })}
 
-                {/* Vybrané pole — checkmark */}
-                {isSelected && (
-                  <div
-                    className="absolute -top-1.5 -right-1.5 z-20 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-500 text-[8px] font-bold text-white shadow"
-                    style={{ transform: `rotate(${-rotDeg}deg)` }}
-                  >
-                    ✓
-                  </div>
-                )}
-              </div>
-            );
-          })}
-
-          {/* Střed desky */}
-          <div
-            className={`absolute left-1/2 top-1/2 flex h-[44%] w-[44%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[50%] border-2 p-4 text-center shadow-inner ${manifest.colors.centerBorder} ${manifest.colors.centerBackground}`}
-          >
-            <div>
-              <div className="text-3xl">{manifest.racers[0]?.emoji ?? "🏁"}</div>
-              <div className={`mt-1 text-[11px] font-semibold ${manifest.colors.centerTitle}`}>
-                {manifest.meta.name}
-              </div>
-              <div className={`mt-0.5 text-[9px] ${manifest.colors.centerSubtitle}`}>
-                editor · {fields.length} polí
-              </div>
+        {/* Střed desky */}
+        <div
+          className={`absolute left-1/2 top-1/2 flex h-[44%] w-[44%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[50%] border-2 p-4 text-center shadow-inner ${manifest.colors.centerBorder} ${manifest.colors.centerBackground}`}
+        >
+          <div>
+            <div className="text-3xl">{manifest.racers[0]?.emoji ?? "🏁"}</div>
+            <div className={`mt-1 text-[11px] font-semibold ${manifest.colors.centerTitle}`}>
+              {manifest.meta.name}
+            </div>
+            <div className={`mt-0.5 text-[9px] ${manifest.colors.centerSubtitle}`}>
+              editor · {fields.length} polí
             </div>
           </div>
         </div>
       </div>
-
-      {/* ── Vybrané pole — detail ── */}
-      {selectedField ? (
-        <div className="rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">{selectedField.emoji}</span>
-            <span className="font-semibold text-indigo-800">{selectedField.label}</span>
-            <span className="font-mono text-xs text-indigo-400">
-              #{selectedField.index} · {selectedField.type}
-            </span>
-            {(selectedField.type === "coins_gain" || selectedField.type === "coins_lose") && (
-              <span className={`ml-auto font-mono text-xs font-semibold ${selectedField.type === "coins_gain" ? "text-emerald-700" : "text-red-700"}`}>
-                {/* amount je v board config, Field.description ho obsahuje */}
-                {selectedField.description}
-              </span>
-            )}
-          </div>
-          {selectedField.type !== "coins_gain" && selectedField.type !== "coins_lose" && (
-            <div className="text-xs text-indigo-600">{selectedField.description}</div>
-          )}
-          <div className="pt-1 text-[10px] text-indigo-400 italic">
-            Fáze 1 MVP — FieldEditorPanel přijde v dalším kroku
-          </div>
-        </div>
-      ) : (
-        <div className="rounded-xl border border-dashed border-slate-300 px-4 py-3 text-center text-xs text-slate-400">
-          Klikni na pole pro zobrazení detailu
-        </div>
-      )}
     </div>
   );
 }
