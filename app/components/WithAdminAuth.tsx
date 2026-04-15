@@ -14,6 +14,19 @@ export default function WithAdminAuth({ children }: { children: React.ReactNode 
   const [userName, setUserName] = React.useState<string>("");
 
   const checkAuth = React.useCallback(async () => {
+    if (typeof window !== "undefined") {
+      const isLocalhost =
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1";
+      const isDev = process.env.NODE_ENV !== "production";
+
+      // Dev-only bypass for the local theme builder/editor.
+      if (isDev && isLocalhost) {
+        setState("authorized");
+        return;
+      }
+    }
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
