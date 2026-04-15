@@ -141,20 +141,41 @@ function getFieldDetail(field: Field, ownerName: string | null): string | null {
   return field.description || null;
 }
 
+function getFieldMetaLabel(field: Field, ownerName: string | null): string | null {
+  if (field.type === "start") return "START";
+  if (field.type === "racer") {
+    if (!field.racer) return null;
+    if (ownerName) return "obsazeno";
+    return `${field.racer.price} 💰`;
+  }
+  if (field.type === "coins_gain") return field.description || "odměna";
+  if (field.type === "coins_lose") return field.description || "ztráta";
+  if (field.type === "chance") return "náhoda";
+  if (field.type === "finance") return "finance";
+  if (field.type === "gamble") return "hazard";
+  return field.description || null;
+}
+
 function getFieldTone(field: Field, themeId: string) {
   const usesDarkSurface = field.type === "start" || themeId.endsWith("night");
   return usesDarkSurface
     ? {
-        cardOverlay: "bg-gradient-to-b from-black/24 via-black/10 to-black/32",
+        cardOverlay: "bg-gradient-to-b from-black/18 via-black/0 via-[42%] to-black/72",
+        topBadge: "border border-white/14 bg-black/42 text-slate-100 shadow-[0_1px_0_rgba(255,255,255,0.06)]",
         titleText: "text-slate-50",
-        detailPanel: "border border-white/12 bg-black/42 text-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
+        metaText: "text-slate-200/90",
+        footerPanel: "border-t border-white/12 bg-gradient-to-t from-black/78 via-black/60 to-black/8",
+        detailPanel: "border border-white/12 bg-black/58 text-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
         detailText: "text-slate-100",
         ownerText: "text-slate-200/85",
       }
     : {
-        cardOverlay: "bg-gradient-to-b from-white/20 via-white/8 to-white/26",
-        titleText: "text-slate-900",
-        detailPanel: "border border-black/8 bg-white/78 text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]",
+        cardOverlay: "bg-gradient-to-b from-white/10 via-transparent via-[36%] to-black/44",
+        topBadge: "border border-black/10 bg-white/74 text-slate-800 shadow-[0_1px_0_rgba(255,255,255,0.4)]",
+        titleText: "text-white",
+        metaText: "text-white/80",
+        footerPanel: "border-t border-black/8 bg-gradient-to-t from-slate-950/78 via-slate-950/58 to-transparent",
+        detailPanel: "border border-black/8 bg-white/88 text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]",
         detailText: "text-slate-700",
         ownerText: "text-slate-700/75",
       };
@@ -1840,6 +1861,7 @@ export default function GameBoard({ gameCode }: Props) {
                     : false;
                   const owner = field.type === "racer" && field.racer ? racerOwnership[racerOwnershipKey(field.racer)] ?? null : null;
                   const detail = getFieldDetail(field, owner?.name ?? null);
+                  const metaLabel = getFieldMetaLabel(field, owner?.name ?? null);
                   const isHovered = hoveredFieldIdx === field.index;
                   const tone = getFieldTone(field, themeId);
 
@@ -1886,28 +1908,46 @@ export default function GameBoard({ gameCode }: Props) {
                       onMouseLeave={() => setHoveredFieldIdx(null)}
                     >
                       <div className={`pointer-events-none absolute inset-0 ${tone.cardOverlay}`} />
+                      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 px-2 pt-2">
+                        <div className={`inline-flex max-w-full items-center rounded-full px-1.5 py-0.5 text-[8px] font-black uppercase tracking-[0.18em] ${tone.topBadge}`}>
+                          {field.type === "racer" ? (field.racer ? "racer" : "slot") : field.type === "coins_gain" ? "reward" : field.type === "coins_lose" ? "risk" : field.type}
+                        </div>
+                      </div>
 
-                      {/* Content wrapper — relative z-10 zajišťuje, že content zůstane nad bg image
-                          a budoucím overlay layerem (bude přidán spolu s reálnými assety). */}
                       <div
-                        className="relative z-10 flex w-full flex-col items-center gap-1 px-2 py-2"
+                        className="relative z-10 flex h-full w-full flex-col justify-between"
                         style={{ transform: `rotate(${-rotDeg}deg)` }}
                       >
-                        <div className={`leading-none ${isHovered ? "text-[1.75rem]" : "text-lg"}`}>{field.emoji}</div>
-                        <div className={`font-bold uppercase leading-tight text-center tracking-[0.08em] ${tone.titleText} ${isHovered ? "text-[11px] max-w-[132px]" : "text-[9px] max-w-[60px]"}`}>
-                          {field.type === "start" ? "START" : field.label}
+                        <div className="flex justify-end px-2 pt-9">
+                          <div className={`leading-none drop-shadow-[0_2px_6px_rgba(15,23,42,0.45)] ${isHovered ? "text-[1.8rem]" : "text-[1.1rem]"}`}>{field.emoji}</div>
                         </div>
-                        {isHovered && detail && (
-                          <div className={`max-w-[136px] rounded-[2px] px-2.5 py-1.5 text-[10px] leading-tight text-center line-clamp-4 ${tone.detailPanel} ${tone.detailText}`}>
-                            {detail}
+
+                        <div className={`mt-auto space-y-1 px-2 pb-2 pt-5 ${tone.footerPanel}`}>
+                          <div className={`font-black uppercase leading-tight tracking-[0.1em] ${tone.titleText} ${isHovered ? "text-[11px]" : "text-[9px]"}`}>
+                            {field.type === "start" ? "START" : field.label}
                           </div>
-                        )}
-                        {owner && (
-                          <div className="flex items-center gap-1">
-                            <div className={`h-1.5 w-1.5 rounded-full ${owner.color}`} />
-                            {isHovered && <span className={`max-w-[112px] truncate text-[8px] font-semibold ${tone.ownerText}`}>{owner.name}</span>}
-                          </div>
-                        )}
+
+                          {metaLabel && (
+                            <div className={`text-[8px] font-semibold uppercase tracking-[0.12em] ${tone.metaText}`}>
+                              {metaLabel}
+                            </div>
+                          )}
+
+                          {isHovered && detail && (
+                            <div className={`max-w-[136px] rounded-[3px] px-2 py-1.5 text-[10px] leading-tight shadow-lg line-clamp-4 ${tone.detailPanel} ${tone.detailText}`}>
+                              {detail}
+                            </div>
+                          )}
+
+                          {owner && (
+                            <div className="flex items-center gap-1.5">
+                              <div className={`h-1.5 w-1.5 rounded-full ${owner.color}`} />
+                              <span className={`max-w-[112px] truncate text-[8px] font-semibold ${isHovered ? tone.ownerText : tone.metaText}`}>
+                                {owner.name}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
