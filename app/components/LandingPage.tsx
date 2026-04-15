@@ -7,6 +7,7 @@ import { generateGameCode, PLAYER_COLORS } from "@/lib/game";
 import { THEMES } from "@/lib/themes";
 import { BOARD_PRESETS } from "@/lib/board";
 import MapMenuStrip from "./MapMenuStrip";
+import BrandLogo from "./BrandLogo";
 
 interface DiscordUser {
   id: string;
@@ -346,10 +347,11 @@ export default function LandingPage() {
             <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-6 py-8">
 
               <div className="mb-6 text-center">
-                <h1
-                  className="text-4xl font-bold text-slate-900 cursor-pointer hover:opacity-75 transition-opacity"
+                <BrandLogo
+                  variant="hero"
+                  className="mx-auto"
                   onClick={() => window.open("/", "_blank")}
-                >PayToWin.cz</h1>
+                />
                 <p className="mt-2 text-slate-500">Dostihy, sázky a finanční chaos.</p>
               </div>
 

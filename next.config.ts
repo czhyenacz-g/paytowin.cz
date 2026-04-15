@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
+  outputFileTracingRoot: path.resolve(__dirname),
   env: {
     // Vercel nastavuje tyto proměnné při každém buildu automaticky.
     // Přes `env` block se "upečou" do JS bundle — čitelné i na klientovi.

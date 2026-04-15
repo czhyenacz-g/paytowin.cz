@@ -41,6 +41,7 @@ import RaceModal from "./RaceModal";
 import RaceEventOverlay from "./RaceEventOverlay";
 import BuildInfoBar from "./BuildInfoBar";
 import ThemeAssetInspector from "./ThemeAssetInspector";
+import BrandLogo from "./BrandLogo";
 
 // Styly polí jsou součástí theme systému (lib/themes/*)
 // Přistupuj přes: theme.colors.fieldStyles[field.type]
@@ -1737,10 +1738,11 @@ export default function GameBoard({ gameCode }: Props) {
             <div className="mb-3 flex items-center gap-2">
               {/* Levá zóna: brand + mode badges */}
               <div className="flex items-center gap-2 shrink-0">
-                <h1
-                  className={`text-lg font-bold cursor-pointer hover:opacity-75 transition-opacity ${theme.colors.textPrimary}`}
+                <BrandLogo
+                  variant="nav"
+                  className={`transition-opacity hover:opacity-75 ${theme.colors.textPrimary}`}
                   onClick={() => window.open("/", "_blank")}
-                >PayToWin.cz</h1>
+                />
                 {isLocalGame && (
                   <div className="rounded-[3px] bg-orange-100 px-2 py-1 text-[11px] font-semibold text-orange-700">
                     🖥️ Lokální
