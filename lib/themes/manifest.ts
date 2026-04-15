@@ -74,6 +74,14 @@ export interface ThemeManifest {
     logoImage?: string;
     /** racer.id → URL obrázku závodníka */
     racerImages?: Record<string, string>;
+    /**
+     * Obrázková pozadí pro typy polí. Klíče odpovídají FieldStyleKey.
+     * Konvence cest: /themes/{themeId}/field-{type}.webp
+     * Pokud klíč chybí, pole se vykreslí s fallbackem na CSS barvy z colors.fieldStyles.
+     *
+     * @example { racer: "/themes/horse-day/field-racer.webp", coins_gain: "/themes/horse-day/field-gain.webp" }
+     */
+    fieldTextures?: Record<string, string>;
   };
 
   /**
@@ -157,6 +165,11 @@ export function themeToManifest(theme: Theme): ThemeManifest {
       ? {
           boardBackgroundImage: theme.assets?.boardBgImage,
           racerImages,
+          fieldTextures: theme.assets?.fieldTextures
+            ? Object.fromEntries(
+                Object.entries(theme.assets.fieldTextures).filter(([, v]) => v !== undefined)
+              ) as Record<string, string>
+            : undefined,
         }
       : undefined,
     cards: theme.content?.cards
