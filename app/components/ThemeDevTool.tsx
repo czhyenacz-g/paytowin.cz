@@ -376,6 +376,14 @@ export default function ThemeDevTool() {
             return next;
           });
         },
+        // Upload pipeline — fáze 1: jen pro non-racer field assety
+        uploadConfig: {
+          themeId,
+          fieldType: fieldConfig.type,
+          onUploaded: (webpPath: string) => {
+            setEditableFieldTextures((prev) => ({ ...prev, [fieldConfig.type]: webpPath }));
+          },
+        },
       };
     }
   }, [selectedFieldIndex, editableBoard, liveManifest, editableFieldTextures, editableRacerImages]);

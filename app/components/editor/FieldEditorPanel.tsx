@@ -42,6 +42,19 @@ export interface AssetSectionConfig {
   onOverrideChange: (override: string | undefined) => void;
   /** Pro racer pole: id závodníka pro zobrazení v UI */
   racerId?: string;
+  /**
+   * Lokální upload pipeline — volitelné, jen pro dev/editor use.
+   * Pokud undefined, upload sekce se nezobrazí.
+   * Fáze 1: jen pro field type assety (ne racer assety).
+   */
+  uploadConfig?: {
+    /** ID tématu, např. "horse-day" — určuje cílovou složku */
+    themeId: string;
+    /** Typ pole, např. "coins_gain" — určuje canonical filename */
+    fieldType: string;
+    /** Voláno po úspěšném uploadu s WebP (nebo PNG fallback) cestou */
+    onUploaded: (webpPath: string) => void;
+  };
 }
 
 // ─── Konstanty ────────────────────────────────────────────────────────────────
@@ -318,7 +331,68 @@ export default function FieldEditorPanel({ field, onChange, assetSection }: Prop
   );
 }
 
+// ─── Image resize helper (Canvas API, žádné závislosti) ──────────────────────
+
+/**
+ * resizeImage — client-side resize přes Canvas API.
+ *
+ * Vrací PNG blob a WebP blob (v Chrome/Edge nativní WebP; v ostatních prohlížečích
+ * WebP slot dostane PNG-encoded data — funkčně i vizuálně OK pro dev tooling).
+ *
+ * maxDim: nejdelší strana výstupu v pixelech. Menší obrázky se nezvětšují.
+ */
+function resizeImage(
+  file: File,
+  maxDim: number,
+): Promise<{ pngBlob: Blob; webpBlob: Blob; width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+
+      const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+      const w = Math.round(img.width  * scale);
+      const h = Math.round(img.height * scale);
+
+      const canvas = document.createElement("canvas");
+      canvas.width  = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { reject(new Error("Canvas 2D context není dostupný.")); return; }
+      ctx.drawImage(img, 0, 0, w, h);
+
+      canvas.toBlob((pngBlob) => {
+        if (!pngBlob) { reject(new Error("Konverze na PNG selhala.")); return; }
+        // WebP — Chrome/Edge vráti WebP, ostatní prohlížeče null → fallback na PNG
+        canvas.toBlob(
+          (webpBlob) => resolve({ pngBlob, webpBlob: webpBlob ?? pngBlob, width: w, height: h }),
+          "image/webp",
+          0.88,
+        );
+      }, "image/png");
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Obrázek nelze načíst."));
+    };
+    img.src = url;
+  });
+}
+
 // ─── AssetSection subkomponenta ───────────────────────────────────────────────
+
+type UploadState =
+  | { status: "idle" }
+  | { status: "processing" }
+  | { status: "uploading" }
+  | { status: "success"; webpPath: string; width: number; height: number }
+  | { status: "error"; message: string };
+
+/** Max. nejdelší strana výstupního assetu v pixelech */
+const ASSET_MAX_DIM = 800;
 
 function AssetSection({
   section,
@@ -329,15 +403,18 @@ function AssetSection({
 }) {
   const [imgOk, setImgOk] = React.useState(false);
   const [overrideInput, setOverrideInput] = React.useState(section.override ?? "");
+  const [uploadState, setUploadState] = React.useState<UploadState>({ status: "idle" });
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  // Sync input při výběru nového pole (section se změní)
+  // Sync input + reset upload state při výběru nového pole
   React.useEffect(() => {
     setOverrideInput(section.override ?? "");
     setImgOk(false);
-  }, [section.assetKey, section.racerId]); // klíče identifikující konkrétní asset slot
+    setUploadState({ status: "idle" });
+  }, [section.assetKey, section.racerId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isOverrideActive = Boolean(section.override);
-  const isUsingFallback = !section.resolvedPath;
+  const isUsingFallback  = !section.resolvedPath;
 
   function handleApplyOverride() {
     const trimmed = overrideInput.trim();
@@ -349,9 +426,51 @@ function AssetSection({
     section.onOverrideChange(undefined);
   }
 
+  async function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !section.uploadConfig) return;
+    // Reset input tak, aby šlo znovu vybrat stejný soubor
+    if (fileInputRef.current) fileInputRef.current.value = "";
+
+    const { themeId, fieldType: ft, onUploaded } = section.uploadConfig;
+
+    try {
+      // Krok 1: resize na klientu
+      setUploadState({ status: "processing" });
+      const { pngBlob, webpBlob, width, height } = await resizeImage(file, ASSET_MAX_DIM);
+
+      // Krok 2: odeslat na dev API route
+      setUploadState({ status: "uploading" });
+      const form = new FormData();
+      form.append("themeId",   themeId);
+      form.append("fieldType", ft);
+      form.append("png",  new File([pngBlob],  "upload.png",  { type: "image/png"  }));
+      form.append("webp", new File([webpBlob], "upload.webp", { type: "image/webp" }));
+
+      const res = await fetch("/api/dev/upload-field-asset", { method: "POST", body: form });
+      const json = await res.json() as { ok?: boolean; error?: string; webpPath?: string; pngPath?: string };
+
+      if (!res.ok || !json.ok) {
+        throw new Error(json.error ?? `HTTP ${res.status}`);
+      }
+
+      // Krok 3: aktualizuj local state (preview se automaticky překreslí)
+      const savedPath = json.webpPath ?? json.pngPath ?? "";
+      onUploaded(savedPath);
+
+      setUploadState({ status: "success", webpPath: savedPath, width, height });
+    } catch (err) {
+      setUploadState({
+        status: "error",
+        message: err instanceof Error ? err.message : "Neznámá chyba.",
+      });
+    }
+  }
+
   return (
     <div className="border-t border-slate-100 px-4 py-3 space-y-3">
-      {/* Header */}
+
+      {/* ── Header ── */}
       <div className="flex items-center gap-2">
         <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
           Texture / Asset
@@ -373,11 +492,13 @@ function AssetSection({
         )}
       </div>
 
+      {/* ── Miniatura + info ── */}
       <div className="flex gap-3 items-start">
-        {/* Miniatura — ukáže se jen pokud asset fyzicky existuje */}
+        {/* Miniatura — zobrazí se jen pokud asset fyzicky existuje */}
         <div className="relative shrink-0 h-14 w-10 rounded border border-slate-200 bg-slate-50 overflow-hidden">
           {section.resolvedPath && (
             <img
+              key={section.resolvedPath}
               src={section.resolvedPath}
               alt=""
               className={`h-full w-full object-cover transition-opacity ${imgOk ? "opacity-100" : "opacity-0"}`}
@@ -386,15 +507,12 @@ function AssetSection({
             />
           )}
           {!imgOk && (
-            <div className="absolute inset-0 flex items-center justify-center text-[16px]">
-              🖼
-            </div>
+            <div className="absolute inset-0 flex items-center justify-center text-[16px]">🖼</div>
           )}
         </div>
 
         {/* Info */}
         <div className="flex-1 space-y-1 min-w-0">
-          {/* Asset key + canonical */}
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
             {section.assetKey && (
               <span className="font-mono text-[10px] text-slate-400">{section.assetKey}</span>
@@ -408,18 +526,11 @@ function AssetSection({
               </span>
             )}
           </div>
-
-          {/* Resolved path */}
-          <div
-            className="font-mono text-[10px] break-all leading-relaxed text-slate-500"
-            title={section.resolvedPath ?? "—"}
-          >
+          <div className="font-mono text-[10px] break-all leading-relaxed text-slate-500" title={section.resolvedPath ?? "—"}>
             {section.resolvedPath
               ? <span className={isOverrideActive ? "text-violet-600" : ""}>{section.resolvedPath}</span>
               : <span className="italic text-slate-400">— žádná cesta</span>}
           </div>
-
-          {/* Field type info — výsledek platí pro všechna pole tohoto type */}
           {fieldType !== "racer" && (
             <div className="text-[10px] text-amber-600">
               Platí pro všechna pole type <code className="font-mono">{fieldType}</code> v tomto tématu
@@ -428,11 +539,10 @@ function AssetSection({
         </div>
       </div>
 
-      {/* Override input */}
+      {/* ── Override input ── */}
       <div className="space-y-1.5">
         <label className="block text-xs font-medium text-slate-500">
-          Override cesta{" "}
-          <span className="font-normal text-slate-400">(prázdné = canonical)</span>
+          Override cesta <span className="font-normal text-slate-400">(prázdné = canonical)</span>
         </label>
         <div className="flex gap-1.5">
           <input
@@ -440,26 +550,76 @@ function AssetSection({
             value={overrideInput}
             onChange={(e) => setOverrideInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") handleApplyOverride(); }}
-            placeholder={section.canonicalFile ? `/themes/moje-theme/${section.canonicalFile}` : "/themes/moje-theme/..."}
+            placeholder={section.canonicalFile ? `/themes/moje-theme/${section.canonicalFile}` : "/themes/..."}
             className="flex-1 min-w-0 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-violet-300 placeholder:text-slate-400"
           />
-          <button
-            onClick={handleApplyOverride}
-            className="shrink-0 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-violet-700"
-          >
+          <button onClick={handleApplyOverride}
+            className="shrink-0 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-violet-700">
             Použít
           </button>
           {isOverrideActive && (
-            <button
-              onClick={handleClearOverride}
+            <button onClick={handleClearOverride}
               className="shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
-              title="Odeber override, vrátit na canonical"
-            >
+              title="Odeber override, vrátit na canonical">
               ✕
             </button>
           )}
         </div>
       </div>
+
+      {/* ── Upload pipeline — jen pokud je uploadConfig k dispozici ── */}
+      {section.uploadConfig && (
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-slate-500">Nahrát obrázek</span>
+            <span className="text-[10px] text-slate-400">
+              PNG/JPG/WebP → resize max {ASSET_MAX_DIM}px → PNG + WebP → uloží do{" "}
+              <code className="font-mono">/themes/{section.uploadConfig.themeId}/</code>
+            </span>
+          </div>
+
+          {/* Stav uploadu */}
+          {uploadState.status === "processing" && (
+            <div className="rounded-lg bg-blue-50 border border-blue-200 px-3 py-2 text-xs text-blue-700">
+              ⏳ Zpracovávám obrázek…
+            </div>
+          )}
+          {uploadState.status === "uploading" && (
+            <div className="rounded-lg bg-blue-50 border border-blue-200 px-3 py-2 text-xs text-blue-700">
+              ⬆️ Nahrávám…
+            </div>
+          )}
+          {uploadState.status === "success" && (
+            <div className="rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2 text-xs text-emerald-700 space-y-0.5">
+              <div className="font-medium">✅ Uloženo ({uploadState.width}×{uploadState.height}px)</div>
+              <div className="font-mono break-all">{uploadState.webpPath}</div>
+            </div>
+          )}
+          {uploadState.status === "error" && (
+            <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
+              ❌ {uploadState.message}
+            </div>
+          )}
+
+          {/* Skrytý file input + viditelné tlačítko */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            className="hidden"
+            onChange={handleFileSelected}
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadState.status === "processing" || uploadState.status === "uploading"}
+            className="w-full rounded-lg border-2 border-dashed border-slate-300 px-3 py-2.5 text-xs text-slate-500 hover:border-violet-400 hover:text-violet-600 hover:bg-violet-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {uploadState.status === "idle" || uploadState.status === "error" || uploadState.status === "success"
+              ? "📁 Vybrat soubor (PNG / JPG / WebP)"
+              : "Zpracovávám…"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
