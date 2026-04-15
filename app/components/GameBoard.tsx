@@ -115,6 +115,20 @@ const FIGURINE_POSITIONS: React.CSSProperties[] = FIELD_POSITIONS.map((pos) => {
   };
 });
 
+// ─── Pole: detail text pro hover stav ────────────────────────────────────────
+function getFieldDetail(field: Field, ownerName: string | null): string | null {
+  if (field.type === "neutral") return null;
+  if (field.type === "racer") {
+    if (!field.racer) return null;
+    if (ownerName) return `✓ ${ownerName}`;
+    return `${field.racer.price} 💰 ${"⭐".repeat(Math.min(field.racer.speed, 5))}`;
+  }
+  if (field.type === "chance")  return "🎴 náhodná karta";
+  if (field.type === "finance") return "💼 finance karta";
+  if (field.type === "gamble")  return "🎲 hazard";
+  return field.description || null;
+}
+
 // ─── Komponenta ───────────────────────────────────────────────────────────────
 
 interface Props {
@@ -1775,47 +1789,40 @@ export default function GameBoard({ gameCode }: Props) {
                   ? displayPlayers.some(p => p.id === hoveredPlayerId && p.position === field.index && !isBankrupt(p))
                   : false;
                 const owner = field.type === "racer" && field.racer ? racerOwnership[racerOwnershipKey(field.racer)] ?? null : null;
+                const detail = getFieldDetail(field, owner?.name ?? null);
                 return (
                   <div
                     key={field.index}
-                    className={`group absolute flex flex-col items-center justify-center rounded-2xl border-2 shadow-sm transition-all duration-200 hover:z-50 ${theme.colors.fieldStyles[field.type]} ${isTrail ? "ring-2 ring-amber-400 ring-offset-1 brightness-110" : ""} ${isHoverHighlight ? "ring-2 ring-blue-400 ring-offset-2 brightness-110 scale-105" : ""} ${owner ? "ring-2 ring-indigo-500 ring-offset-1" : ""}`}
+                    className={`group absolute flex flex-col items-center justify-center rounded-xl border-2 transition-all duration-150 hover:z-50 hover:scale-[1.4] hover:shadow-xl hover:shadow-black/20 ${theme.colors.fieldStyles[field.type]} ${isTrail ? "ring-2 ring-amber-400 ring-offset-1 brightness-110" : ""} ${isHoverHighlight ? "ring-2 ring-blue-400 ring-offset-2 brightness-110" : ""} ${owner ? "ring-2 ring-indigo-500 ring-offset-1" : ""}`}
                     style={pos}
                   >
-                    <div className="text-base leading-none">{field.emoji}</div>
-                    <div className="text-[10px] font-bold leading-tight text-center px-0.5 mt-0.5">
-                      {field.type === "start" ? "START" : field.label}
-                    </div>
-                    {owner && (
-                      <div className={`h-1.5 w-1.5 rounded-full mt-0.5 ${owner.color}`} title={owner.name} />
-                    )}
-                    {/* Tooltip pro racerová pole — instant CSS hover, bez delay */}
-                    {field.type === "racer" && field.racer && (() => {
-                      const racerDisplay = resolveRacerDisplay(field.racer, theme.assets?.racerImages ?? theme.assets?.horseImages);
-                      return (
-                      <div className="pointer-events-none absolute bottom-full left-1/2 mb-2 hidden -translate-x-1/2 group-hover:block z-50 w-40">
-                        <div className="rounded-xl bg-slate-900 px-3 py-2 text-left shadow-xl">
-                          <div className="text-xs font-bold text-white">
-                            {racerDisplay.type === "image"
-                              ? <img src={racerDisplay.src} alt={racerDisplay.alt} className="inline h-4 w-4 mr-1 rounded object-cover" />
-                              : racerDisplay.value
-                            }{" "}{field.racer.name}
-                          </div>
-                          <div className="mt-1 text-[10px] text-slate-300">Rychlost: {"⭐".repeat(field.racer.speed)}</div>
-                          <div className="text-[10px] text-slate-300">Cena: {field.racer.price} 💰</div>
-                          {owner ? (
-                            <div className="mt-1.5 flex items-center gap-1.5">
-                              <div className={`h-3 w-3 rounded-full ${owner.color}`} />
-                              <span className="text-[10px] font-semibold text-amber-300">Vlastní: {owner.name}</span>
-                            </div>
-                          ) : (
-                            <div className="mt-1.5 text-[10px] font-semibold text-emerald-400">Na prodej</div>
-                          )}
-                        </div>
-                        {/* Šipka dolů */}
-                        <div className="mx-auto h-0 w-0 border-x-4 border-t-4 border-x-transparent border-t-slate-900" />
+                    {/* Default state — stručný */}
+                    <div className="flex w-full flex-col items-center px-0.5 group-hover:hidden">
+                      <div className="text-base leading-none">{field.emoji}</div>
+                      <div className="text-[10px] font-bold leading-tight text-center mt-0.5">
+                        {field.type === "start" ? "START" : field.label}
                       </div>
-                      );
-                    })()}
+                      {owner && <div className={`h-1.5 w-1.5 rounded-full mt-0.5 ${owner.color}`} />}
+                    </div>
+
+                    {/* Hover state — rozbalený detail přímo v segmentu */}
+                    <div className="hidden w-full flex-col items-center gap-0.5 px-0.5 py-0.5 group-hover:flex">
+                      <div className="text-sm leading-none">{field.emoji}</div>
+                      <div className="text-[8px] font-black leading-tight text-center line-clamp-2">
+                        {field.type === "start" ? "START" : field.label}
+                      </div>
+                      {detail && (
+                        <div className="text-[7px] leading-tight text-center opacity-80 line-clamp-2 px-0.5">
+                          {detail}
+                        </div>
+                      )}
+                      {owner && (
+                        <div className="flex items-center gap-0.5">
+                          <div className={`h-1.5 w-1.5 rounded-full ${owner.color}`} />
+                          <span className="text-[6px] opacity-70 max-w-[44px] truncate">{owner.name}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 );
               })}
