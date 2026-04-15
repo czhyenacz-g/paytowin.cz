@@ -34,6 +34,7 @@ export const carDayTheme: Theme = {
     playerCardActive:  "border-slate-900 bg-slate-50 shadow-sm",
     playerCardNormal:  "border-slate-200 bg-white",
     playerCardHover:   "border-sky-400 bg-sky-50 shadow-sm",
+    arenaGradient:     "radial-gradient(ellipse 140% 90% at 50% 50%, #f8fafc 0%, #e7e5e4 30%, #d6d3d1 65%, #c7c7c5 100%)",
   },
   labels: {
     themeName:      "Závody aut — Den",

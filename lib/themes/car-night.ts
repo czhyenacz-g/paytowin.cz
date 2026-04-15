@@ -34,6 +34,7 @@ export const carNightTheme: Theme = {
     playerCardActive:  "border-sky-400 bg-slate-700 shadow-sm",
     playerCardNormal:  "border-slate-600 bg-slate-700",
     playerCardHover:   "border-sky-400 bg-slate-600 shadow-sm",
+    arenaGradient:     "radial-gradient(ellipse 140% 90% at 50% 50%, #0f172a 0%, #090f1a 35%, #04080f 65%, #020617 100%)",
   },
   labels: {
     themeName:      "Závody aut — Noc",

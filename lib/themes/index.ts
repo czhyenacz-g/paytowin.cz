@@ -69,6 +69,12 @@ export interface ThemeColors {
   playerCardActive: string;
   playerCardNormal: string;
   playerCardHover: string;
+  /**
+   * Volitelný CSS gradient pro backdrop celé herní obrazovky (min-h-screen div).
+   * Pokud není uveden, použije se flat `pageBackground`.
+   * Vytváří "venue atmosphere" kolem boardu — tráva, beton, aréna.
+   */
+  arenaGradient?: string;
 }
 
 // ─── ThemeLabels ──────────────────────────────────────────────────────────────

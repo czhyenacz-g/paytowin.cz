@@ -1615,7 +1615,10 @@ export default function GameBoard({ gameCode }: Props) {
   }
 
   return (
-    <div className={`min-h-screen ${theme.colors.pageBackground}`}>
+    <div
+      className={`min-h-screen ${theme.colors.pageBackground}`}
+      style={theme.colors.arenaGradient ? { background: theme.colors.arenaGradient } : undefined}
+    >
 
       {/* ── Center Event Modal (card + offer) ───────────────────────────── */}
       {centerEvent && (

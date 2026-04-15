@@ -34,6 +34,7 @@ export const horseClassicTheme: Theme = {
     playerCardActive:  "border-green-700 bg-green-50 shadow-sm",
     playerCardNormal:  "border-stone-300 bg-amber-50",
     playerCardHover:   "border-amber-500 bg-amber-100 shadow-sm",
+    arenaGradient:     "radial-gradient(ellipse 140% 90% at 50% 50%, #fefce8 0%, #fef9c3 30%, #fef08a 65%, #fde047 100%)",
   },
   labels: {
     themeName:      "Klasické dostihy",

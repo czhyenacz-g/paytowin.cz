@@ -34,6 +34,7 @@ export const horseDayTheme: Theme = {
     playerCardActive:  "border-slate-900 bg-slate-50 shadow-sm",
     playerCardNormal:  "border-slate-200 bg-white",
     playerCardHover:   "border-blue-400 bg-blue-50 shadow-sm",
+    arenaGradient:     "radial-gradient(ellipse 140% 90% at 50% 50%, #f0fdf4 0%, #dcfce7 30%, #d1fae5 60%, #bbf7d0 100%)",
   },
   labels: {
     themeName:      "Dostihy — Den",

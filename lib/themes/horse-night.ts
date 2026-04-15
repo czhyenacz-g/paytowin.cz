@@ -34,6 +34,7 @@ export const horseNightTheme: Theme = {
     playerCardActive:  "border-amber-400 bg-slate-700 shadow-sm",
     playerCardNormal:  "border-slate-600 bg-slate-700",
     playerCardHover:   "border-blue-400 bg-slate-600 shadow-sm",
+    arenaGradient:     "radial-gradient(ellipse 140% 90% at 50% 50%, #0c1f11 0%, #071a0b 35%, #030d05 65%, #020617 100%)",
   },
   labels: {
     themeName:      "Dostihy — Noc",
