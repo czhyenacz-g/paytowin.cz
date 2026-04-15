@@ -53,6 +53,12 @@ export const THEME_ASSETS = {
 
 export type ThemeAssetKey = keyof typeof THEME_ASSETS;
 
+export const SHARED_THEME_ASSETS = {
+  placeholderCard: "placeholder-card.webp",
+} as const;
+
+export type SharedThemeAssetKey = keyof typeof SHARED_THEME_ASSETS;
+
 // ─── Path helpers ─────────────────────────────────────────────────────────────
 
 /**
@@ -73,6 +79,10 @@ export function themeAssetPath(themeId: string, asset: string): string {
   return `/themes/${themeId}/${asset}`;
 }
 
+export function sharedThemeAssetPath(asset: string): string {
+  return `/themes/_shared/${asset}`;
+}
+
 /**
  * racerAssetPath — vrátí cestu k obrázku závodníka podle jeho id.
  *
@@ -84,6 +94,36 @@ export function themeAssetPath(themeId: string, asset: string): string {
  */
 export function racerAssetPath(themeId: string, racerId: string): string {
   return `/themes/${themeId}/racer-${racerId}.webp`;
+}
+
+export function resolveFieldCardImagePath(
+  themeId: string,
+  fieldType: string,
+  override?: string
+): string | null {
+  if (override) return override;
+  const assetKey = fieldAssetKey(fieldType);
+  return assetKey ? themeAssetPath(themeId, THEME_ASSETS[assetKey]) : null;
+}
+
+export function resolveRacerCardImagePath(
+  themeId: string,
+  racerId?: string,
+  override?: string
+): string | null {
+  if (override) return override;
+  return racerId ? racerAssetPath(themeId, racerId) : null;
+}
+
+export function getSharedCardPlaceholderPath(): string {
+  return sharedThemeAssetPath(SHARED_THEME_ASSETS.placeholderCard);
+}
+
+export function buildCardBackgroundImageValue(primaryPath: string | null): string {
+  return [primaryPath, getSharedCardPlaceholderPath()]
+    .filter((path): path is string => Boolean(path))
+    .map((path) => `url("${path}")`)
+    .join(", ");
 }
 
 /**

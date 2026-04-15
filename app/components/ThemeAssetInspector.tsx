@@ -22,10 +22,12 @@ import React from "react";
 import { themeToManifest } from "@/lib/themes/manifest";
 import type { Theme } from "@/lib/themes";
 import {
+  buildCardBackgroundImageValue,
+  getSharedCardPlaceholderPath,
+  resolveFieldCardImagePath,
+  resolveRacerCardImagePath,
   themeAssetPath,
-  racerAssetPath,
   THEME_ASSETS,
-  fieldAssetKey,
 } from "@/lib/themes/assets";
 
 // ─── Typy polí ────────────────────────────────────────────────────────────────
@@ -154,24 +156,37 @@ export default function ThemeAssetInspector({ themeId, theme }: Props) {
   const previewPath   = themeAssetPath(themeId, THEME_ASSETS.preview);
   const hasBoardOverride = !!manifest.assets?.boardBackgroundImage;
 
+  const sharedPlaceholderPath = getSharedCardPlaceholderPath();
+
   const fieldRows = FIELD_TYPES.map(({ type }) => {
-    const key      = fieldAssetKey(type);
     const override = manifest.assets?.fieldTextures?.[type];
-    const path     = override ?? (key ? themeAssetPath(themeId, THEME_ASSETS[key]) : "—");
-    return { type, key, path, hasOverride: !!override };
+    const path = resolveFieldCardImagePath(themeId, type, override);
+    return {
+      type,
+      path,
+      hasOverride: !!override,
+      backgroundChain: `${buildCardBackgroundImageValue(path)} -> CSS fallback`,
+    };
   });
 
   const racerRows = manifest.racers.map((r) => {
-    const override    = manifest.assets?.racerImages?.[r.id];
-    const path        = override ?? racerAssetPath(themeId, r.id);
-    return { id: r.id, emoji: r.emoji, path, hasOverride: !!override };
+    const override = manifest.assets?.racerImages?.[r.id];
+    const path = resolveRacerCardImagePath(themeId, r.id, override);
+    return {
+      id: r.id,
+      emoji: r.emoji,
+      path,
+      hasOverride: !!override,
+      backgroundChain: `${buildCardBackgroundImageValue(path)} -> CSS fallback`,
+    };
   });
 
   // Všechny pathy pro paralelní check — spustí se jen při open && enabled
   const allPaths = [
     boardBgPath, centerBgPath, previewPath,
-    ...fieldRows.map((f) => f.path).filter((p) => p !== "—"),
-    ...racerRows.map((r) => r.path),
+    sharedPlaceholderPath,
+    ...fieldRows.map((f) => f.path).filter((p): p is string => Boolean(p)),
+    ...racerRows.map((r) => r.path).filter((p): p is string => Boolean(p)),
   ];
 
   const statuses = useAssetCheck(allPaths, enabled && open);
@@ -225,29 +240,33 @@ export default function ThemeAssetInspector({ themeId, theme }: Props) {
           <AssetRow label="center-bg" path={centerBgPath} status={statuses[centerBgPath]} />
           <AssetRow label="preview"   path={previewPath}  status={statuses[previewPath]} />
 
+          <SectionLabel>Shared fallbacky</SectionLabel>
+          <AssetRow label="card-ph" path={sharedPlaceholderPath} status={statuses[sharedPlaceholderPath]} highlight />
+
           {/* Pole */}
-          <SectionLabel>Pole — type → assetKey → path</SectionLabel>
-          {fieldRows.map(({ type, key, path, hasOverride }) => (
-            <div key={type} className="grid grid-cols-[90px_90px_16px_1fr] gap-1 items-baseline">
+          <SectionLabel>Pole — type → resolved path</SectionLabel>
+          {fieldRows.map(({ type, path, hasOverride, backgroundChain }) => (
+            <div key={type} className="grid grid-cols-[90px_16px_1fr] gap-1 items-baseline">
               <span className="text-slate-500">{type}</span>
-              <span className="text-slate-600">{key ?? "—"}</span>
-              <StatusDot status={path !== "—" ? statuses[path] : undefined} />
+              <StatusDot status={path ? statuses[path] : undefined} />
               <span className={`break-all ${hasOverride ? "text-emerald-400" : "text-slate-400"}`}>
-                {path}
+                {path ?? "—"}
                 {hasOverride && <span className="ml-1 text-emerald-700">← override</span>}
+                <span className="ml-1 text-slate-600">{backgroundChain}</span>
               </span>
             </div>
           ))}
 
           {/* Závodníci */}
           <SectionLabel>Závodníci — racer.id → path</SectionLabel>
-          {racerRows.map(({ id, emoji, path, hasOverride }) => (
+          {racerRows.map(({ id, emoji, path, hasOverride, backgroundChain }) => (
             <div key={id} className="grid grid-cols-[130px_16px_1fr] gap-1 items-baseline">
               <span className="text-slate-500">{emoji} {id}</span>
-              <StatusDot status={statuses[path]} />
+              <StatusDot status={path ? statuses[path] : undefined} />
               <span className={`break-all ${hasOverride ? "text-emerald-400" : "text-slate-400"}`}>
-                {path}
+                {path ?? "—"}
                 {hasOverride && <span className="ml-1 text-emerald-700">← override</span>}
+                <span className="ml-1 text-slate-600">{backgroundChain}</span>
               </span>
             </div>
           ))}

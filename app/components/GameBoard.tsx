@@ -3,7 +3,12 @@
 import React from "react";
 import { supabase } from "@/lib/supabase";
 import { getThemeById, getThemeRacers } from "@/lib/themes";
-import { themeAssetPath, THEME_ASSETS, fieldAssetKey } from "@/lib/themes/assets";
+import { themeToManifest } from "@/lib/themes/manifest";
+import {
+  buildCardBackgroundImageValue,
+  resolveFieldCardImagePath,
+  resolveRacerCardImagePath,
+} from "@/lib/themes/assets";
 import { loadThemeManifestAsync } from "@/lib/themes/loader";
 import { getBoardById } from "@/lib/board";
 import type { Field } from "@/lib/engine";
@@ -231,6 +236,7 @@ export default function GameBoard({ gameCode }: Props) {
 
   // Theme + FIELDS — odvozeno ze stavu themeId/boardId, aktualizuje se při každém renderu
   const theme = getThemeById(themeId);
+  const themeManifest = themeToManifest(theme);
   const board = getBoardById(boardId);
   const FIELDS = buildFields(board, getThemeRacers(theme));
   // Ref aby stale closures (Realtime subscriptions) vždy dostaly aktuální FIELDS
@@ -1843,13 +1849,18 @@ export default function GameBoard({ gameCode }: Props) {
                   if (isHoverHighlight) glows.push("drop-shadow(0 0 7px rgba(96,165,250,0.95))");
                   if (owner) glows.push("drop-shadow(0 0 5px rgba(99,102,241,0.8))");
 
-                  // Background image layer — odvozena konvenční cestou z theme + field type.
-                  // Pokud soubor neexistuje, browser 404 bg image tiše ignoruje → fallback na CSS barvy.
-                  // Overlay pro čitelnost textu bude součástí art passu, až budou reálné assety.
-                  const bgAssetKey = fieldAssetKey(field.type);
-                  const fieldBgPath = bgAssetKey
-                    ? themeAssetPath(themeId, THEME_ASSETS[bgAssetKey])
-                    : null;
+                  const fieldBgPrimaryPath = field.type === "racer"
+                    ? resolveRacerCardImagePath(
+                        themeId,
+                        field.racer?.id,
+                        field.racer?.id ? themeManifest.assets?.racerImages?.[field.racer.id] : undefined
+                      )
+                    : resolveFieldCardImagePath(
+                        themeId,
+                        field.type,
+                        themeManifest.assets?.fieldTextures?.[field.type]
+                      );
+                  const fieldBgImage = buildCardBackgroundImageValue(fieldBgPrimaryPath);
 
                   return (
                     <div
@@ -1865,11 +1876,9 @@ export default function GameBoard({ gameCode }: Props) {
                         zIndex: isHovered ? 100 : 2,
                         filter: glows.length > 0 ? glows.join(" ") : undefined,
                         cursor: "default",
-                        ...(fieldBgPath ? {
-                          backgroundImage: `url(${fieldBgPath})`,
-                          backgroundSize: "cover",
-                          backgroundPosition: "center",
-                        } : {}),
+                        backgroundImage: fieldBgImage,
+                        backgroundSize: "cover, cover",
+                        backgroundPosition: "center, center",
                       }}
                       onMouseEnter={() => setHoveredFieldIdx(field.index)}
                       onMouseLeave={() => setHoveredFieldIdx(null)}
