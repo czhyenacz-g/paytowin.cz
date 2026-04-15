@@ -5,7 +5,7 @@ export default function PravidlaPage() {
         <a href="/" className="mb-8 inline-block text-sm text-slate-400 hover:text-slate-600">← Zpět na úvod</a>
 
         <h1 className="text-3xl font-bold text-slate-800">Pravidla hry</h1>
-        <p className="mt-2 text-slate-500">PayToWin.cz — Dostihy, sázky a finanční chaos</p>
+        <p className="mt-2 text-slate-500">PayToWin.cz — Závody, sázky a finanční chaos</p>
 
         <div className="mt-8 space-y-8 text-slate-700">
 

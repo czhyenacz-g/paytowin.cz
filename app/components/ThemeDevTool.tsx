@@ -279,6 +279,168 @@ function Notification({ type, msg, onDismiss }: { type: NotifType; msg: string; 
   );
 }
 
+// ─── EditorExportPanel ───────────────────────────────────────────────────────
+
+/**
+ * EditorExportPanel — přehledný export editor state pro ruční commit.
+ *
+ * Tři záložky:
+ *   Board  — editableBoard jako JSON (vložit do lib/board/presets.ts)
+ *   Assets — liveManifest.assets jako JSON (vložit do theme souboru)
+ *   Vše    — oba bloky s komentáři (jeden velký copy pro diff/PR)
+ */
+function EditorExportPanel({
+  editableBoard,
+  liveManifest,
+  editableFieldTextures,
+  editableRacerImages,
+}: {
+  editableBoard: BoardConfig;
+  liveManifest: ThemeManifest;
+  editableFieldTextures: Record<string, string>;
+  editableRacerImages: Record<string, string>;
+}) {
+  type ExportTab = "board" | "assets" | "all";
+  const [tab, setTab] = React.useState<ExportTab>("board");
+  const [copied, setCopied] = React.useState<ExportTab | null>(null);
+
+  function copy(text: string, which: ExportTab) {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(which);
+      setTimeout(() => setCopied(null), 2000);
+    });
+  }
+
+  // Výsledný assets objekt — base z manifestu + editor overrides
+  const mergedAssets = React.useMemo(() => ({
+    ...(liveManifest.assets?.boardBackgroundImage !== undefined && {
+      boardBackgroundImage: liveManifest.assets.boardBackgroundImage,
+    }),
+    ...(liveManifest.assets?.previewImage !== undefined && {
+      previewImage: liveManifest.assets.previewImage,
+    }),
+    ...(Object.keys(editableFieldTextures).length > 0 && {
+      fieldTextures: editableFieldTextures,
+    }),
+    ...(Object.keys(editableRacerImages).length > 0 && {
+      racerImages: editableRacerImages,
+    }),
+  }), [liveManifest.assets, editableFieldTextures, editableRacerImages]);
+
+  const hasAssetChanges =
+    Object.keys(editableFieldTextures).length > 0 ||
+    Object.keys(editableRacerImages).length > 0;
+
+  const boardJson   = JSON.stringify(editableBoard, null, 2);
+  const assetsJson  = JSON.stringify(mergedAssets, null, 2);
+  const combinedText = [
+    `// ═══ BOARD CONFIG ═══`,
+    `// Vložit do lib/board/presets.ts (nebo nový soubor pro vlastní mapu):`,
+    `// export const ${editableBoard.id.toUpperCase().replace(/-/g, "_")}_BOARD: BoardConfig = ${boardJson};`,
+    ``,
+    `// ═══ ASSET MAPPING ═══`,
+    `// Vložit do theme souboru jako assets: { … } sekce:`,
+    assetsJson,
+  ].join("\n");
+
+  const TAB_LABELS: Record<ExportTab, string> = {
+    board:  "Board config",
+    assets: "Asset mapping",
+    all:    "Vše",
+  };
+
+  const content: Record<ExportTab, string> = {
+    board:  boardJson,
+    assets: assetsJson,
+    all:    combinedText,
+  };
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-4 py-2.5">
+        <span className="text-xs font-semibold uppercase tracking-widest text-slate-500">
+          Export
+        </span>
+        <div className="flex items-center gap-3">
+          {/* Záložky */}
+          <div className="flex rounded-lg border border-slate-200 bg-white overflow-hidden text-xs">
+            {(["board", "assets", "all"] as ExportTab[]).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                className={`px-3 py-1.5 font-medium transition-colors border-l first:border-l-0 border-slate-200 ${
+                  tab === t ? "bg-slate-800 text-white" : "text-slate-500 hover:bg-slate-50"
+                }`}
+              >
+                {TAB_LABELS[t]}
+                {t === "assets" && hasAssetChanges && (
+                  <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-violet-500 align-middle" />
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Copy button */}
+          <button
+            onClick={() => copy(content[tab], tab)}
+            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+              copied === tab
+                ? "bg-emerald-100 text-emerald-700"
+                : "bg-indigo-600 text-white hover:bg-indigo-700"
+            }`}
+          >
+            {copied === tab ? "✓ Zkopírováno!" : "Kopírovat"}
+          </button>
+        </div>
+      </div>
+
+      {/* Nápověda k záložce */}
+      <div className="border-b border-slate-100 bg-slate-50/60 px-4 py-1.5 text-[10px] text-slate-400">
+        {tab === "board"  && "→ vložit do lib/board/presets.ts jako export const … : BoardConfig = { … }"}
+        {tab === "assets" && (
+          hasAssetChanges
+            ? `→ vložit do lib/themes/${liveManifest.meta.id}.ts jako assets: { … } sekce`
+            : "— žádné asset overrides zatím nebyly nastaveny"
+        )}
+        {tab === "all"    && "→ oba bloky s komentáři — vhodné pro PR popis nebo diff review"}
+      </div>
+
+      {/* JSON preview */}
+      <pre className="px-4 py-3 font-mono text-[10px] leading-relaxed text-slate-600 max-h-64 overflow-y-auto whitespace-pre-wrap break-all">
+        {content[tab]}
+      </pre>
+
+      {/* Asset diff summary — jen na záložce Assets */}
+      {tab === "assets" && (
+        <div className="border-t border-slate-100 px-4 py-2.5 space-y-1">
+          <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">
+            Změněné textury
+          </div>
+          {!hasAssetChanges ? (
+            <div className="text-[10px] text-slate-400 italic">Žádné změny oproti výchozímu manifestu.</div>
+          ) : (
+            <div className="space-y-0.5">
+              {Object.entries(editableFieldTextures).map(([type, path]) => (
+                <div key={type} className="flex items-center gap-2 text-[10px]">
+                  <span className="font-mono text-violet-600 w-24 shrink-0">{type}</span>
+                  <span className="text-slate-400 truncate">{path}</span>
+                </div>
+              ))}
+              {Object.entries(editableRacerImages).map(([id, path]) => (
+                <div key={id} className="flex items-center gap-2 text-[10px]">
+                  <span className="font-mono text-indigo-600 w-24 shrink-0">racer:{id}</span>
+                  <span className="text-slate-400 truncate">{path}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function ThemeDevTool() {
@@ -927,25 +1089,15 @@ export default function ThemeDevTool() {
                 </div>
               </div>
 
-              {/* JSON export — lokální state, pro ruční commit do presets.ts */}
-              <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                    Export board JSON
-                  </span>
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(JSON.stringify(editableBoard, null, 2));
-                    }}
-                    className="text-xs text-indigo-600 hover:text-indigo-800 underline"
-                  >
-                    Zkopírovat do schránky
-                  </button>
-                </div>
-                <pre className="text-[10px] font-mono text-slate-500 leading-relaxed max-h-32 overflow-y-auto whitespace-pre-wrap break-all">
-                  {JSON.stringify(editableBoard, null, 2)}
-                </pre>
-              </div>
+              {/* Export — board config + asset mapping */}
+              {liveManifest && (
+                <EditorExportPanel
+                  editableBoard={editableBoard}
+                  liveManifest={liveManifest}
+                  editableFieldTextures={editableFieldTextures}
+                  editableRacerImages={editableRacerImages}
+                />
+              )}
             </div>
           )}
         </main>
