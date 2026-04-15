@@ -2310,9 +2310,7 @@ export default function GameBoard({ gameCode }: Props) {
         </div>
       </div>
       <BuildInfoBar theme={theme} boardId={boardId} />
-      {process.env.NODE_ENV === "development" && (
-        <ThemeAssetInspector themeId={themeId} theme={theme} />
-      )}
+      <ThemeAssetInspector themeId={themeId} theme={theme} />
       <div className="py-2 flex items-center justify-center gap-4 text-xs text-slate-400">
         <a href="/pravidla" className="hover:text-slate-600 underline">Pravidla</a>
         <span>·</span>

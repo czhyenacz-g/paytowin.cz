@@ -9,7 +9,8 @@
  *   - field type → asset key → resolved path (nebo manifest override)
  *   - závodníci → asset path (nebo manifest override)
  *
- * POUZE pro development prostředí. V produkci se nerendruje — viz GameBoard.tsx.
+ * Zapnutí:  přidej ?isdevelop=1 do URL (nebo &isdevelop=1)
+ * Vypnutí:  ?isdevelop=0 nebo odstraň parametr
  *
  * Collapsible — klikni na hlavičku.
  */
@@ -64,9 +65,19 @@ interface Props {
 }
 
 export default function ThemeAssetInspector({ themeId, theme }: Props) {
+  const [enabled, setEnabled] = React.useState(false);
   const [open, setOpen] = React.useState(false);
 
+  // Čte ?isdevelop=1 z URL — bezpečně jen na klientu
+  React.useEffect(() => {
+    const param = new URLSearchParams(window.location.search).get("isdevelop");
+    setEnabled(param === "1");
+  }, []);
+
   const manifest = themeToManifest(theme);
+
+  // Pokud parametr není aktivní, nerenderujeme nic
+  if (!enabled) return null;
   const basePath = `/themes/${themeId}/`;
 
   // Board assety — manifest override bere přednost (kompatibilita s DB themes)
