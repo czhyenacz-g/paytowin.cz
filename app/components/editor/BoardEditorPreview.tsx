@@ -77,6 +77,7 @@ const FIELD_POSITIONS: React.CSSProperties[] = [
 interface Props {
   board: BoardConfig;
   manifest: ThemeManifest;
+  assetVersion?: number;
   /**
    * Vybraný index pole. Pokud je předán (i jako null), komponenta je controlled —
    * parent drží výběr. Pokud je undefined, komponenta drží vlastní interní stav.
@@ -91,6 +92,7 @@ interface Props {
 export default function BoardEditorPreview({
   board,
   manifest,
+  assetVersion = 0,
   selectedIndex: controlledIndex,
   onFieldClick,
 }: Props) {
@@ -106,7 +108,13 @@ export default function BoardEditorPreview({
     [board, manifest.racers],
   );
 
-  const boardBgImage = manifest.assets?.boardBackgroundImage;
+  function withCacheBust(path: string | null | undefined): string | null {
+    if (!path) return null;
+    const separator = path.includes("?") ? "&" : "?";
+    return `${path}${separator}v=${assetVersion}`;
+  }
+
+  const boardBgImage = withCacheBust(manifest.assets?.boardBackgroundImage);
 
   function handleFieldClick(field: Field) {
     if (!isControlled) setInternalIndex(field.index);
@@ -173,7 +181,7 @@ export default function BoardEditorPreview({
                   manifest.assets?.fieldTextures?.[field.type],
                 );
 
-          const bgImage = buildCardBackgroundImageValue(primaryPath);
+          const bgImage = buildCardBackgroundImageValue(withCacheBust(primaryPath));
 
           return (
             <div

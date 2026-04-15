@@ -96,6 +96,10 @@ export function racerAssetPath(themeId: string, racerId: string): string {
   return `/themes/${themeId}/racer-${racerId}.webp`;
 }
 
+export function racerAssetFilename(racerId: string): string {
+  return `racer-${racerId}.webp`;
+}
+
 export function resolveFieldCardImagePath(
   themeId: string,
   fieldType: string,

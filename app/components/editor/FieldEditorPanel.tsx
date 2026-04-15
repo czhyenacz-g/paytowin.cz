@@ -50,8 +50,10 @@ export interface AssetSectionConfig {
   uploadConfig?: {
     /** ID tématu, např. "horse-day" — určuje cílovou složku */
     themeId: string;
-    /** Typ pole, např. "coins_gain" — určuje canonical filename */
-    fieldType: string;
+    /** Typ pole, např. "coins_gain" — určuje canonical filename pro field assety */
+    fieldType?: string;
+    /** ID závodníka, např. "divoka_ruze" — určuje canonical filename pro racer assety */
+    racerId?: string;
     /** Voláno po úspěšném uploadu s WebP (nebo PNG fallback) cestou */
     onUploaded: (webpPath: string) => void;
   };
@@ -432,7 +434,7 @@ function AssetSection({
     // Reset input tak, aby šlo znovu vybrat stejný soubor
     if (fileInputRef.current) fileInputRef.current.value = "";
 
-    const { themeId, fieldType: ft, onUploaded } = section.uploadConfig;
+    const { themeId, fieldType: ft, racerId, onUploaded } = section.uploadConfig;
 
     try {
       // Krok 1: resize na klientu
@@ -443,7 +445,8 @@ function AssetSection({
       setUploadState({ status: "uploading" });
       const form = new FormData();
       form.append("themeId",   themeId);
-      form.append("fieldType", ft);
+      if (ft) form.append("fieldType", ft);
+      if (racerId) form.append("racerId", racerId);
       form.append("png",  new File([pngBlob],  "upload.png",  { type: "image/png"  }));
       form.append("webp", new File([webpBlob], "upload.webp", { type: "image/webp" }));
 

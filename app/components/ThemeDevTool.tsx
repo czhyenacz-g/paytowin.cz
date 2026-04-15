@@ -458,6 +458,7 @@ export default function ThemeDevTool() {
   const [previewManifest, setPreviewManifest] = React.useState<ThemeManifest | null>(null);
   const [showBoardPreview, setShowBoardPreview] = React.useState(false);
   const [boardPreviewManifest, setBoardPreviewManifest] = React.useState<ThemeManifest | null>(null);
+  const [previewAssetVersion, setPreviewAssetVersion] = React.useState(0);
   // Editovatelná kopie board configu — živá jen v local state, nezapisuje se do presets.ts
   const [editableBoard, setEditableBoard] = React.useState<BoardConfig>(() => ({
     ...SMALL_BOARD,
@@ -518,6 +519,14 @@ export default function ThemeDevTool() {
             return next;
           });
         },
+        uploadConfig: racerId ? {
+          themeId,
+          racerId,
+          onUploaded: (webpPath: string) => {
+            setEditableRacerImages((prev) => ({ ...prev, [racerId]: webpPath }));
+            setPreviewAssetVersion((prev) => prev + 1);
+          },
+        } : undefined,
       };
     } else {
       // Ostatní pole: asset je per-type
@@ -544,6 +553,7 @@ export default function ThemeDevTool() {
           fieldType: fieldConfig.type,
           onUploaded: (webpPath: string) => {
             setEditableFieldTextures((prev) => ({ ...prev, [fieldConfig.type]: webpPath }));
+            setPreviewAssetVersion((prev) => prev + 1);
           },
         },
       };
@@ -672,6 +682,7 @@ export default function ThemeDevTool() {
     const manifest = parseJson();
     if (!manifest) return;
     setBoardPreviewManifest(manifest);
+    setPreviewAssetVersion(0);
     setShowBoardPreview(true);
     setSelectedFieldIndex(null);
     setEditableBoard({
@@ -1053,6 +1064,7 @@ export default function ThemeDevTool() {
                     <BoardEditorPreview
                       board={editableBoard}
                       manifest={liveManifest}
+                      assetVersion={previewAssetVersion}
                       selectedIndex={selectedFieldIndex}
                       onFieldClick={(field) => setSelectedFieldIndex(field.index)}
                     />
