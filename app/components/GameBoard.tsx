@@ -3,6 +3,7 @@
 import React from "react";
 import { supabase } from "@/lib/supabase";
 import { getThemeById, getThemeRacers } from "@/lib/themes";
+import { themeAssetPath, THEME_ASSETS, fieldAssetKey } from "@/lib/themes/assets";
 import { loadThemeManifestAsync } from "@/lib/themes/loader";
 import { getBoardById } from "@/lib/board";
 import type { Field } from "@/lib/engine";
@@ -1819,6 +1820,14 @@ export default function GameBoard({ gameCode }: Props) {
                 if (isHoverHighlight) glows.push("drop-shadow(0 0 7px rgba(96,165,250,0.95))");
                 if (owner) glows.push("drop-shadow(0 0 5px rgba(99,102,241,0.8))");
 
+                // Background image layer — odvozena konvenční cestou z theme + field type.
+                // Pokud soubor neexistuje, browser 404 bg image tiše ignoruje → fallback na CSS barvy.
+                // Overlay pro čitelnost textu bude součástí art passu, až budou reálné assety.
+                const bgAssetKey = fieldAssetKey(field.type);
+                const fieldBgPath = bgAssetKey
+                  ? themeAssetPath(themeId, THEME_ASSETS[bgAssetKey])
+                  : null;
+
                 return (
                   <div
                     key={field.index}
@@ -1834,12 +1843,19 @@ export default function GameBoard({ gameCode }: Props) {
                       zIndex: isHovered ? 100 : 2,
                       filter: glows.length > 0 ? glows.join(" ") : undefined,
                       cursor: "default",
+                      ...(fieldBgPath ? {
+                        backgroundImage: `url(${fieldBgPath})`,
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                      } : {}),
                     }}
                     onMouseEnter={() => setHoveredFieldIdx(field.index)}
                     onMouseLeave={() => setHoveredFieldIdx(null)}
                   >
+                    {/* Content wrapper — relative z-10 zajišťuje, že content zůstane nad bg image
+                        a budoucím overlay layerem (bude přidán spolu s reálnými assety). */}
                     <div
-                      className="flex flex-col items-center gap-0.5 px-1 w-full"
+                      className="relative z-10 flex flex-col items-center gap-0.5 px-1 w-full"
                       style={{ transform: `rotate(${-rotDeg}deg)` }}
                     >
                       <div className={`leading-none ${isHovered ? "text-xl" : "text-base"}`}>{field.emoji}</div>
