@@ -179,6 +179,7 @@ export default function GameBoard({ gameCode }: Props) {
   const [animatingPlayerIdx, setAnimatingPlayerIdx] = React.useState<number | null>(null);
   const [trailFields, setTrailFields] = React.useState<number[]>([]);
   const [hoveredPlayerId, setHoveredPlayerId] = React.useState<string | null>(null);
+  const [hoveredFieldIdx, setHoveredFieldIdx] = React.useState<number | null>(null);
   const [soundEnabled, setSoundEnabled] = React.useState(true);
   const [racerGuideDismissed, setRacerGuideDismissed] = React.useState(false);
   const [staminaGuideDismissed, setStaminaGuideDismissed] = React.useState(false);
@@ -1767,7 +1768,7 @@ export default function GameBoard({ gameCode }: Props) {
             </div>
 
             <div
-              className={`relative mx-auto aspect-square w-full max-w-[760px] rounded-[40px] border-2 ${theme.colors.boardSurfaceBorder} ${theme.colors.boardSurface}`}
+              className={`relative mx-auto aspect-square w-full max-w-[760px] overflow-hidden rounded-[40px] border-2 ${theme.colors.boardSurfaceBorder} ${theme.colors.boardSurface}`}
               style={{
                 ...(boardBgUrl ? { backgroundImage: `url(${boardBgUrl})`, backgroundSize: "cover", backgroundPosition: "center" } : {}),
                 boxShadow: "inset 0 2px 24px rgba(0,0,0,0.09), 0 4px 32px rgba(0,0,0,0.10)",
@@ -1801,43 +1802,58 @@ export default function GameBoard({ gameCode }: Props) {
 
               {FIELDS.map((field) => {
                 const pos = FIELD_POSITIONS[field.index];
-                const playersHere = fieldPlayers(field.index);
                 const isTrail = trailFields.includes(field.index);
                 const isHoverHighlight = hoveredPlayerId
                   ? displayPlayers.some(p => p.id === hoveredPlayerId && p.position === field.index && !isBankrupt(p))
                   : false;
                 const owner = field.type === "racer" && field.racer ? racerOwnership[racerOwnershipKey(field.racer)] ?? null : null;
                 const detail = getFieldDetail(field, owner?.name ?? null);
+                const isHovered = hoveredFieldIdx === field.index;
+
+                // Rotace segmentu: 0° = RIGHT, segment „spodek" míří ven od středu
+                const rotDeg = field.index * (360 / 21) - 90;
+
+                const glows: string[] = [];
+                if (isTrail) glows.push("drop-shadow(0 0 7px rgba(251,191,36,0.95))");
+                if (isHoverHighlight) glows.push("drop-shadow(0 0 7px rgba(96,165,250,0.95))");
+                if (owner) glows.push("drop-shadow(0 0 5px rgba(99,102,241,0.8))");
+
                 return (
                   <div
                     key={field.index}
-                    className={`group absolute flex flex-col items-center justify-center rounded-lg border-2 transition-all duration-150 hover:z-50 hover:scale-[1.4] hover:shadow-xl hover:shadow-black/20 ${theme.colors.fieldStyles[field.type]} ${isTrail ? "ring-2 ring-amber-400 ring-offset-1 brightness-110" : ""} ${isHoverHighlight ? "ring-2 ring-blue-400 ring-offset-2 brightness-110" : ""} ${owner ? "ring-2 ring-indigo-500 ring-offset-1" : ""}`}
-                    style={pos}
+                    className={`absolute flex flex-col items-center justify-center border-2 ${theme.colors.fieldStyles[field.type]}`}
+                    style={{
+                      top: pos.top,
+                      left: pos.left,
+                      width: "78px",
+                      height: "110px",
+                      transform: `translate(-50%, -50%) rotate(${rotDeg}deg) scale(${isHovered ? 2.2 : 1.0})`,
+                      clipPath: "polygon(18% 0%, 82% 0%, 100% 100%, 0% 100%)",
+                      transition: "transform 0.2s ease-out",
+                      zIndex: isHovered ? 100 : 2,
+                      filter: glows.length > 0 ? glows.join(" ") : undefined,
+                      cursor: "default",
+                    }}
+                    onMouseEnter={() => setHoveredFieldIdx(field.index)}
+                    onMouseLeave={() => setHoveredFieldIdx(null)}
                   >
-                    {/* Default state — stručný */}
-                    <div className="flex w-full flex-col items-center px-0.5 group-hover:hidden">
-                      <div className="text-base leading-none">{field.emoji}</div>
-                      <div className="text-[10px] font-bold leading-tight text-center mt-0.5">
+                    <div
+                      className="flex flex-col items-center gap-0.5 px-1 w-full"
+                      style={{ transform: `rotate(${-rotDeg}deg)` }}
+                    >
+                      <div className={`leading-none ${isHovered ? "text-xl" : "text-base"}`}>{field.emoji}</div>
+                      <div className={`font-bold leading-tight text-center ${isHovered ? "text-[9px] max-w-[64px]" : "text-[9px] max-w-[52px]"}`}>
                         {field.type === "start" ? "START" : field.label}
                       </div>
-                      {owner && <div className={`h-1.5 w-1.5 rounded-full mt-0.5 ${owner.color}`} />}
-                    </div>
-
-                    {/* Hover state — rozbalený detail přímo v segmentu */}
-                    <div className="hidden w-full flex-col items-center gap-0.5 px-0.5 py-0.5 group-hover:flex">
-                      <div className="text-sm leading-none">{field.emoji}</div>
-                      <div className="text-[8px] font-black leading-tight text-center line-clamp-2">
-                        {field.type === "start" ? "START" : field.label}
-                      </div>
-                      {detail && (
-                        <div className="text-[7px] leading-tight text-center opacity-80 line-clamp-2 px-0.5">
+                      {isHovered && detail && (
+                        <div className="text-[7px] leading-tight text-center opacity-80 max-w-[64px] line-clamp-3 px-0.5">
                           {detail}
                         </div>
                       )}
                       {owner && (
                         <div className="flex items-center gap-0.5">
                           <div className={`h-1.5 w-1.5 rounded-full ${owner.color}`} />
-                          <span className="text-[6px] opacity-70 max-w-[44px] truncate">{owner.name}</span>
+                          {isHovered && <span className="text-[6px] truncate max-w-[50px] opacity-70">{owner.name}</span>}
                         </div>
                       )}
                     </div>
