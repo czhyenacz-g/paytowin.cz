@@ -1860,7 +1860,7 @@ export default function GameBoard({ gameCode }: Props) {
                         left: pos.left,
                         width: "82px",
                         height: "112px",
-                        transform: `translate(-50%, -50%) rotate(${rotDeg}deg) scale(${isHovered ? 1.92 : 1.0})`,
+                        transform: `translate(-50%, -50%) rotate(${rotDeg}deg) scale(${isHovered ? 2.8 : 1.0})`,
                         transition: "transform 0.18s ease-out, box-shadow 0.18s ease-out",
                         zIndex: isHovered ? 100 : 2,
                         filter: glows.length > 0 ? glows.join(" ") : undefined,
@@ -1882,19 +1882,19 @@ export default function GameBoard({ gameCode }: Props) {
                         className="relative z-10 flex w-full flex-col items-center gap-1 px-2 py-2"
                         style={{ transform: `rotate(${-rotDeg}deg)` }}
                       >
-                        <div className={`leading-none ${isHovered ? "text-2xl" : "text-lg"}`}>{field.emoji}</div>
-                        <div className={`font-bold uppercase leading-tight text-center tracking-[0.08em] ${tone.titleText} ${isHovered ? "text-[10px] max-w-[100px]" : "text-[9px] max-w-[60px]"}`}>
+                        <div className={`leading-none ${isHovered ? "text-[1.75rem]" : "text-lg"}`}>{field.emoji}</div>
+                        <div className={`font-bold uppercase leading-tight text-center tracking-[0.08em] ${tone.titleText} ${isHovered ? "text-[11px] max-w-[132px]" : "text-[9px] max-w-[60px]"}`}>
                           {field.type === "start" ? "START" : field.label}
                         </div>
                         {isHovered && detail && (
-                          <div className={`max-w-[104px] rounded-[2px] px-2 py-1 text-[9px] leading-tight text-center line-clamp-4 ${tone.detailPanel} ${tone.detailText}`}>
+                          <div className={`max-w-[136px] rounded-[2px] px-2.5 py-1.5 text-[10px] leading-tight text-center line-clamp-4 ${tone.detailPanel} ${tone.detailText}`}>
                             {detail}
                           </div>
                         )}
                         {owner && (
                           <div className="flex items-center gap-1">
                             <div className={`h-1.5 w-1.5 rounded-full ${owner.color}`} />
-                            {isHovered && <span className={`max-w-[84px] truncate text-[7px] font-semibold ${tone.ownerText}`}>{owner.name}</span>}
+                            {isHovered && <span className={`max-w-[112px] truncate text-[8px] font-semibold ${tone.ownerText}`}>{owner.name}</span>}
                           </div>
                         )}
                       </div>
