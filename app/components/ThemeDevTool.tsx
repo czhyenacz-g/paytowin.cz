@@ -12,6 +12,8 @@ import {
   setPublicAction,
 } from "@/app/admin/themes/dev/actions";
 import type { ThemeMeta } from "@/app/admin/themes/dev/actions";
+import { SMALL_BOARD } from "@/lib/board/presets";
+import BoardEditorPreview from "@/app/components/editor/BoardEditorPreview";
 
 // ─── Default template ─────────────────────────────────────────────────────────
 
@@ -282,6 +284,8 @@ export default function ThemeDevTool() {
   const [validation, setValidation] = React.useState<{ ok: boolean; messages: string[] } | null>(null);
   const [showPreview, setShowPreview] = React.useState(false);
   const [previewManifest, setPreviewManifest] = React.useState<ThemeManifest | null>(null);
+  const [showBoardPreview, setShowBoardPreview] = React.useState(false);
+  const [boardPreviewManifest, setBoardPreviewManifest] = React.useState<ThemeManifest | null>(null);
 
   // Actions
   const [saving, setSaving] = React.useState(false);
@@ -399,6 +403,13 @@ export default function ThemeDevTool() {
     if (!manifest) return;
     setPreviewManifest(manifest);
     setShowPreview(true);
+  }
+
+  function handleBoardPreview() {
+    const manifest = parseJson();
+    if (!manifest) return;
+    setBoardPreviewManifest(manifest);
+    setShowBoardPreview(true);
   }
 
   async function handleSave() {
@@ -655,6 +666,10 @@ export default function ThemeDevTool() {
                 className="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700">
                 Preview
               </button>
+              <button onClick={handleBoardPreview}
+                className="rounded-lg bg-violet-600 px-3 py-2 text-sm font-medium text-white hover:bg-violet-700">
+                Board
+              </button>
               <button onClick={handleDuplicate}
                 className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
                 Duplikovat
@@ -732,6 +747,34 @@ export default function ThemeDevTool() {
                 </button>
               </div>
               <ThemePreview manifest={previewManifest} />
+            </div>
+          )}
+
+          {/* Board Preview */}
+          {showBoardPreview && boardPreviewManifest && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-slate-700">Board Preview</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-[11px] text-slate-400">
+                    preset: <code className="font-mono">{SMALL_BOARD.id}</code> · {SMALL_BOARD.fieldCount} polí
+                  </span>
+                  <button
+                    onClick={() => setShowBoardPreview(false)}
+                    className="text-xs text-slate-400 hover:text-slate-600 underline"
+                  >
+                    Zavřít
+                  </button>
+                </div>
+              </div>
+              <BoardEditorPreview
+                board={SMALL_BOARD}
+                manifest={boardPreviewManifest}
+                onFieldClick={(field) => {
+                  // Fáze 1: log — fáze 2 otevře FieldEditorPanel
+                  console.log("[BoardEditorPreview] field clicked:", field);
+                }}
+              />
             </div>
           )}
         </main>
