@@ -6,17 +6,43 @@
  * Zobrazí se po kliknutí na pole v BoardEditorPreview.
  * Změny se šíří nahoru přes onChange — panel sám nic neukládá.
  *
- * Dvě vrstvy:
+ * Vrstvy:
  *   Formulář — přívětivé inputy pro label, emoji, type, amount
  *   JSON      — raw editor celého BoardFieldConfig objektu
+ *   Assets    — vždy viditelná sekce s asset/texture mappingem pro dané pole
  *
  * Budoucí fáze:
- *   - sekce Assets: override fieldTextures / racerImages per pole
- *   - upload obrázku přímo z panelu
+ *   - upload obrázku přímo z asset sekce
  */
 
 import React from "react";
 import type { BoardFieldConfig, BoardFieldType } from "@/lib/board/types";
+
+// ─── AssetSection config ──────────────────────────────────────────────────────
+
+/**
+ * AssetSectionConfig — informace o asset vrstvě pro jedno pole.
+ *
+ * Počítá ThemeDevTool z liveManifest + editableTextures/Images.
+ * FieldEditorPanel jen zobrazí a předá změny nahoru přes onOverrideChange.
+ */
+export interface AssetSectionConfig {
+  /** Asset klíč dle THEME_ASSETS, např. "fieldGain". null = neznámý typ. */
+  assetKey: string | null;
+  /** Kanonický název souboru, např. "field-gain.webp" nebo "racer-divoka_ruze.webp" */
+  canonicalFile: string | null;
+  /** Aktuálně resolved cesta (override ? override : canonical path) */
+  resolvedPath: string | null;
+  /** Momentální override z editovatelného manifestu. undefined = není nastaven. */
+  override: string | undefined;
+  /**
+   * Voláno při změně override.
+   * undefined = odeber override, použij canonical fallback.
+   */
+  onOverrideChange: (override: string | undefined) => void;
+  /** Pro racer pole: id závodníka pro zobrazení v UI */
+  racerId?: string;
+}
 
 // ─── Konstanty ────────────────────────────────────────────────────────────────
 
@@ -51,13 +77,15 @@ interface Props {
   field: BoardFieldConfig;
   /** Voláno okamžitě při každé změně. Parent drží stav. */
   onChange: (updated: BoardFieldConfig) => void;
+  /** Asset vrstva — computed ThemeDevToolem. Pokud undefined, sekce se nezobrazí. */
+  assetSection?: AssetSectionConfig;
 }
 
 type Tab = "form" | "json";
 
 // ─── Komponenta ───────────────────────────────────────────────────────────────
 
-export default function FieldEditorPanel({ field, onChange }: Props) {
+export default function FieldEditorPanel({ field, onChange, assetSection }: Props) {
   const [tab, setTab] = React.useState<Tab>("form");
   const [rawJson, setRawJson] = React.useState(() => JSON.stringify(field, null, 2));
   const [jsonError, setJsonError] = React.useState<string | null>(null);
@@ -282,6 +310,155 @@ export default function FieldEditorPanel({ field, onChange }: Props) {
             </div>
           </div>
         )}
+      </div>
+
+      {/* ── Asset sekce — vždy viditelná, nezávislá na tabu ── */}
+      {assetSection && <AssetSection section={assetSection} fieldType={field.type} />}
+    </div>
+  );
+}
+
+// ─── AssetSection subkomponenta ───────────────────────────────────────────────
+
+function AssetSection({
+  section,
+  fieldType,
+}: {
+  section: AssetSectionConfig;
+  fieldType: string;
+}) {
+  const [imgOk, setImgOk] = React.useState(false);
+  const [overrideInput, setOverrideInput] = React.useState(section.override ?? "");
+
+  // Sync input při výběru nového pole (section se změní)
+  React.useEffect(() => {
+    setOverrideInput(section.override ?? "");
+    setImgOk(false);
+  }, [section.assetKey, section.racerId]); // klíče identifikující konkrétní asset slot
+
+  const isOverrideActive = Boolean(section.override);
+  const isUsingFallback = !section.resolvedPath;
+
+  function handleApplyOverride() {
+    const trimmed = overrideInput.trim();
+    section.onOverrideChange(trimmed || undefined);
+  }
+
+  function handleClearOverride() {
+    setOverrideInput("");
+    section.onOverrideChange(undefined);
+  }
+
+  return (
+    <div className="border-t border-slate-100 px-4 py-3 space-y-3">
+      {/* Header */}
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+          Texture / Asset
+        </span>
+        {isOverrideActive && (
+          <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-medium text-violet-700">
+            override aktivní
+          </span>
+        )}
+        {!isOverrideActive && !isUsingFallback && (
+          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-500">
+            canonical
+          </span>
+        )}
+        {isUsingFallback && (
+          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] text-amber-700">
+            fallback placeholder
+          </span>
+        )}
+      </div>
+
+      <div className="flex gap-3 items-start">
+        {/* Miniatura — ukáže se jen pokud asset fyzicky existuje */}
+        <div className="relative shrink-0 h-14 w-10 rounded border border-slate-200 bg-slate-50 overflow-hidden">
+          {section.resolvedPath && (
+            <img
+              src={section.resolvedPath}
+              alt=""
+              className={`h-full w-full object-cover transition-opacity ${imgOk ? "opacity-100" : "opacity-0"}`}
+              onLoad={() => setImgOk(true)}
+              onError={() => setImgOk(false)}
+            />
+          )}
+          {!imgOk && (
+            <div className="absolute inset-0 flex items-center justify-center text-[16px]">
+              🖼
+            </div>
+          )}
+        </div>
+
+        {/* Info */}
+        <div className="flex-1 space-y-1 min-w-0">
+          {/* Asset key + canonical */}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+            {section.assetKey && (
+              <span className="font-mono text-[10px] text-slate-400">{section.assetKey}</span>
+            )}
+            {section.racerId && (
+              <span className="font-mono text-[10px] text-slate-400">racer: {section.racerId}</span>
+            )}
+            {section.canonicalFile && (
+              <span className="font-mono text-[10px] text-slate-500 bg-slate-100 px-1 rounded">
+                {section.canonicalFile}
+              </span>
+            )}
+          </div>
+
+          {/* Resolved path */}
+          <div
+            className="font-mono text-[10px] break-all leading-relaxed text-slate-500"
+            title={section.resolvedPath ?? "—"}
+          >
+            {section.resolvedPath
+              ? <span className={isOverrideActive ? "text-violet-600" : ""}>{section.resolvedPath}</span>
+              : <span className="italic text-slate-400">— žádná cesta</span>}
+          </div>
+
+          {/* Field type info — výsledek platí pro všechna pole tohoto type */}
+          {fieldType !== "racer" && (
+            <div className="text-[10px] text-amber-600">
+              Platí pro všechna pole type <code className="font-mono">{fieldType}</code> v tomto tématu
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Override input */}
+      <div className="space-y-1.5">
+        <label className="block text-xs font-medium text-slate-500">
+          Override cesta{" "}
+          <span className="font-normal text-slate-400">(prázdné = canonical)</span>
+        </label>
+        <div className="flex gap-1.5">
+          <input
+            type="text"
+            value={overrideInput}
+            onChange={(e) => setOverrideInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") handleApplyOverride(); }}
+            placeholder={section.canonicalFile ? `/themes/moje-theme/${section.canonicalFile}` : "/themes/moje-theme/..."}
+            className="flex-1 min-w-0 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-violet-300 placeholder:text-slate-400"
+          />
+          <button
+            onClick={handleApplyOverride}
+            className="shrink-0 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-violet-700"
+          >
+            Použít
+          </button>
+          {isOverrideActive && (
+            <button
+              onClick={handleClearOverride}
+              className="shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+              title="Odeber override, vrátit na canonical"
+            >
+              ✕
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

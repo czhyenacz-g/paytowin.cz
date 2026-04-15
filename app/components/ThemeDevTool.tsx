@@ -16,6 +16,14 @@ import { SMALL_BOARD } from "@/lib/board/presets";
 import type { BoardConfig, BoardFieldConfig } from "@/lib/board/types";
 import BoardEditorPreview from "@/app/components/editor/BoardEditorPreview";
 import FieldEditorPanel from "@/app/components/editor/FieldEditorPanel";
+import type { AssetSectionConfig } from "@/app/components/editor/FieldEditorPanel";
+import { buildFields } from "@/lib/engine";
+import {
+  THEME_ASSETS,
+  fieldAssetKey,
+  resolveFieldCardImagePath,
+  resolveRacerCardImagePath,
+} from "@/lib/themes/assets";
 
 // ─── Default template ─────────────────────────────────────────────────────────
 
@@ -294,6 +302,83 @@ export default function ThemeDevTool() {
     fields: SMALL_BOARD.fields.map((f) => ({ ...f })),
   }));
   const [selectedFieldIndex, setSelectedFieldIndex] = React.useState<number | null>(null);
+  // Editovatelné asset overrides — nezávislé na boardPreviewManifest
+  // fieldTextures: type → custom path, racerImages: racerId → custom path
+  const [editableFieldTextures, setEditableFieldTextures] = React.useState<Record<string, string>>({});
+  const [editableRacerImages, setEditableRacerImages] = React.useState<Record<string, string>>({});
+
+  // Živý manifest pro BoardEditorPreview — base manifest + asset overrides
+  const liveManifest = React.useMemo<ThemeManifest | null>(() => {
+    if (!boardPreviewManifest) return null;
+    return {
+      ...boardPreviewManifest,
+      assets: {
+        ...boardPreviewManifest.assets,
+        fieldTextures: {
+          ...boardPreviewManifest.assets?.fieldTextures,
+          ...editableFieldTextures,
+        },
+        racerImages: {
+          ...boardPreviewManifest.assets?.racerImages,
+          ...editableRacerImages,
+        },
+      },
+    };
+  }, [boardPreviewManifest, editableFieldTextures, editableRacerImages]);
+
+  // Asset sekce pro FieldEditorPanel — počítá se z vybraného pole + liveManifest
+  const currentAssetSection = React.useMemo<AssetSectionConfig | undefined>(() => {
+    if (selectedFieldIndex === null || !liveManifest) return undefined;
+    const fieldConfig = editableBoard.fields.find((f) => f.index === selectedFieldIndex);
+    if (!fieldConfig) return undefined;
+
+    const themeId = liveManifest.meta.id;
+
+    if (fieldConfig.type === "racer") {
+      // Racer pole: asset je per-racer-id, ne per-type
+      const runtimeFields = buildFields(editableBoard, liveManifest.racers);
+      const runtimeField = runtimeFields.find((f) => f.index === selectedFieldIndex);
+      const racerId = runtimeField?.racer?.id;
+      const override = racerId ? editableRacerImages[racerId] : undefined;
+      const resolvedPath = resolveRacerCardImagePath(themeId, racerId, override);
+
+      return {
+        assetKey: "fieldRacer",
+        canonicalFile: racerId ? `racer-${racerId}.webp` : null,
+        resolvedPath,
+        override,
+        racerId,
+        onOverrideChange: (newOverride) => {
+          if (!racerId) return;
+          setEditableRacerImages((prev) => {
+            const next = { ...prev };
+            if (newOverride === undefined) { delete next[racerId]; } else { next[racerId] = newOverride; }
+            return next;
+          });
+        },
+      };
+    } else {
+      // Ostatní pole: asset je per-type
+      const assetKey = fieldAssetKey(fieldConfig.type);
+      const canonicalFile = assetKey ? THEME_ASSETS[assetKey] : null;
+      const override = editableFieldTextures[fieldConfig.type];
+      const resolvedPath = resolveFieldCardImagePath(themeId, fieldConfig.type, override);
+
+      return {
+        assetKey,
+        canonicalFile,
+        resolvedPath,
+        override,
+        onOverrideChange: (newOverride) => {
+          setEditableFieldTextures((prev) => {
+            const next = { ...prev };
+            if (newOverride === undefined) { delete next[fieldConfig.type]; } else { next[fieldConfig.type] = newOverride; }
+            return next;
+          });
+        },
+      };
+    }
+  }, [selectedFieldIndex, editableBoard, liveManifest, editableFieldTextures, editableRacerImages]);
 
   // Actions
   const [saving, setSaving] = React.useState(false);
@@ -419,11 +504,13 @@ export default function ThemeDevTool() {
     setBoardPreviewManifest(manifest);
     setShowBoardPreview(true);
     setSelectedFieldIndex(null);
-    // Resetuj board na čistou kopii SMALL_BOARD při každém otevření preview
     setEditableBoard({
       ...SMALL_BOARD,
       fields: SMALL_BOARD.fields.map((f) => ({ ...f })),
     });
+    // Resetuj asset overrides — inicializuj z aktuálního manifestu
+    setEditableFieldTextures(manifest.assets?.fieldTextures ? { ...manifest.assets.fieldTextures } : {});
+    setEditableRacerImages(manifest.assets?.racerImages ? { ...manifest.assets.racerImages } : {});
   }
 
   async function handleSave() {
@@ -792,16 +879,18 @@ export default function ThemeDevTool() {
 
                 {/* Board preview */}
                 <div className="w-full xl:w-auto xl:flex-1 xl:max-w-[560px]">
-                  <BoardEditorPreview
-                    board={editableBoard}
-                    manifest={boardPreviewManifest}
-                    selectedIndex={selectedFieldIndex}
-                    onFieldClick={(field) => setSelectedFieldIndex(field.index)}
-                  />
+                  {liveManifest && (
+                    <BoardEditorPreview
+                      board={editableBoard}
+                      manifest={liveManifest}
+                      selectedIndex={selectedFieldIndex}
+                      onFieldClick={(field) => setSelectedFieldIndex(field.index)}
+                    />
+                  )}
                 </div>
 
                 {/* Field editor — zobrazí se po kliknutí na pole */}
-                <div className="w-full xl:w-[360px] xl:shrink-0">
+                <div className="w-full xl:w-[380px] xl:shrink-0">
                   {selectedFieldIndex !== null ? (() => {
                     const fieldConfig = editableBoard.fields.find(
                       (f) => f.index === selectedFieldIndex,
@@ -818,6 +907,7 @@ export default function ThemeDevTool() {
                             ),
                           }))
                         }
+                        assetSection={currentAssetSection}
                       />
                     );
                   })() : (
