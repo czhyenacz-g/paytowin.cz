@@ -1769,146 +1769,150 @@ export default function GameBoard({ gameCode }: Props) {
               <span className="rounded-lg bg-amber-100 px-2 py-1 text-amber-800">🟠 {theme.labels.legend.horse}</span>
             </div>
 
-            <div
-              className={`relative mx-auto aspect-square w-full max-w-[760px] overflow-hidden rounded-[40px] border-2 ${theme.colors.boardSurfaceBorder} ${theme.colors.boardSurface}`}
-              style={{
-                ...(boardBgUrl ? { backgroundImage: `url(${boardBgUrl})`, backgroundSize: "cover", backgroundPosition: "center" } : {}),
-                boxShadow: "inset 0 2px 24px rgba(0,0,0,0.09), 0 4px 32px rgba(0,0,0,0.10)",
-              }}
-            >
-              {/* ── Vnitřní hranice tratě — lícuje s vnitřní hranou SVG pásu ── */}
+            <div className="relative mx-auto aspect-square w-full max-w-[760px] overflow-visible">
               <div
-                className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                className={`absolute inset-0 overflow-hidden rounded-[40px] border-2 ${theme.colors.boardSurfaceBorder} ${theme.colors.boardSurface}`}
                 style={{
-                  width: "72%",
-                  height: "72%",
-                  borderRadius: "50%",
-                  border: "1.5px solid rgba(0,0,0,0.09)",
-                  boxShadow: "0 0 0 1px rgba(255,255,255,0.09), inset 0 0 16px rgba(0,0,0,0.05)",
+                  ...(boardBgUrl ? { backgroundImage: `url(${boardBgUrl})`, backgroundSize: "cover", backgroundPosition: "center" } : {}),
+                  boxShadow: "inset 0 2px 24px rgba(0,0,0,0.09), 0 4px 32px rgba(0,0,0,0.10)",
                 }}
-              />
-
-              {/* ── SVG traťový pás — vizuální podklad spojující pole do okruhu ── */}
-              <svg
-                className="pointer-events-none absolute inset-0 w-full h-full"
-                viewBox="0 0 100 100"
-                style={{ zIndex: 0 }}
               >
-                {/* Tmavý pás — viditelný na světlých tématech */}
-                <ellipse cx="50" cy="50" rx="42" ry="42"
-                  fill="none" stroke="rgba(0,0,0,0.07)" strokeWidth="11" />
-                {/* Bílý přesah — subtilní hrana na tmavých tématech */}
-                <ellipse cx="50" cy="50" rx="42" ry="42"
-                  fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="11" />
-              </svg>
+                {/* ── Vnitřní hranice tratě — lícuje s vnitřní hranou SVG pásu ── */}
+                <div
+                  className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                  style={{
+                    width: "72%",
+                    height: "72%",
+                    borderRadius: "50%",
+                    border: "1.5px solid rgba(0,0,0,0.09)",
+                    boxShadow: "0 0 0 1px rgba(255,255,255,0.09), inset 0 0 16px rgba(0,0,0,0.05)",
+                  }}
+                />
 
-              {FIELDS.map((field) => {
-                const pos = FIELD_POSITIONS[field.index];
-                const isTrail = trailFields.includes(field.index);
-                const isHoverHighlight = hoveredPlayerId
-                  ? displayPlayers.some(p => p.id === hoveredPlayerId && p.position === field.index && !isBankrupt(p))
-                  : false;
-                const owner = field.type === "racer" && field.racer ? racerOwnership[racerOwnershipKey(field.racer)] ?? null : null;
-                const detail = getFieldDetail(field, owner?.name ?? null);
-                const isHovered = hoveredFieldIdx === field.index;
+                {/* ── SVG traťový pás — vizuální podklad spojující pole do okruhu ── */}
+                <svg
+                  className="pointer-events-none absolute inset-0 h-full w-full"
+                  viewBox="0 0 100 100"
+                  style={{ zIndex: 0 }}
+                >
+                  {/* Tmavý pás — viditelný na světlých tématech */}
+                  <ellipse cx="50" cy="50" rx="42" ry="42"
+                    fill="none" stroke="rgba(0,0,0,0.07)" strokeWidth="11" />
+                  {/* Bílý přesah — subtilní hrana na tmavých tématech */}
+                  <ellipse cx="50" cy="50" rx="42" ry="42"
+                    fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="11" />
+                </svg>
+              </div>
 
-                // Rotace segmentu: 0° = RIGHT, segment „spodek" míří ven od středu
-                const rotDeg = field.index * (360 / 21) - 90;
+              <div className="absolute inset-0 overflow-visible">
+                {FIELDS.map((field) => {
+                  const pos = FIELD_POSITIONS[field.index];
+                  const isTrail = trailFields.includes(field.index);
+                  const isHoverHighlight = hoveredPlayerId
+                    ? displayPlayers.some(p => p.id === hoveredPlayerId && p.position === field.index && !isBankrupt(p))
+                    : false;
+                  const owner = field.type === "racer" && field.racer ? racerOwnership[racerOwnershipKey(field.racer)] ?? null : null;
+                  const detail = getFieldDetail(field, owner?.name ?? null);
+                  const isHovered = hoveredFieldIdx === field.index;
 
-                const glows: string[] = [];
-                if (isTrail) glows.push("drop-shadow(0 0 7px rgba(251,191,36,0.95))");
-                if (isHoverHighlight) glows.push("drop-shadow(0 0 7px rgba(96,165,250,0.95))");
-                if (owner) glows.push("drop-shadow(0 0 5px rgba(99,102,241,0.8))");
+                  // Rotace segmentu: 0° = RIGHT, segment „spodek" míří ven od středu
+                  const rotDeg = field.index * (360 / 21) - 90;
 
-                // Background image layer — odvozena konvenční cestou z theme + field type.
-                // Pokud soubor neexistuje, browser 404 bg image tiše ignoruje → fallback na CSS barvy.
-                // Overlay pro čitelnost textu bude součástí art passu, až budou reálné assety.
-                const bgAssetKey = fieldAssetKey(field.type);
-                const fieldBgPath = bgAssetKey
-                  ? themeAssetPath(themeId, THEME_ASSETS[bgAssetKey])
-                  : null;
+                  const glows: string[] = [];
+                  if (isTrail) glows.push("drop-shadow(0 0 7px rgba(251,191,36,0.95))");
+                  if (isHoverHighlight) glows.push("drop-shadow(0 0 7px rgba(96,165,250,0.95))");
+                  if (owner) glows.push("drop-shadow(0 0 5px rgba(99,102,241,0.8))");
 
-                return (
-                  <div
-                    key={field.index}
-                    className={`absolute flex flex-col items-center justify-center border-2 ${theme.colors.fieldStyles[field.type]}`}
-                    style={{
-                      top: pos.top,
-                      left: pos.left,
-                      width: "78px",
-                      height: "110px",
-                      transform: `translate(-50%, -50%) rotate(${rotDeg}deg) scale(${isHovered ? 2.2 : 1.0})`,
-                      clipPath: "polygon(18% 0%, 82% 0%, 100% 100%, 0% 100%)",
-                      transition: "transform 0.2s ease-out",
-                      zIndex: isHovered ? 100 : 2,
-                      filter: glows.length > 0 ? glows.join(" ") : undefined,
-                      cursor: "default",
-                      ...(fieldBgPath ? {
-                        backgroundImage: `url(${fieldBgPath})`,
-                        backgroundSize: "cover",
-                        backgroundPosition: "center",
-                      } : {}),
-                    }}
-                    onMouseEnter={() => setHoveredFieldIdx(field.index)}
-                    onMouseLeave={() => setHoveredFieldIdx(null)}
-                  >
-                    {/* Content wrapper — relative z-10 zajišťuje, že content zůstane nad bg image
-                        a budoucím overlay layerem (bude přidán spolu s reálnými assety). */}
+                  // Background image layer — odvozena konvenční cestou z theme + field type.
+                  // Pokud soubor neexistuje, browser 404 bg image tiše ignoruje → fallback na CSS barvy.
+                  // Overlay pro čitelnost textu bude součástí art passu, až budou reálné assety.
+                  const bgAssetKey = fieldAssetKey(field.type);
+                  const fieldBgPath = bgAssetKey
+                    ? themeAssetPath(themeId, THEME_ASSETS[bgAssetKey])
+                    : null;
+
+                  return (
                     <div
-                      className="relative z-10 flex flex-col items-center gap-0.5 px-1 w-full"
-                      style={{ transform: `rotate(${-rotDeg}deg)` }}
+                      key={field.index}
+                      className={`absolute flex flex-col items-center justify-center overflow-hidden rounded-[18px] border-2 shadow-[0_8px_18px_rgba(15,23,42,0.18)] backdrop-blur-[1.5px] ${theme.colors.fieldStyles[field.type]}`}
+                      style={{
+                        top: pos.top,
+                        left: pos.left,
+                        width: "82px",
+                        height: "112px",
+                        transform: `translate(-50%, -50%) rotate(${rotDeg}deg) scale(${isHovered ? 1.92 : 1.0})`,
+                        transition: "transform 0.18s ease-out, box-shadow 0.18s ease-out",
+                        zIndex: isHovered ? 100 : 2,
+                        filter: glows.length > 0 ? glows.join(" ") : undefined,
+                        cursor: "default",
+                        ...(fieldBgPath ? {
+                          backgroundImage: `url(${fieldBgPath})`,
+                          backgroundSize: "cover",
+                          backgroundPosition: "center",
+                        } : {}),
+                      }}
+                      onMouseEnter={() => setHoveredFieldIdx(field.index)}
+                      onMouseLeave={() => setHoveredFieldIdx(null)}
                     >
-                      <div className={`leading-none ${isHovered ? "text-xl" : "text-base"}`}>{field.emoji}</div>
-                      <div className={`font-bold leading-tight text-center ${isHovered ? "text-[9px] max-w-[64px]" : "text-[9px] max-w-[52px]"}`}>
-                        {field.type === "start" ? "START" : field.label}
+                      {/* Content wrapper — relative z-10 zajišťuje, že content zůstane nad bg image
+                          a budoucím overlay layerem (bude přidán spolu s reálnými assety). */}
+                      <div
+                        className="relative z-10 flex w-full flex-col items-center gap-1 px-2 py-2"
+                        style={{ transform: `rotate(${-rotDeg}deg)` }}
+                      >
+                        <div className={`leading-none ${isHovered ? "text-2xl" : "text-lg"}`}>{field.emoji}</div>
+                        <div className={`font-bold uppercase leading-tight text-center tracking-[0.08em] ${isHovered ? "text-[10px] max-w-[100px]" : "text-[9px] max-w-[60px]"}`}>
+                          {field.type === "start" ? "START" : field.label}
+                        </div>
+                        {isHovered && detail && (
+                          <div className="max-w-[104px] rounded-xl bg-white/72 px-2 py-1 text-[9px] leading-tight text-center text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] line-clamp-4">
+                            {detail}
+                          </div>
+                        )}
+                        {owner && (
+                          <div className="flex items-center gap-1">
+                            <div className={`h-1.5 w-1.5 rounded-full ${owner.color}`} />
+                            {isHovered && <span className="max-w-[84px] truncate text-[7px] font-semibold opacity-75">{owner.name}</span>}
+                          </div>
+                        )}
                       </div>
-                      {isHovered && detail && (
-                        <div className="text-[7px] leading-tight text-center opacity-80 max-w-[64px] line-clamp-3 px-0.5">
-                          {detail}
-                        </div>
-                      )}
-                      {owner && (
-                        <div className="flex items-center gap-0.5">
-                          <div className={`h-1.5 w-1.5 rounded-full ${owner.color}`} />
-                          {isHovered && <span className="text-[6px] truncate max-w-[50px] opacity-70">{owner.name}</span>}
-                        </div>
-                      )}
                     </div>
-                  </div>
-                );
-              })}
-              {/* Figurky hráčů — mimo čtverce polí, posunuté ke středu */}
-              {FIELDS.map((field) => {
-                const playersHere = fieldPlayers(field.index);
-                if (playersHere.length === 0) return null;
-                return (
-                  <div
-                    key={`fig-${field.index}`}
-                    className="absolute flex items-center justify-center gap-0.5"
-                    style={FIGURINE_POSITIONS[field.index]}
-                  >
-                    {playersHere.map((player) => {
-                      const isAnimatingThis = player.id === animatingPlayerId;
-                      return (
-                        <div
-                          key={player.id}
-                          className={`flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-black text-black ring-2 ring-black/20 transition-transform duration-200 ${player.color} ${isAnimatingThis ? "scale-125 animate-bounce" : ""}`}
-                          style={{ boxShadow: "0 3px 0 rgba(0,0,0,0.35), 0 4px 6px rgba(0,0,0,0.25)" }}
-                          title={player.name}
-                        >
-                          {player.name.charAt(0).toUpperCase()}
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })}
+                  );
+                })}
 
-              <div className={`absolute left-1/2 top-1/2 flex h-[44%] w-[44%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[50%] border-2 p-4 text-center shadow-inner ${theme.colors.centerBorder} ${theme.colors.centerBackground}`}>
-                <div>
-                  <div className="text-4xl">🐎</div>
-                  <div className={`mt-1 text-sm font-semibold ${theme.colors.centerTitle}`}>{theme.labels.centerTitle}</div>
-                  <div className={`mt-1 text-xs ${theme.colors.centerSubtitle}`}>{theme.labels.centerSubtitle}</div>
+                {/* Figurky hráčů — mimo čtverce polí, posunuté ke středu */}
+                {FIELDS.map((field) => {
+                  const playersHere = fieldPlayers(field.index);
+                  if (playersHere.length === 0) return null;
+                  return (
+                    <div
+                      key={`fig-${field.index}`}
+                      className="absolute flex items-center justify-center gap-0.5"
+                      style={FIGURINE_POSITIONS[field.index]}
+                    >
+                      {playersHere.map((player) => {
+                        const isAnimatingThis = player.id === animatingPlayerId;
+                        return (
+                          <div
+                            key={player.id}
+                            className={`flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-black text-black ring-2 ring-black/20 transition-transform duration-200 ${player.color} ${isAnimatingThis ? "scale-125 animate-bounce" : ""}`}
+                            style={{ boxShadow: "0 3px 0 rgba(0,0,0,0.35), 0 4px 6px rgba(0,0,0,0.25)" }}
+                            title={player.name}
+                          >
+                            {player.name.charAt(0).toUpperCase()}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+
+                <div className={`absolute left-1/2 top-1/2 flex h-[44%] w-[44%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[50%] border-2 p-4 text-center shadow-inner ${theme.colors.centerBorder} ${theme.colors.centerBackground}`}>
+                  <div>
+                    <div className="text-4xl">🐎</div>
+                    <div className={`mt-1 text-sm font-semibold ${theme.colors.centerTitle}`}>{theme.labels.centerTitle}</div>
+                    <div className={`mt-1 text-xs ${theme.colors.centerSubtitle}`}>{theme.labels.centerSubtitle}</div>
+                  </div>
                 </div>
               </div>
             </div>
