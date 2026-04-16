@@ -809,6 +809,14 @@ export default function GameBoard({ gameCode }: Props) {
     }
 
     await supabase.from("players").update({ coins: updatedCoins, horses: updatedHorses }).eq("id", player.id);
+
+    // Optimistický update: okamžitě promítni nové horses + coins do lokálního stavu,
+    // aby racerOwnership a panel hráče nemusely čekat na Supabase realtime.
+    // Analogie: rollDice dělá totéž pro position (viz setPlayers níže u animace).
+    setPlayers(prev => prev.map(p =>
+      p.id === player.id ? { ...p, coins: updatedCoins, horses: updatedHorses } : p
+    ));
+
     await finishTurn({
       nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog],
       ...(postTurnEvent ? { postTurnEvent } : {}),
