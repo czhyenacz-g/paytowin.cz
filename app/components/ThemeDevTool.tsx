@@ -18,6 +18,7 @@ import BoardEditorPreview from "@/app/components/editor/BoardEditorPreview";
 import FieldEditorPanel from "@/app/components/editor/FieldEditorPanel";
 import type { AssetSectionConfig } from "@/app/components/editor/FieldEditorPanel";
 import RacerEditorPanel from "@/app/components/editor/RacerEditorPanel";
+import RacerRosterPanel from "@/app/components/editor/RacerRosterPanel";
 import { buildFields } from "@/lib/engine";
 import type { RacerConfig } from "@/lib/themes";
 import {
@@ -1304,6 +1305,13 @@ export default function ThemeDevTool() {
                   )}
                 </div>
               </div>
+
+              {/* Roster závodníků — správa katalogu, počet, nesoulad */}
+              <RacerRosterPanel
+                racers={editableRacers}
+                racerFieldCount={editableBoard.fields.filter((f) => f.type === "racer").length}
+                onChange={setEditableRacers}
+              />
 
               {/* Export — board config + asset mapping */}
               {liveManifest && (
