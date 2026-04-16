@@ -1914,21 +1914,9 @@ export default function GameBoard({ gameCode }: Props) {
                         }}
                       >
                         <div className={`pointer-events-none absolute inset-0 ${tone.cardOverlay}`} />
-                      {!isHovered && (
-                        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 px-2 pt-2">
-                          <div className="flex justify-center">
-                            <div className="inline-flex max-w-[58px] items-center justify-center rounded-[10px] bg-white/50 px-1.5 py-1 text-[6px] font-black uppercase leading-tight tracking-[0.06em] text-slate-950 shadow-[0_1px_0_rgba(255,255,255,0.35)]">
-                              <span className="whitespace-normal break-words text-center">
-                                {field.type === "racer" ? (field.racer ? "racer" : "slot") : field.type === "coins_gain" ? "reward" : field.type === "coins_lose" ? "risk" : field.type}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-2 pb-2">
-                          <div className="flex justify-center">
-                            <div className="inline-flex max-w-[58px] items-center justify-center rounded-[10px] bg-white/50 px-1.5 py-1 text-[6px] font-black uppercase leading-tight tracking-[0.06em] text-slate-950 shadow-[0_1px_0_rgba(255,255,255,0.35)]">
+                      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-2 pb-2">
+                        <div className="flex justify-center">
+                          <div className="inline-flex max-w-[58px] items-center justify-center rounded-[10px] bg-white/50 px-1.5 py-0.5 text-[5.5px] font-black uppercase leading-[1.05] tracking-[0.04em] text-slate-950 shadow-[0_1px_0_rgba(255,255,255,0.35)]">
                               <span className="whitespace-normal break-words text-center">
                                 {field.type === "start" ? "START" : field.label}
                               </span>
