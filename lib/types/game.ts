@@ -23,6 +23,8 @@ export interface Horse {
   maxStamina?: number;
   /** Aktuální runtime stamina (0–maxStamina); snižuje se závodem, regeneruje se po tahu. */
   stamina?: number;
+  /** Legendární status — kopíruje se z RacerConfig.isLegendary. Ovlivňuje hlášku při ztrátě racera. */
+  isLegendary?: boolean;
   isPreferred?: boolean; // označen hráčem jako preferovaný pro příští závod
 }
 

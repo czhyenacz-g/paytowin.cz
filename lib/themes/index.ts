@@ -53,6 +53,12 @@ export interface RacerConfig {
    */
   stamina?: number;
   /**
+   * Legendární status racera — identita / flavor kategorie, NEZÁVISLÁ na maxStamina.
+   * Pokud true, při ztrátě racera (stamina = 0) se zobrazí speciální flavor hláška.
+   * Vhodné pro racery s unikátním příběhem nebo záměrně jednorázovým designem.
+   */
+  isLegendary?: boolean;
+  /**
    * Flavor text / příběh závodníka — zobrazuje se při hoveru na racer kartu.
    * Volitelné — pokud chybí, karta neukáže popis.
    * Příklad: "Veterán závodního okruhu, který ještě neřekl své poslední slovo…"

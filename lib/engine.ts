@@ -183,13 +183,14 @@ export function buildFields(board: BoardConfig, racers: RacerConfig[]): Field[] 
       // stamina: runtime inicializovaná z maxStamina; fallback 100 aplikuje herní logika
       const catalogMaxStamina = rc.maxStamina ?? rc.stamina;
       const r: Horse = {
-        id:         rc.id,
-        name:       rc.name,
-        speed:      rc.speed,
-        price:      rc.price,
-        emoji:      rc.emoji,
-        maxStamina: catalogMaxStamina,
-        stamina:    catalogMaxStamina,
+        id:          rc.id,
+        name:        rc.name,
+        speed:       rc.speed,
+        price:       rc.price,
+        emoji:       rc.emoji,
+        maxStamina:  catalogMaxStamina,
+        stamina:     catalogMaxStamina,
+        isLegendary: rc.isLegendary,
       };
       return {
         index:       fc.index,

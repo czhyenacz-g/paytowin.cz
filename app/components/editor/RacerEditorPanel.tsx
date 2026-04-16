@@ -34,6 +34,7 @@ export default function RacerEditorPanel({ racer, onChange }: Props) {
   const [speed, setSpeed] = React.useState(String(racer.speed));
   // maxStamina: čteme z nového pole; fallback na deprecated stamina pro starší data
   const [maxStamina, setMaxStamina] = React.useState(String(racer.maxStamina ?? racer.stamina ?? 100));
+  const [isLegendary, setIsLegendary] = React.useState(racer.isLegendary ?? false);
   // flavorText: preferuj flavorText, fallback na deprecated heroText pro compat
   const [flavorText, setFlavorText] = React.useState(racer.flavorText ?? racer.heroText ?? "");
 
@@ -42,21 +43,23 @@ export default function RacerEditorPanel({ racer, onChange }: Props) {
     setName(racer.name);
     setSpeed(String(racer.speed));
     setMaxStamina(String(racer.maxStamina ?? racer.stamina ?? 100));
+    setIsLegendary(racer.isLegendary ?? false);
     setFlavorText(racer.flavorText ?? racer.heroText ?? "");
   }, [racer.id]);
 
   // Zavolá onChange jen tehdy, kdy jsou hodnoty platné a lišící se
-  function commit(overrides: Partial<{ name: string; speed: number; maxStamina: number; flavorText: string }>) {
+  function commit(overrides: Partial<{ name: string; speed: number; maxStamina: number; isLegendary: boolean; flavorText: string }>) {
     const parsedSpeed      = clampInt(Number(overrides.speed      ?? speed),      1, 10);
     const parsedMaxStamina = clampInt(Number(overrides.maxStamina ?? maxStamina),  0, 100);
     onChange({
       ...racer,
-      name:       overrides.name      ?? name,
-      speed:      parsedSpeed,
-      maxStamina: parsedMaxStamina,
-      stamina:    undefined, // vynuluj deprecated pole po první editaci
-      flavorText: (overrides.flavorText ?? flavorText) || undefined, // prázdný string → undefined
-      heroText:   undefined, // explicitně vynuluj deprecated pole po první editaci
+      name:        overrides.name        ?? name,
+      speed:       parsedSpeed,
+      maxStamina:  parsedMaxStamina,
+      isLegendary: (overrides.isLegendary ?? isLegendary) || undefined, // false → undefined (čistší data)
+      stamina:     undefined, // vynuluj deprecated pole po první editaci
+      flavorText:  (overrides.flavorText ?? flavorText) || undefined, // prázdný string → undefined
+      heroText:    undefined, // explicitně vynuluj deprecated pole po první editaci
     });
   }
 
@@ -151,6 +154,23 @@ export default function RacerEditorPanel({ racer, onChange }: Props) {
             </div>
           </div>
         </div>
+
+        {/* Legendary flag */}
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={isLegendary}
+            onChange={(e) => {
+              setIsLegendary(e.target.checked);
+              commit({ isLegendary: e.target.checked });
+            }}
+            className="h-4 w-4 rounded border-amber-300 text-amber-500 focus:ring-amber-300"
+          />
+          <span className="text-xs font-medium text-amber-700">
+            Legendární
+            <span className="ml-1 font-normal text-amber-500">— speciální hláška při ztrátě racera</span>
+          </span>
+        </label>
 
         {/* Flavor text */}
         <div className="space-y-1">

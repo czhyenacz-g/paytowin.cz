@@ -1180,13 +1180,23 @@ export default function GameBoard({ gameCode }: Props) {
         return supabase.from("players").update({ horses: updatedHorses }).eq("id", e.player!.id);
       });
 
+    // Hlášky pro racery vyčerpané na 0 — odlišeny legend flaggem
+    const burnedOutLines = raceEntries
+      .filter(e => e.finalStamina === 0 && e.horse && e.player)
+      .map(e => {
+        const label = `${e.horse!.emoji} ${e.horse!.name} (${e.player!.name})`;
+        return e.horse!.isLegendary
+          ? `${label}: Zmizel tak rychle, jako se objevil.`
+          : `${label}: Zkolaboval po závodě vyčerpáním. Zabaven.`;
+      });
+
     const stateUpdate: Record<string, unknown> = {
       current_player_index: evt.nextIndex,
       turn_count: evt.turnCount,
       offer_pending: null,
       // mass_race_done jen pro mass_race — rivals_race tuto vlajku nemění
       ...(evt.raceType !== "rivals_race" ? { mass_race_done: true } : {}),
-      log: [logLine, ...(gameState.log ?? [])].slice(0, 20),
+      log: [logLine, ...burnedOutLines, ...(gameState.log ?? [])].slice(0, 20),
     };
     if (evt.lastRoll !== undefined) stateUpdate.last_roll = evt.lastRoll;
 
