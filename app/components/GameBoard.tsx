@@ -1937,7 +1937,7 @@ export default function GameBoard({ gameCode }: Props) {
                       onMouseLeave={() => setHoveredFieldIdx(null)}
                     >
                       <div
-                        className={`relative h-full w-full overflow-hidden rounded-[2px] ring-1 ring-black/10 shadow-[0_10px_18px_rgba(15,23,42,0.16)] ${theme.colors.fieldStyles[field.type]}`}
+                        className={`group relative h-full w-full overflow-hidden rounded-[2px] ring-1 ring-black/10 shadow-[0_10px_18px_rgba(15,23,42,0.16)] ${theme.colors.fieldStyles[field.type]}`}
                         style={{
                           backgroundImage: fieldBgImage,
                           backgroundSize: "cover, cover",
@@ -1952,7 +1952,7 @@ export default function GameBoard({ gameCode }: Props) {
                         <div className={`pointer-events-none absolute inset-0 ${tone.cardOverlay}`} />
                         {/* Jemný bílý overlay pro neracer pole — odlišuje je od hero racer karet */}
                         {field.type !== "racer" && (
-                          <div className="pointer-events-none absolute inset-0 bg-white/50" />
+                          <div className="pointer-events-none absolute inset-0 bg-white/25 transition-opacity duration-150 group-hover:opacity-0" />
                         )}
                       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-2 pb-2">
                         <div className="flex justify-center">
