@@ -931,24 +931,36 @@ export default function GameBoard({ gameCode }: Props) {
       // skip_next_turn uložíme do DB — bude přeskočen při příštím tahu
       logLines.push(`${player.name}: ${card.text} (vynechá příští tah)`);
     } else if (card.effect.kind === "give_racer") {
-      // Najdi volné racery — na boardu, nevlastněné žádným hráčem
+      // Všichni volní raceři — na boardu, nevlastněni žádným hráčem
       const racerFields = fieldsRef.current.filter(f => (f.type === "racer" || f.type === "horse") && f.racer);
       const ownedKeys = new Set(players.flatMap(p => p.horses.map(h => racerOwnershipKey(h))));
-      let candidates = racerFields
-        .map(f => f.racer!)
-        .filter(r => !ownedKeys.has(racerOwnershipKey(r)));
-      // Pokud je zadáno konkrétní racerId, filtruj na něj
+      const freeRacers = racerFields.map(f => f.racer!).filter(r => !ownedKeys.has(racerOwnershipKey(r)));
+
+      // Priorita 1: konkrétní racer dle racerId
+      // Priorita 2: náhodný volný racer (fallback pokud named není dostupný)
+      // Priorita 3: nic — zaloguj skip
+      let chosen: typeof freeRacers[number] | undefined;
+      let usedFallback = false;
       if (card.effect.racerId) {
-        candidates = candidates.filter(r => r.id === card.effect.racerId);
+        chosen = freeRacers.find(r => r.id === card.effect.racerId);
+        if (!chosen) {
+          chosen = freeRacers[Math.floor(Math.random() * freeRacers.length)];
+          usedFallback = true;
+        }
+      } else {
+        chosen = freeRacers[Math.floor(Math.random() * freeRacers.length)];
       }
-      if (candidates.length > 0) {
-        const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+
+      if (chosen) {
         const newHorse: Horse = { ...chosen, stamina: chosen.maxStamina ?? chosen.stamina ?? 100 };
         updatedPlayer = { ...updatedPlayer, horses: [...updatedPlayer.horses, newHorse] };
-        logLines.push(`${player.name}: ${card.text} — získal ${chosen.emoji} ${chosen.name}!`);
+        if (usedFallback) {
+          logLines.push(`${player.name}: ${card.text} — požadovaný závodník nebyl dostupný, získal ${chosen.emoji} ${chosen.name}!`);
+        } else {
+          logLines.push(`${player.name}: ${card.text} — získal ${chosen.emoji} ${chosen.name}!`);
+        }
       } else {
-        // Žádný volný racer není k dispozici
-        logLines.push(`${player.name}: ${card.text} — žádný volný závodník k dispozici.`);
+        logLines.push(`${player.name}: ${card.text} — žádný volný závodník není k dispozici.`);
       }
     }
 
