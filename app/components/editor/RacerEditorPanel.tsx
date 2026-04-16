@@ -34,6 +34,16 @@ function sanitizeId(raw: string): string {
 // ─── Komponenta ───────────────────────────────────────────────────────────────
 
 export default function RacerEditorPanel({ racer, onChange }: Props) {
+  // Flash "uloženo" po každém commitu
+  const [saved, setSaved] = React.useState(false);
+  const savedTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  function flashSaved() {
+    setSaved(true);
+    if (savedTimer.current) clearTimeout(savedTimer.current);
+    savedTimer.current = setTimeout(() => setSaved(false), 1500);
+  }
+  React.useEffect(() => () => { if (savedTimer.current) clearTimeout(savedTimer.current); }, []);
+
   // Lokální stav — synchronizován s prop při změně racerId
   const [idVal, setIdVal] = React.useState(racer.id);
   const [name, setName] = React.useState(racer.name);
@@ -72,6 +82,7 @@ export default function RacerEditorPanel({ racer, onChange }: Props) {
       flavorText:  (overrides.flavorText ?? flavorText) || undefined, // prázdný string → undefined
       heroText:    undefined, // explicitně vynuluj deprecated pole po první editaci
     });
+    flashSaved();
   }
 
   return (
@@ -83,6 +94,12 @@ export default function RacerEditorPanel({ racer, onChange }: Props) {
         <span className="text-xs font-semibold text-amber-800">Závodník</span>
         <span className="font-mono text-[10px] text-amber-600 bg-amber-100 rounded px-1.5 py-0.5">
           {racer.id}
+        </span>
+        <span
+          className="ml-auto text-[10px] font-medium text-emerald-600 transition-opacity duration-300"
+          style={{ opacity: saved ? 1 : 0 }}
+        >
+          ✓ uloženo
         </span>
       </div>
 
@@ -104,6 +121,7 @@ export default function RacerEditorPanel({ racer, onChange }: Props) {
                 const sanitized = sanitizeId(idVal);
                 setIdVal(sanitized);
                 onChange({ ...racer, id: sanitized });
+                flashSaved();
               }}
               placeholder="zeleznik"
               className="w-full rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm text-slate-900 font-mono placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-300"
