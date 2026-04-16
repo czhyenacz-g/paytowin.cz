@@ -78,9 +78,9 @@ export const CHANCE_CARDS: GameCard[] = [
   {
     id: "ch9",
     type: "chance",
-    text: "Na okraji závodiště stojí Železník — nikdo si ho nevšimne. Bereš ho.",
-    effect: { kind: "give_racer", racerId: "zeleznik" },
-    effectLabel: "🐴 Železník je tvůj",
+    text: "Na okraji závodiště stojí opuštěný závodník — nikdo si ho nevšimne. Bereš ho.",
+    effect: { kind: "give_racer", racerId: "legendary_racer" },
+    effectLabel: "🐴 Legendární závodník je tvůj",
   },
 ];
 
