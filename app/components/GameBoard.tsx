@@ -930,6 +930,26 @@ export default function GameBoard({ gameCode }: Props) {
     } else if (card.effect.kind === "skip_turn") {
       // skip_next_turn uložíme do DB — bude přeskočen při příštím tahu
       logLines.push(`${player.name}: ${card.text} (vynechá příští tah)`);
+    } else if (card.effect.kind === "give_racer") {
+      // Najdi volné racery — na boardu, nevlastněné žádným hráčem
+      const racerFields = fieldsRef.current.filter(f => (f.type === "racer" || f.type === "horse") && f.racer);
+      const ownedKeys = new Set(players.flatMap(p => p.horses.map(h => racerOwnershipKey(h))));
+      let candidates = racerFields
+        .map(f => f.racer!)
+        .filter(r => !ownedKeys.has(racerOwnershipKey(r)));
+      // Pokud je zadáno konkrétní racerId, filtruj na něj
+      if (card.effect.racerId) {
+        candidates = candidates.filter(r => r.id === card.effect.racerId);
+      }
+      if (candidates.length > 0) {
+        const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+        const newHorse: Horse = { ...chosen, stamina: chosen.maxStamina ?? chosen.stamina ?? 100 };
+        updatedPlayer = { ...updatedPlayer, horses: [...updatedPlayer.horses, newHorse] };
+        logLines.push(`${player.name}: ${card.text} — získal ${chosen.emoji} ${chosen.name}!`);
+      } else {
+        // Žádný volný racer není k dispozici
+        logLines.push(`${player.name}: ${card.text} — žádný volný závodník k dispozici.`);
+      }
     }
 
     const wentBankrupt = updatedPlayer.coins <= 0 && player.coins > 0;
@@ -941,6 +961,7 @@ export default function GameBoard({ gameCode }: Props) {
     const playerUpdate: Record<string, unknown> = { coins: updatedPlayer.coins };
     if (card.effect.kind === "move") playerUpdate.position = updatedPlayer.position;
     if (card.effect.kind === "skip_turn") playerUpdate.skip_next_turn = true;
+    if (card.effect.kind === "give_racer") playerUpdate.horses = updatedPlayer.horses;
 
     console.log(`[turn-flow] applyCardEffect persisting — pos=${updatedPlayer.position} coins=${updatedPlayer.coins} wentBankrupt=${wentBankrupt}`);
     await supabase.from("players").update(playerUpdate).eq("id", player.id);

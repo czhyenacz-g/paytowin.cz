@@ -1,10 +1,11 @@
 // ─── Karty Náhoda / Finance ───────────────────────────────────────────────────
 
-export type CardEffectKind = "coins" | "skip_turn" | "move";
+export type CardEffectKind = "coins" | "skip_turn" | "move" | "give_racer";
 
 export interface CardEffect {
   kind: CardEffectKind;
-  value?: number; // pro coins (kladné = zisk, záporné = ztráta) a move (kladné = dopředu, záporné = dozadu)
+  value?: number;    // pro coins a move
+  racerId?: string;  // pro give_racer: konkrétní racer ID; pokud chybí → náhodný volný
 }
 
 export interface GameCard {
@@ -73,6 +74,13 @@ export const CHANCE_CARDS: GameCard[] = [
     text: "Tvoje závodní číslo bylo omylem přiděleno dvakrát. Chaos.",
     effect: { kind: "move", value: -2 },
     effectLabel: "Posun -2 pole",
+  },
+  {
+    id: "ch9",
+    type: "chance",
+    text: "Opuštěný kůň hledá nového majitele. Ujímáš se ho zdarma.",
+    effect: { kind: "give_racer" },
+    effectLabel: "🐴 Nový závodník zdarma",
   },
 ];
 
