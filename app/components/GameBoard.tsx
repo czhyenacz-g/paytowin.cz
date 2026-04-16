@@ -819,6 +819,7 @@ export default function GameBoard({ gameCode }: Props) {
 
     await finishTurn({
       nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog],
+      updatedCurrentPlayerHorses: updatedHorses, // předej aktuální seznam, regen nepřepíše nový nákup
       ...(postTurnEvent ? { postTurnEvent } : {}),
     });
 
@@ -1023,6 +1024,10 @@ export default function GameBoard({ gameCode }: Props) {
     log: string[];
     lastRoll?: number;
     postTurnEvent?: PostTurnEvent;
+    /** Aktuální stav horses pro regen — nutné pokud volající (buyRacer) v tomto tahu
+     *  horses aktualizoval. Closure `players` je stale a bez tohoto parametru by regen
+     *  přepsal nově zakoupené racery starší DB hodnotou. */
+    updatedCurrentPlayerHorses?: Horse[];
   }) => {
     if (!gameId) return;
 
@@ -1083,9 +1088,12 @@ export default function GameBoard({ gameCode }: Props) {
     if (params.lastRoll !== undefined) update.last_roll = params.lastRoll;
 
     // Regen staminy pro aktuálního hráče (+10 za tah, strop = maxStamina ?? 100)
+    // Použijeme params.updatedCurrentPlayerHorses pokud existuje — closure `players`
+    // je stale, pokud volající (buyRacer) v tomto tahu horses aktualizoval.
     const playerForRegen = gameState ? players[gameState.current_player_index] : null;
-    const regenHorses = playerForRegen?.horses?.length
-      ? playerForRegen.horses.map(h => {
+    const regenSourceHorses = params.updatedCurrentPlayerHorses ?? playerForRegen?.horses ?? [];
+    const regenHorses = regenSourceHorses.length > 0
+      ? regenSourceHorses.map(h => {
           const cap = h.maxStamina ?? 100;
           return { ...h, stamina: Math.min(cap, (h.stamina ?? cap) + 10) };
         })
