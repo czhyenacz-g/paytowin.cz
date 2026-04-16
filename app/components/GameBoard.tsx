@@ -156,6 +156,24 @@ function getFieldMetaLabel(field: Field, ownerName: string | null): string | nul
   return field.description || null;
 }
 
+/**
+ * getFieldAccentColor — barva akcentní horní hrany karty (strana od středu).
+ * Nezávislé na theme — jde o herní sémantiku pole, ne o theme barvu.
+ */
+function getFieldAccentColor(field: Field): string {
+  switch (field.type) {
+    case "start":      return "#ef4444"; // red-500
+    case "coins_gain": return "#34d399"; // emerald-400
+    case "coins_lose": return "#f87171"; // red-400
+    case "gamble":     return "#c084fc"; // violet-400
+    case "racer":
+    case "horse":      return "#fbbf24"; // amber-400
+    case "chance":     return "#38bdf8"; // sky-400
+    case "finance":    return "#2dd4bf"; // teal-400
+    default:           return "#94a3b8"; // slate-400 (neutral)
+  }
+}
+
 function getFieldTone(field: Field, themeId: string) {
   const usesDarkSurface = field.type === "start" || themeId.endsWith("night");
   return usesDarkSurface
@@ -1906,11 +1924,16 @@ export default function GameBoard({ gameCode }: Props) {
                       onMouseLeave={() => setHoveredFieldIdx(null)}
                     >
                       <div
-                        className={`relative h-full w-full overflow-hidden rounded-[2px] border-2 ring-1 ring-black/10 shadow-[0_10px_18px_rgba(15,23,42,0.16)] ${theme.colors.fieldStyles[field.type]}`}
+                        className={`relative h-full w-full overflow-hidden rounded-[2px] ring-1 ring-black/10 shadow-[0_10px_18px_rgba(15,23,42,0.16)] ${theme.colors.fieldStyles[field.type]}`}
                         style={{
                           backgroundImage: fieldBgImage,
                           backgroundSize: "cover, cover",
                           backgroundPosition: "center, center",
+                          // Vrchní hrana = vzdálená od středu: výrazný barevný akcent
+                          // Ostatní 3 hrany: 2px černá
+                          border: "2px solid rgba(0,0,0,0.82)",
+                          borderTopWidth: "6px",
+                          borderTopColor: getFieldAccentColor(field),
                         }}
                       >
                         <div className={`pointer-events-none absolute inset-0 ${tone.cardOverlay}`} />
