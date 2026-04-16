@@ -40,9 +40,16 @@ export interface RacerConfig {
   /** Volitelná přímá URL obrázku — theme builder ji vyplní. Fallback: emoji. */
   image?: string;
   /**
-   * Výchozí stamina závodníka při zakoupení hráčem (0–100, výchozí 100).
-   * V průběhu hry se mění na Horse.stamina (runtime hodnota).
+   * Maximální / výchozí stamina závodníka — katalogová vlastnost (0–100, výchozí 100).
+   * Při zakoupení se zkopíruje do Horse.stamina (runtime aktuální hodnota).
+   * Regen se zastaví na této hodnotě — racer nemůže přesáhnout svůj vlastní strop.
    * Pokud není uvedena, použije se fallback 100.
+   */
+  maxStamina?: number;
+  /**
+   * @deprecated Použij maxStamina.
+   * Zachováno pro backward kompatibilitu se staršími daty.
+   * engine.ts aplikuje fallback: maxStamina ?? stamina.
    */
   stamina?: number;
   /**

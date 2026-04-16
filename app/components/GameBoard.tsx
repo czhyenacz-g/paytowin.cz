@@ -1074,10 +1074,13 @@ export default function GameBoard({ gameCode }: Props) {
     };
     if (params.lastRoll !== undefined) update.last_roll = params.lastRoll;
 
-    // Regen staminy pro aktuálního hráče (+10 za tah, max 100)
+    // Regen staminy pro aktuálního hráče (+10 za tah, strop = maxStamina ?? 100)
     const playerForRegen = gameState ? players[gameState.current_player_index] : null;
     const regenHorses = playerForRegen?.horses?.length
-      ? playerForRegen.horses.map(h => ({ ...h, stamina: Math.min(100, (h.stamina ?? 100) + 10) }))
+      ? playerForRegen.horses.map(h => {
+          const cap = h.maxStamina ?? 100;
+          return { ...h, stamina: Math.min(cap, (h.stamina ?? cap) + 10) };
+        })
       : null;
     await Promise.all([
       supabase.from("game_state").update(update).eq("game_id", gameId),

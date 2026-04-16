@@ -32,7 +32,8 @@ export default function RacerEditorPanel({ racer, onChange }: Props) {
   // Lokální stav — synchronizován s prop při změně racerId
   const [name, setName] = React.useState(racer.name);
   const [speed, setSpeed] = React.useState(String(racer.speed));
-  const [stamina, setStamina] = React.useState(String(racer.stamina ?? 100));
+  // maxStamina: čteme z nového pole; fallback na deprecated stamina pro starší data
+  const [maxStamina, setMaxStamina] = React.useState(String(racer.maxStamina ?? racer.stamina ?? 100));
   // flavorText: preferuj flavorText, fallback na deprecated heroText pro compat
   const [flavorText, setFlavorText] = React.useState(racer.flavorText ?? racer.heroText ?? "");
 
@@ -40,19 +41,20 @@ export default function RacerEditorPanel({ racer, onChange }: Props) {
   React.useEffect(() => {
     setName(racer.name);
     setSpeed(String(racer.speed));
-    setStamina(String(racer.stamina ?? 100));
+    setMaxStamina(String(racer.maxStamina ?? racer.stamina ?? 100));
     setFlavorText(racer.flavorText ?? racer.heroText ?? "");
   }, [racer.id]);
 
   // Zavolá onChange jen tehdy, kdy jsou hodnoty platné a lišící se
-  function commit(overrides: Partial<{ name: string; speed: number; stamina: number; flavorText: string }>) {
-    const parsedSpeed   = clampInt(Number(overrides.speed   ?? speed),   1, 10);
-    const parsedStamina = clampInt(Number(overrides.stamina ?? stamina),  0, 100);
+  function commit(overrides: Partial<{ name: string; speed: number; maxStamina: number; flavorText: string }>) {
+    const parsedSpeed      = clampInt(Number(overrides.speed      ?? speed),      1, 10);
+    const parsedMaxStamina = clampInt(Number(overrides.maxStamina ?? maxStamina),  0, 100);
     onChange({
       ...racer,
       name:       overrides.name      ?? name,
       speed:      parsedSpeed,
-      stamina:    parsedStamina,
+      maxStamina: parsedMaxStamina,
+      stamina:    undefined, // vynuluj deprecated pole po první editaci
       flavorText: (overrides.flavorText ?? flavorText) || undefined, // prázdný string → undefined
       heroText:   undefined, // explicitně vynuluj deprecated pole po první editaci
     });
@@ -124,27 +126,27 @@ export default function RacerEditorPanel({ racer, onChange }: Props) {
 
           <div className="space-y-1">
             <label className="block text-xs font-medium text-amber-700">
-              Stamina výchozí
+              Max stamina
               <span className="ml-1 font-normal text-amber-500">(0–100)</span>
             </label>
             <input
               type="number"
               min={0}
               max={100}
-              value={stamina}
-              onChange={(e) => setStamina(e.target.value)}
+              value={maxStamina}
+              onChange={(e) => setMaxStamina(e.target.value)}
               onBlur={() => {
-                const v = clampInt(Number(stamina), 0, 100);
-                setStamina(String(v));
-                commit({ stamina: v });
+                const v = clampInt(Number(maxStamina), 0, 100);
+                setMaxStamina(String(v));
+                commit({ maxStamina: v });
               }}
               className="w-full rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-amber-300"
             />
-            {/* Stamina bar */}
+            {/* Max stamina bar */}
             <div className="h-1 rounded-sm bg-amber-100 mt-1 overflow-hidden">
               <div
                 className="h-full rounded-sm bg-emerald-400 transition-all"
-                style={{ width: `${Math.min(100, Math.max(0, Number(stamina)))}%` }}
+                style={{ width: `${Math.min(100, Math.max(0, Number(maxStamina)))}%` }}
               />
             </div>
           </div>

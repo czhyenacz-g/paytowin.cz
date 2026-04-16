@@ -179,13 +179,17 @@ export function buildFields(board: BoardConfig, racers: RacerConfig[]): Field[] 
           action: (p) => ({ player: p, log: "" }),
         };
       }
+      // maxStamina: katalogový strop; fallback na deprecated rc.stamina → undefined
+      // stamina: runtime inicializovaná z maxStamina; fallback 100 aplikuje herní logika
+      const catalogMaxStamina = rc.maxStamina ?? rc.stamina;
       const r: Horse = {
-        id:      rc.id,
-        name:    rc.name,
-        speed:   rc.speed,
-        price:   rc.price,
-        emoji:   rc.emoji,
-        stamina: rc.stamina, // přenesen z katalogu; fallback 100 aplikuje herní logika
+        id:         rc.id,
+        name:       rc.name,
+        speed:      rc.speed,
+        price:      rc.price,
+        emoji:      rc.emoji,
+        maxStamina: catalogMaxStamina,
+        stamina:    catalogMaxStamina,
       };
       return {
         index:       fc.index,

@@ -18,7 +18,11 @@ export interface Horse {
   speed: number;
   price: number;
   emoji: string;
-  stamina?: number;    // 0–100, výchozí 100; snižuje se závodem (−30), regeneruje se po tahu (+10)
+  /** Katalogový strop staminy (0–100) — kopíruje se z RacerConfig.maxStamina při nákupu.
+   *  Regen se zastaví na této hodnotě. Stará data bez tohoto pole: fallback 100. */
+  maxStamina?: number;
+  /** Aktuální runtime stamina (0–maxStamina); snižuje se závodem, regeneruje se po tahu. */
+  stamina?: number;
   isPreferred?: boolean; // označen hráčem jako preferovaný pro příští závod
 }
 
