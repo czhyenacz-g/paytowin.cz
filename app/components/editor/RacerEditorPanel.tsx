@@ -4,7 +4,7 @@
  * RacerEditorPanel — editor jednoho závodníka (RacerConfig).
  *
  * Zobrazuje se v ThemeDevTool vedle FieldEditorPanel, pokud je vybráno racer pole.
- * Umožňuje upravit: name (label), speed, stamina, heroText (flavor text).
+ * Umožňuje upravit: name (label), speed, stamina, flavorText (flavor text).
  *
  * Neovlivňuje GameBoard, herní logiku ani jiné komponenty.
  * Data žijí v editableRacers local state ThemeDevTool → liveManifest.racers.
@@ -33,26 +33,28 @@ export default function RacerEditorPanel({ racer, onChange }: Props) {
   const [name, setName] = React.useState(racer.name);
   const [speed, setSpeed] = React.useState(String(racer.speed));
   const [stamina, setStamina] = React.useState(String(racer.stamina ?? 100));
-  const [heroText, setHeroText] = React.useState(racer.heroText ?? "");
+  // flavorText: preferuj flavorText, fallback na deprecated heroText pro compat
+  const [flavorText, setFlavorText] = React.useState(racer.flavorText ?? racer.heroText ?? "");
 
   // Sync: pokud parent změní racera (jiný racer slot), resetuj lokální stav
   React.useEffect(() => {
     setName(racer.name);
     setSpeed(String(racer.speed));
     setStamina(String(racer.stamina ?? 100));
-    setHeroText(racer.heroText ?? "");
+    setFlavorText(racer.flavorText ?? racer.heroText ?? "");
   }, [racer.id]);
 
   // Zavolá onChange jen tehdy, kdy jsou hodnoty platné a lišící se
-  function commit(overrides: Partial<{ name: string; speed: number; stamina: number; heroText: string }>) {
+  function commit(overrides: Partial<{ name: string; speed: number; stamina: number; flavorText: string }>) {
     const parsedSpeed   = clampInt(Number(overrides.speed   ?? speed),   1, 10);
     const parsedStamina = clampInt(Number(overrides.stamina ?? stamina),  0, 100);
     onChange({
       ...racer,
-      name:     overrides.name     ?? name,
-      speed:    parsedSpeed,
-      stamina:  parsedStamina,
-      heroText: (overrides.heroText ?? heroText) || undefined, // prázdný string → undefined
+      name:       overrides.name      ?? name,
+      speed:      parsedSpeed,
+      stamina:    parsedStamina,
+      flavorText: (overrides.flavorText ?? flavorText) || undefined, // prázdný string → undefined
+      heroText:   undefined, // explicitně vynuluj deprecated pole po první editaci
     });
   }
 
@@ -148,22 +150,22 @@ export default function RacerEditorPanel({ racer, onChange }: Props) {
           </div>
         </div>
 
-        {/* Hero text */}
+        {/* Flavor text */}
         <div className="space-y-1">
           <label className="block text-xs font-medium text-amber-700">
-            Hero popisek
-            <span className="ml-1 font-normal text-amber-500">— flavor text, zobrazí se při hoveru na kartu</span>
+            Flavor text
+            <span className="ml-1 font-normal text-amber-500">— příběh / popis, zobrazí se při hoveru na kartu</span>
           </label>
           <textarea
-            value={heroText}
-            onChange={(e) => setHeroText(e.target.value)}
-            onBlur={() => commit({ heroText })}
+            value={flavorText}
+            onChange={(e) => setFlavorText(e.target.value)}
+            onBlur={() => commit({ flavorText })}
             rows={3}
             placeholder="Veterán závodního okruhu, který ještě neřekl své poslední slovo…"
             className="w-full rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-amber-300"
           />
           <div className="text-[10px] text-amber-400 text-right">
-            {heroText.length > 0 ? `${heroText.length} znaků` : "prázdné — popis nebude zobrazen"}
+            {flavorText.length > 0 ? `${flavorText.length} znaků` : "prázdné — popis nebude zobrazen"}
           </div>
         </div>
 

@@ -709,7 +709,7 @@ export default function ThemeDevTool() {
     // Resetuj asset overrides — inicializuj z aktuálního manifestu
     setEditableFieldTextures(manifest.assets?.fieldTextures ? { ...manifest.assets.fieldTextures } : {});
     setEditableRacerImages(manifest.assets?.racerImages ? { ...manifest.assets.racerImages } : {});
-    // Inicializuj editableRacers — hluboká kopie, zachová stamina/heroText pokud existují
+    // Inicializuj editableRacers — hluboká kopie, zachová stamina/flavorText pokud existují
     setEditableRacers(manifest.racers.map((r) => ({ ...r })));
   }
 

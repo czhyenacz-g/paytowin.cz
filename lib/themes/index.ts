@@ -50,6 +50,12 @@ export interface RacerConfig {
    * Volitelné — pokud chybí, karta neukáže popis.
    * Příklad: "Veterán závodního okruhu, který ještě neřekl své poslední slovo…"
    */
+  flavorText?: string;
+  /**
+   * @deprecated Použij flavorText.
+   * Zachováno pro backward kompatibilitu se staršími daty.
+   * buildFields() aplikuje fallback: flavorText ?? heroText.
+   */
   heroText?: string;
 }
 

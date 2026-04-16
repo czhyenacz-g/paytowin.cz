@@ -53,10 +53,12 @@ export interface Field {
   /** @deprecated použij racer */
   horse?: Horse;
   /**
-   * Flavor text / příběh závodníka — přenesen z RacerConfig.heroText.
-   * Použij pro hover detail na racer kartě. Undefined pokud theme hero text nedefinuje.
+   * Flavor text / příběh pole nebo závodníka.
+   * Pro racer pole: přenesen z RacerConfig.flavorText (fallback: RacerConfig.heroText pro compat).
+   * Pro ostatní pole: přenesen z BoardFieldConfig.flavorText.
+   * Použij pro hover detail na kartě. Undefined pokud theme ani board text nedefinují.
    */
-  heroText?: string;
+  flavorText?: string;
   action: (player: Player) => { player: Player; log: string };
 }
 
@@ -193,7 +195,8 @@ export function buildFields(board: BoardConfig, racers: RacerConfig[]): Field[] 
         description: `${rc.name} na prodej (rychlost ${rc.speed}) za ${rc.price} coins.`,
         racer:       r,
         horse:       r, // @deprecated legacy alias
-        heroText:    rc.heroText,
+        // flavorText: preferuj rc.flavorText; fallback na rc.heroText (deprecated, backward compat)
+        flavorText:  rc.flavorText ?? rc.heroText,
         action:      (p) => ({ player: p, log: "" }),
       };
     }
@@ -207,6 +210,7 @@ export function buildFields(board: BoardConfig, racers: RacerConfig[]): Field[] 
         label:       fc.label,
         emoji:       fc.emoji,
         description: `Průchod = +${bonus} coins.`,
+        flavorText:  fc.flavorText,
         action:      (p) => ({
           player: { ...p, coins: p.coins + bonus },
           log:    `${p.name} prošel STARTem — +${bonus} 💰`,
@@ -223,6 +227,7 @@ export function buildFields(board: BoardConfig, racers: RacerConfig[]): Field[] 
         label:       fc.label,
         emoji:       fc.emoji,
         description: `+${amount} coins.`,
+        flavorText:  fc.flavorText,
         action:      (p) => ({
           player: { ...p, coins: p.coins + amount },
           log:    `${p.name}: ${fc.label} — +${amount} 💰`,
@@ -239,6 +244,7 @@ export function buildFields(board: BoardConfig, racers: RacerConfig[]): Field[] 
         label:       fc.label,
         emoji:       fc.emoji,
         description: `${amount} coins.`,
+        flavorText:  fc.flavorText,
         action:      (p) => ({
           player: { ...p, coins: p.coins + amount },
           log:    `${p.name}: ${fc.label} — ${amount} 💰`,
@@ -253,6 +259,7 @@ export function buildFields(board: BoardConfig, racers: RacerConfig[]): Field[] 
       label:       fc.label,
       emoji:       fc.emoji,
       description: fc.label,
+      flavorText:  fc.flavorText,
       action:      (p) => ({ player: p, log: "" }),
     };
   });

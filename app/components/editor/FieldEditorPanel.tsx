@@ -274,6 +274,23 @@ export default function FieldEditorPanel({ field, onChange, assetSection }: Prop
               )}
             </div>
 
+            {/* Flavor text — volitelné pro všechny typy polí */}
+            <div className="col-span-2 space-y-1">
+              <label className="block text-xs font-medium text-slate-500">
+                Flavor text
+                <span className="ml-1 font-normal text-slate-400">— zobrazí se při hoveru jako detail karty</span>
+              </label>
+              <textarea
+                value={field.flavorText ?? ""}
+                onChange={(e) =>
+                  handleFormChange({ flavorText: e.target.value || undefined })
+                }
+                rows={2}
+                placeholder="Toto místo skrývá příběh…"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              />
+            </div>
+
             {/* Index — pouze info, nelze měnit */}
             <div className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-xs text-slate-500">
               <span className="font-mono font-medium">index: {field.index}</span>

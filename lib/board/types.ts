@@ -54,6 +54,13 @@ export interface BoardFieldConfig {
    * - ostatní typy: undefined
    */
   amount?: number;
+  /**
+   * Flavor text / příběh pole — zobrazí se při hoveru jako detail karty.
+   * Volitelné pro všechny typy polí.
+   * Pro racer pole: zobrazí se místo (nebo vedle) flavor textu závodníka z RacerConfig.flavorText.
+   * Příklad: "Toto místo skrývá nebezpečné sázky, ale i velké příležitosti…"
+   */
+  flavorText?: string;
 }
 
 // ─── Board preset ─────────────────────────────────────────────────────────────
