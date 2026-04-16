@@ -261,6 +261,7 @@ export default function GameBoard({ gameCode }: Props) {
   const themeManifest = themeToManifest(theme);
   const board = getBoardById(boardId);
   const FIELDS = buildFields(board, getThemeRacers(theme));
+  const hoveredField = hoveredFieldIdx !== null ? FIELDS.find((field) => field.index === hoveredFieldIdx) ?? null : null;
   // Ref aby stale closures (Realtime subscriptions) vždy dostaly aktuální FIELDS
   const fieldsRef = React.useRef<Field[]>(FIELDS);
   fieldsRef.current = FIELDS;
@@ -1889,7 +1890,7 @@ export default function GameBoard({ gameCode }: Props) {
                   return (
                     <div
                       key={field.index}
-                      className={`absolute flex flex-col items-center justify-center overflow-hidden rounded-[2px] border-2 ring-1 ring-black/10 shadow-[0_10px_18px_rgba(15,23,42,0.16)] ${theme.colors.fieldStyles[field.type]}`}
+                      className="absolute overflow-visible"
                       style={{
                         top: pos.top,
                         left: pos.left,
@@ -1900,55 +1901,47 @@ export default function GameBoard({ gameCode }: Props) {
                         zIndex: isHovered ? 100 : 2,
                         filter: glows.length > 0 ? glows.join(" ") : undefined,
                         cursor: "default",
-                        backgroundImage: fieldBgImage,
-                        backgroundSize: "cover, cover",
-                        backgroundPosition: "center, center",
                       }}
                       onMouseEnter={() => setHoveredFieldIdx(field.index)}
                       onMouseLeave={() => setHoveredFieldIdx(null)}
                     >
-                      <div className={`pointer-events-none absolute inset-0 ${tone.cardOverlay}`} />
-                      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 px-2 pt-2">
-                        <div className="flex justify-start">
-                          <div className={`inline-flex max-w-full items-center rounded-full px-1.5 py-0.5 text-[8px] font-black uppercase tracking-[0.18em] ${tone.topBadge}`}>
-                            {field.type === "racer" ? (field.racer ? "racer" : "slot") : field.type === "coins_gain" ? "reward" : field.type === "coins_lose" ? "risk" : field.type}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-2 pb-2">
-                        <div className="flex justify-center">
-                          <div className="inline-flex max-w-[58px] items-center justify-center rounded-[10px] bg-white/50 px-1.5 py-1 text-[6px] font-black uppercase leading-tight tracking-[0.06em] text-slate-950 shadow-[0_1px_0_rgba(255,255,255,0.35)]">
-                            <span className="whitespace-normal break-words text-center">
-                              {field.type === "start" ? "START" : field.label}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
                       <div
-                        className="relative z-10 flex h-full w-full flex-col justify-between"
-                        style={{ transform: `rotate(${-rotDeg}deg)` }}
+                        className={`relative h-full w-full overflow-hidden rounded-[2px] border-2 ring-1 ring-black/10 shadow-[0_10px_18px_rgba(15,23,42,0.16)] ${theme.colors.fieldStyles[field.type]}`}
+                        style={{
+                          backgroundImage: fieldBgImage,
+                          backgroundSize: "cover, cover",
+                          backgroundPosition: "center, center",
+                        }}
                       >
-                        {isHovered && (
-                          <div className={`mt-auto space-y-1 px-2 pb-2 pt-5 ${tone.footerPanel}`}>
-                            {detail && (
-                              <div className={`max-w-[136px] rounded-[3px] px-2 py-1.5 text-[10px] leading-tight shadow-lg line-clamp-4 ${tone.detailPanel} ${tone.detailText}`}>
-                                {detail}
-                              </div>
-                            )}
-
-                            {owner && (
-                              <div className="flex items-center gap-1.5">
-                                <div className={`h-1.5 w-1.5 rounded-full ${owner.color}`} />
-                                <span className={`max-w-[112px] truncate text-[8px] font-semibold ${tone.ownerText}`}>
-                                  {owner.name}
-                                </span>
-                              </div>
-                            )}
+                        <div className={`pointer-events-none absolute inset-0 ${tone.cardOverlay}`} />
+                      {!isHovered && (
+                        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 px-2 pt-2">
+                          <div className="flex justify-center">
+                            <div className="inline-flex max-w-[58px] items-center justify-center rounded-[10px] bg-white/50 px-1.5 py-1 text-[6px] font-black uppercase leading-tight tracking-[0.06em] text-slate-950 shadow-[0_1px_0_rgba(255,255,255,0.35)]">
+                              <span className="whitespace-normal break-words text-center">
+                                {field.type === "racer" ? (field.racer ? "racer" : "slot") : field.type === "coins_gain" ? "reward" : field.type === "coins_lose" ? "risk" : field.type}
+                              </span>
+                            </div>
                           </div>
-                        )}
+                        </div>
+                      )}
+
+                        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-2 pb-2">
+                          <div className="flex justify-center">
+                            <div className="inline-flex max-w-[58px] items-center justify-center rounded-[10px] bg-white/50 px-1.5 py-1 text-[6px] font-black uppercase leading-tight tracking-[0.06em] text-slate-950 shadow-[0_1px_0_rgba(255,255,255,0.35)]">
+                              <span className="whitespace-normal break-words text-center">
+                                {field.type === "start" ? "START" : field.label}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div
+                          className="relative z-10 flex h-full w-full flex-col justify-between"
+                          style={{ transform: `rotate(${-rotDeg}deg)` }}
+                        />
                       </div>
+
                     </div>
                   );
                 })}
@@ -1981,11 +1974,37 @@ export default function GameBoard({ gameCode }: Props) {
                 })}
 
                 <div className={`absolute left-1/2 top-1/2 flex h-[44%] w-[44%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[50%] border-2 p-4 text-center shadow-inner ${theme.colors.centerBorder} ${theme.colors.centerBackground}`}>
-                  <div>
-                    <div className="text-4xl">🐎</div>
-                    <div className={`mt-1 text-sm font-semibold ${theme.colors.centerTitle}`}>{theme.labels.centerTitle}</div>
-                    <div className={`mt-1 text-xs ${theme.colors.centerSubtitle}`}>{theme.labels.centerSubtitle}</div>
-                  </div>
+                  {hoveredField ? (
+                    <div className="max-w-[180px]">
+                      <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                        {hoveredField.type === "racer" ? (hoveredField.racer ? "racer" : "slot") : hoveredField.type === "coins_gain" ? "reward" : hoveredField.type === "coins_lose" ? "risk" : hoveredField.type}
+                      </div>
+                      <div className={`mt-2 text-sm font-semibold ${theme.colors.centerTitle}`}>
+                        {hoveredField.type === "start" ? "START" : hoveredField.label}
+                      </div>
+                      {getFieldDetail(
+                        hoveredField,
+                        hoveredField.type === "racer" && hoveredField.racer
+                          ? (racerOwnership[racerOwnershipKey(hoveredField.racer)]?.name ?? null)
+                          : null,
+                      ) && (
+                        <div className={`mt-2 text-xs leading-relaxed ${theme.colors.centerSubtitle}`}>
+                          {getFieldDetail(
+                            hoveredField,
+                            hoveredField.type === "racer" && hoveredField.racer
+                              ? (racerOwnership[racerOwnershipKey(hoveredField.racer)]?.name ?? null)
+                              : null,
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="text-4xl">🐎</div>
+                      <div className={`mt-1 text-sm font-semibold ${theme.colors.centerTitle}`}>{theme.labels.centerTitle}</div>
+                      <div className={`mt-1 text-xs ${theme.colors.centerSubtitle}`}>{theme.labels.centerSubtitle}</div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
