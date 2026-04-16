@@ -1950,6 +1950,10 @@ export default function GameBoard({ gameCode }: Props) {
                         }}
                       >
                         <div className={`pointer-events-none absolute inset-0 ${tone.cardOverlay}`} />
+                        {/* Jemný bílý overlay pro neracer pole — odlišuje je od hero racer karet */}
+                        {field.type !== "racer" && (
+                          <div className="pointer-events-none absolute inset-0 bg-white/[0.04]" />
+                        )}
                       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-2 pb-2">
                         <div className="flex justify-center">
                           <div className="inline-flex max-w-[58px] items-center justify-center rounded-[10px] bg-white/50 px-1.5 py-0.5 text-[5.5px] font-black uppercase leading-[1.05] tracking-[0.04em] text-slate-950 shadow-[0_1px_0_rgba(255,255,255,0.35)]">
