@@ -51,9 +51,53 @@ export const horseDayTheme: Theme = {
     racerField: "Stáj",
   },
   racers: [
-    { id: "divoka_ruze",  name: "Divoká růže",  speed: 2, price: 80,  emoji: "🌹" },
-    { id: "modry_blesk",  name: "Modrý blesk",  speed: 3, price: 150, emoji: "🔵" },
-    { id: "zlata_hriva",  name: "Zlatá hříva",  speed: 4, price: 250, emoji: "🟡" },
-    { id: "rychly_vitr",  name: "Rychlý vítr",  speed: 5, price: 400, emoji: "🟢" },
+    {
+      "id": "divoka_ruze",
+      "name": "Divoká růže",
+      "speed": 2,
+      "price": 80,
+      "emoji": "🌹"
+    },
+    {
+      "id": "modry_blesk",
+      "name": "Modrý blesk",
+      "speed": 3,
+      "price": 150,
+      "emoji": "🔵"
+    },
+    {
+      "id": "zlata_hriva",
+      "name": "Zlatá hříva",
+      "speed": 7,
+      "price": 250,
+      "emoji": "🟡",
+      "maxStamina": 100
+    },
+    {
+      "id": "r6",
+      "name": "Pepík",
+      "speed": 3,
+      "price": 150,
+      "emoji": "🐴",
+      "maxStamina": 91,
+      "flavorText": "Pepó! Pepane! Pepíku!!"
+    },
+    {
+      "id": "rychly_vitr",
+      "name": "Rychlý vítr",
+      "speed": 5,
+      "price": 400,
+      "emoji": "🟢"
+    },
+    {
+      "id": "r5",
+      "name": "Železník",
+      "speed": 10,
+      "price": 150,
+      "emoji": "🐴",
+      "maxStamina": 100,
+      "isLegendary": true,
+      "flavorText": "Železník — legendární kůň, který nezná strach, únavu ani druhé místo. Jeho jediný cíl je jasný: vyhrát."
+    }
   ],
 };
