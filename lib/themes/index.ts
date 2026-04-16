@@ -39,6 +39,18 @@ export interface RacerConfig {
   emoji: string;
   /** Volitelná přímá URL obrázku — theme builder ji vyplní. Fallback: emoji. */
   image?: string;
+  /**
+   * Výchozí stamina závodníka při zakoupení hráčem (0–100, výchozí 100).
+   * V průběhu hry se mění na Horse.stamina (runtime hodnota).
+   * Pokud není uvedena, použije se fallback 100.
+   */
+  stamina?: number;
+  /**
+   * Flavor text / příběh závodníka — zobrazuje se při hoveru na racer kartu.
+   * Volitelné — pokud chybí, karta neukáže popis.
+   * Příklad: "Veterán závodního okruhu, který ještě neřekl své poslední slovo…"
+   */
+  heroText?: string;
 }
 
 /**

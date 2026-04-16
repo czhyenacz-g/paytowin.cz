@@ -52,6 +52,11 @@ export interface Field {
   racer?: Horse;
   /** @deprecated použij racer */
   horse?: Horse;
+  /**
+   * Flavor text / příběh závodníka — přenesen z RacerConfig.heroText.
+   * Použij pro hover detail na racer kartě. Undefined pokud theme hero text nedefinuje.
+   */
+  heroText?: string;
   action: (player: Player) => { player: Player; log: string };
 }
 
@@ -172,7 +177,14 @@ export function buildFields(board: BoardConfig, racers: RacerConfig[]): Field[] 
           action: (p) => ({ player: p, log: "" }),
         };
       }
-      const r: Horse = { id: rc.id, name: rc.name, speed: rc.speed, price: rc.price, emoji: rc.emoji };
+      const r: Horse = {
+        id:      rc.id,
+        name:    rc.name,
+        speed:   rc.speed,
+        price:   rc.price,
+        emoji:   rc.emoji,
+        stamina: rc.stamina, // přenesen z katalogu; fallback 100 aplikuje herní logika
+      };
       return {
         index:       fc.index,
         type:        "racer",
@@ -181,6 +193,7 @@ export function buildFields(board: BoardConfig, racers: RacerConfig[]): Field[] 
         description: `${rc.name} na prodej (rychlost ${rc.speed}) za ${rc.price} coins.`,
         racer:       r,
         horse:       r, // @deprecated legacy alias
+        heroText:    rc.heroText,
         action:      (p) => ({ player: p, log: "" }),
       };
     }

@@ -17,7 +17,9 @@ import type { BoardConfig, BoardFieldConfig } from "@/lib/board/types";
 import BoardEditorPreview from "@/app/components/editor/BoardEditorPreview";
 import FieldEditorPanel from "@/app/components/editor/FieldEditorPanel";
 import type { AssetSectionConfig } from "@/app/components/editor/FieldEditorPanel";
+import RacerEditorPanel from "@/app/components/editor/RacerEditorPanel";
 import { buildFields } from "@/lib/engine";
+import type { RacerConfig } from "@/lib/themes";
 import {
   THEME_ASSETS,
   fieldAssetKey,
@@ -469,12 +471,15 @@ export default function ThemeDevTool() {
   // fieldTextures: type → custom path, racerImages: racerId → custom path
   const [editableFieldTextures, setEditableFieldTextures] = React.useState<Record<string, string>>({});
   const [editableRacerImages, setEditableRacerImages] = React.useState<Record<string, string>>({});
+  // Editovatelní závodníci — živá kopie manifest.racers pro editor
+  const [editableRacers, setEditableRacers] = React.useState<RacerConfig[]>([]);
 
-  // Živý manifest pro BoardEditorPreview — base manifest + asset overrides
+  // Živý manifest pro BoardEditorPreview — base manifest + asset overrides + editableRacers
   const liveManifest = React.useMemo<ThemeManifest | null>(() => {
     if (!boardPreviewManifest) return null;
     return {
       ...boardPreviewManifest,
+      racers: editableRacers.length > 0 ? editableRacers : boardPreviewManifest.racers,
       assets: {
         ...boardPreviewManifest.assets,
         fieldTextures: {
@@ -487,7 +492,7 @@ export default function ThemeDevTool() {
         },
       },
     };
-  }, [boardPreviewManifest, editableFieldTextures, editableRacerImages]);
+  }, [boardPreviewManifest, editableRacers, editableFieldTextures, editableRacerImages]);
 
   // Asset sekce pro FieldEditorPanel — počítá se z vybraného pole + liveManifest
   const currentAssetSection = React.useMemo<AssetSectionConfig | undefined>(() => {
@@ -559,6 +564,18 @@ export default function ThemeDevTool() {
       };
     }
   }, [selectedFieldIndex, editableBoard, liveManifest, editableFieldTextures, editableRacerImages]);
+
+  // Aktuálně vybraný závodník — jen pro racer pole
+  const currentSelectedRacer = React.useMemo<RacerConfig | null>(() => {
+    if (selectedFieldIndex === null || !liveManifest) return null;
+    const fieldConfig = editableBoard.fields.find((f) => f.index === selectedFieldIndex);
+    if (fieldConfig?.type !== "racer") return null;
+    const runtimeFields = buildFields(editableBoard, liveManifest.racers);
+    const runtimeField = runtimeFields.find((f) => f.index === selectedFieldIndex);
+    const racerId = runtimeField?.racer?.id;
+    if (!racerId) return null;
+    return liveManifest.racers.find((r) => r.id === racerId) ?? null;
+  }, [selectedFieldIndex, editableBoard, liveManifest]);
 
   // Actions
   const [saving, setSaving] = React.useState(false);
@@ -692,6 +709,8 @@ export default function ThemeDevTool() {
     // Resetuj asset overrides — inicializuj z aktuálního manifestu
     setEditableFieldTextures(manifest.assets?.fieldTextures ? { ...manifest.assets.fieldTextures } : {});
     setEditableRacerImages(manifest.assets?.racerImages ? { ...manifest.assets.racerImages } : {});
+    // Inicializuj editableRacers — hluboká kopie, zachová stamina/heroText pokud existují
+    setEditableRacers(manifest.racers.map((r) => ({ ...r })));
   }
 
   async function handleSave() {
@@ -1072,25 +1091,38 @@ export default function ThemeDevTool() {
                 </div>
 
                 {/* Field editor — zobrazí se po kliknutí na pole */}
-                <div className="w-full xl:w-[380px] xl:shrink-0">
+                <div className="w-full xl:w-[380px] xl:shrink-0 space-y-4">
                   {selectedFieldIndex !== null ? (() => {
                     const fieldConfig = editableBoard.fields.find(
                       (f) => f.index === selectedFieldIndex,
                     );
                     if (!fieldConfig) return null;
                     return (
-                      <FieldEditorPanel
-                        field={fieldConfig}
-                        onChange={(updated: BoardFieldConfig) =>
-                          setEditableBoard((prev) => ({
-                            ...prev,
-                            fields: prev.fields.map((f) =>
-                              f.index === selectedFieldIndex ? updated : f,
-                            ),
-                          }))
-                        }
-                        assetSection={currentAssetSection}
-                      />
+                      <>
+                        <FieldEditorPanel
+                          field={fieldConfig}
+                          onChange={(updated: BoardFieldConfig) =>
+                            setEditableBoard((prev) => ({
+                              ...prev,
+                              fields: prev.fields.map((f) =>
+                                f.index === selectedFieldIndex ? updated : f,
+                              ),
+                            }))
+                          }
+                          assetSection={currentAssetSection}
+                        />
+                        {/* Racer editor — jen pro racer pole */}
+                        {currentSelectedRacer && (
+                          <RacerEditorPanel
+                            racer={currentSelectedRacer}
+                            onChange={(updated: RacerConfig) =>
+                              setEditableRacers((prev) =>
+                                prev.map((r) => (r.id === updated.id ? updated : r)),
+                              )
+                            }
+                          />
+                        )}
+                      </>
                     );
                   })() : (
                     <div className="rounded-xl border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-400">
