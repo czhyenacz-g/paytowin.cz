@@ -32,6 +32,7 @@ export default function RacerEditorPanel({ racer, onChange }: Props) {
   // Lokální stav — synchronizován s prop při změně racerId
   const [name, setName] = React.useState(racer.name);
   const [speed, setSpeed] = React.useState(String(racer.speed));
+  const [price, setPrice] = React.useState(String(racer.price));
   // maxStamina: čteme z nového pole; fallback na deprecated stamina pro starší data
   const [maxStamina, setMaxStamina] = React.useState(String(racer.maxStamina ?? racer.stamina ?? 100));
   const [isLegendary, setIsLegendary] = React.useState(racer.isLegendary ?? false);
@@ -42,19 +43,22 @@ export default function RacerEditorPanel({ racer, onChange }: Props) {
   React.useEffect(() => {
     setName(racer.name);
     setSpeed(String(racer.speed));
+    setPrice(String(racer.price));
     setMaxStamina(String(racer.maxStamina ?? racer.stamina ?? 100));
     setIsLegendary(racer.isLegendary ?? false);
     setFlavorText(racer.flavorText ?? racer.heroText ?? "");
   }, [racer.id]);
 
   // Zavolá onChange jen tehdy, kdy jsou hodnoty platné a lišící se
-  function commit(overrides: Partial<{ name: string; speed: number; maxStamina: number; isLegendary: boolean; flavorText: string }>) {
+  function commit(overrides: Partial<{ name: string; speed: number; price: number; maxStamina: number; isLegendary: boolean; flavorText: string }>) {
     const parsedSpeed      = clampInt(Number(overrides.speed      ?? speed),      1, 10);
+    const parsedPrice      = clampInt(Number(overrides.price      ?? price),      0, 99999);
     const parsedMaxStamina = clampInt(Number(overrides.maxStamina ?? maxStamina),  0, 100);
     onChange({
       ...racer,
       name:        overrides.name        ?? name,
       speed:       parsedSpeed,
+      price:       parsedPrice,
       maxStamina:  parsedMaxStamina,
       isLegendary: (overrides.isLegendary ?? isLegendary) || undefined, // false → undefined (čistší data)
       stamina:     undefined, // vynuluj deprecated pole po první editaci
@@ -67,16 +71,11 @@ export default function RacerEditorPanel({ racer, onChange }: Props) {
     <div className="rounded-xl border border-amber-200 bg-amber-50 overflow-hidden">
 
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-amber-200 bg-amber-100/60 px-4 py-2.5">
-        <div className="flex items-center gap-2">
-          <span className="text-base">{racer.emoji}</span>
-          <span className="text-xs font-semibold text-amber-800">Závodník</span>
-          <span className="font-mono text-[10px] text-amber-600 bg-amber-100 rounded px-1.5 py-0.5">
-            {racer.id}
-          </span>
-        </div>
-        <span className="text-[10px] text-amber-500">
-          cena: {racer.price} coins
+      <div className="flex items-center gap-2 border-b border-amber-200 bg-amber-100/60 px-4 py-2.5">
+        <span className="text-base">{racer.emoji}</span>
+        <span className="text-xs font-semibold text-amber-800">Závodník</span>
+        <span className="font-mono text-[10px] text-amber-600 bg-amber-100 rounded px-1.5 py-0.5">
+          {racer.id}
         </span>
       </div>
 
@@ -96,8 +95,8 @@ export default function RacerEditorPanel({ racer, onChange }: Props) {
           />
         </div>
 
-        {/* Speed + Stamina — 2 sloupce */}
-        <div className="grid grid-cols-2 gap-3">
+        {/* Speed + Price + Stamina — 3 sloupce */}
+        <div className="grid grid-cols-3 gap-3">
           <div className="space-y-1">
             <label className="block text-xs font-medium text-amber-700">
               Speed
@@ -125,6 +124,26 @@ export default function RacerEditorPanel({ racer, onChange }: Props) {
                 />
               ))}
             </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="block text-xs font-medium text-amber-700">
+              Cena
+              <span className="ml-1 font-normal text-amber-500">(coins)</span>
+            </label>
+            <input
+              type="number"
+              min={0}
+              max={99999}
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              onBlur={() => {
+                const v = clampInt(Number(price), 0, 99999);
+                setPrice(String(v));
+                commit({ price: v });
+              }}
+              className="w-full rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-amber-300"
+            />
           </div>
 
           <div className="space-y-1">
