@@ -60,6 +60,7 @@ export default function LandingPage() {
   const [activePanel, setActivePanel] = React.useState<string | null>(null);
   const [communityThemes, setCommunityThemes] = React.useState<CommunityThemeSummary[]>([]);
   const [communityLoading, setCommunityLoading] = React.useState(false);
+  const [hostedGamesCount, setHostedGamesCount] = React.useState<number | null>(null);
   // Načti session + předvyplň ?join=KOD z URL
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -133,6 +134,16 @@ export default function LandingPage() {
       isMounted = false;
     };
   }, []);
+
+  // Načti statistiky profilu při otevření panelu
+  React.useEffect(() => {
+    if (activePanel !== "profil" || !discordUser?.id) return;
+    supabase
+      .from("games")
+      .select("id", { count: "exact", head: true })
+      .eq("owner_discord_id", discordUser.id)
+      .then(({ count }) => setHostedGamesCount(count ?? 0));
+  }, [activePanel, discordUser?.id]);
 
   const handleBack = () => {
     setActivePanel(null);
@@ -662,75 +673,88 @@ export default function LandingPage() {
                   </div>
                 ) : isProfilePanel ? (
                   <div className="space-y-4">
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
-                      <div className="text-sm font-semibold text-slate-800">Osobní sekce hráče</div>
-                      <p className="mt-1 text-sm leading-relaxed text-slate-500">
-                        Tady bude tvoje budoucí systémová zóna mimo samotné mapy: přehled účtu, profil, dosažené úspěchy a další osobní nastavení.
-                      </p>
+                    {/* Identity block */}
+                    <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 flex items-center gap-4">
+                      <div className="relative shrink-0">
+                        {discordUser?.avatar ? (
+                          <img src={discordUser.avatar} alt="" className="h-14 w-14 rounded-2xl object-cover" />
+                        ) : (
+                          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-900 text-white text-xl font-bold">
+                            {discordUser?.name?.charAt(0).toUpperCase() ?? "?"}
+                          </div>
+                        )}
+                        <span className="absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full bg-emerald-400 ring-2 ring-white" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-base font-bold text-slate-900 truncate">
+                          {discordUser?.name || "Nepřihlášený hráč"}
+                        </div>
+                        {discordUser?.id && (
+                          <div className="mt-0.5 font-mono text-[11px] text-slate-400 truncate">
+                            Discord ID: {discordUser.id}
+                          </div>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="grid gap-3 sm:grid-cols-3">
+                    {/* Stats grid */}
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                       {[
-                        {
-                          title: "Přehled účtu",
-                          text: "Shrnutí přihlášení, identity a základních systémových informací.",
-                        },
-                        {
-                          title: "Dosažené úspěchy",
-                          text: "Místo pro achievementy, odemčené milníky a dlouhodobý progres.",
-                        },
-                        {
-                          title: "Budoucí správa",
-                          text: "Později sem přidáme úpravy profilu, historii a další osobní volby.",
-                        },
-                      ].map((item) => (
-                        <div key={item.title} className="rounded-2xl border border-slate-200 bg-white p-4">
-                          <div className="text-sm font-semibold text-slate-800">{item.title}</div>
-                          <p className="mt-1 text-xs leading-relaxed text-slate-500">{item.text}</p>
+                        { label: "Odehrané hry", value: hostedGamesCount !== null ? String(hostedGamesCount) : "…" },
+                        { label: "Výhry",         value: "–" },
+                        { label: "Závody",        value: "–" },
+                        { label: "Ztracení raceři", value: "–" },
+                      ].map((s) => (
+                        <div key={s.label} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-center">
+                          <div className="text-2xl font-black text-slate-900">{s.value}</div>
+                          <div className="mt-0.5 text-[11px] text-slate-500 leading-tight">{s.label}</div>
                         </div>
                       ))}
                     </div>
+                    <p className="text-[11px] text-slate-400 -mt-1 px-1">
+                      Výhry, závody a ztracení raceři se budou sledovat od příštích her.
+                    </p>
 
-                    <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-4">
-                      <div className="flex items-start gap-3">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-white text-lg">
-                          {discordUser?.avatar ? (
-                            <img src={discordUser.avatar} alt="" className="h-11 w-11 rounded-2xl object-cover" />
-                          ) : (
-                            <span>{discordUser?.name?.charAt(0).toUpperCase() ?? "?"}</span>
-                          )}
-                        </div>
-                        <div className="min-w-0">
-                          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Aktuální profil</div>
-                          <div className="mt-1 text-sm font-semibold text-slate-800">
-                            {discordUser?.name || "Nepřihlášený hráč"}
+                    {/* Achievements */}
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                      <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Achievementy</div>
+                      <div className="grid grid-cols-4 gap-2">
+                        {[
+                          { emoji: "🏁", label: "První závod" },
+                          { emoji: "🏆", label: "První výhra" },
+                          { emoji: "🐴", label: "První racer" },
+                          { emoji: "💀", label: "Ztracený racer" },
+                          { emoji: "⚡", label: "Legendární racer" },
+                          { emoji: "💰", label: "Boháč" },
+                          { emoji: "🎲", label: "Hazardér" },
+                          { emoji: "👑", label: "Šampion" },
+                        ].map((a) => (
+                          <div
+                            key={a.label}
+                            className="flex flex-col items-center gap-1 rounded-xl border border-slate-100 bg-slate-50 px-2 py-3 opacity-45 grayscale"
+                            title={a.label}
+                          >
+                            <span className="text-2xl">{a.emoji}</span>
+                            <span className="text-center text-[10px] leading-tight text-slate-600">{a.label}</span>
                           </div>
-                          <div className="mt-1 text-xs text-slate-500">
-                            {discordUser
-                              ? "Připojení přes Discord je aktivní. Později sem přibydou další osobní nastavení."
-                              : "Pro plný profil později přidáme osobní nastavení a trvalý přehled účtu."}
-                          </div>
-                        </div>
+                        ))}
                       </div>
+                    </div>
 
-                      <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                        Tohle je vstupní detail view pro budoucí account sekci. Zatím neobsahuje backend profilu ani achievement systém, ale už vytváří jasné místo, kam se tyto funkce přidají.
-                      </div>
-
-                      <div className="flex flex-col gap-3 sm:flex-row">
-                        <button
-                          onClick={() => router.push("/hry")}
-                          className="flex-1 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-                        >
-                          👀 Přehled aktivních her
-                        </button>
-                        <button
-                          onClick={handleBack}
-                          className="flex-1 rounded-2xl border-2 border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
-                        >
-                          ← Zpět na menu
-                        </button>
-                      </div>
+                    {/* Actions */}
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                      <button
+                        onClick={() => router.push("/hry")}
+                        className="flex-1 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                      >
+                        👀 Přehled aktivních her
+                      </button>
+                      <button
+                        onClick={handleBack}
+                        className="flex-1 rounded-2xl border-2 border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                      >
+                        ← Zpět na menu
+                      </button>
                     </div>
                   </div>
                 ) : shareCode ? (
