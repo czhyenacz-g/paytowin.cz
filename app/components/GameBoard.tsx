@@ -164,7 +164,7 @@ function getFieldTone(field: Field, themeId: string) {
         topBadge: "border border-white/14 bg-black/42 text-slate-100 shadow-[0_1px_0_rgba(255,255,255,0.06)]",
         titleText: "text-slate-50",
         metaText: "text-slate-200/90",
-        footerPanel: "border-t border-white/12 bg-gradient-to-t from-black/78 via-black/60 to-black/8",
+        footerPanel: "bg-gradient-to-t from-black/78 via-black/60 to-black/8",
         detailPanel: "border border-white/12 bg-black/58 text-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
         detailText: "text-slate-100",
         ownerText: "text-slate-200/85",
@@ -174,7 +174,7 @@ function getFieldTone(field: Field, themeId: string) {
         topBadge: "border border-black/10 bg-white/74 text-slate-800 shadow-[0_1px_0_rgba(255,255,255,0.4)]",
         titleText: "text-white",
         metaText: "text-white/80",
-        footerPanel: "border-t border-black/8 bg-gradient-to-t from-slate-950/78 via-slate-950/58 to-transparent",
+        footerPanel: "bg-gradient-to-t from-slate-950/78 via-slate-950/58 to-transparent",
         detailPanel: "border border-black/8 bg-white/88 text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]",
         detailText: "text-slate-700",
         ownerText: "text-slate-700/75",
@@ -1908,41 +1908,46 @@ export default function GameBoard({ gameCode }: Props) {
                       onMouseLeave={() => setHoveredFieldIdx(null)}
                     >
                       <div className={`pointer-events-none absolute inset-0 ${tone.cardOverlay}`} />
+                      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 px-2 pt-2">
+                        <div className="flex justify-start">
+                          <div className={`inline-flex max-w-full items-center rounded-full px-1.5 py-0.5 text-[8px] font-black uppercase tracking-[0.18em] ${tone.topBadge}`}>
+                            {field.type === "racer" ? (field.racer ? "racer" : "slot") : field.type === "coins_gain" ? "reward" : field.type === "coins_lose" ? "risk" : field.type}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-2 pb-2">
+                        <div className="flex justify-center">
+                          <div className="inline-flex max-w-[58px] items-center justify-center rounded-[10px] bg-white/50 px-1.5 py-1 text-[6px] font-black uppercase leading-tight tracking-[0.06em] text-slate-950 shadow-[0_1px_0_rgba(255,255,255,0.35)]">
+                            <span className="whitespace-normal break-words text-center">
+                              {field.type === "start" ? "START" : field.label}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
 
                       <div
                         className="relative z-10 flex h-full w-full flex-col justify-between"
                         style={{ transform: `rotate(${-rotDeg}deg)` }}
                       >
-                        <div className="flex justify-end px-2 pt-9">
-                          <div className={`leading-none drop-shadow-[0_2px_6px_rgba(15,23,42,0.45)] ${isHovered ? "text-[1.8rem]" : "text-[1.1rem]"}`}>{field.emoji}</div>
-                        </div>
+                        {isHovered && (
+                          <div className={`mt-auto space-y-1 px-2 pb-2 pt-5 ${tone.footerPanel}`}>
+                            {detail && (
+                              <div className={`max-w-[136px] rounded-[3px] px-2 py-1.5 text-[10px] leading-tight shadow-lg line-clamp-4 ${tone.detailPanel} ${tone.detailText}`}>
+                                {detail}
+                              </div>
+                            )}
 
-                        <div className={`mt-auto space-y-1 px-2 pb-2 pt-5 ${tone.footerPanel}`}>
-                          <div className={`font-black uppercase leading-tight tracking-[0.1em] ${tone.titleText} ${isHovered ? "text-[11px]" : "text-[9px]"}`}>
-                            {field.type === "start" ? "START" : field.label}
+                            {owner && (
+                              <div className="flex items-center gap-1.5">
+                                <div className={`h-1.5 w-1.5 rounded-full ${owner.color}`} />
+                                <span className={`max-w-[112px] truncate text-[8px] font-semibold ${tone.ownerText}`}>
+                                  {owner.name}
+                                </span>
+                              </div>
+                            )}
                           </div>
-
-                          {isHovered && detail && (
-                            <div className={`max-w-[136px] rounded-[3px] px-2 py-1.5 text-[10px] leading-tight shadow-lg line-clamp-4 ${tone.detailPanel} ${tone.detailText}`}>
-                              {detail}
-                            </div>
-                          )}
-
-                          {owner && (
-                            <div className="flex items-center gap-1.5">
-                              <div className={`h-1.5 w-1.5 rounded-full ${owner.color}`} />
-                              <span className={`max-w-[112px] truncate text-[8px] font-semibold ${isHovered ? tone.ownerText : tone.metaText}`}>
-                                {owner.name}
-                              </span>
-                            </div>
-                          )}
-
-                          <div className="pt-0.5">
-                            <div className={`inline-flex max-w-full items-center rounded-full px-1.5 py-0.5 text-[8px] font-black uppercase tracking-[0.18em] ${tone.topBadge}`}>
-                              {field.type === "racer" ? (field.racer ? "racer" : "slot") : field.type === "coins_gain" ? "reward" : field.type === "coins_lose" ? "risk" : field.type}
-                            </div>
-                          </div>
-                        </div>
+                        )}
                       </div>
                     </div>
                   );
