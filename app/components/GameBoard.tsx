@@ -1931,7 +1931,7 @@ export default function GameBoard({ gameCode }: Props) {
                           backgroundPosition: "center, center",
                           // Vrchní hrana = vzdálená od středu: výrazný barevný akcent
                           // Ostatní 3 hrany: 2px černá
-                          border: "2px solid rgba(0,0,0,0.82)",
+                          border: "1px solid rgba(0,0,0,0.82)",
                           borderTopWidth: "6px",
                           borderTopColor: getFieldAccentColor(field),
                         }}
