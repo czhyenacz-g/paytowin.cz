@@ -63,7 +63,8 @@ export const horseDayTheme: Theme = {
       "name": "Modrý blesk",
       "speed": 3,
       "price": 150,
-      "emoji": "🔵"
+      "emoji": "🔵",
+      "maxStamina": 50
     },
     {
       "id": "zlata_hriva",
