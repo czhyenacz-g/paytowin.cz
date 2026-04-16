@@ -49,6 +49,46 @@ const PANELS: Panel[] = [
 export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
   const [hovered, setHovered] = React.useState<number | null>(null);
 
+  // ── Hover zvuk ────────────────────────────────────────────────────────────────
+  const audioCtxRef     = React.useRef<AudioContext | null>(null);
+  const lastSoundMsRef  = React.useRef<number>(0);
+
+  const playHoverSound = React.useCallback(() => {
+    const now = Date.now();
+    if (now - lastSoundMsRef.current < 70) return; // cooldown — rychlý přejezd přes všechny panely max ~14 zvuků/s
+    lastSoundMsRef.current = now;
+
+    try {
+      if (!audioCtxRef.current) audioCtxRef.current = new AudioContext();
+      const ctx = audioCtxRef.current;
+      // Pokud browser pozastavil kontext (bez user interaction), pokus o resume
+      if (ctx.state === "suspended") ctx.resume();
+
+      // Krátký rising sweep — "game menu whoosh" charakter
+      // Pokud chceš místo syntetického zvuku soubor, ulož /public/audio/menu-hover.mp3
+      // a nahraď tento blok: new Audio("/audio/menu-hover.mp3").play().catch(() => {});
+      const t   = ctx.currentTime;
+      const dur = 0.13; // 130 ms — krátké, táhlé
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(260, t);
+      osc.frequency.exponentialRampToValueAtTime(680, t + dur);
+
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.10, t + 0.018); // attack
+      gain.gain.exponentialRampToValueAtTime(0.001, t + dur); // decay
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + dur);
+    } catch {
+      // AudioContext nedostupný (SSR, blokovaný prohlížečem) — ticho
+    }
+  }, []);
+
   return (
     <div
       className="flex w-full overflow-hidden shadow-2xl"
@@ -95,7 +135,7 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
                 backgroundPosition: panel.bgPosition ?? "center center",
               } : {}),
             }}
-            onMouseEnter={() => setHovered(idx)}
+            onMouseEnter={() => { setHovered(idx); playHoverSound(); }}
             onMouseLeave={() => setHovered(null)}
             onClick={handleClick}
           >
