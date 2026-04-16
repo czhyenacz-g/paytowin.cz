@@ -2416,7 +2416,7 @@ export default function GameBoard({ gameCode }: Props) {
                               </div>
                             </div>
                             {!bankrupt && player.horses.length > 0 && (
-                              <div className="border-t border-black/8 pt-2">
+                              <div className="border-t border-black/8 pt-2 space-y-1.5">
                                 {[...player.horses]
                                   .sort((a, b) => (b.isPreferred ? 1 : 0) - (a.isPreferred ? 1 : 0))
                                   .map((h) => {
@@ -2428,7 +2428,7 @@ export default function GameBoard({ gameCode }: Props) {
                                         className={`rounded-[3px] px-2.5 py-2 text-xs ${
                                           h.isPreferred
                                             ? "border border-yellow-200 bg-yellow-50"
-                                            : "bg-slate-50"
+                                            : "border border-black/[0.06] bg-slate-50"
                                         }`}
                                       >
                                         <div className={`flex items-start gap-2 text-sm font-semibold leading-snug ${h.isPreferred ? "text-amber-700" : "text-slate-700"}`}>
@@ -2439,7 +2439,10 @@ export default function GameBoard({ gameCode }: Props) {
                                         </div>
                                         <div className="mt-1.5 ml-6 inline-flex max-w-full flex-wrap items-center gap-1.5">
                                           <span className="whitespace-nowrap rounded-[2px] bg-white/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
-                                            Stamina {h.stamina ?? 100}%
+                                            ⚡ {h.speed}
+                                          </span>
+                                          <span className="whitespace-nowrap rounded-[2px] bg-white/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
+                                            Stamina {h.stamina ?? h.maxStamina ?? 100}%
                                           </span>
                                           {isOwn ? (
                                             <span className="inline-flex items-center gap-1 whitespace-nowrap">
