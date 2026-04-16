@@ -26,10 +26,16 @@ function clampInt(val: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, Math.round(val)));
 }
 
+/** Sanitizuje ID na slug: lowercase, jen a-z 0-9 _ - */
+function sanitizeId(raw: string): string {
+  return raw.toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 40) || "r_new";
+}
+
 // ─── Komponenta ───────────────────────────────────────────────────────────────
 
 export default function RacerEditorPanel({ racer, onChange }: Props) {
   // Lokální stav — synchronizován s prop při změně racerId
+  const [idVal, setIdVal] = React.useState(racer.id);
   const [name, setName] = React.useState(racer.name);
   const [speed, setSpeed] = React.useState(String(racer.speed));
   const [price, setPrice] = React.useState(String(racer.price));
@@ -41,6 +47,7 @@ export default function RacerEditorPanel({ racer, onChange }: Props) {
 
   // Sync: pokud parent změní racera (jiný racer slot), resetuj lokální stav
   React.useEffect(() => {
+    setIdVal(racer.id);
     setName(racer.name);
     setSpeed(String(racer.speed));
     setPrice(String(racer.price));
@@ -82,17 +89,37 @@ export default function RacerEditorPanel({ racer, onChange }: Props) {
       {/* Formulář */}
       <div className="px-4 py-3 space-y-3">
 
-        {/* Jméno */}
-        <div className="space-y-1">
-          <label className="block text-xs font-medium text-amber-700">Jméno</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onBlur={() => commit({ name })}
-            placeholder="Divoká růže"
-            className="w-full rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-300"
-          />
+        {/* ID + Jméno — 2 sloupce */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <label className="block text-xs font-medium text-amber-700">
+              ID
+              <span className="ml-1 font-normal text-amber-500">— slug, jen a-z 0-9 _-</span>
+            </label>
+            <input
+              type="text"
+              value={idVal}
+              onChange={(e) => setIdVal(e.target.value)}
+              onBlur={() => {
+                const sanitized = sanitizeId(idVal);
+                setIdVal(sanitized);
+                onChange({ ...racer, id: sanitized });
+              }}
+              placeholder="zeleznik"
+              className="w-full rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm text-slate-900 font-mono placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-300"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="block text-xs font-medium text-amber-700">Jméno</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onBlur={() => commit({ name })}
+              placeholder="Divoká růže"
+              className="w-full rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-300"
+            />
+          </div>
         </div>
 
         {/* Speed + Price + Stamina — 3 sloupce */}
