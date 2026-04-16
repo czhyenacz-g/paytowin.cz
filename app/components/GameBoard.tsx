@@ -1985,6 +1985,11 @@ export default function GameBoard({ gameCode }: Props) {
                           )}
                         </div>
                       )}
+                      {hoveredField.flavorText && (
+                        <div className={`mt-2 text-[10px] italic leading-relaxed opacity-70 ${theme.colors.centerSubtitle}`}>
+                          {hoveredField.flavorText}
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div>
