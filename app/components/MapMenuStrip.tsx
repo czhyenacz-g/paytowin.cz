@@ -193,7 +193,7 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
                       color: panel.id === "profil" ? "#0f172a" : "#000",
                     }}
                   >
-                    {panel.id === "profil" ? "Otevřít →" : "Hrát →"}
+                    {panel.id === "profil" ? "Otevřít →" : panel.id === "editor" ? "Jít budovat →" : "Hrát →"}
                   </span>
                 </div>
               )}
