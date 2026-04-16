@@ -296,13 +296,15 @@ function EditorExportPanel({
   liveManifest,
   editableFieldTextures,
   editableRacerImages,
+  editableRacers,
 }: {
   editableBoard: BoardConfig;
   liveManifest: ThemeManifest;
   editableFieldTextures: Record<string, string>;
   editableRacerImages: Record<string, string>;
+  editableRacers: RacerConfig[];
 }) {
-  type ExportTab = "board" | "assets" | "all";
+  type ExportTab = "board" | "racers" | "assets" | "all";
   const [tab, setTab] = React.useState<ExportTab>("board");
   const [copied, setCopied] = React.useState<ExportTab | null>(null);
 
@@ -334,25 +336,45 @@ function EditorExportPanel({
     Object.keys(editableRacerImages).length > 0;
 
   const boardJson   = JSON.stringify(editableBoard, null, 2);
+  const racersJson  = JSON.stringify(editableRacers, null, 2);
   const assetsJson  = JSON.stringify(mergedAssets, null, 2);
+
+  const themeFile   = `lib/themes/${liveManifest.meta.id}.ts`;
+
   const combinedText = [
     `// ═══ BOARD CONFIG ═══`,
-    `// Vložit do lib/board/presets.ts (nebo nový soubor pro vlastní mapu):`,
+    `// Soubor: lib/board/presets.ts`,
     `// export const ${editableBoard.id.toUpperCase().replace(/-/g, "_")}_BOARD: BoardConfig = ${boardJson};`,
     ``,
+    `// ═══ RACEŘI ═══`,
+    `// Soubor: ${themeFile} — sekce racers: [...]`,
+    racersJson,
+    ``,
     `// ═══ ASSET MAPPING ═══`,
-    `// Vložit do theme souboru jako assets: { … } sekce:`,
+    `// Soubor: ${themeFile} — sekce assets: { … }`,
     assetsJson,
   ].join("\n");
 
   const TAB_LABELS: Record<ExportTab, string> = {
     board:  "Board config",
+    racers: "Raceři",
     assets: "Asset mapping",
     all:    "Vše",
   };
 
+  // Zda jsou raceři změnění oproti původnímu manifestu (heuristika: JSON diff)
+  const hasRacerChanges = JSON.stringify(editableRacers) !== JSON.stringify(liveManifest.racers);
+
+  const EXPORT_HINTS: Record<ExportTab, string> = {
+    board:  "→ lib/board/presets.ts — export const … : BoardConfig = { … }",
+    racers: `→ ${themeFile} — sekce racers: [ … ]`,
+    assets: hasAssetChanges ? `→ ${themeFile} — sekce assets: { … }` : "— žádné asset overrides zatím nebyly nastaveny",
+    all:    "→ všechny bloky s komentáři — vhodné pro diff review nebo PR popis",
+  };
+
   const content: Record<ExportTab, string> = {
     board:  boardJson,
+    racers: racersJson,
     assets: assetsJson,
     all:    combinedText,
   };
@@ -367,7 +389,7 @@ function EditorExportPanel({
         <div className="flex items-center gap-3">
           {/* Záložky */}
           <div className="flex rounded-lg border border-slate-200 bg-white overflow-hidden text-xs">
-            {(["board", "assets", "all"] as ExportTab[]).map((t) => (
+            {(["board", "racers", "assets", "all"] as ExportTab[]).map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
@@ -378,6 +400,9 @@ function EditorExportPanel({
                 {TAB_LABELS[t]}
                 {t === "assets" && hasAssetChanges && (
                   <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-violet-500 align-middle" />
+                )}
+                {t === "racers" && hasRacerChanges && (
+                  <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-amber-400 align-middle" />
                 )}
               </button>
             ))}
@@ -399,13 +424,7 @@ function EditorExportPanel({
 
       {/* Nápověda k záložce */}
       <div className="border-b border-slate-100 bg-slate-50/60 px-4 py-1.5 text-[10px] text-slate-400">
-        {tab === "board"  && "→ vložit do lib/board/presets.ts jako export const … : BoardConfig = { … }"}
-        {tab === "assets" && (
-          hasAssetChanges
-            ? `→ vložit do lib/themes/${liveManifest.meta.id}.ts jako assets: { … } sekce`
-            : "— žádné asset overrides zatím nebyly nastaveny"
-        )}
-        {tab === "all"    && "→ oba bloky s komentáři — vhodné pro PR popis nebo diff review"}
+        {EXPORT_HINTS[tab]}
       </div>
 
       {/* JSON preview */}
@@ -413,12 +432,10 @@ function EditorExportPanel({
         {content[tab]}
       </pre>
 
-      {/* Asset diff summary — jen na záložce Assets */}
+      {/* Asset diff summary */}
       {tab === "assets" && (
         <div className="border-t border-slate-100 px-4 py-2.5 space-y-1">
-          <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">
-            Změněné textury
-          </div>
+          <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Změněné textury</div>
           {!hasAssetChanges ? (
             <div className="text-[10px] text-slate-400 italic">Žádné změny oproti výchozímu manifestu.</div>
           ) : (
@@ -436,6 +453,27 @@ function EditorExportPanel({
                 </div>
               ))}
             </div>
+          )}
+        </div>
+      )}
+
+      {/* Racer diff summary */}
+      {tab === "racers" && (
+        <div className="border-t border-slate-100 px-4 py-2.5 space-y-1">
+          <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Raceři v editoru</div>
+          <div className="space-y-0.5">
+            {editableRacers.map((r) => (
+              <div key={r.id} className="flex items-center gap-2 text-[10px]">
+                <span className="text-base leading-none">{r.emoji}</span>
+                <span className="font-mono text-amber-700 w-28 shrink-0">{r.id}</span>
+                <span className="text-slate-500 shrink-0">speed:{r.speed}</span>
+                <span className="text-slate-500 shrink-0">stamina:{r.stamina ?? 100}</span>
+                {r.flavorText && <span className="text-slate-400 truncate italic">{r.flavorText.slice(0, 40)}{r.flavorText.length > 40 ? "…" : ""}</span>}
+              </div>
+            ))}
+          </div>
+          {hasRacerChanges && (
+            <div className="mt-1 text-[10px] text-amber-600">● Oproti manifestu byly změněny parametry závodníků</div>
           )}
         </div>
       )}
@@ -473,6 +511,20 @@ export default function ThemeDevTool() {
   const [editableRacerImages, setEditableRacerImages] = React.useState<Record<string, string>>({});
   // Editovatelní závodníci — živá kopie manifest.racers pro editor
   const [editableRacers, setEditableRacers] = React.useState<RacerConfig[]>([]);
+
+  // ── Draft persistence (localStorage) ──────────────────────────────────────
+  // savedSnapshot: JSON otisk stavu při posledním otevření/uložení — slouží pro isDirty
+  const [savedSnapshot, setSavedSnapshot] = React.useState<string | null>(null);
+  const [lastSavedAt, setLastSavedAt] = React.useState<Date | null>(null);
+  const [hasDraft, setHasDraft] = React.useState<boolean>(() => {
+    try { return !!localStorage.getItem("ptw_board_draft"); } catch { return false; }
+  });
+
+  const isDirty = React.useMemo(() => {
+    if (!showBoardPreview || savedSnapshot === null) return false;
+    const current = JSON.stringify({ editableBoard, editableRacers, editableFieldTextures, editableRacerImages });
+    return current !== savedSnapshot;
+  }, [showBoardPreview, savedSnapshot, editableBoard, editableRacers, editableFieldTextures, editableRacerImages]);
 
   // Živý manifest pro BoardEditorPreview — base manifest + asset overrides + editableRacers
   const liveManifest = React.useMemo<ThemeManifest | null>(() => {
@@ -698,19 +750,93 @@ export default function ThemeDevTool() {
   function handleBoardPreview() {
     const manifest = parseJson();
     if (!manifest) return;
+
+    const newBoard: BoardConfig     = { ...SMALL_BOARD, fields: SMALL_BOARD.fields.map((f) => ({ ...f })) };
+    const newRacers: RacerConfig[]  = manifest.racers.map((r) => ({ ...r }));
+    const newTextures               = manifest.assets?.fieldTextures ? { ...manifest.assets.fieldTextures } : {};
+    const newRacerImages            = manifest.assets?.racerImages   ? { ...manifest.assets.racerImages }   : {};
+
     setBoardPreviewManifest(manifest);
     setPreviewAssetVersion(0);
     setShowBoardPreview(true);
     setSelectedFieldIndex(null);
-    setEditableBoard({
-      ...SMALL_BOARD,
-      fields: SMALL_BOARD.fields.map((f) => ({ ...f })),
-    });
-    // Resetuj asset overrides — inicializuj z aktuálního manifestu
-    setEditableFieldTextures(manifest.assets?.fieldTextures ? { ...manifest.assets.fieldTextures } : {});
-    setEditableRacerImages(manifest.assets?.racerImages ? { ...manifest.assets.racerImages } : {});
-    // Inicializuj editableRacers — hluboká kopie, zachová stamina/flavorText pokud existují
-    setEditableRacers(manifest.racers.map((r) => ({ ...r })));
+    setEditableBoard(newBoard);
+    setEditableFieldTextures(newTextures);
+    setEditableRacerImages(newRacerImages);
+    setEditableRacers(newRacers);
+
+    // Nastav čistý snapshot — žádné neuložené změny hned po otevření
+    const snap = JSON.stringify({ editableBoard: newBoard, editableRacers: newRacers, editableFieldTextures: newTextures, editableRacerImages: newRacerImages });
+    setSavedSnapshot(snap);
+    setLastSavedAt(null);
+  }
+
+  function saveDraft() {
+    if (!liveManifest) return;
+    const draft = {
+      savedAt: new Date().toISOString(),
+      themeId: liveManifest.meta.id,
+      editableBoard,
+      editableRacers,
+      editableFieldTextures,
+      editableRacerImages,
+    };
+    try {
+      localStorage.setItem("ptw_board_draft", JSON.stringify(draft));
+      const snap = JSON.stringify({ editableBoard, editableRacers, editableFieldTextures, editableRacerImages });
+      setSavedSnapshot(snap);
+      setLastSavedAt(new Date());
+      setHasDraft(true);
+      notify("success", "Draft uložen lokálně.");
+    } catch {
+      notify("error", "Nepodařilo se uložit draft (localStorage).");
+    }
+  }
+
+  function loadDraft() {
+    try {
+      const raw = localStorage.getItem("ptw_board_draft");
+      if (!raw) { notify("info", "Žádný lokální draft nenalezen."); return; }
+      const draft = JSON.parse(raw) as {
+        savedAt: string; themeId: string;
+        editableBoard: BoardConfig; editableRacers: RacerConfig[];
+        editableFieldTextures: Record<string, string>; editableRacerImages: Record<string, string>;
+      };
+      const newBoard    = draft.editableBoard;
+      const newRacers   = draft.editableRacers   ?? [];
+      const newTextures = draft.editableFieldTextures ?? {};
+      const newImages   = draft.editableRacerImages   ?? {};
+      setEditableBoard(newBoard);
+      setEditableRacers(newRacers);
+      setEditableFieldTextures(newTextures);
+      setEditableRacerImages(newImages);
+      setSelectedFieldIndex(null);
+      const snap = JSON.stringify({ editableBoard: newBoard, editableRacers: newRacers, editableFieldTextures: newTextures, editableRacerImages: newImages });
+      setSavedSnapshot(snap);
+      const savedDate = new Date(draft.savedAt);
+      setLastSavedAt(savedDate);
+      notify("success", `Draft načten — uložen ${savedDate.toLocaleString("cs", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`);
+    } catch {
+      notify("error", "Draft je poškozený nebo nelze načíst.");
+    }
+  }
+
+  function resetDraft() {
+    if (!boardPreviewManifest) return;
+    if (!window.confirm("Resetovat board editor? Ztratíš všechny neuložené změny a vrátíš se na výchozí stav manifestu.")) return;
+    const newBoard    = { ...SMALL_BOARD, fields: SMALL_BOARD.fields.map((f) => ({ ...f })) };
+    const newRacers   = boardPreviewManifest.racers.map((r) => ({ ...r }));
+    const newTextures = boardPreviewManifest.assets?.fieldTextures ? { ...boardPreviewManifest.assets.fieldTextures } : {};
+    const newImages   = boardPreviewManifest.assets?.racerImages   ? { ...boardPreviewManifest.assets.racerImages }   : {};
+    setEditableBoard(newBoard);
+    setEditableRacers(newRacers);
+    setEditableFieldTextures(newTextures);
+    setEditableRacerImages(newImages);
+    setSelectedFieldIndex(null);
+    const snap = JSON.stringify({ editableBoard: newBoard, editableRacers: newRacers, editableFieldTextures: newTextures, editableRacerImages: newImages });
+    setSavedSnapshot(snap);
+    setLastSavedAt(null);
+    notify("info", "Editor resetován na výchozí stav manifestu.");
   }
 
   async function handleSave() {
@@ -1074,6 +1200,52 @@ export default function ThemeDevTool() {
                 </div>
               </div>
 
+              {/* Draft status bar */}
+              <div className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5">
+                {/* Status badge */}
+                <div className={`flex items-center gap-1.5 text-xs font-medium ${
+                  isDirty ? "text-amber-600" : lastSavedAt ? "text-emerald-600" : "text-slate-400"
+                }`}>
+                  <div className={`h-2 w-2 rounded-full shrink-0 ${
+                    isDirty ? "bg-amber-400" : lastSavedAt ? "bg-emerald-400" : "bg-slate-300"
+                  }`} />
+                  {isDirty
+                    ? "Neuložené změny"
+                    : lastSavedAt
+                      ? `Uloženo lokálně — ${lastSavedAt.toLocaleTimeString("cs", { hour: "2-digit", minute: "2-digit" })}`
+                      : "Čistý stav"}
+                </div>
+
+                <div className="flex-1" />
+
+                {/* Draft actions */}
+                <button
+                  onClick={saveDraft}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                    isDirty
+                      ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                      : "border border-slate-200 text-slate-500 hover:bg-slate-50"
+                  }`}
+                >
+                  💾 Uložit draft
+                </button>
+                {hasDraft && (
+                  <button
+                    onClick={loadDraft}
+                    className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+                  >
+                    📂 Načíst draft
+                  </button>
+                )}
+                <button
+                  onClick={resetDraft}
+                  className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
+                  title="Resetovat na výchozí stav manifestu"
+                >
+                  ↺ Reset
+                </button>
+              </div>
+
               {/* Board + panel vedle sebe na větších obrazovkách, pod sebou na malých */}
               <div className="flex flex-col xl:flex-row gap-6 items-start">
 
@@ -1140,6 +1312,7 @@ export default function ThemeDevTool() {
                   liveManifest={liveManifest}
                   editableFieldTextures={editableFieldTextures}
                   editableRacerImages={editableRacerImages}
+                  editableRacers={editableRacers}
                 />
               )}
             </div>
