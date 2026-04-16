@@ -19,6 +19,8 @@ import FieldEditorPanel from "@/app/components/editor/FieldEditorPanel";
 import type { AssetSectionConfig } from "@/app/components/editor/FieldEditorPanel";
 import RacerEditorPanel from "@/app/components/editor/RacerEditorPanel";
 import RacerRosterPanel from "@/app/components/editor/RacerRosterPanel";
+import DeckEditorPanel from "@/app/components/editor/DeckEditorPanel";
+import type { GameCard } from "@/lib/cards";
 import { buildFields } from "@/lib/engine";
 import type { RacerConfig } from "@/lib/themes";
 import {
@@ -298,14 +300,16 @@ function EditorExportPanel({
   editableFieldTextures,
   editableRacerImages,
   editableRacers,
+  editableCards,
 }: {
   editableBoard: BoardConfig;
   liveManifest: ThemeManifest;
   editableFieldTextures: Record<string, string>;
   editableRacerImages: Record<string, string>;
   editableRacers: RacerConfig[];
+  editableCards: { chance: GameCard[]; finance: GameCard[] };
 }) {
-  type ExportTab = "board" | "racers" | "assets" | "all";
+  type ExportTab = "board" | "racers" | "decks" | "assets" | "all";
   const [tab, setTab] = React.useState<ExportTab>("board");
   const [copied, setCopied] = React.useState<ExportTab | null>(null);
 
@@ -338,7 +342,9 @@ function EditorExportPanel({
 
   const boardJson   = JSON.stringify(editableBoard, null, 2);
   const racersJson  = JSON.stringify(editableRacers, null, 2);
+  const decksJson   = JSON.stringify(editableCards, null, 2);
   const assetsJson  = JSON.stringify(mergedAssets, null, 2);
+  const hasDecksChanges = editableCards.chance.length > 0 || editableCards.finance.length > 0;
 
   const themeFile   = `lib/themes/${liveManifest.meta.id}.ts`;
 
@@ -351,6 +357,11 @@ function EditorExportPanel({
     `// Soubor: ${themeFile} — sekce racers: [...]`,
     racersJson,
     ``,
+    `// ═══ DECKY ═══`,
+    `// Soubor: ${themeFile} — sekce cards: { chance: [...], finance: [...] }`,
+    `// Vložit jen pokud chceš přepsat globální balíčky z lib/cards.ts.`,
+    decksJson,
+    ``,
     `// ═══ ASSET MAPPING ═══`,
     `// Soubor: ${themeFile} — sekce assets: { … }`,
     assetsJson,
@@ -359,6 +370,7 @@ function EditorExportPanel({
   const TAB_LABELS: Record<ExportTab, string> = {
     board:  "Board config",
     racers: "Raceři",
+    decks:  "Decky",
     assets: "Asset mapping",
     all:    "Vše",
   };
@@ -369,6 +381,7 @@ function EditorExportPanel({
   const EXPORT_HINTS: Record<ExportTab, string> = {
     board:  "→ lib/board/presets.ts — export const … : BoardConfig = { … }",
     racers: `→ ${themeFile} — sekce racers: [ … ]`,
+    decks:  hasDecksChanges ? `→ ${themeFile} — sekce cards: { chance: […], finance: […] }` : "— prázdné decky = hra použije globální karty z lib/cards.ts",
     assets: hasAssetChanges ? `→ ${themeFile} — sekce assets: { … }` : "— žádné asset overrides zatím nebyly nastaveny",
     all:    "→ všechny bloky s komentáři — vhodné pro diff review nebo PR popis",
   };
@@ -376,6 +389,7 @@ function EditorExportPanel({
   const content: Record<ExportTab, string> = {
     board:  boardJson,
     racers: racersJson,
+    decks:  decksJson,
     assets: assetsJson,
     all:    combinedText,
   };
@@ -390,7 +404,7 @@ function EditorExportPanel({
         <div className="flex items-center gap-3">
           {/* Záložky */}
           <div className="flex rounded-lg border border-slate-200 bg-white overflow-hidden text-xs">
-            {(["board", "racers", "assets", "all"] as ExportTab[]).map((t) => (
+            {(["board", "racers", "decks", "assets", "all"] as ExportTab[]).map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
@@ -404,6 +418,9 @@ function EditorExportPanel({
                 )}
                 {t === "racers" && hasRacerChanges && (
                   <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-amber-400 align-middle" />
+                )}
+                {t === "decks" && hasDecksChanges && (
+                  <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-sky-400 align-middle" />
                 )}
               </button>
             ))}
@@ -455,6 +472,34 @@ function EditorExportPanel({
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Deck diff summary */}
+      {tab === "decks" && (
+        <div className="border-t border-slate-100 px-4 py-2.5 space-y-2">
+          {(["chance", "finance"] as const).map((deckType) => {
+            const deckCards = editableCards[deckType];
+            const deckLabel = deckType === "chance" ? "🎴 Náhoda" : "💼 Finance";
+            return (
+              <div key={deckType}>
+                <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">
+                  {deckLabel} — {deckCards.length > 0 ? `${deckCards.length} vlastních karet` : "globální fallback (lib/cards.ts)"}
+                </div>
+                {deckCards.length > 0 && (
+                  <div className="space-y-0.5">
+                    {deckCards.map((c) => (
+                      <div key={c.id} className="flex items-center gap-2 text-[10px]">
+                        <span className="font-mono text-slate-300 w-16 shrink-0">{c.id}</span>
+                        <span className="text-slate-500 shrink-0 w-20">{c.effect.kind}{c.effect.value !== undefined ? ` ${c.effect.value}` : ""}</span>
+                        <span className="text-slate-400 truncate italic">{c.text.slice(0, 50)}{c.text.length > 50 ? "…" : ""}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -512,6 +557,8 @@ export default function ThemeDevTool() {
   const [editableRacerImages, setEditableRacerImages] = React.useState<Record<string, string>>({});
   // Editovatelní závodníci — živá kopie manifest.racers pro editor
   const [editableRacers, setEditableRacers] = React.useState<RacerConfig[]>([]);
+  // Editovatelné decky — živá kopie manifest.cards; prázdné = hra používá globální balíčky
+  const [editableCards, setEditableCards] = React.useState<{ chance: GameCard[]; finance: GameCard[] }>({ chance: [], finance: [] });
 
   // ── Draft persistence (localStorage) ──────────────────────────────────────
   // savedSnapshot: JSON otisk stavu při posledním otevření/uložení — slouží pro isDirty
@@ -523,16 +570,18 @@ export default function ThemeDevTool() {
 
   const isDirty = React.useMemo(() => {
     if (!showBoardPreview || savedSnapshot === null) return false;
-    const current = JSON.stringify({ editableBoard, editableRacers, editableFieldTextures, editableRacerImages });
+    const current = JSON.stringify({ editableBoard, editableRacers, editableCards, editableFieldTextures, editableRacerImages });
     return current !== savedSnapshot;
   }, [showBoardPreview, savedSnapshot, editableBoard, editableRacers, editableFieldTextures, editableRacerImages]);
 
   // Živý manifest pro BoardEditorPreview — base manifest + asset overrides + editableRacers
   const liveManifest = React.useMemo<ThemeManifest | null>(() => {
     if (!boardPreviewManifest) return null;
+    const hasCustomCards = editableCards.chance.length > 0 || editableCards.finance.length > 0;
     return {
       ...boardPreviewManifest,
       racers: editableRacers.length > 0 ? editableRacers : boardPreviewManifest.racers,
+      cards: hasCustomCards ? editableCards : boardPreviewManifest.cards,
       assets: {
         ...boardPreviewManifest.assets,
         fieldTextures: {
@@ -545,7 +594,7 @@ export default function ThemeDevTool() {
         },
       },
     };
-  }, [boardPreviewManifest, editableRacers, editableFieldTextures, editableRacerImages]);
+  }, [boardPreviewManifest, editableRacers, editableCards, editableFieldTextures, editableRacerImages]);
 
   // Asset sekce pro FieldEditorPanel — počítá se z vybraného pole + liveManifest
   const currentAssetSection = React.useMemo<AssetSectionConfig | undefined>(() => {
@@ -754,6 +803,9 @@ export default function ThemeDevTool() {
 
     const newBoard: BoardConfig     = { ...SMALL_BOARD, fields: SMALL_BOARD.fields.map((f) => ({ ...f })) };
     const newRacers: RacerConfig[]  = manifest.racers.map((r) => ({ ...r }));
+    const newCards: { chance: GameCard[]; finance: GameCard[] } = manifest.cards
+      ? { chance: [...manifest.cards.chance], finance: [...manifest.cards.finance] }
+      : { chance: [], finance: [] };
     const newTextures               = manifest.assets?.fieldTextures ? { ...manifest.assets.fieldTextures } : {};
     const newRacerImages            = manifest.assets?.racerImages   ? { ...manifest.assets.racerImages }   : {};
 
@@ -765,9 +817,10 @@ export default function ThemeDevTool() {
     setEditableFieldTextures(newTextures);
     setEditableRacerImages(newRacerImages);
     setEditableRacers(newRacers);
+    setEditableCards(newCards);
 
     // Nastav čistý snapshot — žádné neuložené změny hned po otevření
-    const snap = JSON.stringify({ editableBoard: newBoard, editableRacers: newRacers, editableFieldTextures: newTextures, editableRacerImages: newRacerImages });
+    const snap = JSON.stringify({ editableBoard: newBoard, editableRacers: newRacers, editableCards: newCards, editableFieldTextures: newTextures, editableRacerImages: newRacerImages });
     setSavedSnapshot(snap);
     setLastSavedAt(null);
   }
@@ -779,12 +832,13 @@ export default function ThemeDevTool() {
       themeId: liveManifest.meta.id,
       editableBoard,
       editableRacers,
+      editableCards,
       editableFieldTextures,
       editableRacerImages,
     };
     try {
       localStorage.setItem("ptw_board_draft", JSON.stringify(draft));
-      const snap = JSON.stringify({ editableBoard, editableRacers, editableFieldTextures, editableRacerImages });
+      const snap = JSON.stringify({ editableBoard, editableRacers, editableCards, editableFieldTextures, editableRacerImages });
       setSavedSnapshot(snap);
       setLastSavedAt(new Date());
       setHasDraft(true);
@@ -801,18 +855,21 @@ export default function ThemeDevTool() {
       const draft = JSON.parse(raw) as {
         savedAt: string; themeId: string;
         editableBoard: BoardConfig; editableRacers: RacerConfig[];
+        editableCards?: { chance: GameCard[]; finance: GameCard[] };
         editableFieldTextures: Record<string, string>; editableRacerImages: Record<string, string>;
       };
       const newBoard    = draft.editableBoard;
       const newRacers   = draft.editableRacers   ?? [];
+      const newCards    = draft.editableCards    ?? { chance: [], finance: [] };
       const newTextures = draft.editableFieldTextures ?? {};
       const newImages   = draft.editableRacerImages   ?? {};
       setEditableBoard(newBoard);
       setEditableRacers(newRacers);
+      setEditableCards(newCards);
       setEditableFieldTextures(newTextures);
       setEditableRacerImages(newImages);
       setSelectedFieldIndex(null);
-      const snap = JSON.stringify({ editableBoard: newBoard, editableRacers: newRacers, editableFieldTextures: newTextures, editableRacerImages: newImages });
+      const snap = JSON.stringify({ editableBoard: newBoard, editableRacers: newRacers, editableCards: newCards, editableFieldTextures: newTextures, editableRacerImages: newImages });
       setSavedSnapshot(snap);
       const savedDate = new Date(draft.savedAt);
       setLastSavedAt(savedDate);
@@ -827,14 +884,18 @@ export default function ThemeDevTool() {
     if (!window.confirm("Resetovat board editor? Ztratíš všechny neuložené změny a vrátíš se na výchozí stav manifestu.")) return;
     const newBoard    = { ...SMALL_BOARD, fields: SMALL_BOARD.fields.map((f) => ({ ...f })) };
     const newRacers   = boardPreviewManifest.racers.map((r) => ({ ...r }));
+    const newCards    = boardPreviewManifest.cards
+      ? { chance: [...boardPreviewManifest.cards.chance], finance: [...boardPreviewManifest.cards.finance] }
+      : { chance: [], finance: [] };
     const newTextures = boardPreviewManifest.assets?.fieldTextures ? { ...boardPreviewManifest.assets.fieldTextures } : {};
     const newImages   = boardPreviewManifest.assets?.racerImages   ? { ...boardPreviewManifest.assets.racerImages }   : {};
     setEditableBoard(newBoard);
     setEditableRacers(newRacers);
+    setEditableCards(newCards);
     setEditableFieldTextures(newTextures);
     setEditableRacerImages(newImages);
     setSelectedFieldIndex(null);
-    const snap = JSON.stringify({ editableBoard: newBoard, editableRacers: newRacers, editableFieldTextures: newTextures, editableRacerImages: newImages });
+    const snap = JSON.stringify({ editableBoard: newBoard, editableRacers: newRacers, editableCards: newCards, editableFieldTextures: newTextures, editableRacerImages: newImages });
     setSavedSnapshot(snap);
     setLastSavedAt(null);
     notify("info", "Editor resetován na výchozí stav manifestu.");
@@ -1313,6 +1374,14 @@ export default function ThemeDevTool() {
                 onChange={setEditableRacers}
               />
 
+              {/* Deck editor — Náhoda + Finance */}
+              <DeckEditorPanel
+                chanceDeck={editableCards.chance}
+                financeDeck={editableCards.finance}
+                onChangeChance={(cards) => setEditableCards((prev) => ({ ...prev, chance: cards }))}
+                onChangeFinance={(cards) => setEditableCards((prev) => ({ ...prev, finance: cards }))}
+              />
+
               {/* Export — board config + asset mapping */}
               {liveManifest && (
                 <EditorExportPanel
@@ -1321,6 +1390,7 @@ export default function ThemeDevTool() {
                   editableFieldTextures={editableFieldTextures}
                   editableRacerImages={editableRacerImages}
                   editableRacers={editableRacers}
+                  editableCards={editableCards}
                 />
               )}
             </div>
