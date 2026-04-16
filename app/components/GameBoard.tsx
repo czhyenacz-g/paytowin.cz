@@ -1993,21 +1993,52 @@ export default function GameBoard({ gameCode }: Props) {
                       <div className={`mt-2 text-sm font-semibold ${theme.colors.centerTitle}`}>
                         {hoveredField.type === "start" ? "START" : hoveredField.label}
                       </div>
-                      {getFieldDetail(
-                        hoveredField,
-                        hoveredField.type === "racer" && hoveredField.racer
-                          ? (racerOwnership[racerOwnershipKey(hoveredField.racer)]?.name ?? null)
-                          : null,
-                      ) && (
+                      {/* Racer detail — 3 řádky (jen pro volné racer pole) */}
+                      {hoveredField.type === "racer" && hoveredField.racer && (() => {
+                        const racer = hoveredField.racer;
+                        const owner = racerOwnership[racerOwnershipKey(racer)] ?? null;
+                        const stamina = racer.stamina ?? 100;
+                        const speedStars  = Math.min(racer.speed, 5);
+                        const staminaDots = Math.round(stamina / 20);
+
+                        if (owner) {
+                          // Obsazeno — jen krátký řádek
+                          return (
+                            <div className={`mt-2 text-xs font-medium ${theme.colors.centerSubtitle}`}>
+                              ✓ {owner.name}
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div className={`mt-2 space-y-1 text-[10px] ${theme.colors.centerSubtitle}`}>
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="opacity-60 shrink-0">Rychlost</span>
+                              <span className="tracking-tight">
+                                {"⭐".repeat(speedStars)}{"·".repeat(5 - speedStars)}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="opacity-60 shrink-0">Stamina</span>
+                              <span className="tracking-tight">
+                                {"🔵".repeat(staminaDots)}{"·".repeat(5 - staminaDots)}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="opacity-60 shrink-0">Cena</span>
+                              <span className="font-semibold">{racer.price} 💰</span>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Non-racer detail — existující string renderer */}
+                      {hoveredField.type !== "racer" && getFieldDetail(hoveredField, null) && (
                         <div className={`mt-2 text-xs leading-relaxed ${theme.colors.centerSubtitle}`}>
-                          {getFieldDetail(
-                            hoveredField,
-                            hoveredField.type === "racer" && hoveredField.racer
-                              ? (racerOwnership[racerOwnershipKey(hoveredField.racer)]?.name ?? null)
-                              : null,
-                          )}
+                          {getFieldDetail(hoveredField, null)}
                         </div>
                       )}
+
                       {hoveredField.flavorText && (
                         <div className={`mt-2 text-[10px] italic leading-relaxed opacity-70 ${theme.colors.centerSubtitle}`}>
                           {hoveredField.flavorText}
