@@ -681,6 +681,7 @@ export default function ThemeDevTool() {
 
   // Actions
   const [saving, setSaving] = React.useState(false);
+  const [savingToFiles, setSavingToFiles] = React.useState(false);
   const [notif, setNotif] = React.useState<{ type: NotifType; msg: string } | null>(null);
 
   // Meta — derived from JSON, best-effort. Používá se v meta baru i metadata formu.
@@ -899,6 +900,37 @@ export default function ThemeDevTool() {
     setSavedSnapshot(snap);
     setLastSavedAt(null);
     notify("info", "Editor resetován na výchozí stav manifestu.");
+  }
+
+  async function handleSaveToFiles() {
+    if (!liveManifest) return;
+    setSavingToFiles(true);
+    try {
+      const res = await fetch("/api/dev/save-editor-state", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          themeId: liveManifest.meta.id,
+          editableBoard,
+          editableRacers,
+          editableCards,
+        }),
+      });
+      const data = await res.json() as { ok: boolean; written?: string[]; error?: string };
+      if (data.ok) {
+        notify("success", `Zapsáno do souborů: ${data.written?.join(", ") ?? "soubory"}`);
+        // Mark as clean — files are now in sync
+        const snap = JSON.stringify({ editableBoard, editableRacers, editableCards, editableFieldTextures, editableRacerImages });
+        setSavedSnapshot(snap);
+        setLastSavedAt(new Date());
+      } else {
+        notify("error", `Chyba při zápisu: ${data.error ?? "Neznámá chyba"}`);
+      }
+    } catch (err) {
+      notify("error", `Síťová chyba: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setSavingToFiles(false);
+    }
   }
 
   async function handleSave() {
@@ -1305,6 +1337,14 @@ export default function ThemeDevTool() {
                   title="Resetovat na výchozí stav manifestu"
                 >
                   ↺ Reset
+                </button>
+                <button
+                  onClick={handleSaveToFiles}
+                  disabled={savingToFiles}
+                  className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                  title="Zapsat board, raceře a decky přímo do zdrojových souborů (jen v dev)"
+                >
+                  {savingToFiles ? "Zapisuji…" : "💾 Uložit do souborů"}
                 </button>
               </div>
 
