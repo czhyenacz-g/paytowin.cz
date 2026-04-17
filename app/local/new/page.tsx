@@ -95,6 +95,9 @@ export default function LocalNewPage() {
       return;
     }
 
+    // Batch insert hráčů bez discord polí — funguje bez ohledu na RLS nebo stav migrace.
+    // RLS policy typicky vyžaduje discord_id = auth.uid(), což by blokovalo null hodnoty
+    // pro hráče 2-N. Discord identitu přidáme separátním UPDATE níže (best effort).
     const { data: insertedPlayers, error: playersErr } = await supabase
       .from("players")
       .insert(
@@ -106,17 +109,24 @@ export default function LocalNewPage() {
           coins: 1000,
           horses: [],
           turn_order: i,
-          // První hráč je Discord host — ostatní jsou lokální jména bez Discord identity
-          discord_id: i === 0 ? discordId || null : null,
-          discord_avatar_url: i === 0 ? discordAvatarUrl : null,
         }))
       )
       .select();
 
     if (playersErr || !insertedPlayers?.length) {
+      console.error("[createLocalGame] players insert failed:", playersErr);
       setError("Nepodařilo se přidat hráče.");
       setLoading(false);
       return;
+    }
+
+    // Discord identita pro hosta (první hráč) — best effort, neblokuje flow pokud selže.
+    // Vyžaduje spuštěnou migraci 20260417_players_add_discord_identity.sql.
+    if (discordId && insertedPlayers[0]) {
+      await supabase
+        .from("players")
+        .update({ discord_id: discordId, discord_avatar_url: discordAvatarUrl })
+        .eq("id", insertedPlayers[0].id);
     }
 
     await supabase.from("game_state").insert({
