@@ -300,19 +300,30 @@ function DeckPanel({
               : `${cards.length} karet (vlastní)`}
           </span>
         </div>
-        <button
-          onClick={handleAdd}
-          className="rounded-lg bg-white/70 hover:bg-white px-2.5 py-1 text-xs font-medium text-slate-700 border border-slate-200 transition-colors"
-        >
-          + Přidat
-        </button>
+        <div className="flex items-center gap-1.5">
+          {isUsingGlobal && (
+            <button
+              onClick={() => { onChange([...globalCards]); }}
+              className="rounded-lg bg-white/70 hover:bg-white px-2.5 py-1 text-xs font-medium text-slate-700 border border-slate-200 transition-colors"
+              title="Zkopíruje globální karty do vlastního decku pro editaci"
+            >
+              Importovat globální
+            </button>
+          )}
+          <button
+            onClick={handleAdd}
+            className="rounded-lg bg-white/70 hover:bg-white px-2.5 py-1 text-xs font-medium text-slate-700 border border-slate-200 transition-colors"
+          >
+            + Přidat
+          </button>
+        </div>
       </div>
 
       {/* Global fallback note */}
       {isUsingGlobal && (
         <div className="px-4 py-2 text-[11px] text-slate-400 border-b border-slate-100 bg-white italic">
           Prázdný deck — hra používá globální karty z <code className="font-mono">lib/cards.ts</code>.
-          Přidej alespoň jednu kartu pro vlastní balíček.
+          Klikni <strong>Importovat globální</strong> pro editaci, nebo <strong>+ Přidat</strong> pro novou kartu.
         </div>
       )}
 

@@ -77,13 +77,6 @@ export const CHANCE_CARDS: GameCard[] = [
     effect: { kind: "move", value: -2 },
     effectLabel: "Posun -2 pole",
   },
-  {
-    id: "ch9",
-    type: "chance",
-    text: "Na okraji závodiště stojí opuštěný závodník — nikdo si ho nevšimne. Bereš ho.",
-    effect: { kind: "give_racer", racerId: "legendary_racer" },
-    effectLabel: "🐴 Legendární závodník je tvůj",
-  },
 ];
 
 // ─── Balíček Finance ──────────────────────────────────────────────────────────
