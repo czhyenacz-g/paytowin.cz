@@ -128,6 +128,17 @@ export const horseDayTheme: Theme = {
           "effectLabel": "-80 💰"
         },
         {
+          "id": "ch9",
+          "type": "chance",
+          "text": "Železník!!",
+          "effect": {
+            "kind": "give_racer",
+            "racerId": "zeleznik"
+          },
+          "effectLabel": "💰💰💰💰💰💰💰💰",
+          "imagePath": "/themes/horse-day/horse_legend.webp"
+        },
+        {
           "id": "ch3",
           "type": "chance",
           "text": "Pořadatel tě přemisťuje na lepší startovní pozici.",
@@ -185,17 +196,6 @@ export const horseDayTheme: Theme = {
             "value": -2
           },
           "effectLabel": "Posun -2 pole"
-        },
-        {
-          "id": "ch9",
-          "type": "chance",
-          "text": "Železník!!",
-          "effect": {
-            "kind": "give_racer",
-            "racerId": "zeleznik"
-          },
-          "effectLabel": "💰💰💰💰💰💰💰💰",
-          "imagePath": "/themes/horse-day/horse_legend.webp"
         }
       ],
       "finance": []
