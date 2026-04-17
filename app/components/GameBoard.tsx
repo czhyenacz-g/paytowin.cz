@@ -1658,9 +1658,12 @@ export default function GameBoard({ gameCode }: Props) {
   React.useEffect(() => {
     if (racePendingEvt?.phase !== "racing") return;
     if (!isHost && !isLocalGame) return;
+    // Online: 10 s minihra + 2 s buffer = 12 s
+    // Hot-seat: 5 s handoff + 10 s minihra + 2 s buffer = 17 s
+    const watchdogMs = isLocalGame ? 17000 : 12000;
     const timer = setTimeout(() => {
       submitPendingRaceScoreRef.current(0);
-    }, 11000); // 8 s minihra + 3 s buffer
+    }, watchdogMs);
     return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [racePendingEvt?.phase === "racing"

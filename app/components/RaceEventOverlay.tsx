@@ -59,7 +59,7 @@ interface RaceEventOverlayProps {
 
 // ── Minihra: 8s reaction pattern ──────────────────────────────────────────────
 
-const RACE_DURATION_MS = 8000;
+const RACE_DURATION_MS = 10000;
 
 // Šipky jako cílové klávesy; KEY_CODE_MAP mapuje e.code → symbol
 const RACE_KEYS = ["←", "→", "↑", "↓"] as const;
@@ -276,6 +276,27 @@ export default function RaceEventOverlay({
   const phase = event.phase;
   const labels = RACE_TYPE_LABELS[event.raceType ?? "mass_race"];
 
+  // Hot-seat handoff: 5s countdown před závodem každého hráče.
+  // Dává čas fyzicky předat zařízení. Aktivní jen pro isLocalGame.
+  const [handoffCountdown, setHandoffCountdown] = React.useState<number | null>(null);
+  React.useEffect(() => {
+    if (phase !== "racing" || !isLocalGame) {
+      setHandoffCountdown(null);
+      return;
+    }
+    setHandoffCountdown(5);
+    const timers = [
+      setTimeout(() => setHandoffCountdown(4), 1000),
+      setTimeout(() => setHandoffCountdown(3), 2000),
+      setTimeout(() => setHandoffCountdown(2), 3000),
+      setTimeout(() => setHandoffCountdown(1), 4000),
+      setTimeout(() => setHandoffCountdown(null), 5000),
+    ];
+    return () => timers.forEach(clearTimeout);
+  // Znovu se spustí při každém novém závodníkovi (currentRacerIndex) i při vstupu do racing fáze
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase === "racing" ? `racing_${event.currentRacerIndex ?? 0}` : "not_racing", isLocalGame]);
+
   // Preferred závodník pro aktuálního výběrčího
   const preferredHorse = selectorPlayer?.horses.find(h => h.isPreferred) ?? null;
   const preferredKey = preferredHorse ? racerOwnershipKey(preferredHorse) : null;
@@ -399,7 +420,7 @@ export default function RaceEventOverlay({
           </div>
         )}
 
-        {/* ── Minihra — každý hráč závodí 5 s ── */}
+        {/* ── Minihra — každý hráč závodí 10 s ── */}
         {phase === "racing" && racingPlayer && (
           <div className="space-y-3">
             <div className="text-center space-y-1">
@@ -408,16 +429,32 @@ export default function RaceEventOverlay({
                 {(event.currentRacerIndex ?? 0) + 1} / {event.playerIds.length}
               </p>
             </div>
-            <RacingMinigame
-              key={event.currentRacerIndex ?? 0}
-              racingPlayer={racingPlayer}
-              racingHorse={racingHorse}
-              isMyTurn={isMyRacingTurn}
-              currentIdx={event.currentRacerIndex ?? 0}
-              totalRacers={event.playerIds.length}
-              initialStamina={racingHorse?.stamina ?? 100}
-              onSubmit={onSubmitScore}
-            />
+
+            {/* Hot-seat handoff: "Připrav se" countdown před závodem každého hráče */}
+            {isLocalGame && handoffCountdown !== null ? (
+              <div className="text-center space-y-4 py-4">
+                <div className="text-5xl">{racingHorse?.emoji ?? "🏇"}</div>
+                <p className="text-sm font-semibold text-slate-500 uppercase tracking-widest">
+                  Na start se připraví
+                </p>
+                <p className="text-2xl font-black text-indigo-700">{racingPlayer.name}</p>
+                <div className="text-8xl font-black text-slate-800 tabular-nums leading-none">
+                  {handoffCountdown}
+                </div>
+                <p className="text-sm text-slate-400">Předej zařízení a připrav se!</p>
+              </div>
+            ) : (
+              <RacingMinigame
+                key={`${event.currentRacerIndex ?? 0}_ready`}
+                racingPlayer={racingPlayer}
+                racingHorse={racingHorse}
+                isMyTurn={isMyRacingTurn}
+                currentIdx={event.currentRacerIndex ?? 0}
+                totalRacers={event.playerIds.length}
+                initialStamina={racingHorse?.stamina ?? 100}
+                onSubmit={onSubmitScore}
+              />
+            )}
           </div>
         )}
 
