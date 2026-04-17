@@ -527,6 +527,92 @@ function EditorExportPanel({
   );
 }
 
+// ─── LegendaryRacerGuide ──────────────────────────────────────────────────────
+
+function LegendaryRacerGuide() {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <div className="rounded-xl border border-indigo-200 bg-indigo-50 overflow-hidden">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-indigo-100/60 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-base">📖</span>
+          <span className="text-xs font-semibold text-indigo-800">Jak vytvořit legendárního racera získatelného z Náhody</span>
+        </div>
+        <span className="text-xs text-indigo-400 shrink-0">{open ? "▲ Skrýt" : "▼ Zobrazit"}</span>
+      </button>
+
+      {open && (
+        <div className="border-t border-indigo-200 px-4 py-4 space-y-4 text-xs text-indigo-900">
+
+          <div className="space-y-2.5">
+            {([
+              {
+                n: 1,
+                title: "Přidej racera do rosteru",
+                body: <>V sekci <strong>Závodníci</strong> klikni <em>+ Přidat</em>. Nastav mu unikátní ID — např. <code className="font-mono bg-indigo-100 px-1 rounded">zeleznik</code>. ID musí být slug (jen a–z, 0–9, _, -).</>,
+              },
+              {
+                n: 2,
+                title: "Nastav mu Legendary + Flavor text",
+                body: <>Klikni na racera v rosteru, otevře se RacerEditor. Zaškrtni <strong>Legendární</strong> a vyplň <strong>Flavor text</strong> — zobrazí se při burnoutu i při revealu karty.</>,
+              },
+              {
+                n: 3,
+                title: "Volitelně: přidej racer art obrázek",
+                body: <>V RacerEditoru nebo v FieldEditoru (kliknutím na racer pole v boardu) nahraj <code className="font-mono bg-indigo-100 px-1 rounded">.webp</code> obrázek závodníka. Zobrazuje se při hoveru na kartu v boardu.</>,
+              },
+              {
+                n: 4,
+                title: "Otevři Deck editor — Náhoda",
+                body: <>Pokud je deck prázdný, klikni <strong>Importovat globální</strong> (zkopíruje výchozí karty k editaci). Nebo rovnou klikni <strong>+ Přidat</strong> pro novou kartu.</>,
+              },
+              {
+                n: 5,
+                title: "Nastav kartu: efekt give_racer + Racer ID",
+                body: <>Klikni na kartu, v editoru vyber efekt <strong>Závodník zdarma</strong>. Do pole <strong>Racer ID</strong> zadej přesně stejné ID, které jsi použil v kroku 1 — např. <code className="font-mono bg-indigo-100 px-1 rounded">zeleznik</code>. Pokud ID nesedí, hra dá náhodného volného racera.</>,
+              },
+              {
+                n: 6,
+                title: "Volitelně: přidej reveal obrázek ke kartě",
+                body: <>V poli <strong>Art obrázek</strong> zadej cestu k souboru v <code className="font-mono bg-indigo-100 px-1 rounded">/public</code> — např. <code className="font-mono bg-indigo-100 px-1 rounded">/themes/horse-day/horse_legend.webp</code>. Zobrazí se při reveal karty ve hře.</>,
+              },
+              {
+                n: 7,
+                title: "Ulož do souborů",
+                body: <>Klikni <strong>💾 Uložit do souborů</strong> v liště nad boardem. Zapíše racer do <code className="font-mono bg-indigo-100 px-1 rounded">lib/themes/{"{themeId}"}.ts</code> a karty do stejného souboru. Pak commitni a pushni.</>,
+              },
+            ] as { n: number; title: string; body: React.ReactNode }[]).map(({ n, title, body }) => (
+              <div key={n} className="flex gap-3">
+                <div className="shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-white font-bold text-[10px] mt-0.5">
+                  {n}
+                </div>
+                <div>
+                  <div className="font-semibold text-indigo-800 mb-0.5">{title}</div>
+                  <div className="text-indigo-700 leading-relaxed">{body}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="rounded-lg border border-indigo-200 bg-white/60 px-3 py-2.5 space-y-1">
+            <div className="font-semibold text-indigo-800 text-[11px] uppercase tracking-wide">Jak to funguje uvnitř</div>
+            <div className="text-indigo-600 leading-relaxed">
+              Každé theme má vlastní deck karet (<code className="font-mono bg-indigo-100 px-1 rounded">theme.content.cards</code>).
+              Karta <code className="font-mono bg-indigo-100 px-1 rounded">give_racer</code> hledá racera podle <code className="font-mono bg-indigo-100 px-1 rounded">racerId</code> v živém boardu aktuálního theme.
+              Díky tomu horse-day dá Železníka, car-day dá Ferrari — každé theme má svého legendu, bez zásahu do globálního kódu.
+              Pokud racerId nesedí na žádného volného racera, hra dá náhodného volného jako fallback.
+            </div>
+          </div>
+
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function ThemeDevTool() {
@@ -1409,6 +1495,9 @@ export default function ThemeDevTool() {
                 onChangeChance={(cards) => setEditableCards((prev) => ({ ...prev, chance: cards }))}
                 onChangeFinance={(cards) => setEditableCards((prev) => ({ ...prev, finance: cards }))}
               />
+
+              {/* Návod: legendární racer z karty Náhoda */}
+              <LegendaryRacerGuide />
 
               {/* Export — board config + asset mapping */}
               {liveManifest && (
