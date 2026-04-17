@@ -1251,9 +1251,9 @@ export default function GameBoard({ gameCode }: Props) {
       : null;
     if (!evt || evt.phase !== "results") return;
 
-    // Urči vítěze: effective score = tapy * (finalStamina/maxStamina), tiebreak: speed
-    // Dělíme maxStamina (ne 100) — legendární koně s nízkým stropem nejsou penalizováni
-    // za svůj katalogový limit, jen za to kolik staminy skutečně ztratili.
+    // Urči vítěze: effective score = tapy * staminaMultiplier, tiebreak: speed
+    // Legendární kůň: multiplier=1.0 (záchrana, stamina ho nebrzdí) + vždy se vyřadí po závodě.
+    // Ostatní koně: finalStamina/maxStamina.
     const raceEntries = (evt.playerIds ?? []).map(pid => {
       const player = players.find(p => p.id === pid);
       const horseKey = evt.selections?.[pid];
@@ -1261,7 +1261,8 @@ export default function GameBoard({ gameCode }: Props) {
       const rawScore = evt.scores?.[pid] ?? 0;
       const finalStamina = evt.finalStaminas?.[pid] ?? horse?.stamina ?? 100;
       const maxStamina = horse?.maxStamina ?? 100;
-      return { player, horse, horseKey, rawScore, effectiveScore: rawScore * (finalStamina / maxStamina), speed: horse?.speed ?? 0, finalStamina, maxStamina };
+      const staminaMultiplier = horse?.isLegendary ? 1 : (finalStamina / maxStamina);
+      return { player, horse, horseKey, rawScore, effectiveScore: rawScore * staminaMultiplier, speed: horse?.speed ?? 0, finalStamina, maxStamina };
     });
     const winnerEntry = [...raceEntries].sort((a, b) => b.effectiveScore - a.effectiveScore || b.speed - a.speed)[0];
 
@@ -1272,11 +1273,12 @@ export default function GameBoard({ gameCode }: Props) {
       ? `🏁 ${raceLabel}: ${winner.name} vyhrál! +${reward} 💰 (${winnerEntry.horse?.emoji ?? ""} ${winnerEntry.horse?.name ?? ""})`
       : `🏁 ${raceLabel} skončil.`;
 
-    // Aplikuj finalStamina na závodního koně; kůň s 0 staminou se vyřadí z inventáře
+    // Aplikuj finalStamina na závodního koně; kůň s 0 staminou nebo legendární se vyřadí z inventáře
     const staminaUpdates = raceEntries
       .filter(e => e.player && e.horse)
       .map(e => {
-        const updatedHorses = e.finalStamina === 0
+        const eliminate = e.finalStamina === 0 || e.horse!.isLegendary;
+        const updatedHorses = eliminate
           ? e.player!.horses.filter(h => racerOwnershipKey(h) !== e.horseKey)
           : e.player!.horses.map(h =>
               racerOwnershipKey(h) === e.horseKey ? { ...h, stamina: e.finalStamina } : h
@@ -1284,9 +1286,9 @@ export default function GameBoard({ gameCode }: Props) {
         return supabase.from("players").update({ horses: updatedHorses }).eq("id", e.player!.id);
       });
 
-    // Hlášky pro racery vyčerpané na 0 — odlišeny legend flaggem
+    // Hlášky pro racery vyřazené po závodě (stamina=0 nebo legendární)
     const burnedOutLines = raceEntries
-      .filter(e => e.finalStamina === 0 && e.horse && e.player)
+      .filter(e => (e.finalStamina === 0 || e.horse?.isLegendary) && e.horse && e.player)
       .map(e => {
         const label = `${e.horse!.emoji} ${e.horse!.name} (${e.player!.name})`;
         return e.horse!.isLegendary
@@ -1552,7 +1554,8 @@ export default function GameBoard({ gameCode }: Props) {
   const isMyRacingTurn = !!(racePendingEvt?.phase === "racing" && (
     isLocalGame ? true : raceCurrentPlayer?.id === myPlayerId
   ));
-  // Výsledky závodu: effective score = raw tapy × (finalStamina/maxStamina), tiebreak speed
+  // Výsledky závodu: effective score = raw tapy × staminaMultiplier, tiebreak speed
+  // Legendární kůň: multiplier=1.0. Ostatní: finalStamina/maxStamina.
   // Řazení odpovídá winner logice v closeRaceResult
   const raceResults = racePendingEvt?.phase === "results"
     ? (racePendingEvt.playerIds ?? []).map(pid => {
@@ -1562,7 +1565,8 @@ export default function GameBoard({ gameCode }: Props) {
         const score = racePendingEvt.scores?.[pid] ?? 0;
         const finalStamina = racePendingEvt.finalStaminas?.[pid] ?? horse?.stamina ?? 100;
         const maxStamina = horse?.maxStamina ?? 100;
-        const effectiveScore = score * (finalStamina / maxStamina);
+        const staminaMultiplier = horse?.isLegendary ? 1 : (finalStamina / maxStamina);
+        const effectiveScore = score * staminaMultiplier;
         return { player, horse, speed: horse?.speed ?? 0, score, effectiveScore, finalStamina };
       }).sort((a, b) => b.effectiveScore - a.effectiveScore || b.speed - a.speed)
     : null;
