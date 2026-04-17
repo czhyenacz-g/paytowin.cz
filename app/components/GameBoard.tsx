@@ -35,8 +35,9 @@ function canTriggerRivalsRace(p1: Player, p2: Player): boolean {
 import { drawCard } from "@/lib/cards";
 import type { GameCard } from "@/lib/cards";
 import type { Player, Horse, GameState, OfferPending, RerollOffer, RaceOffer, BankruptAnnouncement, RacePendingEvent, PostTurnEvent, RaceType } from "@/lib/types/game";
-import type { CenterEvent } from "@/lib/types/events";
+import type { CenterEvent, FlashEvent } from "@/lib/types/events";
 import CenterEventModal from "./modals/CenterEventModal";
+import FlashToast from "./modals/FlashToast";
 import RaceModal from "./RaceModal";
 import RaceEventOverlay from "./RaceEventOverlay";
 import type { MinigameResult } from "./race/RacingMinigame";
@@ -263,6 +264,8 @@ export default function GameBoard({ gameCode }: Props) {
   const animPositionRef = React.useRef<number | null>(null);
 
   const [boardBgUrl, setBoardBgUrl] = React.useState<string>("");
+  const [flashEvent, setFlashEvent] = React.useState<FlashEvent | null>(null);
+  const flashTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -494,6 +497,14 @@ export default function GameBoard({ gameCode }: Props) {
 
   // ── Herní akce ────────────────────────────────────────────────────────────────
 
+  /** Zobrazí krátký centrální spotlight — auto-dismiss po dané době. */
+  const showFlash = React.useCallback((event: FlashEvent) => {
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    setFlashEvent(event);
+    const ms = event.type === "legendary_gone" ? 3000 : 2000;
+    flashTimerRef.current = setTimeout(() => setFlashEvent(null), ms);
+  }, []);
+
   const rollDice = async () => {
     const activePendingRace = gameState?.offer_pending?.type === "race" ? gameState.offer_pending as RaceOffer : null;
     const activePendingBankrupt = gameState?.offer_pending?.type === "bankrupt_announcement";
@@ -708,6 +719,11 @@ export default function GameBoard({ gameCode }: Props) {
       const { player: afterField, log: fieldLog } = field.action(movedPlayer);
       const finalPlayer = afterField;
       const logLines = [...(fieldLog ? [fieldLog] : []), ...extraLog];
+
+      // Flash spotlight pro výrazné finanční penalizace
+      if (field.type === "coins_lose") {
+        showFlash({ type: "coins_penalty", emoji: field.emoji, playerName: movedPlayer.name, amount: afterField.coins - movedPlayer.coins, fieldLabel: field.label });
+      }
 
       // Bankrot? — nextIndex počítáme s AKTUALIZOVANÝM hráčem, aby se přeskočil i sám sebe pokud zkrachoval
       const wentBankrupt = finalPlayer.coins <= 0 && currentPlayer.coins > 0;
@@ -1288,14 +1304,19 @@ export default function GameBoard({ gameCode }: Props) {
       });
 
     // Hlášky pro racery vyřazené po závodě (stamina=0 nebo legendární)
-    const burnedOutLines = raceEntries
-      .filter(e => (e.finalStamina === 0 || e.horse?.isLegendary) && e.horse && e.player)
-      .map(e => {
-        const label = `${e.horse!.emoji} ${e.horse!.name} (${e.player!.name})`;
-        return e.horse!.isLegendary
-          ? `${label}: Zmizel tak rychle, jako se objevil.`
-          : `${label}: Zkolaboval po závodě vyčerpáním. Zabaven.`;
-      });
+    const burnedOutEntries = raceEntries.filter(e => (e.finalStamina === 0 || e.horse?.isLegendary) && e.horse && e.player);
+    const burnedOutLines = burnedOutEntries.map(e => {
+      const label = `${e.horse!.emoji} ${e.horse!.name} (${e.player!.name})`;
+      return e.horse!.isLegendary
+        ? `${label}: Zmizel tak rychle, jako se objevil.`
+        : `${label}: Zkolaboval po závodě vyčerpáním. Zabaven.`;
+    });
+
+    // Flash spotlight — legendární závodník má přednost; fallback na prvního stamina burnout
+    const legendaryEntry = burnedOutEntries.find(e => e.horse?.isLegendary);
+    if (legendaryEntry) {
+      showFlash({ type: "legendary_gone", emoji: legendaryEntry.horse!.emoji, playerName: legendaryEntry.player!.name, racerName: legendaryEntry.horse!.name });
+    }
 
     const stateUpdate: Record<string, unknown> = {
       current_player_index: evt.nextIndex,
@@ -1842,6 +1863,9 @@ export default function GameBoard({ gameCode }: Props) {
           onApplyCard={pendingCard ? () => applyCardEffectRef.current(pendingCard.card, pendingCard.playerIndex) : undefined}
         />
       )}
+
+      {/* ── Flash Toast (auto-dismiss spotlight pro výrazné momenty) ─────── */}
+      {flashEvent && <FlashToast event={flashEvent} />}
 
       {/* ── Race Modal ───────────────────────────────────────────────────── */}
       {pendingRace && (
