@@ -2305,13 +2305,6 @@ export default function GameBoard({ gameCode }: Props) {
                 )}
 
                 <div className={`rounded-[4px] p-4 transition-colors border border-black/[0.06] ${isRolling ? theme.colors.rollPanelRolling : theme.colors.rollPanelIdle}`}>
-                  {currentPlayer && (
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <div className={`h-2.5 w-2.5 shrink-0 rounded-full ${currentPlayer.color}`} />
-                      <span className="text-[11px] font-bold text-slate-700 truncate">{currentPlayer.name}</span>
-                      <span className="text-[10px] text-slate-400 ml-0.5">na tahu</span>
-                    </div>
-                  )}
                   <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Poslední hod</div>
                   <div className="flex items-center gap-3">
                     <DiceFace
@@ -2323,6 +2316,15 @@ export default function GameBoard({ gameCode }: Props) {
                       <span className={`text-3xl font-bold ${isRolling ? "text-amber-600" : "text-slate-700"}`}>
                         {(isRolling || isMoving || hasPendingRollDecision) && displayRoll !== null ? displayRoll : gameState?.last_roll}
                       </span>
+                    )}
+                    {currentPlayer && (
+                      <div className="ml-auto flex flex-col items-end gap-0.5">
+                        <div className="flex items-center gap-1.5">
+                          <div className={`h-2.5 w-2.5 shrink-0 rounded-full ${currentPlayer.color}`} />
+                          <span className="text-[11px] font-bold text-slate-700 truncate max-w-[80px]">{currentPlayer.name}</span>
+                        </div>
+                        <span className="text-[10px] text-slate-400">na tahu</span>
+                      </div>
                     )}
                   </div>
                 </div>
