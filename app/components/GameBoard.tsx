@@ -2318,7 +2318,7 @@ export default function GameBoard({ gameCode }: Props) {
                       </span>
                     )}
                     {currentPlayer && (
-                      <div className="ml-auto flex flex-col items-end gap-0.5">
+                      <div className="ml-auto mr-2 flex flex-col items-end gap-0.5">
                         <div className="flex items-center gap-1.5">
                           <div className={`h-2.5 w-2.5 shrink-0 rounded-full ${currentPlayer.color}`} />
                           <span className="text-[11px] font-bold text-slate-700 truncate max-w-[80px]">{currentPlayer.name}</span>
