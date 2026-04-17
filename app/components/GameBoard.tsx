@@ -39,6 +39,7 @@ import type { CenterEvent } from "@/lib/types/events";
 import CenterEventModal from "./modals/CenterEventModal";
 import RaceModal from "./RaceModal";
 import RaceEventOverlay from "./RaceEventOverlay";
+import type { MinigameResult } from "./race/RacingMinigame";
 import BuildInfoBar from "./BuildInfoBar";
 import ThemeAssetInspector from "./ThemeAssetInspector";
 import BrandLogo from "./BrandLogo";
@@ -1350,9 +1351,9 @@ export default function GameBoard({ gameCode }: Props) {
   };
 
   // Zapíše skóre aktuálního závodníka a posune na dalšího (nebo results).
-  // finalStamina: stamina závodníka po závodě (0 = kůň bude vyřazen).
-  // Pokud není předána (watchdog), zachová aktuální staminu koně (žádný drain).
-  const submitPendingRaceScore = async (score: number, finalStamina?: number) => {
+  // Přijímá MinigameResult od RacingMinigame nebo watchdog fallback { score: 0 }.
+  // Pokud finalStamina chybí (watchdog), zachová aktuální staminu koně.
+  const submitPendingRaceScore = async ({ score, finalStamina }: { score: number; finalStamina?: number }) => {
     if (!gameId || !gameState) return;
     const evt = gameState.offer_pending?.type === "race_pending"
       ? gameState.offer_pending as RacePendingEvent
@@ -1670,7 +1671,7 @@ export default function GameBoard({ gameCode }: Props) {
     // Hot-seat: 5 s handoff + 10 s minihra + 2 s buffer = 17 s
     const watchdogMs = isLocalGame ? 17000 : 12000;
     const timer = setTimeout(() => {
-      submitPendingRaceScoreRef.current(0);
+      submitPendingRaceScoreRef.current({ score: 0 });
     }, watchdogMs);
     return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
