@@ -72,6 +72,7 @@ function CardEditor({ card, onUpdate }: { card: GameCard; onUpdate: (updated: Ga
   const [kind, setKind]               = React.useState<CardEffectKind>(card.effect.kind);
   const [value, setValue]             = React.useState(String(card.effect.value ?? ""));
   const [racerId, setRacerId]         = React.useState(card.effect.racerId ?? "");
+  const [imagePath, setImagePath]     = React.useState(card.imagePath ?? "");
 
   // Sync při přepnutí karty
   React.useEffect(() => {
@@ -80,6 +81,7 @@ function CardEditor({ card, onUpdate }: { card: GameCard; onUpdate: (updated: Ga
     setKind(card.effect.kind);
     setValue(String(card.effect.value ?? ""));
     setRacerId(card.effect.racerId ?? "");
+    setImagePath(card.imagePath ?? "");
   }, [card.id]);
 
   function buildEffect(): GameCard["effect"] {
@@ -90,7 +92,7 @@ function CardEditor({ card, onUpdate }: { card: GameCard; onUpdate: (updated: Ga
   }
 
   function commit() {
-    onUpdate({ ...card, text, effectLabel, effect: buildEffect() });
+    onUpdate({ ...card, text, effectLabel, effect: buildEffect(), imagePath: imagePath.trim() || undefined });
   }
 
   function handleAutoLabel() {
@@ -166,6 +168,39 @@ function CardEditor({ card, onUpdate }: { card: GameCard; onUpdate: (updated: Ga
               placeholder="legendary_racer"
               className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-300"
             />
+          </div>
+        )}
+      </div>
+
+      {/* Image path */}
+      <div className="space-y-1">
+        <label className="block text-[11px] font-medium text-slate-500">
+          Art obrázek
+          <span className="ml-1 font-normal text-slate-400">— cesta do /public, např. /cards/zeleznik.webp (prázdné = žádný obrázek)</span>
+        </label>
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={imagePath}
+            onChange={(e) => setImagePath(e.target.value)}
+            onBlur={commit}
+            placeholder="/cards/zeleznik-reveal.webp"
+            className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+          />
+          {imagePath.trim() && (
+            <button
+              onClick={() => { setImagePath(""); onUpdate({ ...card, text, effectLabel, effect: buildEffect(), imagePath: undefined }); }}
+              className="shrink-0 rounded-lg border border-slate-200 px-2 py-2 text-[11px] text-slate-400 hover:text-red-500"
+              title="Smazat obrázek"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+        {imagePath.trim() && (
+          <div className="mt-1 overflow-hidden rounded-lg border border-slate-200 bg-slate-100" style={{ maxHeight: "80px" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={imagePath.trim()} alt="" className="w-full object-cover" style={{ maxHeight: "80px" }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
           </div>
         )}
       </div>

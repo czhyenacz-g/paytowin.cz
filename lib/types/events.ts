@@ -18,6 +18,8 @@ export type CenterEvent =
       playerName: string;
       text: string;
       effectLabel: string;
+      /** Volitelný art obrázek zobrazený při reveal. Pokud chybí, render beze změny. */
+      imagePath?: string;
     }
   | {
       type: "offer";

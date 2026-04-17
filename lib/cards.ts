@@ -14,6 +14,8 @@ export interface GameCard {
   text: string;
   effect: CardEffect;
   effectLabel: string; // zkratka pro UI: "+100 💰", "Vynecháš tah", "Posun +2"
+  /** Volitelný obrázek zobrazovaný při reveal karty. Cesta do /public, např. "/cards/zeleznik-reveal.webp". */
+  imagePath?: string;
 }
 
 // ─── Balíček Náhoda ───────────────────────────────────────────────────────────

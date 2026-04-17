@@ -2590,6 +2590,7 @@ function mapToCenterEvent(
       playerName: players[playerIndex]?.name ?? "?",
       text: card.text,
       effectLabel: card.effectLabel,
+      imagePath: card.imagePath,
     };
   }
   if (pendingOffer) {

@@ -56,6 +56,17 @@ function CardEventContent({ event }: { event: Extract<CenterEvent, { type: "card
           {event.playerName} lízl kartu:
         </div>
       </div>
+      {event.imagePath && (
+        <div className="bg-slate-900 flex items-center justify-center overflow-hidden" style={{ maxHeight: "220px" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={event.imagePath}
+            alt=""
+            className="w-full object-cover"
+            style={{ maxHeight: "220px" }}
+          />
+        </div>
+      )}
       <div className="bg-white px-6 py-5 space-y-4">
         <p className="text-base font-medium text-slate-800 leading-snug">
           {event.text}
