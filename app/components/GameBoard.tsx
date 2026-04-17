@@ -927,6 +927,29 @@ export default function GameBoard({ gameCode }: Props) {
       updatedPlayer = { ...updatedPlayer, position: newPos };
       const sign = card.effect.value > 0 ? "+" : "";
       logLines.push(`${player.name}: ${card.text} (posun ${sign}${card.effect.value})`);
+
+      // Vyhodnoť efekt cílového pole.
+      // Guard depth=1: chance/finance by spustily další card_pending flow (nekonečný řetězec),
+      // racer by spustil horse_pending buy/rent flow — obě věci nelze bezpečně zanořit do
+      // applyCardEffect. Pro tato pole pouze logujeme, efekt se nespustí.
+      const landingField = fieldsRef.current[newPos];
+      if (landingField) {
+        const lt = landingField.type;
+        if (lt === "chance" || lt === "finance") {
+          const label = lt === "chance" ? "Náhoda" : "Finance";
+          logLines.push(`${player.name}: přistál na poli ${label} — karta se nevylosuje (přesun byl kartou).`);
+          console.log(`[turn-flow] card move landed on ${lt} — skipped (chain guard depth=1)`);
+        } else if (lt === "racer" || lt === "horse") {
+          logLines.push(`${player.name}: přistál u stáje ${landingField.racer?.emoji ?? ""} ${landingField.label} — nabídka se nespustí (přesun byl kartou).`);
+          console.log(`[turn-flow] card move landed on racer — skipped (chain guard depth=1)`);
+        } else {
+          // coins_gain, coins_lose, start, gamble, neutral — bezpečné synchronní akce
+          const { player: afterField, log: fieldLog } = landingField.action(updatedPlayer);
+          updatedPlayer = afterField;
+          if (fieldLog) logLines.push(fieldLog);
+          console.log(`[turn-flow] card move landed on ${lt} — field action applied, coins=${updatedPlayer.coins}`);
+        }
+      }
     } else if (card.effect.kind === "skip_turn") {
       // skip_next_turn uložíme do DB — bude přeskočen při příštím tahu
       logLines.push(`${player.name}: ${card.text} (vynechá příští tah)`);
