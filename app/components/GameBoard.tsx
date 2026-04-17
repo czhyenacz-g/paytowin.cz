@@ -960,15 +960,36 @@ export default function GameBoard({ gameCode }: Props) {
       const freeRacers = racerFields.map(f => f.racer!).filter(r => !ownedKeys.has(racerOwnershipKey(r)));
 
       // Priorita 1: konkrétní racer dle racerId
-      // Priorita 2: náhodný volný racer (fallback pokud named není dostupný)
+      //   1a. Hledej na boardových polích (běžný případ)
+      //   1b. Hledej přímo v theme rosterech — podporuje legendární racery, kteří
+      //       nemají vlastní pole na boardu (off-board raceři, více racer slotů než
+      //       theme.racers). Pokud ho hráč ještě nevlastní, je považován za volného.
+      // Priorita 2: náhodný volný racer z boardu (fallback pokud named není dostupný)
       // Priorita 3: nic — zaloguj skip
       let chosen: typeof freeRacers[number] | undefined;
       let usedFallback = false;
       if (card.effect.racerId) {
         chosen = freeRacers.find(r => r.id === card.effect.racerId);
         if (!chosen) {
-          chosen = freeRacers[Math.floor(Math.random() * freeRacers.length)];
-          usedFallback = true;
+          // Off-board legendary lookup: racer je v theme rosterech, ale ne na boardovém poli
+          const themeRacer = getThemeRacers(theme).find(rc => rc.id === card.effect.racerId);
+          if (themeRacer && !ownedKeys.has(racerOwnershipKey(themeRacer))) {
+            chosen = {
+              id:          themeRacer.id,
+              name:        themeRacer.name,
+              speed:       themeRacer.speed,
+              price:       themeRacer.price,
+              emoji:       themeRacer.emoji,
+              maxStamina:  themeRacer.maxStamina ?? themeRacer.stamina,
+              stamina:     themeRacer.maxStamina ?? themeRacer.stamina,
+              isLegendary: themeRacer.isLegendary,
+            };
+            console.log(`[give_racer] off-board legendary found in theme roster: "${themeRacer.name}" (id=${themeRacer.id})`);
+          } else {
+            chosen = freeRacers[Math.floor(Math.random() * freeRacers.length)];
+            usedFallback = true;
+            console.log(`[give_racer] named racer "${card.effect.racerId}" not available (owned or missing) → random fallback`);
+          }
         }
       } else {
         chosen = freeRacers[Math.floor(Math.random() * freeRacers.length)];

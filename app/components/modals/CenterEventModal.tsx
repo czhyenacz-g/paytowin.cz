@@ -65,13 +65,12 @@ function CardEventContent({
         </div>
       </div>
       {event.imagePath && (
-        <div className="bg-slate-900 flex items-center justify-center overflow-hidden" style={{ maxHeight: "220px" }}>
+        <div className="bg-slate-900 overflow-hidden" style={{ height: "260px" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={event.imagePath}
             alt=""
-            className="w-full object-cover"
-            style={{ maxHeight: "220px" }}
+            className="w-full h-full object-cover object-center"
           />
         </div>
       )}
