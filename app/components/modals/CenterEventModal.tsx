@@ -31,7 +31,7 @@ export default function CenterEventModal({ event, onConfirm, onDecline, onApplyC
       style={{ background: "rgba(0,0,0,0.55)" }}
     >
       <div
-        className="mx-4 w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden"
+        className="mx-4 w-full max-w-sm"
         style={{ animation: "cardFadeIn 0.25s ease-out both" }}
       >
         {event.type === "card" && <CardEventContent event={event} onApplyCard={onApplyCard} />}
@@ -54,28 +54,30 @@ function CardEventContent({
 }) {
   const accent = CARD_ACCENT[event.cardType];
 
-  // Když je art obrázek, vyplní celou kartu — UI prvky překryté jako overlay s gradientem
+  // S obrázkem: karta je full-bleed art, text a tlačítko jsou pod kartou
   if (event.imagePath) {
     return (
-      <div className="relative overflow-hidden" style={{ minHeight: "440px" }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={event.imagePath}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover object-center"
-        />
-        {/* Horní overlay: kategorie + emoji + jméno */}
-        <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-black/75 to-transparent px-6 pt-6 pb-10">
-          <div className="text-xs font-bold uppercase tracking-widest text-white/70">
-            {event.category}
-          </div>
-          <div className="mt-1 text-3xl">{event.emoji}</div>
-          <div className="mt-2 text-xs font-semibold text-white/80">
-            {event.playerName} lízl kartu:
+      <>
+        {/* Art karta — horní overlay jen pro kategorii/emoji/jméno */}
+        <div className="rounded-3xl overflow-hidden shadow-2xl relative" style={{ minHeight: "400px" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={event.imagePath}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-black/75 to-transparent px-6 pt-6 pb-12">
+            <div className="text-xs font-bold uppercase tracking-widest text-white/70">
+              {event.category}
+            </div>
+            <div className="mt-1 text-3xl">{event.emoji}</div>
+            <div className="mt-2 text-xs font-semibold text-white/80">
+              {event.playerName} lízl kartu:
+            </div>
           </div>
         </div>
-        {/* Dolní overlay: text + badge + tlačítko */}
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent px-6 pt-12 pb-6 space-y-3">
+        {/* Text a tlačítko pod kartou */}
+        <div className="px-2 pt-4 pb-1 space-y-3">
           <p className="text-base font-semibold text-white leading-snug drop-shadow">
             {event.text}
           </p>
@@ -95,13 +97,13 @@ function CardEventContent({
             </div>
           )}
         </div>
-      </div>
+      </>
     );
   }
 
   // Standardní layout bez obrázku
   return (
-    <>
+    <div className="rounded-3xl shadow-2xl overflow-hidden">
       <div className={`px-6 pt-6 pb-4 ${accent.headerBg}`}>
         <div className="text-xs font-bold uppercase tracking-widest text-white/70">
           {event.category}
@@ -131,7 +133,7 @@ function CardEventContent({
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 }
 
@@ -147,7 +149,7 @@ function OfferEventContent({
   onDecline?: () => void;
 }) {
   return (
-    <>
+    <div className="rounded-3xl shadow-2xl overflow-hidden">
       <div className="bg-amber-500 px-6 pt-6 pb-4">
         <div className="text-xs font-bold uppercase tracking-widest text-white/70">
           Speciální nabídka
@@ -187,6 +189,6 @@ function OfferEventContent({
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 }
