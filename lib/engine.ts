@@ -20,10 +20,11 @@ import type { BoardConfig } from "./board";
 // ─── Konstanty ────────────────────────────────────────────────────────────────
 
 export const REROLL_COST = 250;
-export const REROLL_CHANCE = 0.25;
+export const REROLL_CHANCE = 0.10;
 
-const BANKRUPTCY_TAX_PER_ROUND = 25;
+const BANKRUPTCY_TAX_PER_ROUND = 20;
 const BANKRUPTCY_TAX_CAP = 400;
+const BANKRUPTCY_TAX_START_ROUND = 3; // daně začínají až od kola 3
 
 // ─── Typy polí ────────────────────────────────────────────────────────────────
 
@@ -71,7 +72,8 @@ export const sleep = (ms: number): Promise<void> =>
 
 /** Kolo 1 = 0, každé další kolo +50 coins, strop 500. */
 export function getStartTax(round: number): number {
-  return Math.min((round - 1) * BANKRUPTCY_TAX_PER_ROUND, BANKRUPTCY_TAX_CAP);
+  if (round < BANKRUPTCY_TAX_START_ROUND) return 0;
+  return Math.min((round - BANKRUPTCY_TAX_START_ROUND + 1) * BANKRUPTCY_TAX_PER_ROUND, BANKRUPTCY_TAX_CAP);
 }
 
 // ─── Bankrot ──────────────────────────────────────────────────────────────────
