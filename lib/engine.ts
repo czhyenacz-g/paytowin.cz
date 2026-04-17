@@ -22,8 +22,8 @@ import type { BoardConfig } from "./board";
 export const REROLL_COST = 250;
 export const REROLL_CHANCE = 0.25;
 
-const BANKRUPTCY_TAX_PER_ROUND = 50;
-const BANKRUPTCY_TAX_CAP = 500;
+const BANKRUPTCY_TAX_PER_ROUND = 25;
+const BANKRUPTCY_TAX_CAP = 400;
 
 // ─── Typy polí ────────────────────────────────────────────────────────────────
 
