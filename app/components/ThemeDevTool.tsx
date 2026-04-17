@@ -1198,19 +1198,11 @@ export default function ThemeDevTool() {
 
               <div className="flex-1" />
 
-              {/* Save — blocked for built-in */}
-              {currentSource === "built-in" ? (
-                <button disabled
-                  title="Built-in themes nelze přepsat. Použij Duplikovat."
-                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-400 cursor-not-allowed">
-                  🔒 Uložit
-                </button>
-              ) : (
-                <button onClick={handleSave} disabled={saving}
-                  className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50">
-                  {saving ? "Ukládám…" : "Uložit"}
-                </button>
-              )}
+              {/* Save — TODO: dočasně povoleno i pro built-in; před finálním nasazením vrátit blokaci pro currentSource === "built-in" */}
+              <button onClick={handleSave} disabled={saving}
+                className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50">
+                {saving ? "Ukládám…" : "Uložit"}
+              </button>
 
               <button onClick={handleSaveAsNew} disabled={saving}
                 className="rounded-lg border border-emerald-400 px-3 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50 disabled:opacity-50">
@@ -1218,11 +1210,7 @@ export default function ThemeDevTool() {
               </button>
             </div>
 
-            {currentSource === "built-in" && (
-              <div className="text-xs text-amber-600">
-                Built-in theme — nelze přepsat. Použij <strong>Duplikovat</strong> → uprav <code className="font-mono">meta.id</code> → <strong>Uložit jako nové</strong>.
-              </div>
-            )}
+            {/* TODO: dočasně skryto — varování "built-in nelze přepsat"; vrátit spolu s blokací tlačítka Uložit */}
           </div>
 
           {/* Validation result */}
