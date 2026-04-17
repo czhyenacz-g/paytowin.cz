@@ -45,6 +45,8 @@ export interface Database {
           horses: Json;
           turn_order: number;
           skip_next_turn: boolean;
+          discord_id: string | null;
+          discord_avatar_url: string | null;
         };
         Insert: {
           game_id: string;
@@ -55,6 +57,8 @@ export interface Database {
           horses: Json;
           turn_order: number;
           skip_next_turn?: boolean;
+          discord_id?: string | null;
+          discord_avatar_url?: string | null;
         };
         Update: {
           position?: number;
@@ -63,6 +67,8 @@ export interface Database {
           color?: string;
           name?: string;
           skip_next_turn?: boolean;
+          discord_id?: string | null;
+          discord_avatar_url?: string | null;
         };
       };
       game_state: {

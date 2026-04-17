@@ -22,6 +22,7 @@ export default function LocalNewPage() {
   const [authState, setAuthState] = React.useState<AuthState>("loading");
   const [discordId, setDiscordId] = React.useState("");
   const [discordName, setDiscordName] = React.useState("");
+  const [discordAvatarUrl, setDiscordAvatarUrl] = React.useState<string | null>(null);
 
   const [playerCount, setPlayerCount] = React.useState(2);
   const [playerNames, setPlayerNames] = React.useState<string[]>(["", ""]);
@@ -46,6 +47,7 @@ export default function LocalNewPage() {
       if (!did) { setAuthState("unauthenticated"); return; }
       setDiscordId(did);
       setDiscordName((user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? "") as string);
+      setDiscordAvatarUrl((user?.user_metadata?.avatar_url as string | null) ?? null);
       setAuthState("ready");
     });
   }, []);
@@ -104,6 +106,9 @@ export default function LocalNewPage() {
           coins: 1000,
           horses: [],
           turn_order: i,
+          // První hráč je Discord host — ostatní jsou lokální jména bez Discord identity
+          discord_id: i === 0 ? discordId || null : null,
+          discord_avatar_url: i === 0 ? discordAvatarUrl : null,
         }))
       )
       .select();

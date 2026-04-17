@@ -202,6 +202,8 @@ export default function LandingPage() {
       coins: 1000,
       horses: [],
       turn_order: 0,
+      discord_id: discordUser?.id ?? null,
+      discord_avatar_url: discordUser?.avatar ?? null,
     }).select().single();
 
     if (playerErr || !newPlayer) {
@@ -288,6 +290,8 @@ export default function LandingPage() {
       coins: 1000,
       horses: [],
       turn_order: turnOrder,
+      discord_id: discordUser?.id ?? null,
+      discord_avatar_url: discordUser?.avatar ?? null,
     }).select().single();
 
     if (newPlayer) {

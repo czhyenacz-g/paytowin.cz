@@ -2474,9 +2474,11 @@ export default function GameBoard({ gameCode }: Props) {
                       const isCurrent = gameState?.current_player_index === index;
                       const bankrupt = isBankrupt(player);
                       const field = FIELDS[player.position];
-                      // Vlastní Discord avatar — zobrazujeme jen pro vlastního hráče (avatar session je k dispozici jen lokálně)
-                      const isMe = isLocalGame ? false : player.id === myPlayerId;
-                      const showAvatar = isMe && !!myDiscordAvatar;
+                      // Discord avatar: preferuj player.discord_avatar_url (uložen v DB při joinu).
+                      // Fallback pro vlastního hráče: session avatar (pro případ starých záznamů bez DB pole).
+                      const isMe = !isLocalGame && player.id === myPlayerId;
+                      const avatarUrl = player.discord_avatar_url ?? (isMe ? myDiscordAvatar : null);
+                      const showAvatar = !!avatarUrl;
                       return (
                         <div
                           key={player.id}
@@ -2498,7 +2500,7 @@ export default function GameBoard({ gameCode }: Props) {
                                 {showAvatar ? (
                                   // eslint-disable-next-line @next/next/no-img-element
                                   <img
-                                    src={myDiscordAvatar}
+                                    src={avatarUrl!}
                                     alt=""
                                     className={`h-8 w-8 shrink-0 rounded-full object-cover ring-2 shadow ${bankrupt ? "ring-slate-300 opacity-40" : "ring-black/20"}`}
                                   />

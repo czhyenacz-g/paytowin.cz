@@ -38,6 +38,10 @@ export interface Player {
   horses: Horse[];
   turn_order: number;
   skip_next_turn: boolean;
+  /** Discord user ID — null pro hráče bez Discord loginu nebo stará data. */
+  discord_id?: string | null;
+  /** Discord CDN URL avataru — null pokud hráč nemá Discord nebo URL není k dispozici. */
+  discord_avatar_url?: string | null;
 }
 
 // ─── Herní stav ───────────────────────────────────────────────────────────────

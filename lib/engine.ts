@@ -133,6 +133,8 @@ export function normalizePlayer(raw: unknown): Player {
     horses: Array.isArray(r.horses) ? (r.horses as Horse[]) : [],
     turn_order: Number(r.turn_order),
     skip_next_turn: Boolean(r.skip_next_turn ?? false),
+    discord_id: (r.discord_id as string | null | undefined) ?? null,
+    discord_avatar_url: (r.discord_avatar_url as string | null | undefined) ?? null,
   };
 }
 
