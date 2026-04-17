@@ -236,6 +236,7 @@ export default function GameBoard({ gameCode }: Props) {
   const pendingRaceScoreRef = React.useRef<string | null>(null);
   const [countdownNum, setCountdownNum] = React.useState<number | null>(null);
   const [myPlayerId, setMyPlayerId] = React.useState<string | null>(null);
+  const [myDiscordAvatar, setMyDiscordAvatar] = React.useState<string | null>(null);
   const [viewerRole, setViewerRole] = React.useState<"loading" | "player" | "spectator" | "login_required">("loading");
   const [isRolling, setIsRolling] = React.useState(false);
   const [isMoving, setIsMoving] = React.useState(false);
@@ -399,6 +400,8 @@ export default function GameBoard({ gameCode }: Props) {
 
       const { data: { user } } = await supabase.auth.getUser();
       const myDiscordId = user?.user_metadata?.provider_id as string | undefined;
+      const myAvatarUrl = user?.user_metadata?.avatar_url as string | null ?? null;
+      if (myAvatarUrl) setMyDiscordAvatar(myAvatarUrl);
 
       const pid = localStorage.getItem(`paytowin_player_${gameCode}`);
       setMyPlayerId(pid);
@@ -2471,6 +2474,9 @@ export default function GameBoard({ gameCode }: Props) {
                       const isCurrent = gameState?.current_player_index === index;
                       const bankrupt = isBankrupt(player);
                       const field = FIELDS[player.position];
+                      // Vlastní Discord avatar — zobrazujeme jen pro vlastního hráče (avatar session je k dispozici jen lokálně)
+                      const isMe = isLocalGame ? false : player.id === myPlayerId;
+                      const showAvatar = isMe && !!myDiscordAvatar;
                       return (
                         <div
                           key={player.id}
@@ -2489,9 +2495,18 @@ export default function GameBoard({ gameCode }: Props) {
                           <div className="space-y-2">
                             <div className="flex items-center justify-between gap-2">
                               <div className="flex items-center gap-2 min-w-0">
-                                <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-black text-black ring-2 ring-black/20 shadow ${bankrupt ? "bg-slate-400" : player.color}`}>
-                                  {player.name.charAt(0).toUpperCase()}
-                                </div>
+                                {showAvatar ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    src={myDiscordAvatar}
+                                    alt=""
+                                    className={`h-8 w-8 shrink-0 rounded-full object-cover ring-2 shadow ${bankrupt ? "ring-slate-300 opacity-40" : "ring-black/20"}`}
+                                  />
+                                ) : (
+                                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-black text-black ring-2 ring-black/20 shadow ${bankrupt ? "bg-slate-400" : player.color}`}>
+                                    {player.name.charAt(0).toUpperCase()}
+                                  </div>
+                                )}
                                 <div className="min-w-0">
                                   <div className={`font-semibold text-sm leading-tight ${bankrupt ? "text-slate-400 line-through" : theme.colors.textPrimary}`}>
                                     {player.name}
