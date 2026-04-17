@@ -2305,6 +2305,13 @@ export default function GameBoard({ gameCode }: Props) {
                 )}
 
                 <div className={`rounded-[4px] p-4 transition-colors border border-black/[0.06] ${isRolling ? theme.colors.rollPanelRolling : theme.colors.rollPanelIdle}`}>
+                  {currentPlayer && (
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <div className={`h-2.5 w-2.5 shrink-0 rounded-full ${currentPlayer.color}`} />
+                      <span className="text-[11px] font-bold text-slate-700 truncate">{currentPlayer.name}</span>
+                      <span className="text-[10px] text-slate-400 ml-0.5">na tahu</span>
+                    </div>
+                  )}
                   <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Poslední hod</div>
                   <div className="flex items-center gap-3">
                     <DiceFace
