@@ -66,9 +66,16 @@ export default function RaceEventOverlay({
   const phase = event.phase;
   const labels = RACE_TYPE_LABELS[event.raceType ?? "mass_race"];
 
-  // Hot-seat handoff: 5s countdown před závodem každého hráče.
-  // Dává čas fyzicky předat zařízení. Aktivní jen pro isLocalGame.
-  const [handoffCountdown, setHandoffCountdown] = React.useState<number | null>(null);
+  // Hot-seat handoff: 5s "Připrav se" countdown před závodem každého hráče.
+  // Dává čas fyzicky předat zařízení u jednoho počítače. Aktivní jen pro isLocalGame.
+  //
+  // handoffDoneForIndex: explicitně označuje, pro který currentRacerIndex handoff skončil.
+  // Inicializuje se na -1 → minigame se nikdy nezobrazí dřív než handoff skončí
+  // (eliminuje race condition kde null initial state probliknul minigame před efektem).
+  const currentRacerIndex = event.currentRacerIndex ?? 0;
+  const [handoffCountdown,    setHandoffCountdown]    = React.useState<number | null>(null);
+  const [handoffDoneForIndex, setHandoffDoneForIndex] = React.useState<number>(-1);
+
   React.useEffect(() => {
     if (phase !== "racing" || !isLocalGame) {
       setHandoffCountdown(null);
@@ -80,12 +87,19 @@ export default function RaceEventOverlay({
       setTimeout(() => setHandoffCountdown(3), 2000),
       setTimeout(() => setHandoffCountdown(2), 3000),
       setTimeout(() => setHandoffCountdown(1), 4000),
-      setTimeout(() => setHandoffCountdown(null), 5000),
+      setTimeout(() => {
+        setHandoffCountdown(null);
+        setHandoffDoneForIndex(currentRacerIndex); // minigame se odemkne jen pro tohoto hráče
+      }, 5000),
     ];
     return () => timers.forEach(clearTimeout);
   // Znovu se spustí při každém novém závodníkovi (currentRacerIndex) i při vstupu do racing fáze
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase === "racing" ? `racing_${event.currentRacerIndex ?? 0}` : "not_racing", isLocalGame]);
+  }, [phase === "racing" ? `racing_${currentRacerIndex}` : "not_racing", isLocalGame]);
+
+  // Minigame se zobrazí jen když: online NEBO handoff tohoto závodníka explicitně dokončen
+  const showHandoff = isLocalGame && phase === "racing" && handoffDoneForIndex !== currentRacerIndex;
+  const showMinigame = !isLocalGame || (phase === "racing" && handoffDoneForIndex === currentRacerIndex);
 
   // Preferred závodník pro aktuálního výběrčího
   const preferredHorse = selectorPlayer?.horses.find(h => h.isPreferred) ?? null;
@@ -220,31 +234,36 @@ export default function RaceEventOverlay({
               </p>
             </div>
 
-            {/* Hot-seat handoff: "Připrav se" countdown před závodem každého hráče */}
-            {isLocalGame && handoffCountdown !== null ? (
+            {/* Hot-seat handoff: "Připrav se" countdown před závodem každého hráče.
+                showHandoff garantuje zobrazení od prvního renderu — žádný flash minigame. */}
+            {showHandoff ? (
               <div className="text-center space-y-4 py-4">
                 <div className="text-5xl">{racingHorse?.emoji ?? "🏇"}</div>
                 <p className="text-sm font-semibold text-slate-500 uppercase tracking-widest">
                   Na start se připraví
                 </p>
                 <p className="text-2xl font-black text-indigo-700">{racingPlayer.name}</p>
-                <div className="text-8xl font-black text-slate-800 tabular-nums leading-none">
-                  {handoffCountdown}
-                </div>
+                {handoffCountdown !== null ? (
+                  <div className="text-8xl font-black text-slate-800 tabular-nums leading-none">
+                    {handoffCountdown}
+                  </div>
+                ) : (
+                  <div className="text-2xl font-semibold text-slate-400">…</div>
+                )}
                 <p className="text-sm text-slate-400">Předej zařízení a připrav se!</p>
               </div>
-            ) : (
+            ) : showMinigame ? (
               <RacingMinigame
-                key={`${event.currentRacerIndex ?? 0}_ready`}
+                key={`${currentRacerIndex}_ready`}
                 racingPlayer={racingPlayer}
                 racingHorse={racingHorse}
                 isMyTurn={isMyRacingTurn}
-                currentIdx={event.currentRacerIndex ?? 0}
+                currentIdx={currentRacerIndex}
                 totalRacers={event.playerIds.length}
                 initialStamina={racingHorse?.stamina ?? 100}
                 onSubmit={onSubmitScore}
               />
-            )}
+            ) : null}
           </div>
         )}
 
