@@ -22,7 +22,7 @@ import type { BoardConfig } from "./board";
 export const REROLL_COST = 250;
 export const REROLL_CHANCE = 0.10;
 
-const BANKRUPTCY_TAX_PER_ROUND = 20;
+const BANKRUPTCY_TAX_PER_ROUND = 40;
 const BANKRUPTCY_TAX_CAP = 400;
 const BANKRUPTCY_TAX_START_ROUND = 3; // daně začínají až od kola 3
 
