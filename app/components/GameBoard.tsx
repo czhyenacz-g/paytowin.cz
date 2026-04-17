@@ -1015,7 +1015,7 @@ export default function GameBoard({ gameCode }: Props) {
     const timer = setTimeout(() => {
       console.log(`[turn-flow] card timer fired — calling applyCardEffect`);
       applyCardEffectRef.current(pendingCard.card, pendingCard.playerIndex);
-    }, 2500);
+    }, 15000);
 
     return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1775,6 +1775,7 @@ export default function GameBoard({ gameCode }: Props) {
           event={centerEvent}
           onConfirm={acceptOffer}
           onDecline={declineOffer}
+          onApplyCard={pendingCard ? () => applyCardEffectRef.current(pendingCard.card, pendingCard.playerIndex) : undefined}
         />
       )}
 
@@ -2591,6 +2592,7 @@ function mapToCenterEvent(
       text: card.text,
       effectLabel: card.effectLabel,
       imagePath: card.imagePath,
+      isActivePlayer: gameMode === "local" ? true : (myPlayerId !== null && (players[playerIndex]?.id === myPlayerId)),
     };
   }
   if (pendingOffer) {

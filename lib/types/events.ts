@@ -20,6 +20,8 @@ export type CenterEvent =
       effectLabel: string;
       /** Volitelný art obrázek zobrazený při reveal. Pokud chybí, render beze změny. */
       imagePath?: string;
+      /** True pro klienta hráče, jehož karta je — může kliknout Pokračovat pro dřívější zavření */
+      isActivePlayer: boolean;
     }
   | {
       type: "offer";

@@ -20,9 +20,11 @@ interface Props {
   event: CenterEvent;
   onConfirm?: () => void;
   onDecline?: () => void;
+  /** Zavolá okamžitou aplikaci efektu karty — jen předávat pro aktivního hráče */
+  onApplyCard?: () => void;
 }
 
-export default function CenterEventModal({ event, onConfirm, onDecline }: Props) {
+export default function CenterEventModal({ event, onConfirm, onDecline, onApplyCard }: Props) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
@@ -32,7 +34,7 @@ export default function CenterEventModal({ event, onConfirm, onDecline }: Props)
         className="mx-4 w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden"
         style={{ animation: "cardFadeIn 0.25s ease-out both" }}
       >
-        {event.type === "card" && <CardEventContent event={event} />}
+        {event.type === "card" && <CardEventContent event={event} onApplyCard={onApplyCard} />}
         {event.type === "offer" && (
           <OfferEventContent event={event} onConfirm={onConfirm} onDecline={onDecline} />
         )}
@@ -43,7 +45,13 @@ export default function CenterEventModal({ event, onConfirm, onDecline }: Props)
 
 // ─── Card variant ─────────────────────────────────────────────────────────────
 
-function CardEventContent({ event }: { event: Extract<CenterEvent, { type: "card" }> }) {
+function CardEventContent({
+  event,
+  onApplyCard,
+}: {
+  event: Extract<CenterEvent, { type: "card" }>;
+  onApplyCard?: () => void;
+}) {
   const accent = CARD_ACCENT[event.cardType];
   return (
     <>
@@ -74,9 +82,18 @@ function CardEventContent({ event }: { event: Extract<CenterEvent, { type: "card
         <div className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold ${accent.badgeBg} ${accent.badgeText}`}>
           {event.effectLabel}
         </div>
-        <div className="text-xs text-slate-400">
-          Efekt se aplikuje za chvíli…
-        </div>
+        {event.isActivePlayer ? (
+          <button
+            onClick={onApplyCard}
+            className="w-full rounded-xl bg-slate-800 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-900 transition-colors"
+          >
+            Pokračovat →
+          </button>
+        ) : (
+          <div className="text-xs text-slate-400">
+            Čeká na {event.playerName}…
+          </div>
+        )}
       </div>
     </>
   );
