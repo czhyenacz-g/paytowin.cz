@@ -53,6 +53,53 @@ function CardEventContent({
   onApplyCard?: () => void;
 }) {
   const accent = CARD_ACCENT[event.cardType];
+
+  // Když je art obrázek, vyplní celou kartu — UI prvky překryté jako overlay s gradientem
+  if (event.imagePath) {
+    return (
+      <div className="relative overflow-hidden" style={{ minHeight: "440px" }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={event.imagePath}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover object-center"
+        />
+        {/* Horní overlay: kategorie + emoji + jméno */}
+        <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-black/75 to-transparent px-6 pt-6 pb-10">
+          <div className="text-xs font-bold uppercase tracking-widest text-white/70">
+            {event.category}
+          </div>
+          <div className="mt-1 text-3xl">{event.emoji}</div>
+          <div className="mt-2 text-xs font-semibold text-white/80">
+            {event.playerName} lízl kartu:
+          </div>
+        </div>
+        {/* Dolní overlay: text + badge + tlačítko */}
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent px-6 pt-12 pb-6 space-y-3">
+          <p className="text-base font-semibold text-white leading-snug drop-shadow">
+            {event.text}
+          </p>
+          <div className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold ${accent.badgeBg} ${accent.badgeText}`}>
+            {event.effectLabel}
+          </div>
+          {event.isActivePlayer ? (
+            <button
+              onClick={onApplyCard}
+              className="w-full rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 px-4 py-3 text-sm font-semibold text-white hover:bg-white/30 transition-colors"
+            >
+              Pokračovat →
+            </button>
+          ) : (
+            <div className="text-xs text-white/60">
+              Čeká na {event.playerName}…
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Standardní layout bez obrázku
   return (
     <>
       <div className={`px-6 pt-6 pb-4 ${accent.headerBg}`}>
@@ -64,16 +111,6 @@ function CardEventContent({
           {event.playerName} lízl kartu:
         </div>
       </div>
-      {event.imagePath && (
-        <div className="bg-slate-900 overflow-hidden" style={{ height: "260px" }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={event.imagePath}
-            alt=""
-            className="w-full h-full object-cover object-center"
-          />
-        </div>
-      )}
       <div className="bg-white px-6 py-5 space-y-4">
         <p className="text-base font-medium text-slate-800 leading-snug">
           {event.text}
