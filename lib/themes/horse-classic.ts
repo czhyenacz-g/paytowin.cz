@@ -51,9 +51,41 @@ export const horseClassicTheme: Theme = {
     racerField: "Stáj",
   },
   racers: [
-    { id: "sombra_roja",   name: "Sombra Roja",   speed: 2, price: 80,  emoji: "🔴" },
-    { id: "viento_dorado", name: "Viento Dorado",  speed: 3, price: 150, emoji: "🟤" },
-    { id: "el_relampago",  name: "El Relámpago",   speed: 4, price: 250, emoji: "⚡" },
-    { id: "caballo_real",  name: "Caballo Real",   speed: 5, price: 400, emoji: "👑" },
+    {
+      "id": "sombra_roja",
+      "name": "Sombra Roja",
+      "speed": 2,
+      "price": 80,
+      "emoji": "🔴"
+    },
+    {
+      "id": "viento_dorado",
+      "name": "Viento Dorado",
+      "speed": 3,
+      "price": 150,
+      "emoji": "🟤"
+    },
+    {
+      "id": "el_relampago",
+      "name": "El Relámpago",
+      "speed": 4,
+      "price": 250,
+      "emoji": "⚡"
+    },
+    {
+      "id": "caballo_real",
+      "name": "Caballo Real",
+      "speed": 5,
+      "price": 400,
+      "emoji": "👑"
+    },
+    {
+      "id": "r5",
+      "name": "Pablo",
+      "speed": 7,
+      "price": 150,
+      "emoji": "🐴",
+      "maxStamina": 78
+    }
   ],
 };

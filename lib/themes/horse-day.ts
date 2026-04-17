@@ -96,9 +96,9 @@ export const horseDayTheme: Theme = {
       "id": "zeleznik",
       "name": "Železník",
       "speed": 10,
-      "price": 150,
+      "price": 15000,
       "emoji": "🐴",
-      "maxStamina": 100,
+      "maxStamina": 10,
       "isLegendary": true,
       "flavorText": "Železník — legendární kůň, který nezná strach, únavu ani druhé místo. Jeho jediný cíl je jasný: vyhrát."
     }

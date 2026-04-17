@@ -78,6 +78,14 @@ export const carNightTheme: Theme = {
       "speed": 5,
       "price": 400,
       "emoji": "🔥"
+    },
+    {
+      "id": "r5",
+      "name": "Tvuj tata",
+      "speed": 8,
+      "price": 150,
+      "emoji": "🐴",
+      "maxStamina": 100
     }
   ],
 };
