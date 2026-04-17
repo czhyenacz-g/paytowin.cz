@@ -1251,14 +1251,17 @@ export default function GameBoard({ gameCode }: Props) {
       : null;
     if (!evt || evt.phase !== "results") return;
 
-    // Urči vítěze: effective score = tapy * (finalStamina/100), tiebreak: speed
+    // Urči vítěze: effective score = tapy * (finalStamina/maxStamina), tiebreak: speed
+    // Dělíme maxStamina (ne 100) — legendární koně s nízkým stropem nejsou penalizováni
+    // za svůj katalogový limit, jen za to kolik staminy skutečně ztratili.
     const raceEntries = (evt.playerIds ?? []).map(pid => {
       const player = players.find(p => p.id === pid);
       const horseKey = evt.selections?.[pid];
       const horse = player?.horses.find(h => racerOwnershipKey(h) === horseKey);
       const rawScore = evt.scores?.[pid] ?? 0;
       const finalStamina = evt.finalStaminas?.[pid] ?? horse?.stamina ?? 100;
-      return { player, horse, horseKey, rawScore, effectiveScore: rawScore * (finalStamina / 100), speed: horse?.speed ?? 0, finalStamina };
+      const maxStamina = horse?.maxStamina ?? 100;
+      return { player, horse, horseKey, rawScore, effectiveScore: rawScore * (finalStamina / maxStamina), speed: horse?.speed ?? 0, finalStamina, maxStamina };
     });
     const winnerEntry = [...raceEntries].sort((a, b) => b.effectiveScore - a.effectiveScore || b.speed - a.speed)[0];
 
@@ -1549,7 +1552,7 @@ export default function GameBoard({ gameCode }: Props) {
   const isMyRacingTurn = !!(racePendingEvt?.phase === "racing" && (
     isLocalGame ? true : raceCurrentPlayer?.id === myPlayerId
   ));
-  // Výsledky závodu: effective score = raw tapy × (finalStamina/100), tiebreak speed
+  // Výsledky závodu: effective score = raw tapy × (finalStamina/maxStamina), tiebreak speed
   // Řazení odpovídá winner logice v closeRaceResult
   const raceResults = racePendingEvt?.phase === "results"
     ? (racePendingEvt.playerIds ?? []).map(pid => {
@@ -1558,7 +1561,8 @@ export default function GameBoard({ gameCode }: Props) {
         const horse = player?.horses.find(h => racerOwnershipKey(h) === horseKey);
         const score = racePendingEvt.scores?.[pid] ?? 0;
         const finalStamina = racePendingEvt.finalStaminas?.[pid] ?? horse?.stamina ?? 100;
-        const effectiveScore = score * (finalStamina / 100);
+        const maxStamina = horse?.maxStamina ?? 100;
+        const effectiveScore = score * (finalStamina / maxStamina);
         return { player, horse, speed: horse?.speed ?? 0, score, effectiveScore, finalStamina };
       }).sort((a, b) => b.effectiveScore - a.effectiveScore || b.speed - a.speed)
     : null;
