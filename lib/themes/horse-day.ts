@@ -93,7 +93,7 @@ export const horseDayTheme: Theme = {
       "maxStamina": 80
     },
     {
-      "id": "r5",
+      "id": "zeleznik",
       "name": "Železník",
       "speed": 10,
       "price": 150,
@@ -192,7 +192,7 @@ export const horseDayTheme: Theme = {
           "text": "Železník!!",
           "effect": {
             "kind": "give_racer",
-            "racerId": "legendary_racer"
+            "racerId": "zeleznik"
           },
           "effectLabel": "💰💰💰💰💰💰💰💰",
           "imagePath": "/themes/horse-day/horse_legend.webp"

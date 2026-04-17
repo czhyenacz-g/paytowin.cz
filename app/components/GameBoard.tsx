@@ -988,6 +988,11 @@ export default function GameBoard({ gameCode }: Props) {
 
     await finishTurn({
       nextIndex, turnCount: gameState.turn_count + 1, log: [...logLines, ...newLog],
+      // FIX: give_racer zapsal nové horses do DB těsně před tímto voláním.
+      // finishTurn dělá stamina regen write ze closure `players` — která je stale a
+      // neobsahuje právě přidaného racera. Bez tohoto parametru by regen write
+      // přepsal horses a nový racer by zmizel. Stejná třída bugu jako buyRacer.
+      ...(card.effect.kind === "give_racer" ? { updatedCurrentPlayerHorses: updatedPlayer.horses } : {}),
       ...(wentBankrupt && !cardGameEnds ? { postTurnEvent: { kind: "announcement" as const, playerId: updatedPlayer.id, playerName: updatedPlayer.name } } : {}),
     });
 
