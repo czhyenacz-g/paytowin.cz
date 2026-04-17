@@ -100,6 +100,7 @@ function RacingMinigame({
   const [inputs, setInputs] = React.useState(0);              // celkem stisků → stamina drain
   const [score, setScore] = React.useState(0);                // čistý výsledek (správné − špatné, ≥0)
   const [targetKey, setTargetKey] = React.useState<RaceKey>(() => randomKey());
+  const [pressesOnTarget, setPressesOnTarget] = React.useState(0); // kolik stisků na aktuálním cíli
   const [lastResult, setLastResult] = React.useState<"+1" | "−1" | null>(null);
   const submittedRef = React.useRef(false);
 
@@ -129,20 +130,30 @@ function RacingMinigame({
   React.useEffect(() => {
     if (!isMyTurn) return;
     const interval = setInterval(() => {
-      if (!submittedRef.current) setTargetKey(prev => randomKey(prev));
+      if (!submittedRef.current) {
+        setTargetKey(prev => randomKey(prev));
+        setPressesOnTarget(0);
+      }
     }, 2000);
     return () => clearInterval(interval);
   }, [isMyTurn]);
 
-  // Input: správná klávesa +1, špatná −1 (min 0); cíl se vždy změní
+  // Input: správná klávesa +1, špatná −1 (min 0); cíl se mění po každém 2. stisku
   const handleInput = (pressedKey: RaceKey) => {
     if (!isMyTurn || submittedRef.current || timeLeft === 0) return;
     const correct = pressedKey === targetKey;
     setInputs(i => i + 1);
     setScore(s => correct ? s + 1 : Math.max(0, s - 1));
-    setTargetKey(prev => randomKey(prev));
     setLastResult(correct ? "+1" : "−1");
     setTimeout(() => setLastResult(null), 300);
+    setPressesOnTarget(prev => {
+      const next = prev + 1;
+      if (next >= 2) {
+        setTargetKey(k => randomKey(k));
+        return 0;
+      }
+      return next;
+    });
   };
 
   // Klávesnice: šipkové klávesy — jen aktivní závodník
