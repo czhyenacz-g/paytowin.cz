@@ -103,4 +103,102 @@ export const horseDayTheme: Theme = {
       "flavorText": "Železník — legendární kůň, který nezná strach, únavu ani druhé místo. Jeho jediný cíl je jasný: vyhrát."
     }
   ],
+
+  content: {
+    "cards": {
+      "chance": [
+        {
+          "id": "ch1",
+          "type": "chance",
+          "text": "Neznámý příznivec ti diskrétně poslal obálku.",
+          "effect": {
+            "kind": "coins",
+            "value": 100
+          },
+          "effectLabel": "+100 💰"
+        },
+        {
+          "id": "ch2",
+          "type": "chance",
+          "text": "Zakopl jsi u stáje a rozbil vybavení. Zaplať škodu.",
+          "effect": {
+            "kind": "coins",
+            "value": -80
+          },
+          "effectLabel": "-80 💰"
+        },
+        {
+          "id": "ch3",
+          "type": "chance",
+          "text": "Pořadatel tě přemisťuje na lepší startovní pozici.",
+          "effect": {
+            "kind": "move",
+            "value": 2
+          },
+          "effectLabel": "Posun +2 pole"
+        },
+        {
+          "id": "ch4",
+          "type": "chance",
+          "text": "Rozhodčí odhalil chybu — vracíš se zpět.",
+          "effect": {
+            "kind": "move",
+            "value": -3
+          },
+          "effectLabel": "Posun -3 pole"
+        },
+        {
+          "id": "ch5",
+          "type": "chance",
+          "text": "Tisk tě označil za favorita. Sponzoři se hrnou.",
+          "effect": {
+            "kind": "coins",
+            "value": 150
+          },
+          "effectLabel": "+150 💰"
+        },
+        {
+          "id": "ch6",
+          "type": "chance",
+          "text": "Kůň tě zaskočil a ty jsi přehlédl start. Čekáš.",
+          "effect": {
+            "kind": "skip_turn"
+          },
+          "effectLabel": "Vynecháš příští tah"
+        },
+        {
+          "id": "ch7",
+          "type": "chance",
+          "text": "Veterinář ti vrátil přeplatek za prohlídku.",
+          "effect": {
+            "kind": "coins",
+            "value": 60
+          },
+          "effectLabel": "+60 💰"
+        },
+        {
+          "id": "ch8",
+          "type": "chance",
+          "text": "Tvoje závodní číslo bylo omylem přiděleno dvakrát. Chaos.",
+          "effect": {
+            "kind": "move",
+            "value": -2
+          },
+          "effectLabel": "Posun -2 pole"
+        },
+        {
+          "id": "ch9",
+          "type": "chance",
+          "text": "Železník!!",
+          "effect": {
+            "kind": "give_racer",
+            "racerId": "legendary_racer"
+          },
+          "effectLabel": "💰💰💰💰💰💰💰💰",
+          "imagePath": "/themes/horse-day/horse_legend.webp"
+        }
+      ],
+      "finance": []
+    }
+  },
 };
