@@ -56,39 +56,41 @@ export const horseDayTheme: Theme = {
       "name": "Divoká růže",
       "speed": 2,
       "price": 80,
-      "emoji": "🌹"
+      "emoji": "🌹",
+      "maxStamina": 100
     },
     {
       "id": "modry_blesk",
-      "name": "Modrý blesk",
+      "name": "Blue thunder",
       "speed": 3,
       "price": 150,
       "emoji": "🔵",
-      "maxStamina": 50
+      "maxStamina": 95
     },
     {
       "id": "zlata_hriva",
       "name": "Zlatá hříva",
-      "speed": 7,
+      "speed": 6,
       "price": 250,
       "emoji": "🟡",
-      "maxStamina": 100
+      "maxStamina": 90
     },
     {
       "id": "r6",
       "name": "Pepík",
-      "speed": 3,
+      "speed": 5,
       "price": 150,
       "emoji": "🐴",
-      "maxStamina": 91,
+      "maxStamina": 100,
       "flavorText": "Pepó! Pepane! Pepíku!!"
     },
     {
       "id": "rychly_vitr",
       "name": "Rychlý vítr",
-      "speed": 5,
+      "speed": 9,
       "price": 400,
-      "emoji": "🟢"
+      "emoji": "🟢",
+      "maxStamina": 80
     },
     {
       "id": "r5",
