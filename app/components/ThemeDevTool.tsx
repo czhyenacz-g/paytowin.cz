@@ -11,7 +11,8 @@ import {
   listThemesAction,
   setPublicAction,
 } from "@/app/admin/themes/dev/actions";
-import { resolveRacerRefsAction } from "@/app/admin/racers/actions";
+import { resolveRacerRefsAction, listRacersAction } from "@/app/admin/racers/actions";
+import { profileToConfig } from "@/lib/racers/adapters";
 import type { ThemeMeta } from "@/app/admin/themes/dev/actions";
 import { SMALL_BOARD } from "@/lib/board/presets";
 import type { BoardConfig, BoardFieldConfig } from "@/lib/board/types";
@@ -651,6 +652,17 @@ export default function ThemeDevTool() {
   const [racersFromRegistry, setRacersFromRegistry] = React.useState(false);
 
   /**
+   * racerPicker — stav pickeru pro přidání závodníka z globální registry.
+   * open=false → panel skrytý; open=true → select + button zobrazeny.
+   */
+  const [racerPicker, setRacerPicker] = React.useState<{
+    open:     boolean;
+    list:     RacerConfig[];
+    loading:  boolean;
+    selected: string;
+  }>({ open: false, list: [], loading: false, selected: "" });
+
+  /**
    * withSlotIndexes — zajistí, že každý racer má explicitní slotIndex.
    * Pokud racer slotIndex nemá (stará data), přiřadí mu pořadový index.
    * Volá se při každém načtení racerů z manifestu/draftu.
@@ -680,11 +692,16 @@ export default function ThemeDevTool() {
     if (!boardPreviewManifest) return null;
     const hasCustomCards = editableCards.chance.length > 0 || editableCards.finance.length > 0;
 
+    // racerFieldCount — počet racer polí na boardu; off-board raceři (zeleznik apod.)
+    // mají slotIndex >= racerFieldCount a nesmí být v racerRefs.
+    const racerFieldCount = editableBoard.fields.filter((f) => f.type === "racer").length;
+
     // racerRefs: pokud jsme v registry módu, synchronizujeme je s aktuálními editableRacers
-    // (slot assignment mohl být změněn přes RacerRosterPanel → swap slotů)
+    // (slot assignment mohl být změněn přes RacerRosterPanel → swap slotů).
+    // Off-board raceři (slotIndex >= racerFieldCount) se do racerRefs nezahrnují.
     const updatedRacerRefs = racersFromRegistry
       ? editableRacers
-          .filter((r) => r.id && r.slotIndex !== undefined)
+          .filter((r) => r.id && r.slotIndex !== undefined && r.slotIndex < racerFieldCount)
           .map((r) => ({ slotIndex: r.slotIndex!, racer_id: r.id }))
       : boardPreviewManifest.racerRefs; // undefined pro legacy themes
 
@@ -705,7 +722,7 @@ export default function ThemeDevTool() {
         },
       },
     };
-  }, [boardPreviewManifest, editableRacers, racersFromRegistry, editableCards, editableFieldTextures, editableRacerImages]);
+  }, [boardPreviewManifest, editableBoard, editableRacers, racersFromRegistry, editableCards, editableFieldTextures, editableRacerImages]);
 
   // Asset sekce pro FieldEditorPanel — počítá se z vybraného pole + liveManifest
   const currentAssetSection = React.useMemo<AssetSectionConfig | undefined>(() => {
@@ -1055,6 +1072,42 @@ export default function ThemeDevTool() {
     setSavedSnapshot(snap);
     setLastSavedAt(null);
     notify("info", "Editor resetován na výchozí stav manifestu.");
+  }
+
+  // ── Registry picker ─────────────────────────────────────────────────────────
+
+  /** Načte závodníky z registry, odfiltruje ty co jsou už v theme membership. */
+  async function handleOpenPicker() {
+    setRacerPicker({ open: true, list: [], loading: true, selected: "" });
+    const profiles = await listRacersAction();
+    if (!profiles) {
+      setRacerPicker({ open: false, list: [], loading: false, selected: "" });
+      notify("error", "Nepodařilo se načíst Racer Registry.");
+      return;
+    }
+    const existingIds = new Set(editableRacers.map((r) => r.id));
+    const available = profiles.map(profileToConfig).filter((r) => !existingIds.has(r.id));
+    setRacerPicker({
+      open:     true,
+      list:     available,
+      loading:  false,
+      selected: available[0]?.id ?? "",
+    });
+  }
+
+  /** Přidá vybraného závodníka z registry do theme membership jako off-board racer. */
+  function handleAddFromRegistry() {
+    const toAdd = racerPicker.list.find((r) => r.id === racerPicker.selected);
+    if (!toAdd) return;
+    // Off-board: slotIndex mimo boardová pole (za posledním závodníkem v rosteru)
+    const withSlot: RacerConfig = { ...toAdd, slotIndex: editableRacers.length };
+    setEditableRacers((prev) => [...prev, withSlot]);
+    const remaining = racerPicker.list.filter((r) => r.id !== toAdd.id);
+    setRacerPicker((prev) => ({
+      ...prev,
+      list:     remaining,
+      selected: remaining[0]?.id ?? "",
+    }));
   }
 
   async function handleSaveToFiles() {
@@ -1613,7 +1666,7 @@ export default function ThemeDevTool() {
                 racerFieldCount={editableBoard.fields.filter((f) => f.type === "racer").length}
                 onChange={setEditableRacers}
                 isBuiltInTheme={currentSource === "built-in" && process.env.NODE_ENV === "production"}
-                catalogReadOnly={currentSource !== "built-in" || process.env.NODE_ENV !== "production"}
+                catalogReadOnly={false}
                 onEditRacers={() => {
                   if (currentSource === "new") {
                     notify(
@@ -1626,6 +1679,66 @@ export default function ThemeDevTool() {
                   if (themeId) window.open(`/admin/themes/dev/${themeId}/racers`, "_blank");
                 }}
               />
+
+              {/* Přidat závodníka z globální registry — jen v registry módu */}
+              {racersFromRegistry && (
+                <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+                  <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-4 py-2.5">
+                    <span className="text-xs font-semibold uppercase tracking-widest text-slate-500">
+                      Přidat závodníka z registry
+                    </span>
+                    {!racerPicker.open && (
+                      <button
+                        onClick={handleOpenPicker}
+                        className="rounded-lg bg-indigo-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-indigo-600 transition-colors"
+                      >
+                        Vybrat ze seznamu →
+                      </button>
+                    )}
+                  </div>
+                  {racerPicker.open && (
+                    <div className="px-4 py-3 space-y-2">
+                      {racerPicker.loading ? (
+                        <div className="text-xs text-slate-400">Načítám registry…</div>
+                      ) : racerPicker.list.length === 0 ? (
+                        <div className="text-xs text-slate-400 italic">
+                          Všichni závodníci z registry jsou již v theme membership.
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={racerPicker.selected}
+                            onChange={(e) => setRacerPicker((prev) => ({ ...prev, selected: e.target.value }))}
+                            className="flex-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                          >
+                            {racerPicker.list.map((r) => (
+                              <option key={r.id} value={r.id}>
+                                {r.emoji} {r.name} · ⚡{r.speed} · {r.price} 💰
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            onClick={handleAddFromRegistry}
+                            disabled={!racerPicker.selected}
+                            className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-40 transition-colors"
+                          >
+                            + Přidat
+                          </button>
+                        </div>
+                      )}
+                      <button
+                        onClick={() => setRacerPicker({ open: false, list: [], loading: false, selected: "" })}
+                        className="text-[10px] text-slate-400 hover:text-slate-600 underline"
+                      >
+                        Zavřít
+                      </button>
+                    </div>
+                  )}
+                  <div className="border-t border-slate-100 px-4 py-2 text-[10px] text-slate-400">
+                    Závodníci přidaní zde jsou off-board — nemají slot na boardu, ale jsou dostupní pro give_racer efekty chance karet.
+                  </div>
+                </div>
+              )}
 
               {/* Deck editor — Náhoda + Finance */}
               <DeckEditorPanel

@@ -120,13 +120,12 @@ export default function RacerRosterPanel({
   function handleDelete(idx: number) {
     const r = racers[idx];
     if (isRacerLocked(r)) return;
-    if (
-      !window.confirm(
-        `Smazat závodníka "${r.name}" (${r.id})?\n\n` +
-        `Pozor: odstraněním ${idx + 1}. závodníka se posune přiřazení racerů na ` +
-        `všech následujících racer polích boardu.`,
-      )
-    ) return;
+    const rSlot = r.slotIndex ?? idx;
+    const onBoard = hasSlotContext && rSlot < (racerFieldCount as number);
+    const confirmMsg = onBoard
+      ? `Odebrat "${r.name}" (${r.id}) z theme membership?\n\nRacer má board slot ${rSlot + 1} — odebráním ztratí i přiřazení na board.`
+      : `Odebrat "${r.name}" (${r.id}) z theme membership?\n\nRacer je off-board — bude odstraněn z membership, v globálním katalogu zůstane.`;
+    if (!window.confirm(confirmMsg)) return;
     const next = racers.filter((_, i) => i !== idx);
     onChange(next);
     if (selectedId === r.id) setSelectedId(null);
@@ -139,9 +138,24 @@ export default function RacerRosterPanel({
   /**
    * Přiřadí závodníka k danému slotu — swap:
    * Vybraný racer dostane targetSlot, racer co v slotu seděl dostane jeho starý slot.
+   *
+   * Prázdný výběr ("prázdný") odebere racera ze slotu a přesune ho do off-board membership
+   * (slotIndex >= racerFieldCount) — racer ZŮSTANE v theme, jen bez board přiřazení.
    */
   function handleSlotAssign(targetSlot: number, pickedId: string) {
-    if (!pickedId) return;
+    if (!pickedId) {
+      // "prázdný" → odeber racera ze slotu, ponech v membership jako off-board
+      const inSlot = racers.find((r, i) => (r.slotIndex ?? i) === targetSlot);
+      if (!inSlot) return; // slot je už prázdný
+      // Najdi nejnižší volný off-board slotIndex (>= racerFieldCount) bez konfliktu
+      const usedSlots = new Set(
+        racers.filter((r) => r.id !== inSlot.id).map((r, i) => r.slotIndex ?? i)
+      );
+      let offSlot = racerFieldCount as number;
+      while (usedSlots.has(offSlot)) offSlot++;
+      onChange(racers.map((r) => r.id === inSlot.id ? { ...r, slotIndex: offSlot } : r));
+      return;
+    }
     const picked = racers.find((r) => r.id === pickedId);
     if (!picked) return;
     const pickedOldSlot = picked.slotIndex ?? racers.indexOf(picked);
@@ -192,12 +206,22 @@ export default function RacerRosterPanel({
             Editovat závodníky →
           </button>
         ) : (
-          <button
-            onClick={handleAdd}
-            className="rounded-lg bg-amber-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-amber-600 transition-colors"
-          >
-            + Přidat závodníka
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleAdd}
+              className="rounded-lg bg-amber-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-amber-600 transition-colors"
+            >
+              + Přidat závodníka
+            </button>
+            {onEditRacers && (
+              <button
+                onClick={onEditRacers}
+                className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors"
+              >
+                Racer Admin →
+              </button>
+            )}
+          </div>
         )}
       </div>
 
@@ -279,8 +303,10 @@ export default function RacerRosterPanel({
       <div className="divide-y divide-slate-100">
         {racers.map((r, idx) => {
           const isSelected = selectedId === r.id;
-          // isOrphan: závodník bez racer pole na boardu (jen pokud znám počet polí)
-          const isOrphan = hasSlotContext && idx >= (racerFieldCount as number);
+          // isOrphan: závodník je v theme membership, ale nemá board slot.
+          // Správně: porovnáváme slotIndex, ne pozici v poli.
+          const rSlot    = r.slotIndex ?? idx;
+          const isOrphan = hasSlotContext && rSlot >= (racerFieldCount as number);
           const locked   = isRacerLocked(r);
 
           return (
@@ -297,11 +323,11 @@ export default function RacerRosterPanel({
                   if (!catalogReadOnly) setSelectedId(isSelected ? null : r.id);
                 }}
               >
-                {/* Slot číslo */}
+                {/* Slot číslo — pro off-board racery zobrazí "–" místo matoucího čísla */}
                 <span className={`text-[10px] font-mono w-4 shrink-0 text-center ${
                   isOrphan ? "text-slate-300" : "text-slate-400"
                 }`}>
-                  {(r.slotIndex ?? idx) + 1}.
+                  {isOrphan ? "–" : `${rSlot + 1}.`}
                 </span>
 
                 <span className="text-xl leading-none shrink-0">{r.emoji}</span>
@@ -315,9 +341,19 @@ export default function RacerRosterPanel({
                     <span>·</span>
                     <span>{r.price} 💰</span>
                     {r.isLegendary && <span className="text-amber-500">· leg</span>}
-                    {isOrphan && <span className="text-slate-300">· bez pole</span>}
                   </div>
                 </div>
+
+                {/* Board status badge — jen pokud je znám kontext boardu */}
+                {hasSlotContext && (
+                  <span className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${
+                    isOrphan
+                      ? "bg-slate-100 text-slate-400"
+                      : "bg-emerald-100 text-emerald-700"
+                  }`}>
+                    {isOrphan ? "off-board" : "na boardu"}
+                  </span>
+                )}
 
                 {/* Akce — skryty v catalogReadOnly módu */}
                 {!catalogReadOnly && (
@@ -379,7 +415,7 @@ export default function RacerRosterPanel({
         {catalogReadOnly
           ? "Závodníky edituj v Racer Adminu — v builderu lze měnit jen přiřazení slotů."
           : hasSlotContext
-            ? "Slot 1 → 1. racer pole zleva. Přiřaď závodníka přes select výše nebo přeřaď pořadí ↑↓ v seznamu."
+            ? "Slot 1 → 1. racer pole zleva. Přiřaď závodníka přes select výše; výběrem \"prázdný\" odebereš ze slotu (ale racer zůstane v membership)."
             : "Závodníci v katalogu — uložením se změní v theme souboru / DB."
         }
       </div>
