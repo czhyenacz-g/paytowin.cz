@@ -132,6 +132,7 @@ export function normalizeRacer(rc: RacerConfig): Horse {
     maxStamina:  catalogMaxStamina,
     stamina:     catalogMaxStamina,
     isLegendary: rc.isLegendary,
+    image:       rc.image,
   };
 }
 

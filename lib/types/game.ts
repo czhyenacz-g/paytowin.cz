@@ -37,6 +37,8 @@ export interface Horse {
   /** Legendární status — kopíruje se z RacerConfig.isLegendary. Ovlivňuje hlášku při ztrátě racera. */
   isLegendary?: boolean;
   isPreferred?: boolean; // označen hráčem jako preferovaný pro příští závod
+  /** Volitelná URL obrázku — kopíruje se z RacerConfig.image. Fallback: emoji. */
+  image?: string;
 }
 
 /**

@@ -2196,6 +2196,15 @@ export default function GameBoard({ gameCode }: Props) {
                         const racer = hoveredField.racer;
                         const owner = racerOwnership[racerOwnershipKey(racer)] ?? null;
                         const speedStars = Math.min(racer.speed, 5);
+                        const racerImage = racer.image ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={racer.image}
+                            alt={racer.name}
+                            className="mx-auto mt-2 h-14 w-14 rounded-lg object-cover bg-slate-100"
+                            onError={(e) => { e.currentTarget.style.display = "none"; }}
+                          />
+                        ) : null;
 
                         if (owner) {
                           // Vlastněný racer — aktuální stamina z player.horses
@@ -2204,6 +2213,7 @@ export default function GameBoard({ gameCode }: Props) {
                           const staminaDots = Math.round(currentStamina / 20);
                           return (
                             <div className={`mt-2 space-y-1 text-[10px] ${theme.colors.centerSubtitle}`}>
+                              {racerImage}
                               <div className={`text-xs font-medium ${theme.colors.centerSubtitle}`}>✓ {owner.name}</div>
                               <div className="flex items-center justify-between gap-3">
                                 <span className="opacity-60 shrink-0">Rychlost</span>
@@ -2226,6 +2236,7 @@ export default function GameBoard({ gameCode }: Props) {
                         const staminaDots = Math.round(maxStamina / 20);
                         return (
                           <div className={`mt-2 space-y-1 text-[10px] ${theme.colors.centerSubtitle}`}>
+                            {racerImage}
                             <div className="flex items-center justify-between gap-3">
                               <span className="opacity-60 shrink-0">Rychlost</span>
                               <span className="tracking-tight">
@@ -2429,7 +2440,17 @@ export default function GameBoard({ gameCode }: Props) {
                       {theme.labels.racerField} nabízí {theme.labels.racer.toLowerCase()}:
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="text-3xl">{pendingRacer.racer.emoji}</div>
+                      {pendingRacer.racer.image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={pendingRacer.racer.image}
+                          alt={pendingRacer.racer.name}
+                          className="h-12 w-12 rounded-lg object-cover bg-slate-100 shrink-0"
+                          onError={(e) => { e.currentTarget.style.display = "none"; }}
+                        />
+                      ) : (
+                        <div className="text-3xl shrink-0">{pendingRacer.racer.emoji}</div>
+                      )}
                       <div>
                         <div className="font-bold text-slate-800">{pendingRacer.racer.name}</div>
                         <div className="text-sm text-slate-500">Rychlost: {"⭐".repeat(pendingRacer.racer.speed)}</div>
