@@ -50,6 +50,14 @@ export const carNightTheme: Theme = {
     racers:     "Auta",
     racerField: "Garáž",
   },
+  racerRefs: [
+    { slotIndex: 0, racer_id: "stary_mustang" },
+    { slotIndex: 1, racer_id: "modra_strela" },
+    { slotIndex: 2, racer_id: "zlaty_blesk" },
+    { slotIndex: 3, racer_id: "rychly_demon" },
+    { slotIndex: 4, racer_id: "car_night_r5" },
+  ],
+  /** @fallback inline data — seed source + runtime fallback pokud registry není dostupná */
   racers: [
     {
       "id": "stary_mustang",
@@ -80,7 +88,7 @@ export const carNightTheme: Theme = {
       "emoji": "🔥"
     },
     {
-      "id": "r5",
+      "id": "car_night_r5",
       "name": "Tvuj tata",
       "speed": 8,
       "price": 150,

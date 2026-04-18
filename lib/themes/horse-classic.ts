@@ -50,6 +50,14 @@ export const horseClassicTheme: Theme = {
     racers:     "Koně",
     racerField: "Stáj",
   },
+  racerRefs: [
+    { slotIndex: 0, racer_id: "sombra_roja" },
+    { slotIndex: 1, racer_id: "viento_dorado" },
+    { slotIndex: 2, racer_id: "el_relampago" },
+    { slotIndex: 3, racer_id: "caballo_real" },
+    { slotIndex: 4, racer_id: "horse_classic_pablo" },
+  ],
+  /** @fallback inline data — seed source + runtime fallback pokud registry není dostupná */
   racers: [
     {
       "id": "sombra_roja",
@@ -80,7 +88,7 @@ export const horseClassicTheme: Theme = {
       "emoji": "👑"
     },
     {
-      "id": "r5",
+      "id": "horse_classic_pablo",
       "name": "Pablo",
       "speed": 7,
       "price": 150,

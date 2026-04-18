@@ -195,6 +195,16 @@ export interface Theme {
    * Engine čte přes getThemeRacers(), ne přímo.
    */
   horses?: RacerConfig[];
+  /**
+   * Racer Registry reference — nový kanonický způsob přiřazení závodníků k theme.
+   *
+   * Pokud přítomno: runtime načte závodníky z globální registry (`racers` tabulky).
+   * Pokud chybí: runtime použije inline `racers` (backward compatible fallback).
+   *
+   * Propagováno do ThemeManifest.racerRefs přes themeToManifest().
+   * Inline `racers` zůstává jako fallback (+ off-board legendary lookup pro give_racer).
+   */
+  racerRefs?: Array<{ slotIndex: number; racer_id: string }>;
   assets?: ThemeAssets;
   content?: ThemeContent;
 }

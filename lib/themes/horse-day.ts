@@ -50,6 +50,15 @@ export const horseDayTheme: Theme = {
     racers:     "Koně",
     racerField: "Stáj",
   },
+  racerRefs: [
+    { slotIndex: 0, racer_id: "divoka_ruze" },
+    { slotIndex: 1, racer_id: "modry_blesk" },
+    { slotIndex: 2, racer_id: "zlata_hriva" },
+    { slotIndex: 3, racer_id: "r6" },
+    { slotIndex: 4, racer_id: "rychly_vitr" },
+    { slotIndex: 5, racer_id: "zeleznik" },
+  ],
+  /** @fallback inline data — seed source + runtime fallback pokud registry není dostupná */
   racers: [
     {
       "id": "divoka_ruze",

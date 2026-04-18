@@ -50,6 +50,14 @@ export const horseNightTheme: Theme = {
     racers:     "Koně",
     racerField: "Stáj",
   },
+  racerRefs: [
+    { slotIndex: 0, racer_id: "divoka_ruze" },
+    { slotIndex: 1, racer_id: "modry_blesk" },
+    { slotIndex: 2, racer_id: "zlata_hriva" },
+    { slotIndex: 3, racer_id: "rychly_vitr" },
+    { slotIndex: 4, racer_id: "horse_night_buran" },
+  ],
+  /** @fallback inline data — seed source + runtime fallback pokud registry není dostupná */
   racers: [
     {
       "id": "divoka_ruze",
@@ -80,7 +88,7 @@ export const horseNightTheme: Theme = {
       "emoji": "🟢"
     },
     {
-      "id": "r5",
+      "id": "horse_night_buran",
       "name": "Buran",
       "speed": 10,
       "price": 150,
