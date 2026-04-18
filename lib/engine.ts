@@ -111,6 +111,30 @@ export function racerOwnershipKey(racer: Pick<Horse, "id" | "name">): string {
   return racer.id ?? racer.name;
 }
 
+/**
+ * normalizeRacer — vytvoří Horse ze záznamu RacerConfig.
+ *
+ * Jediné místo kde se aplikují fallbacky deprecated polí:
+ *   stamina  → maxStamina  (stará data bez maxStamina)
+ *   heroText → flavorText  (aplikováno v buildFields níže, nikoli zde — flavorText není součástí Horse)
+ *
+ * Výsledný Horse je vhodný jako Field.racer (kontext 3) i jako základ pro OwnedRacer (kontext 2).
+ * Budoucnost: tato funkce se stane mostem k Racer Registry (místo inline kopírování polí).
+ */
+export function normalizeRacer(rc: RacerConfig): Horse {
+  const catalogMaxStamina = rc.maxStamina ?? rc.stamina;
+  return {
+    id:          rc.id,
+    name:        rc.name,
+    speed:       rc.speed,
+    price:       rc.price,
+    emoji:       rc.emoji,
+    maxStamina:  catalogMaxStamina,
+    stamina:     catalogMaxStamina,
+    isLegendary: rc.isLegendary,
+  };
+}
+
 /** Vrátí index dalšího aktivního (neozkrachovalého) hráče. */
 export function getNextActiveIndex(currentIndex: number, players: Player[]): number {
   if (players.length === 0) return 0;
@@ -188,19 +212,7 @@ export function buildFields(board: BoardConfig, racers: RacerConfig[]): Field[] 
           action: (p) => ({ player: p, log: "" }),
         };
       }
-      // maxStamina: katalogový strop; fallback na deprecated rc.stamina → undefined
-      // stamina: runtime inicializovaná z maxStamina; fallback 100 aplikuje herní logika
-      const catalogMaxStamina = rc.maxStamina ?? rc.stamina;
-      const r: Horse = {
-        id:          rc.id,
-        name:        rc.name,
-        speed:       rc.speed,
-        price:       rc.price,
-        emoji:       rc.emoji,
-        maxStamina:  catalogMaxStamina,
-        stamina:     catalogMaxStamina,
-        isLegendary: rc.isLegendary,
-      };
+      const r: Horse = normalizeRacer(rc);
       return {
         index:       fc.index,
         type:        "racer",

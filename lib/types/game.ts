@@ -12,6 +12,17 @@ export const STAMINA_PER_TAP = 2;
 
 // ─── Hráč ─────────────────────────────────────────────────────────────────────
 
+/**
+ * Horse — runtime reprezentace závodníka.
+ *
+ * Používán ve třech kontextech — viz komentáře níže:
+ *   1. RacerConfig  (lib/themes/index.ts) — katalogová definice v theme; neměnná pravda
+ *   2. OwnedRacer   — snapshot při nákupu; uložen v player.horses (DB JSONB)
+ *   3. Field.racer  — kopie pro zobrazení na poli; sestaven z RacerConfig přes normalizeRacer()
+ *
+ * Alias OwnedRacer (níže) zpřesňuje sémantiku pro případ 2.
+ * Připraveno pro budoucí Racer Registry — až bude registry hotové, OwnedRacer se stane referencí (racer_id).
+ */
 export interface Horse {
   id?: string;
   name: string;
@@ -28,6 +39,18 @@ export interface Horse {
   isPreferred?: boolean; // označen hráčem jako preferovaný pro příští závod
 }
 
+/**
+ * OwnedRacer — závodník vlastněný hráčem (kontexty 2 výše).
+ *
+ * Strukturou identický s Horse; alias zpřesňuje sémantiku na call-site.
+ * Uložen jako DB JSONB v player.horses — obsahuje snapshot katalogových dat
+ * (id, speed, price, maxStamina) + runtime stav (stamina, isPreferred).
+ *
+ * Pozn.: id může chybět u velmi starých dat → racerOwnershipKey() fallbackuje na name.
+ * Po Racer Registry migraci: OwnedRacer = { racer_id: string; stamina: number; isPreferred?: boolean }
+ */
+export type OwnedRacer = Horse;
+
 export interface Player {
   id: string;
   game_id: string;
@@ -35,7 +58,8 @@ export interface Player {
   position: number;
   color: string;
   coins: number;
-  horses: Horse[];
+  /** Vlastněné závodníky — OwnedRacer snapshoty, uloženy jako JSONB v DB. Viz typ OwnedRacer níže. */
+  horses: OwnedRacer[];
   turn_order: number;
   skip_next_turn: boolean;
   /** Discord user ID — null pro hráče bez Discord loginu nebo stará data. */
