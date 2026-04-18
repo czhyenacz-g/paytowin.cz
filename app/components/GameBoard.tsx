@@ -2148,7 +2148,7 @@ export default function GameBoard({ gameCode }: Props) {
                   return (
                     <div
                       className="absolute pointer-events-none select-none"
-                      style={{ top: "calc(50% - 52px)", left: "0.5%", transform: "translateY(-100%)", zIndex: 3 }}
+                      style={{ top: "calc(50% - 60px)", left: "0.5%", transform: "translateY(-100%)", zIndex: 3 }}
                     >
                       <div className="rounded-lg bg-black/40 px-2 py-1.5 backdrop-blur-sm space-y-0.5">
                         <div className="text-[9px] font-semibold text-green-400 whitespace-nowrap">
