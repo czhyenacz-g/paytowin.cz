@@ -801,6 +801,18 @@ export default function ThemeDevTool() {
 
   React.useEffect(() => { loadList(); }, [loadList]);
 
+  // ── Auto-open theme from URL param (?openTheme=id) ────────────────────────
+  // Nastaveno Racer Adminem v back linku — obnoví kontext po návratu z editace.
+
+  const [autoOpenId, setAutoOpenId] = React.useState<string | null>(null);
+  const autoOpenFiredRef = React.useRef(false);
+
+  React.useEffect(() => {
+    // Přečti URL param jen jednou na klientu (SSR guard)
+    const param = new URLSearchParams(window.location.search).get("openTheme");
+    if (param) setAutoOpenId(param);
+  }, []);
+
   // ── JSON parse helper ──────────────────────────────────────────────────────
 
   function parseJson(): ThemeManifest | null {
@@ -841,6 +853,15 @@ export default function ThemeDevTool() {
     setParseError(null);
     notify("info", `Načteno: ${theme.name}`);
   }, [notify]);
+
+  // Druhá část auto-open efektu — spustí se až po deklaraci handleOpenTheme
+  React.useEffect(() => {
+    if (!autoOpenId || autoOpenFiredRef.current || listStatus !== "ready") return;
+    const meta = themeList.find((t) => t.id === autoOpenId);
+    if (!meta) return;
+    autoOpenFiredRef.current = true;
+    handleOpenTheme(meta);
+  }, [autoOpenId, listStatus, themeList, handleOpenTheme]);
 
   function handleNewTheme() {
     setJson(JSON.stringify(DEFAULT_TEMPLATE, null, 2));

@@ -111,7 +111,10 @@ export default function RacerAdminTool({ themeId, isBuiltIn }: Props) {
           <div className="text-4xl">⚠️</div>
           <div className="font-semibold text-red-700">Chyba načítání theme</div>
           <div className="text-sm text-slate-600">{error ?? "Theme nenalezeno."}</div>
-          <a href="/admin/themes/dev" className="text-xs text-indigo-600 hover:underline">
+          <a
+            href={`/admin/themes/dev?openTheme=${encodeURIComponent(themeId)}`}
+            className="text-xs text-indigo-600 hover:underline"
+          >
             ← Zpět do Theme Builderu
           </a>
         </div>
@@ -128,7 +131,7 @@ export default function RacerAdminTool({ themeId, isBuiltIn }: Props) {
       <div className="border-b border-slate-200 bg-white px-4 py-3 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
           <a
-            href="/admin/themes/dev"
+            href={`/admin/themes/dev?openTheme=${encodeURIComponent(themeId)}`}
             className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
           >
             ← Theme Builder
