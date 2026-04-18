@@ -1516,8 +1516,8 @@ export default function ThemeDevTool() {
                 racers={editableRacers}
                 racerFieldCount={editableBoard.fields.filter((f) => f.type === "racer").length}
                 onChange={setEditableRacers}
-                isBuiltInTheme={currentSource === "built-in"}
-                catalogReadOnly={currentSource !== "built-in"}
+                isBuiltInTheme={currentSource === "built-in" && process.env.NODE_ENV === "production"}
+                catalogReadOnly={currentSource !== "built-in" || process.env.NODE_ENV !== "production"}
                 onEditRacers={() => {
                   if (currentSource === "new") {
                     notify(
