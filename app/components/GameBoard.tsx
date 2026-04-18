@@ -651,7 +651,7 @@ export default function GameBoard({ gameCode }: Props) {
         if (canTriggerRivalsRace(movedPlayer, ownerPlayer)) {
           // ── Rivals race: oba hráči mají závodníky → duel místo rentu ──────────
           const reward = Math.round(field.racer.price * 0.2);
-          const logLines = [`⚔️ ${currentPlayer.name} vstoupil na stáj ${ownerPlayer.name} — čeká je souboj!`, ...extraLog];
+          const logLines = [`⚔️ ${currentPlayer.name} vstoupil na ${theme.labels.racerField.toLowerCase()} ${ownerPlayer.name} — čeká je souboj!`, ...extraLog];
           const updatedPlayersForNext = players.map(p => p.id === currentPlayer.id ? movedPlayer : p);
           const nextIndex = getNextActiveIndex(gameState.current_player_index, updatedPlayersForNext);
           await supabase.from("players").update({ position: newPosition, coins: movedPlayer.coins, laps: movedPlayer.laps ?? 0 }).eq("id", currentPlayer.id);
@@ -709,7 +709,7 @@ export default function GameBoard({ gameCode }: Props) {
           turn_count: newTurnCount,
           horse_pending: true,
           card_pending: null,
-          log: [`${currentPlayer.name} přišel na stáj: ${field.racer.emoji} ${field.racer.name}`, ...extraLog, ...newLog].slice(0, 20),
+          log: [`${currentPlayer.name} přišel na ${theme.labels.racerField.toLowerCase()}: ${field.racer.emoji} ${field.racer.name}`, ...extraLog, ...newLog].slice(0, 20),
         }).eq("game_id", gameId);
         setPendingRacer({ racer: field.racer, playerIndex: gameState.current_player_index });
       }

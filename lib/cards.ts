@@ -59,7 +59,7 @@ export const CHANCE_CARDS: GameCard[] = [
   {
     id: "ch6",
     type: "chance",
-    text: "Kůň tě zaskočil a ty jsi přehlédl start. Čekáš.",
+    text: "Chaos před startem tě rozhodil a ty jsi přehlédl signál. Čekáš.",
     effect: { kind: "skip_turn" },
     effectLabel: "Vynecháš příští tah",
   },
@@ -127,7 +127,7 @@ export const FINANCE_CARDS: GameCard[] = [
   {
     id: "fi7",
     type: "finance",
-    text: "Nepředvídané náklady na dopravu koní. Zasahuje to rozpočet.",
+    text: "Nepředvídané náklady na dopravu závodníků. Zasahuje to rozpočet.",
     effect: { kind: "coins", value: -80 },
     effectLabel: "-80 💰",
   },

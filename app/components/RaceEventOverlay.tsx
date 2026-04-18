@@ -16,7 +16,7 @@ const RACE_TYPE_LABELS: Record<RaceType, {
   resultsTitle:    string;
 }> = {
   mass_race:   { selectingTitle: "Výběr závodníků", selectingEmoji: "🏁", selectingPrompt: "Vyber závodníka pro závod",  countdownSub: "Závod začíná!",  racingTitle: "🏇 Závod!",   resultsTitle: "Výsledky závodu"  },
-  rivals_race: { selectingTitle: "Souboj o stáj",   selectingEmoji: "⚔️", selectingPrompt: "Vyber závodníka pro souboj", countdownSub: "Souboj začíná!", racingTitle: "⚔️ Souboj!", resultsTitle: "Výsledky souboje" },
+  rivals_race: { selectingTitle: "Souboj o závodníka", selectingEmoji: "⚔️", selectingPrompt: "Vyber závodníka pro souboj", countdownSub: "Souboj začíná!", racingTitle: "⚔️ Souboj!", resultsTitle: "Výsledky souboje" },
 };
 
 interface RaceResult {
