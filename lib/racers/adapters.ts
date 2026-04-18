@@ -13,7 +13,7 @@
  */
 
 import type { RacerConfig } from "@/lib/themes";
-import type { RacerProfile, RacerProfileInsert } from "./types";
+import type { RacerProfile, RacerProfileInsert, RacerType } from "./types";
 
 // ─── Profile → Config ─────────────────────────────────────────────────────────
 
@@ -34,6 +34,7 @@ export function profileToConfig(p: RacerProfile): RacerConfig {
     flavorText:  p.flavorText,
     image:       p.imageUrl,
     isBuiltIn:   p.isBuiltin || undefined,     // false → undefined
+    racerType:   p.type,
     // slotIndex: záměrně vynecháno — přiřazuje se per-theme, ne z globálního profilu
   };
 }
@@ -60,7 +61,7 @@ export function configToProfile(
     isLegendary: c.isLegendary ?? false,
     flavorText:  c.flavorText ?? c.heroText,   // heroText je deprecated fallback
     imageUrl:    c.image,
-    type:        defaults.type     ?? "horse",
+    type:        (c.racerType ?? defaults.type ?? "horse") as RacerType,
     isBuiltin:   defaults.isBuiltin ?? (c.isBuiltIn ?? false),
     isPublic:    defaults.isPublic  ?? true,
   };

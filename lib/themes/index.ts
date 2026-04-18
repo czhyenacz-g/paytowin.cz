@@ -4,6 +4,7 @@ import { horseClassicTheme } from "./horse-classic";
 import { carDayTheme } from "./car-day";
 import { carNightTheme } from "./car-night";
 import type { GameCard } from "@/lib/cards";
+import type { RacerType } from "@/lib/racers/types";
 
 // ─── Field style keys ─────────────────────────────────────────────────────────
 
@@ -83,6 +84,12 @@ export interface RacerConfig {
    * nahrazovat implicitní pořadí a umožní selectbox výběr.
    */
   slotIndex?: number;
+  /**
+   * Skupina závodníka — přenáší se z RacerProfile.type přes adaptér.
+   * Používá se v Racer Admin pro seskupení a filtrování.
+   * Nemá vliv na herní logiku.
+   */
+  racerType?: RacerType;
 }
 
 /**

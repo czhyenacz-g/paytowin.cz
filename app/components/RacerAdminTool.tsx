@@ -17,6 +17,11 @@ import React from "react";
 import type { RacerConfig } from "@/lib/themes";
 import { profileToConfig, configToProfile } from "@/lib/racers/adapters";
 import {
+  RACER_TYPE_LABELS,
+  RACER_TYPE_ORDER,
+} from "@/lib/racers/types";
+import type { RacerType } from "@/lib/racers/types";
+import {
   listRacersAction,
   upsertRacerAction,
   deleteRacerAction,
@@ -83,6 +88,7 @@ export default function RacerAdminTool({ themeId }: Props) {
   const [saving, setSaving]           = React.useState(false);
   const [seeding, setSeeding]         = React.useState(false);
   const [notif, setNotif]             = React.useState<{ ok: boolean; msg: React.ReactNode } | null>(null);
+  const [filterType, setFilterType]   = React.useState<RacerType | "all">("all");
 
   const racerType = inferTypeFromTheme(themeId);
 
@@ -302,14 +308,38 @@ export default function RacerAdminTool({ themeId }: Props) {
 
         {/* Info řádek */}
         <div className="text-xs text-slate-400">
-          Racer Registry · type: {racerType} ·{" "}
+          Racer Registry ·{" "}
           {racers.length} závodník{racers.length === 1 ? "" : "ů"}
           {deletedIds.size > 0 && (
             <span className="text-amber-500"> · {deletedIds.size} čeká na smazání</span>
           )}
-          {" · "}
-          <span className="text-slate-300">slot assignment není k dispozici bez kontextu boardu</span>
         </div>
+
+        {/* Filter podle skupiny */}
+        {!isEmpty && (
+          <div className="flex flex-wrap gap-1.5">
+            {(["all", ...RACER_TYPE_ORDER] as const).map((t) => {
+              const count = t === "all"
+                ? racers.length
+                : racers.filter((r) => (r.racerType ?? "unset") === t).length;
+              if (t !== "all" && count === 0) return null;
+              return (
+                <button
+                  key={t}
+                  onClick={() => setFilterType(t)}
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                    filterType === t
+                      ? "bg-indigo-600 text-white"
+                      : "border border-slate-200 text-slate-500 hover:border-indigo-300 hover:text-indigo-600"
+                  }`}
+                >
+                  {t === "all" ? "Vše" : RACER_TYPE_LABELS[t]}
+                  <span className="ml-1.5 opacity-60">{count}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* Prázdná registry — nabídni seed */}
         {isEmpty && (
@@ -329,14 +359,33 @@ export default function RacerAdminTool({ themeId }: Props) {
           </div>
         )}
 
-        {/* Plná editace katalogu */}
-        {!isEmpty && (
-          <RacerRosterPanel
-            racers={racers}
-            onChange={handleRacersChange}
-            isBuiltInTheme={false}
-          />
-        )}
+        {/* Katalog — seskupený podle skupiny nebo filtrovaný */}
+        {!isEmpty && RACER_TYPE_ORDER.map((groupType) => {
+          if (filterType !== "all" && filterType !== groupType) return null;
+          const groupRacers = racers.filter((r) => (r.racerType ?? "unset") === groupType);
+          if (groupRacers.length === 0) return null;
+          return (
+            <div key={groupType} className="space-y-1">
+              {/* Skupinová hlavička — jen ve výpisu "vše" */}
+              {filterType === "all" && (
+                <div className="px-1 pt-1 pb-0.5 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+                  {RACER_TYPE_LABELS[groupType]}
+                  <span className="ml-2 font-normal normal-case text-slate-300">{groupRacers.length}</span>
+                </div>
+              )}
+              <RacerRosterPanel
+                racers={groupRacers}
+                onChange={(updated) =>
+                  handleRacersChange([
+                    ...racers.filter((r) => (r.racerType ?? "unset") !== groupType),
+                    ...updated,
+                  ])
+                }
+                isBuiltInTheme={false}
+              />
+            </div>
+          );
+        })}
 
       </div>
     </div>

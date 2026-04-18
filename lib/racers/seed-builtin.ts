@@ -25,7 +25,7 @@
 
 import { THEMES }    from "@/lib/themes";
 import { getThemeRacers } from "@/lib/themes";
-import type { RacerProfile, RacerProfileInsert } from "./types";
+import type { RacerProfile, RacerProfileInsert, RacerType } from "./types";
 import { upsertRacer, listRacers } from "./repository";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -36,10 +36,10 @@ import { upsertRacer, listRacers } from "./repository";
  * car-day / car-night → 'car'
  * Ostatní → 'custom'
  */
-function inferRacerType(themeId: string): string {
+function inferRacerType(themeId: string): RacerType {
   if (themeId.startsWith("horse")) return "horse";
   if (themeId.startsWith("car"))   return "car";
-  return "custom";
+  return "unset";
 }
 
 // ─── Extrakce profilů ─────────────────────────────────────────────────────────

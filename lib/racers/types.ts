@@ -10,6 +10,35 @@
  *   OwnedRacer   — alias pro Horse; bude nahrazen referencí { racer_id, stamina } po fázi 4
  */
 
+// ─── RacerType ────────────────────────────────────────────────────────────────
+
+/** Pevně definované skupiny závodníků. "unset" = fallback pro stará data bez přiřazeného typu. */
+export const RACER_TYPES = ["horse", "lama", "camel", "car", "unset"] as const;
+export type  RacerType   = typeof RACER_TYPES[number];
+
+/** Zobrazované názvy skupin v UI. */
+export const RACER_TYPE_LABELS: Record<RacerType, string> = {
+  horse:  "Koně",
+  lama:   "Lamy",
+  camel:  "Velbloudi",
+  car:    "Auta",
+  unset:  "Nenastaveno",
+};
+
+/** Pořadí skupin v UI — horse, lama, camel, car, unset. */
+export const RACER_TYPE_ORDER: RacerType[] = ["horse", "lama", "camel", "car", "unset"];
+
+/**
+ * toRacerType — coerce libovolné DB hodnoty na RacerType.
+ * Neznámé hodnoty (stará data, null, undefined) padnou na "unset".
+ */
+export function toRacerType(value: unknown): RacerType {
+  if (typeof value === "string" && (RACER_TYPES as readonly string[]).includes(value)) {
+    return value as RacerType;
+  }
+  return "unset";
+}
+
 // ─── RacerProfile ─────────────────────────────────────────────────────────────
 
 /**
@@ -33,11 +62,11 @@ export interface RacerProfile {
   /** Storage path v Supabase bucket "racers". Null = není nahráno. */
   imagePath?:  string;
   /**
-   * Typ závodníka — odpovídá "identitě" theme světa.
-   * Příklady: 'horse' | 'car' | 'boat' | 'custom'
-   * Theme filtry mohou zobrazit jen závodníky relevantního typu.
+   * Skupina závodníka — odpovídá "identitě" theme světa.
+   * Pevné hodnoty: horse | lama | camel | car | unset.
+   * "unset" = stará data nebo nenastaveno (fallback).
    */
-  type:        string;
+  type:        RacerType;
   /** True = zabudovaný závodník; nelze smazat, jen admin může editovat. */
   isBuiltin:   boolean;
   /** Discord ID vlastníka. Null = globální/systémový závodník, dostupný všem. */

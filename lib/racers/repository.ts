@@ -14,6 +14,7 @@
 
 import { supabase } from "@/lib/supabase";
 import type { RacerProfile, RacerProfileInsert, RacerProfileUpdate } from "./types";
+import { toRacerType } from "./types";
 
 // ─── Row ↔ RacerProfile mapping ───────────────────────────────────────────────
 
@@ -31,7 +32,7 @@ function rowToProfile(row: Record<string, unknown>): RacerProfile {
     flavorText:  row.flavor_text  as string | undefined ?? undefined,
     imageUrl:    row.image_url    as string | undefined ?? undefined,
     imagePath:   row.image_path   as string | undefined ?? undefined,
-    type:        row.type         as string,
+    type:        toRacerType(row.type),
     isBuiltin:   row.is_builtin   as boolean,
     ownerId:     row.owner_id     as string | undefined ?? undefined,
     isPublic:    row.is_public    as boolean,

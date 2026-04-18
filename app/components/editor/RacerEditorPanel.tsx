@@ -13,6 +13,8 @@
 import React from "react";
 import type { RacerConfig } from "@/lib/themes";
 import { uploadRacerImageAction } from "@/app/admin/racers/actions";
+import { RACER_TYPE_LABELS, RACER_TYPE_ORDER } from "@/lib/racers/types";
+import type { RacerType } from "@/lib/racers/types";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -58,6 +60,7 @@ export default function RacerEditorPanel({ racer, onChange, readOnly = false }: 
   const [price, setPrice] = React.useState(String(racer.price));
   // maxStamina: čteme z nového pole; fallback na deprecated stamina pro starší data
   const [maxStamina, setMaxStamina] = React.useState(String(racer.maxStamina ?? racer.stamina ?? 100));
+  const [racerType, setRacerType]     = React.useState<RacerType>(racer.racerType ?? "unset");
   const [isLegendary, setIsLegendary] = React.useState(racer.isLegendary ?? false);
   // flavorText: preferuj flavorText, fallback na deprecated heroText pro compat
   const [flavorText, setFlavorText] = React.useState(racer.flavorText ?? racer.heroText ?? "");
@@ -70,13 +73,14 @@ export default function RacerEditorPanel({ racer, onChange, readOnly = false }: 
     setSpeed(String(racer.speed));
     setPrice(String(racer.price));
     setMaxStamina(String(racer.maxStamina ?? racer.stamina ?? 100));
+    setRacerType(racer.racerType ?? "unset");
     setIsLegendary(racer.isLegendary ?? false);
     setFlavorText(racer.flavorText ?? racer.heroText ?? "");
     setImageUrl(racer.image ?? "");
   }, [racer.id]);
 
   // Zavolá onChange jen tehdy, kdy jsou hodnoty platné a lišící se
-  function commit(overrides: Partial<{ name: string; speed: number; price: number; maxStamina: number; isLegendary: boolean; flavorText: string; imageUrl: string }>) {
+  function commit(overrides: Partial<{ name: string; speed: number; price: number; maxStamina: number; racerType: RacerType; isLegendary: boolean; flavorText: string; imageUrl: string }>) {
     const parsedSpeed      = clampInt(Number(overrides.speed      ?? speed),      1, 10);
     const parsedPrice      = clampInt(Number(overrides.price      ?? price),      0, 99999);
     const parsedMaxStamina = clampInt(Number(overrides.maxStamina ?? maxStamina),  0, 100);
@@ -86,6 +90,7 @@ export default function RacerEditorPanel({ racer, onChange, readOnly = false }: 
       speed:       parsedSpeed,
       price:       parsedPrice,
       maxStamina:  parsedMaxStamina,
+      racerType:   overrides.racerType   ?? racerType,
       isLegendary: (overrides.isLegendary ?? isLegendary) || undefined, // false → undefined (čistší data)
       stamina:     undefined, // vynuluj deprecated pole po první editaci
       flavorText:  (overrides.flavorText ?? flavorText) || undefined, // prázdný string → undefined
@@ -186,6 +191,24 @@ export default function RacerEditorPanel({ racer, onChange, readOnly = false }: 
               <p className="text-[10px] text-red-400">Jméno nesmí být prázdné.</p>
             )}
           </div>
+        </div>
+
+        {/* Skupina (type) */}
+        <div className="space-y-1">
+          <label className="block text-xs font-medium text-amber-700">Skupina</label>
+          <select
+            value={racerType}
+            onChange={(e) => {
+              const t = e.target.value as RacerType;
+              setRacerType(t);
+              commit({ racerType: t });
+            }}
+            className="w-40 rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-300"
+          >
+            {RACER_TYPE_ORDER.map((t) => (
+              <option key={t} value={t}>{RACER_TYPE_LABELS[t]}</option>
+            ))}
+          </select>
         </div>
 
         {/* Speed + Price + Stamina — 3 sloupce */}
