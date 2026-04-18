@@ -1088,8 +1088,22 @@ export default function ThemeDevTool() {
     }
   }
 
+  /**
+   * resolveManifestForSave — vrátí manifest pro uložení do DB.
+   *
+   * Registry mód (racerRefs): použij liveManifest — má aktuální racerRefs ze slot assignmentu.
+   * Legacy mód: použij parseJson() — JSON textarea je source of truth.
+   *
+   * Fallback: pokud v registry módu není liveManifest (board editor ještě nebyl otevřen),
+   * parseJson() vrátí původní manifest s nezmenenými racerRefs — stále správné.
+   */
+  function resolveManifestForSave(): ThemeManifest | null {
+    if (racersFromRegistry && liveManifest) return liveManifest;
+    return parseJson();
+  }
+
   async function handleSave() {
-    const manifest = parseJson();
+    const manifest = resolveManifestForSave();
     if (!manifest) return;
     setSaving(true);
     const result = await saveThemeAction(manifest);
@@ -1097,9 +1111,13 @@ export default function ThemeDevTool() {
     if (result.ok) {
       setCurrentSource("db");
       setCurrentId(manifest.meta.id);
+      // Synchronizuj JSON textarea s uloženým stavem — aby editor vždy reflektoval co je v DB
+      setJson(JSON.stringify(manifest, null, 2));
       notify("success", (
         <>
-          Uloženo: {manifest.meta.id} ·{" "}
+          Uloženo: {manifest.meta.id}
+          {racersFromRegistry && <span className="ml-1 text-emerald-600 font-medium">(racerRefs)</span>}
+          {" · "}
           <a
             href={`/admin/themes/dev/${manifest.meta.id}/racers`}
             target="_blank"
@@ -1117,7 +1135,7 @@ export default function ThemeDevTool() {
   }
 
   async function handleSaveAsNew() {
-    const manifest = parseJson();
+    const manifest = resolveManifestForSave();
     if (!manifest) return;
     setSaving(true);
     const result = await saveAsNewAction(manifest);
@@ -1125,9 +1143,13 @@ export default function ThemeDevTool() {
     if (result.ok) {
       setCurrentSource("db");
       setCurrentId(manifest.meta.id);
+      // Synchronizuj JSON textarea s uloženým stavem
+      setJson(JSON.stringify(manifest, null, 2));
       notify("success", (
         <>
-          Uloženo jako nové: {manifest.meta.id} ·{" "}
+          Uloženo jako nové: {manifest.meta.id}
+          {racersFromRegistry && <span className="ml-1 text-emerald-600 font-medium">(racerRefs)</span>}
+          {" · "}
           <a
             href={`/admin/themes/dev/${manifest.meta.id}/racers`}
             target="_blank"
@@ -1332,9 +1354,16 @@ export default function ThemeDevTool() {
           <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-slate-700">ThemeManifest JSON</span>
-              <button onClick={handleFormat} className="text-xs text-slate-400 hover:text-slate-600 underline">
-                Formátovat
-              </button>
+              <div className="flex items-center gap-3">
+                {racersFromRegistry && liveManifest && (
+                  <span className="text-[11px] text-emerald-600 font-medium">
+                    ● Registry mód — Uložit použije live stav (racerRefs), ne tento text
+                  </span>
+                )}
+                <button onClick={handleFormat} className="text-xs text-slate-400 hover:text-slate-600 underline">
+                  Formátovat
+                </button>
+              </div>
             </div>
 
             <textarea
