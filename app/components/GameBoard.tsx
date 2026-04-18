@@ -720,9 +720,11 @@ export default function GameBoard({ gameCode }: Props) {
       const finalPlayer = afterField;
       const logLines = [...(fieldLog ? [fieldLog] : []), ...extraLog];
 
-      // Flash spotlight pro výrazné finanční penalizace
+      // Flash spotlight pro finanční pole
       if (field.type === "coins_lose") {
         showFlash({ type: "coins_penalty", emoji: field.emoji, playerName: movedPlayer.name, amount: afterField.coins - movedPlayer.coins, fieldLabel: field.label });
+      } else if (field.type === "coins_gain") {
+        showFlash({ type: "coins_gain", emoji: field.emoji, playerName: movedPlayer.name, amount: afterField.coins - movedPlayer.coins, fieldLabel: field.label });
       }
 
       // Bankrot? — nextIndex počítáme s AKTUALIZOVANÝM hráčem, aby se přeskočil i sám sebe pokud zkrachoval
@@ -2139,16 +2141,16 @@ export default function GameBoard({ gameCode }: Props) {
                   );
                 })}
 
-                {/* ── Info blok Startu — vlevo vedle pole index 0 ────────────────── */}
+                {/* ── Info blok Startu — pod kartou (pole 0 je rotovaná -90°, zabírá levou hranu)  */}
                 {(() => {
                   const startBonus = board.fields.find(f => f.type === "start")?.amount ?? 200;
                   const startTax   = getStartTax(currentRound);
                   return (
                     <div
                       className="absolute pointer-events-none select-none"
-                      style={{ top: "50%", left: "0.5%", transform: "translateY(-50%)" }}
+                      style={{ top: "calc(50% + 60px)", left: "0.5%", zIndex: 3 }}
                     >
-                      <div className="rounded-lg bg-black/35 px-2 py-1.5 backdrop-blur-sm space-y-0.5">
+                      <div className="rounded-lg bg-black/40 px-2 py-1.5 backdrop-blur-sm space-y-0.5">
                         <div className="text-[9px] font-semibold text-green-400 whitespace-nowrap">
                           Dotace: +{startBonus} 💰
                         </div>

@@ -23,6 +23,9 @@ export default function FlashToast({ event }: Props) {
       {event.type === "coins_penalty" && (
         <CoinsPenaltyContent event={event} />
       )}
+      {event.type === "coins_gain" && (
+        <CoinsGainContent event={event} />
+      )}
     </div>
   );
 }
@@ -46,6 +49,32 @@ function LegendaryGoneContent({
       <div className="mt-1 text-xl font-black text-white">{event.racerName}</div>
       <div className="mt-2 text-sm text-slate-400">
         {event.playerName} — závodil jako legenda, zmizel jako legenda.
+      </div>
+    </div>
+  );
+}
+
+// ── Finanční zisk ────────────────────────────────────────────────────────────
+
+function CoinsGainContent({
+  event,
+}: {
+  event: Extract<FlashEvent, { type: "coins_gain" }>;
+}) {
+  return (
+    <div
+      className="mx-6 w-full max-w-xs rounded-2xl bg-white px-5 py-5 shadow-2xl ring-2 ring-green-200"
+      style={{ animation: "cardFadeIn 0.2s ease-out both" }}
+    >
+      <div className="flex items-center gap-3">
+        <div className="text-3xl">{event.emoji}</div>
+        <div>
+          <div className="text-sm font-bold text-slate-800">{event.fieldLabel}</div>
+          <div className="text-xs text-slate-500">{event.playerName}</div>
+        </div>
+        <div className="ml-auto text-lg font-black text-green-600">
+          +{event.amount} 💰
+        </div>
       </div>
     </div>
   );

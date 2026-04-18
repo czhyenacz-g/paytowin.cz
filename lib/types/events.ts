@@ -25,6 +25,14 @@ export type FlashEvent =
       /** Záporná hodnota, např. -60 */
       amount: number;
       fieldLabel: string;
+    }
+  | {
+      type: "coins_gain";
+      emoji: string;
+      playerName: string;
+      /** Kladná hodnota, např. +80 */
+      amount: number;
+      fieldLabel: string;
     };
 
 export type CenterEvent =
