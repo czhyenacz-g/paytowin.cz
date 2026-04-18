@@ -59,10 +59,28 @@ export interface ThemeManifest {
   colors: ThemeColors;
 
   /**
-   * Závodníci — povinné, min. 1.
-   * Musí pokrývat všechny racer sloty na zvoleném board presetu.
+   * Závodníci — inline data (legacy / fallback).
+   *
+   * Nová themes by měly používat racerRefs (reference do globální registry).
+   * Pokud jsou přítomny racerRefs, inline racers slouží jen jako fallback
+   * při nedostupnosti registry nebo před dokončením async resolution.
+   *
+   * Stále povinné u built-in themes; u registry-based themes volitelné.
    */
   racers: RacerConfig[];
+
+  /**
+   * Racer Registry reference — nový kanonický způsob přiřazení závodníků k theme.
+   *
+   * Každý záznam říká: "na slotu slotIndex použij závodníka racer_id z globální registry."
+   * Pořadí závisí na slotIndex — závodník s nejnižším slotIndex obsadí první racer pole na desce.
+   *
+   * Pokud přítomno a neprázdné: runtime načte závodníky z tabulky `racers` (globální registry).
+   * Pokud chybí nebo prázdné: runtime použije inline racers (backward compatible fallback).
+   *
+   * Budoucnost: jakmile bude registry-based flow plně stabilní, inline racers bude deprecated.
+   */
+  racerRefs?: Array<{ slotIndex: number; racer_id: string }>;
 
   /** Obrazové assety theme. Normalizovaný tvar (bez legacy horseImages). */
   assets?: {

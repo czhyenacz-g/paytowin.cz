@@ -3,6 +3,8 @@
 import React from "react";
 import { supabase } from "@/lib/supabase";
 import { getThemeById, getThemeRacers } from "@/lib/themes";
+import type { RacerConfig } from "@/lib/themes";
+import { resolveRacerRefsAction } from "@/app/admin/racers/actions";
 import { themeToManifest } from "@/lib/themes/manifest";
 import {
   buildCardBackgroundImageValue,
@@ -265,16 +267,30 @@ export default function GameBoard({ gameCode }: Props) {
   const animPositionRef = React.useRef<number | null>(null);
 
   const [boardBgUrl, setBoardBgUrl] = React.useState<string>("");
+  /** Závodníci načtení z globální registry (racerRefs flow). Null = použij inline theme racers. */
+  const [resolvedRacers, setResolvedRacers] = React.useState<RacerConfig[] | null>(null);
   const [flashEvent, setFlashEvent] = React.useState<FlashEvent | null>(null);
   const flashTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   React.useEffect(() => {
     let cancelled = false;
-    loadThemeManifestAsync(themeId).then((manifest) => {
-      if (!cancelled) {
-        const bgUrl = manifest.assets?.boardBackgroundImage ?? "";
-        setBoardBgUrl(bgUrl);
-        console.log(`[GameBoard] theme="${themeId}" boardBgUrl="${bgUrl || "none"}"`);
+    loadThemeManifestAsync(themeId).then(async (manifest) => {
+      if (cancelled) return;
+
+      const bgUrl = manifest.assets?.boardBackgroundImage ?? "";
+      setBoardBgUrl(bgUrl);
+      console.log(`[GameBoard] theme="${themeId}" boardBgUrl="${bgUrl || "none"}"`);
+
+      // Pokud theme používá racerRefs → načti závodníky z globální registry
+      if (manifest.racerRefs?.length) {
+        const racers = await resolveRacerRefsAction(manifest.racerRefs);
+        if (!cancelled && racers.length > 0) {
+          setResolvedRacers(racers);
+          console.log(`[GameBoard] theme="${themeId}" racerRefs resolved: ${racers.length} závodníků z registry`);
+        }
+      } else {
+        // Theme nemá racerRefs — reset na inline fallback
+        setResolvedRacers(null);
       }
     });
     return () => { cancelled = true; };
@@ -284,7 +300,8 @@ export default function GameBoard({ gameCode }: Props) {
   const theme = getThemeById(themeId);
   const themeManifest = themeToManifest(theme);
   const board = getBoardById(boardId);
-  const FIELDS = buildFields(board, getThemeRacers(theme));
+  // resolvedRacers: závodníci z globální registry (racerRefs flow); null = inline fallback
+  const FIELDS = buildFields(board, resolvedRacers ?? getThemeRacers(theme));
   const hoveredField = hoveredFieldIdx !== null ? FIELDS.find((field) => field.index === hoveredFieldIdx) ?? null : null;
   // Ref aby stale closures (Realtime subscriptions) vždy dostaly aktuální FIELDS
   const fieldsRef = React.useRef<Field[]>(FIELDS);

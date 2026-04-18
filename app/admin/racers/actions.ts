@@ -18,7 +18,10 @@ import {
   deleteRacer,
 } from "@/lib/racers/repository";
 import { seedBuiltinRacers, resetBuiltinRacers } from "@/lib/racers/seed-builtin";
+import { resolveRacerRefs } from "@/lib/racers/resolver";
+import type { RacerRef } from "@/lib/racers/resolver";
 import type { RacerProfile, RacerProfileInsert, RacerProfileUpdate } from "@/lib/racers/types";
+import type { RacerConfig } from "@/lib/themes";
 
 // ─── Read ─────────────────────────────────────────────────────────────────────
 
@@ -53,6 +56,19 @@ export async function deleteRacerAction(
   id: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   return deleteRacer(id);
+}
+
+// ─── Registry Resolve ─────────────────────────────────────────────────────────
+
+/**
+ * resolveRacerRefsAction — přeloží RacerRef[] na RacerConfig[] z globální registry.
+ *
+ * Určeno pro volání z client komponent (GameBoard, ThemeDevTool apod.).
+ * Pokud závodník není v registry, je přeskočen (s console.warn).
+ * Volající musí zajistit fallback na inline racers pokud výsledek je [].
+ */
+export async function resolveRacerRefsAction(refs: RacerRef[]): Promise<RacerConfig[]> {
+  return resolveRacerRefs(refs);
 }
 
 // ─── Seed / Reset ─────────────────────────────────────────────────────────────
