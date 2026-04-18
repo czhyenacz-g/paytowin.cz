@@ -269,7 +269,7 @@ function EditorMeta({ id, name, version, source }: { id: string; name: string; v
 
 type NotifType = "success" | "error" | "info";
 
-function Notification({ type, msg, onDismiss }: { type: NotifType; msg: string; onDismiss: () => void }) {
+function Notification({ type, msg, onDismiss }: { type: NotifType; msg: React.ReactNode; onDismiss: () => void }) {
   const styles: Record<NotifType, string> = {
     success: "border-emerald-200 bg-emerald-50 text-emerald-800",
     error:   "border-red-200 bg-red-50 text-red-800",
@@ -764,7 +764,7 @@ export default function ThemeDevTool() {
   // Actions
   const [saving, setSaving] = React.useState(false);
   const [savingToFiles, setSavingToFiles] = React.useState(false);
-  const [notif, setNotif] = React.useState<{ type: NotifType; msg: string } | null>(null);
+  const [notif, setNotif] = React.useState<{ type: NotifType; msg: React.ReactNode } | null>(null);
 
   // Meta — derived from JSON, best-effort. Používá se v meta baru i metadata formu.
   const parsedMeta = React.useMemo(() => {
@@ -781,7 +781,7 @@ export default function ThemeDevTool() {
 
   // ── Notification helpers ───────────────────────────────────────────────────
 
-  const notify = React.useCallback((type: NotifType, msg: string) => {
+  const notify = React.useCallback((type: NotifType, msg: React.ReactNode) => {
     setNotif({ type, msg });
     if (type !== "error") setTimeout(() => setNotif(null), 3500);
   }, []);
@@ -1024,7 +1024,19 @@ export default function ThemeDevTool() {
     if (result.ok) {
       setCurrentSource("db");
       setCurrentId(manifest.meta.id);
-      notify("success", `Uloženo: ${manifest.meta.id}`);
+      notify("success", (
+        <>
+          Uloženo: {manifest.meta.id} ·{" "}
+          <a
+            href={`/admin/themes/dev/${manifest.meta.id}/racers`}
+            target="_blank"
+            rel="noreferrer"
+            className="underline font-medium"
+          >
+            Editovat závodníky →
+          </a>
+        </>
+      ));
       loadList();
     } else {
       notify("error", result.error);
@@ -1040,7 +1052,19 @@ export default function ThemeDevTool() {
     if (result.ok) {
       setCurrentSource("db");
       setCurrentId(manifest.meta.id);
-      notify("success", `Uloženo jako nové: ${manifest.meta.id}`);
+      notify("success", (
+        <>
+          Uloženo jako nové: {manifest.meta.id} ·{" "}
+          <a
+            href={`/admin/themes/dev/${manifest.meta.id}/racers`}
+            target="_blank"
+            rel="noreferrer"
+            className="underline font-medium"
+          >
+            Editovat závodníky →
+          </a>
+        </>
+      ));
       loadList();
     } else {
       notify("error", result.error);
@@ -1472,14 +1496,17 @@ export default function ThemeDevTool() {
                 racerFieldCount={editableBoard.fields.filter((f) => f.type === "racer").length}
                 onChange={setEditableRacers}
                 isBuiltInTheme={currentSource === "built-in"}
-                catalogReadOnly={currentSource === "db"}
+                catalogReadOnly={currentSource !== "built-in"}
                 onEditRacers={() => {
-                  if (boardPreviewManifest) {
-                    window.open(
-                      `/admin/themes/dev/${boardPreviewManifest.meta.id}/racers`,
-                      "_blank",
+                  if (currentSource === "new") {
+                    notify(
+                      "info",
+                      'Theme ještě není uloženo — klikni "Uložit jako nové" v editoru výše a pak se vrať na Editovat závodníky.',
                     );
+                    return;
                   }
+                  const themeId = currentId ?? boardPreviewManifest?.meta.id;
+                  if (themeId) window.open(`/admin/themes/dev/${themeId}/racers`, "_blank");
                 }}
               />
 
