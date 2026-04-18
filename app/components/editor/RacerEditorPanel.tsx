@@ -146,8 +146,13 @@ export default function RacerEditorPanel({ racer, onChange, readOnly = false }: 
               onChange={(e) => setName(e.target.value)}
               onBlur={() => commit({ name })}
               placeholder="Divoká růže"
-              className="w-full rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-300"
+              className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-300 ${
+                !name.trim() ? "border-red-300 focus:ring-red-300" : "border-amber-300"
+              }`}
             />
+            {!name.trim() && (
+              <p className="text-[10px] text-red-400">Jméno nesmí být prázdné.</p>
+            )}
           </div>
         </div>
 

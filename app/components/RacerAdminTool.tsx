@@ -31,10 +31,52 @@ interface Props {
   isBuiltIn:  boolean;
 }
 
-// ─── Helper ───────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function withSlotIndexes(racers: RacerConfig[]): RacerConfig[] {
   return racers.map((r, i) => (r.slotIndex !== undefined ? r : { ...r, slotIndex: i }));
+}
+
+const VALID_ID_RE = /^[a-z0-9][a-z0-9_-]*$/;
+
+/**
+ * validateRacers — vrátí seznam chybových hlášení pro zjevně rozbitá data.
+ * Prázdné pole = vše OK.
+ */
+function validateRacers(racers: RacerConfig[]): string[] {
+  const errors: string[] = [];
+  const seenIds = new Set<string>();
+
+  for (let i = 0; i < racers.length; i++) {
+    const r   = racers[i];
+    const lbl = `Závodník ${i + 1}${r.name ? ` („${r.name}")` : ""}`;
+
+    if (!r.id || !VALID_ID_RE.test(r.id)) {
+      errors.push(`${lbl}: neplatné ID "${r.id}" — jen a-z 0-9 _ -, začít písmenem/číslicí`);
+    } else if (seenIds.has(r.id)) {
+      errors.push(`${lbl}: duplicitní ID "${r.id}"`);
+    } else {
+      seenIds.add(r.id);
+    }
+
+    if (!r.name?.trim()) {
+      errors.push(`${lbl}: prázdné jméno`);
+    }
+
+    if (!Number.isInteger(r.speed) || r.speed < 1 || r.speed > 10) {
+      errors.push(`${lbl}: speed musí být 1–10 (je ${r.speed})`);
+    }
+
+    if (r.price < 0) {
+      errors.push(`${lbl}: cena nesmí být záporná (je ${r.price})`);
+    }
+
+    if (r.maxStamina !== undefined && (r.maxStamina < 0 || r.maxStamina > 100)) {
+      errors.push(`${lbl}: max stamina musí být 0–100 (je ${r.maxStamina})`);
+    }
+  }
+
+  return errors;
 }
 
 // ─── Komponenta ───────────────────────────────────────────────────────────────
@@ -45,7 +87,7 @@ export default function RacerAdminTool({ themeId, isBuiltIn }: Props) {
   const [loading, setLoading]     = React.useState(true);
   const [error, setError]         = React.useState<string | null>(null);
   const [saving, setSaving]       = React.useState(false);
-  const [notif, setNotif]         = React.useState<{ ok: boolean; msg: string } | null>(null);
+  const [notif, setNotif]         = React.useState<{ ok: boolean; msg: React.ReactNode } | null>(null);
 
   // ── Load ──────────────────────────────────────────────────────────────────
 
@@ -65,6 +107,25 @@ export default function RacerAdminTool({ themeId, isBuiltIn }: Props) {
 
   async function handleSave() {
     if (!manifest) return;
+
+    // Validace před save — blokuje uložení rozbitých dat
+    const errors = validateRacers(racers);
+    if (errors.length > 0) {
+      setNotif({
+        ok:  false,
+        msg: (
+          <span>
+            Nelze uložit — oprav {errors.length === 1 ? "tuto chybu" : `${errors.length} chyby`}:
+            <ul className="mt-1 list-disc list-inside space-y-0.5 text-xs">
+              {errors.map((e, i) => <li key={i}>{e}</li>)}
+            </ul>
+          </span>
+        ),
+      });
+      setTimeout(() => setNotif(null), 10_000);
+      return;
+    }
+
     setSaving(true);
 
     let result: { ok: true; written?: string[] } | { ok: false; error: string };
