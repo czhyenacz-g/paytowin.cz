@@ -18,6 +18,8 @@ import type { RacerConfig } from "@/lib/themes";
 interface Props {
   racer: RacerConfig;
   onChange: (updated: RacerConfig) => void;
+  /** Pokud true, editor je jen pro čtení — built-in racer nelze editovat. */
+  readOnly?: boolean;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -33,7 +35,7 @@ function sanitizeId(raw: string): string {
 
 // ─── Komponenta ───────────────────────────────────────────────────────────────
 
-export default function RacerEditorPanel({ racer, onChange }: Props) {
+export default function RacerEditorPanel({ racer, onChange, readOnly = false }: Props) {
   // Flash "uloženo" po každém commitu
   const [saved, setSaved] = React.useState(false);
   const savedTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -86,25 +88,31 @@ export default function RacerEditorPanel({ racer, onChange }: Props) {
   }
 
   return (
-    <div className="rounded-xl border border-amber-200 bg-amber-50 overflow-hidden">
+    <div className={`rounded-xl border overflow-hidden ${readOnly ? "border-slate-200 bg-slate-50" : "border-amber-200 bg-amber-50"}`}>
 
       {/* Header */}
-      <div className="flex items-center gap-2 border-b border-amber-200 bg-amber-100/60 px-4 py-2.5">
+      <div className={`flex items-center gap-2 border-b px-4 py-2.5 ${readOnly ? "border-slate-200 bg-slate-100/60" : "border-amber-200 bg-amber-100/60"}`}>
         <span className="text-base">{racer.emoji}</span>
-        <span className="text-xs font-semibold text-amber-800">Závodník</span>
-        <span className="font-mono text-[10px] text-amber-600 bg-amber-100 rounded px-1.5 py-0.5">
+        <span className={`text-xs font-semibold ${readOnly ? "text-slate-500" : "text-amber-800"}`}>Závodník</span>
+        <span className={`font-mono text-[10px] rounded px-1.5 py-0.5 ${readOnly ? "text-slate-400 bg-slate-200" : "text-amber-600 bg-amber-100"}`}>
           {racer.id}
         </span>
-        <span
-          className="ml-auto text-[10px] font-medium text-emerald-600 transition-opacity duration-300"
-          style={{ opacity: saved ? 1 : 0 }}
-        >
-          ✓ uloženo
-        </span>
+        {readOnly ? (
+          <span className="ml-auto text-[10px] font-medium text-slate-400 flex items-center gap-1">
+            🔒 vestavěný · nelze editovat
+          </span>
+        ) : (
+          <span
+            className="ml-auto text-[10px] font-medium text-emerald-600 transition-opacity duration-300"
+            style={{ opacity: saved ? 1 : 0 }}
+          >
+            ✓ uloženo
+          </span>
+        )}
       </div>
 
       {/* Formulář */}
-      <div className="px-4 py-3 space-y-3">
+      <div className={`px-4 py-3 space-y-3 ${readOnly ? "opacity-60 pointer-events-none select-none" : ""}`}>
 
         {/* ID + Jméno — 2 sloupce */}
         <div className="grid grid-cols-2 gap-3">

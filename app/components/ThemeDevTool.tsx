@@ -1486,6 +1486,7 @@ export default function ThemeDevTool() {
                 racers={editableRacers}
                 racerFieldCount={editableBoard.fields.filter((f) => f.type === "racer").length}
                 onChange={setEditableRacers}
+                isBuiltInTheme={currentSource === "built-in"}
               />
 
               {/* Deck editor — Náhoda + Finance */}

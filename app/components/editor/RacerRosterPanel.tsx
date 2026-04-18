@@ -25,9 +25,15 @@ import RacerEditorPanel from "./RacerEditorPanel";
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface Props {
-  racers:          RacerConfig[];
-  racerFieldCount: number;
-  onChange:        (updated: RacerConfig[]) => void;
+  racers:           RacerConfig[];
+  racerFieldCount:  number;
+  onChange:         (updated: RacerConfig[]) => void;
+  /**
+   * True pokud je celé theme vestavěné (source === "built-in").
+   * V takovém případě jsou všichni závodníci locked — nelze editovat ani smazat.
+   * Také blokuje přidání nových závodníků.
+   */
+  isBuiltInTheme?:  boolean;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -42,11 +48,14 @@ function generateId(racers: RacerConfig[]): string {
 
 // ─── Komponenta ───────────────────────────────────────────────────────────────
 
-export default function RacerRosterPanel({ racers, racerFieldCount, onChange }: Props) {
+export default function RacerRosterPanel({ racers, racerFieldCount, onChange, isBuiltInTheme = false }: Props) {
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
 
   const mismatch  = racers.length !== racerFieldCount;
   const shortage  = racerFieldCount > racers.length; // board chce víc racerů
+
+  /** True pokud je konkrétní racer locked — buď theme je built-in, nebo racer má isBuiltIn flag. */
+  const isRacerLocked = (r: RacerConfig) => isBuiltInTheme || r.isBuiltIn === true;
 
   // ── Akce ──────────────────────────────────────────────────────────────────
 
@@ -78,6 +87,7 @@ export default function RacerRosterPanel({ racers, racerFieldCount, onChange }: 
 
   function handleDelete(idx: number) {
     const r = racers[idx];
+    if (isRacerLocked(r)) return; // guard — UI to nemělo zobrazit, ale pro jistotu
     if (
       !window.confirm(
         `Smazat závodníka "${r.name}" (${r.id})?\n\n` +
@@ -113,12 +123,18 @@ export default function RacerRosterPanel({ racers, racerFieldCount, onChange }: 
             {racers.length} závodníků / {racerFieldCount} {racerFieldCount === 1 ? "pole" : "polí"}
           </span>
         </div>
-        <button
-          onClick={handleAdd}
-          className="rounded-lg bg-amber-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-amber-600 transition-colors"
-        >
-          + Přidat závodníka
-        </button>
+        {isBuiltInTheme ? (
+          <span className="text-[10px] text-slate-400 flex items-center gap-1">
+            🔒 vestavěné
+          </span>
+        ) : (
+          <button
+            onClick={handleAdd}
+            className="rounded-lg bg-amber-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-amber-600 transition-colors"
+          >
+            + Přidat závodníka
+          </button>
+        )}
       </div>
 
       {/* Mismatch warning */}
@@ -156,6 +172,7 @@ export default function RacerRosterPanel({ racers, racerFieldCount, onChange }: 
         {racers.map((r, idx) => {
           const isSelected = selectedId === r.id;
           const isOrphan   = idx >= racerFieldCount; // závodník bez racer pole na boardu
+          const locked     = isRacerLocked(r);
 
           return (
             <div key={r.id}>
@@ -163,7 +180,7 @@ export default function RacerRosterPanel({ racers, racerFieldCount, onChange }: 
               {/* Row */}
               <div
                 className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors select-none ${
-                  isSelected ? "bg-amber-50" : "hover:bg-slate-50"
+                  isSelected ? (locked ? "bg-slate-100" : "bg-amber-50") : "hover:bg-slate-50"
                 }`}
                 onClick={() => setSelectedId(isSelected ? null : r.id)}
               >
@@ -194,38 +211,45 @@ export default function RacerRosterPanel({ racers, racerFieldCount, onChange }: 
                   className="flex items-center gap-0.5 shrink-0"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <button
-                    onClick={() => handleMoveUp(idx)}
-                    disabled={idx === 0}
-                    title="Posunout nahoru (přeřadit slot)"
-                    className="rounded p-1 text-xs text-slate-400 hover:text-slate-700 disabled:opacity-20 transition-colors"
-                  >
-                    ↑
-                  </button>
-                  <button
-                    onClick={() => handleMoveDown(idx)}
-                    disabled={idx === racers.length - 1}
-                    title="Posunout dolů (přeřadit slot)"
-                    className="rounded p-1 text-xs text-slate-400 hover:text-slate-700 disabled:opacity-20 transition-colors"
-                  >
-                    ↓
-                  </button>
-                  <button
-                    onClick={() => handleDelete(idx)}
-                    title="Smazat závodníka"
-                    className="ml-1 rounded p-1 text-xs text-slate-400 hover:text-red-500 transition-colors"
-                  >
-                    ✕
-                  </button>
+                  {locked ? (
+                    <span className="text-[11px] text-slate-300 px-1" title="Vestavěný závodník — nelze editovat ani smazat">🔒</span>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => handleMoveUp(idx)}
+                        disabled={idx === 0}
+                        title="Posunout nahoru (přeřadit slot)"
+                        className="rounded p-1 text-xs text-slate-400 hover:text-slate-700 disabled:opacity-20 transition-colors"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        onClick={() => handleMoveDown(idx)}
+                        disabled={idx === racers.length - 1}
+                        title="Posunout dolů (přeřadit slot)"
+                        className="rounded p-1 text-xs text-slate-400 hover:text-slate-700 disabled:opacity-20 transition-colors"
+                      >
+                        ↓
+                      </button>
+                      <button
+                        onClick={() => handleDelete(idx)}
+                        title="Smazat závodníka"
+                        className="ml-1 rounded p-1 text-xs text-slate-400 hover:text-red-500 transition-colors"
+                      >
+                        ✕
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
 
-              {/* Inline RacerEditorPanel — rozbalí se po kliknutí */}
+              {/* Inline RacerEditorPanel — rozbalí se po kliknutí; readOnly pro locked racery */}
               {isSelected && (
-                <div className="px-4 pb-3 bg-amber-50/40">
+                <div className={`px-4 pb-3 ${locked ? "bg-slate-50/60" : "bg-amber-50/40"}`}>
                   <RacerEditorPanel
                     racer={r}
                     onChange={handleChange}
+                    readOnly={locked}
                   />
                 </div>
               )}

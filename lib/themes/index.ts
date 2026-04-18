@@ -70,6 +70,19 @@ export interface RacerConfig {
    * buildFields() aplikuje fallback: flavorText ?? heroText.
    */
   heroText?: string;
+  /**
+   * Označení vestavěného závodníka — nelze editovat ani smazat v builder UI.
+   * Nastaveno automaticky: v ThemeDevTool když je theme.source === "built-in".
+   * Neperzistuje do DB při exportu — je to UI-level signalizace.
+   */
+  isBuiltIn?: boolean;
+  /**
+   * Explicitní přiřazení na slot (index racer pole na boardu).
+   * Zatím nepoužíváno v buildFields() — slot je stále implicitní (pořadí v arrayi).
+   * Groundwork pro budoucí Racer Registry: po zavedení registry bude toto pole
+   * nahrazovat implicitní pořadí a umožní selectbox výběr.
+   */
+  slotIndex?: number;
 }
 
 /**
