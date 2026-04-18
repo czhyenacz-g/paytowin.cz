@@ -643,6 +643,15 @@ export default function ThemeDevTool() {
   const [editableRacerImages, setEditableRacerImages] = React.useState<Record<string, string>>({});
   // Editovatelní závodníci — živá kopie manifest.racers pro editor
   const [editableRacers, setEditableRacers] = React.useState<RacerConfig[]>([]);
+
+  /**
+   * withSlotIndexes — zajistí, že každý racer má explicitní slotIndex.
+   * Pokud racer slotIndex nemá (stará data), přiřadí mu pořadový index.
+   * Volá se při každém načtení racerů z manifestu/draftu.
+   */
+  function withSlotIndexes(racers: RacerConfig[]): RacerConfig[] {
+    return racers.map((r, i) => r.slotIndex !== undefined ? r : { ...r, slotIndex: i });
+  }
   // Editovatelné decky — živá kopie manifest.cards; prázdné = hra používá globální balíčky
   const [editableCards, setEditableCards] = React.useState<{ chance: GameCard[]; finance: GameCard[] }>({ chance: [], finance: [] });
 
@@ -889,7 +898,7 @@ export default function ThemeDevTool() {
     if (!manifest) return;
 
     const newBoard: BoardConfig     = { ...SMALL_BOARD, fields: SMALL_BOARD.fields.map((f) => ({ ...f })) };
-    const newRacers: RacerConfig[]  = manifest.racers.map((r) => ({ ...r }));
+    const newRacers: RacerConfig[]  = withSlotIndexes(manifest.racers.map((r) => ({ ...r })));
     const newCards: { chance: GameCard[]; finance: GameCard[] } = manifest.cards
       ? { chance: [...manifest.cards.chance], finance: [...manifest.cards.finance] }
       : { chance: [], finance: [] };
@@ -946,7 +955,7 @@ export default function ThemeDevTool() {
         editableFieldTextures: Record<string, string>; editableRacerImages: Record<string, string>;
       };
       const newBoard    = draft.editableBoard;
-      const newRacers   = draft.editableRacers   ?? [];
+      const newRacers   = withSlotIndexes(draft.editableRacers   ?? []);
       const newCards    = draft.editableCards    ?? { chance: [], finance: [] };
       const newTextures = draft.editableFieldTextures ?? {};
       const newImages   = draft.editableRacerImages   ?? {};
@@ -970,7 +979,7 @@ export default function ThemeDevTool() {
     if (!boardPreviewManifest) return;
     if (!window.confirm("Resetovat board editor? Ztratíš všechny neuložené změny a vrátíš se na výchozí stav manifestu.")) return;
     const newBoard    = { ...SMALL_BOARD, fields: SMALL_BOARD.fields.map((f) => ({ ...f })) };
-    const newRacers   = boardPreviewManifest.racers.map((r) => ({ ...r }));
+    const newRacers   = withSlotIndexes(boardPreviewManifest.racers.map((r) => ({ ...r })));
     const newCards    = boardPreviewManifest.cards
       ? { chance: [...boardPreviewManifest.cards.chance], finance: [...boardPreviewManifest.cards.finance] }
       : { chance: [], finance: [] };

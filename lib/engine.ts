@@ -197,12 +197,19 @@ export function normalizeState(raw: unknown): GameState {
  * Engine zůstává čistý — žádná data, jen transformace.
  */
 export function buildFields(board: BoardConfig, racers: RacerConfig[]): Field[] {
+  // Pokud alespoň jeden racer má slotIndex, seřaď podle něj.
+  // Fallback: původní pořadí v arrayi (backward compat pro data bez slotIndex).
+  const hasExplicitSlots = racers.some(r => r.slotIndex !== undefined);
+  const orderedRacers = hasExplicitSlots
+    ? [...racers].sort((a, b) => (a.slotIndex ?? Infinity) - (b.slotIndex ?? Infinity))
+    : racers;
+
   let racerSlotCount = 0;
 
   return board.fields.map((fc): Field => {
     // ── Racer pole ──────────────────────────────────────────────────────────
     if (fc.type === "racer") {
-      const rc = racers[racerSlotCount++];
+      const rc = orderedRacers[racerSlotCount++];
       if (!rc) {
         // Board má víc racer slotů než theme poskytuje závodníků — bezpečný fallback
         console.warn(`[buildFields] Board "${board.id}" slot ${fc.index}: chybí závodník (theme má jen ${racers.length}).`);

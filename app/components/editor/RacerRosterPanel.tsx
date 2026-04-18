@@ -61,28 +61,34 @@ export default function RacerRosterPanel({ racers, racerFieldCount, onChange, is
 
   function handleAdd() {
     const newRacer: RacerConfig = {
-      id:    generateId(racers),
-      name:  "Nový závodník",
-      speed: 3,
-      price: 150,
-      emoji: "🐴",
+      id:        generateId(racers),
+      name:      "Nový závodník",
+      speed:     3,
+      price:     150,
+      emoji:     "🐴",
+      slotIndex: racers.length, // explicitní slot = konec katalogu
     };
     onChange([...racers, newRacer]);
     setSelectedId(newRacer.id);
+  }
+
+  /** Po přeskládání arrayi přepočítá slotIndex dle nového pořadí. */
+  function reassignSlots(reordered: RacerConfig[]): RacerConfig[] {
+    return reordered.map((r, i) => ({ ...r, slotIndex: i }));
   }
 
   function handleMoveUp(idx: number) {
     if (idx === 0) return;
     const next = [...racers];
     [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
-    onChange(next);
+    onChange(reassignSlots(next));
   }
 
   function handleMoveDown(idx: number) {
     if (idx >= racers.length - 1) return;
     const next = [...racers];
     [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
-    onChange(next);
+    onChange(reassignSlots(next));
   }
 
   function handleDelete(idx: number) {
@@ -184,11 +190,11 @@ export default function RacerRosterPanel({ racers, racerFieldCount, onChange, is
                 }`}
                 onClick={() => setSelectedId(isSelected ? null : r.id)}
               >
-                {/* Slot číslo */}
+                {/* Slot číslo — explicitní slotIndex pokud je k dispozici, fallback na idx */}
                 <span className={`text-[10px] font-mono w-4 shrink-0 text-center ${
                   isOrphan ? "text-slate-300" : "text-slate-400"
                 }`}>
-                  {idx + 1}.
+                  {(r.slotIndex ?? idx) + 1}.
                 </span>
 
                 <span className="text-xl leading-none shrink-0">{r.emoji}</span>
@@ -261,7 +267,7 @@ export default function RacerRosterPanel({ racers, racerFieldCount, onChange, is
 
       {/* Footer nápověda */}
       <div className="border-t border-slate-100 px-4 py-2 text-[10px] text-slate-400">
-        Pořadí závodníků odpovídá pořadí racer polí na boardu (slot 1 → pole #1 zleva). ↑↓ přeřadí slot.
+        Číslo slotu odpovídá pořadí racer polí na boardu (slot 1 → 1. racer pole zleva). ↑↓ přeřadí slot.
       </div>
 
     </div>
