@@ -139,6 +139,7 @@ export function normalizePlayer(raw: unknown): Player {
     skip_next_turn: Boolean(r.skip_next_turn ?? false),
     discord_id: (r.discord_id as string | null | undefined) ?? null,
     discord_avatar_url: (r.discord_avatar_url as string | null | undefined) ?? null,
+    laps: Number(r.laps ?? 0),
   };
 }
 
