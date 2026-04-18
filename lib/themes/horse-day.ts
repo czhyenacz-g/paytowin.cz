@@ -56,7 +56,8 @@ export const horseDayTheme: Theme = {
     { slotIndex: 2, racer_id: "zlata_hriva" },
     { slotIndex: 3, racer_id: "r6" },
     { slotIndex: 4, racer_id: "rychly_vitr" },
-    { slotIndex: 5, racer_id: "zeleznik" },
+    // zeleznik záměrně vynechán — off-board legendary, dán přes chance kartu ch9,
+    // ne přes boardové pole. Zůstává v inline racers[] pro give_racer off-board lookup.
   ],
   /** @fallback inline data — seed source + runtime fallback pokud registry není dostupná */
   racers: [
