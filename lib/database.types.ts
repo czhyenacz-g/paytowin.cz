@@ -124,6 +124,57 @@ export interface Database {
           emoji?: string;
         };
       };
+      racers: {
+        Row: {
+          id:           string;
+          name:         string;
+          speed:        number;
+          price:        number;
+          emoji:        string;
+          max_stamina:  number;
+          is_legendary: boolean;
+          flavor_text:  string | null;
+          image_url:    string | null;
+          image_path:   string | null;
+          type:         string;
+          is_builtin:   boolean;
+          owner_id:     string | null;
+          is_public:    boolean;
+          created_at:   string;
+          updated_at:   string;
+        };
+        Insert: {
+          id:            string;
+          name:          string;
+          speed:         number;
+          price:         number;
+          emoji:         string;
+          max_stamina?:  number;
+          is_legendary?: boolean;
+          flavor_text?:  string | null;
+          image_url?:    string | null;
+          image_path?:   string | null;
+          type?:         string;
+          is_builtin?:   boolean;
+          owner_id?:     string | null;
+          is_public?:    boolean;
+        };
+        Update: {
+          name?:         string;
+          speed?:        number;
+          price?:        number;
+          emoji?:        string;
+          max_stamina?:  number;
+          is_legendary?: boolean;
+          flavor_text?:  string | null;
+          image_url?:    string | null;
+          image_path?:   string | null;
+          type?:         string;
+          is_builtin?:   boolean;
+          owner_id?:     string | null;
+          is_public?:    boolean;
+        };
+      };
       themes: {
         Row: {
           id: string;
