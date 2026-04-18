@@ -72,13 +72,14 @@ const OBSTACLE_KEYS: ObstacleKey[] = ["←", "→", "↑"];
 
 /** Vizuální styl každé dráhy — barva markeru a tlačítka. */
 const OBSTACLE_TRACK: Record<ObstacleKey, {
-  markerBg:  string;   // Tailwind bg pro přijíždějící marker
-  btnActive: string;   // Tailwind třídy pro aktivní tlačítko
-  laneLabel: string;   // Popisek pod dráhou
+  markerBg:  string;
+  btnActive: string;
+  laneLabel: string;
+  obstacleEmoji: string;  // vizuální překážka zobrazená v markeru
 }> = {
-  "←": { markerBg: "bg-rose-500",   btnActive: "bg-rose-500   text-white hover:bg-rose-400   active:scale-95 shadow", laneLabel: "vlevo" },
-  "→": { markerBg: "bg-orange-500", btnActive: "bg-orange-500 text-white hover:bg-orange-400 active:scale-95 shadow", laneLabel: "vpravo" },
-  "↑": { markerBg: "bg-sky-500",    btnActive: "bg-sky-500    text-white hover:bg-sky-400    active:scale-95 shadow", laneLabel: "skok" },
+  "←": { markerBg: "bg-rose-500",   btnActive: "bg-rose-500   text-white hover:bg-rose-400   active:scale-95 shadow", laneLabel: "vlevo",  obstacleEmoji: "🚧" },
+  "→": { markerBg: "bg-orange-500", btnActive: "bg-orange-500 text-white hover:bg-orange-400 active:scale-95 shadow", laneLabel: "vpravo", obstacleEmoji: "🚧" },
+  "↑": { markerBg: "bg-sky-500",    btnActive: "bg-sky-500    text-white hover:bg-sky-400    active:scale-95 shadow", laneLabel: "skok",   obstacleEmoji: "🌊" },
 };
 
 const KEY_CODE_MAP: Record<string, ObstacleKey | "↓"> = {
@@ -117,6 +118,10 @@ export default function RacingMinigame({
   const promptActiveRef  = React.useRef(false);
   const currentPromptRef = React.useRef<ObstacleKey | null>(null);
   const lastPromptKeyRef = React.useRef<ObstacleKey | undefined>(undefined);
+
+  // ── Horse animation ────────────────────────────────────────────────────
+  // CSS animation value — prázdný string = idle (transform: translateX(-50%))
+  const [horseAnim, setHorseAnim] = React.useState("");
 
   // ── Sprint phase state ─────────────────────────────────────────────────
   const [sprintScore, setSprintScore] = React.useState(0);
@@ -205,10 +210,16 @@ export default function RacingMinigame({
       scoreRef.current.obstacle += OBSTACLE_HIT_PTS;
       setObstacleScore(scoreRef.current.obstacle);
       setObstFeedback("hit");
+      // Animace koně odpovídá akci
+      const anim = key === "↑" ? "horseJump 480ms ease-out both"
+                 : key === "←" ? "horseHitLeft 480ms ease-out both"
+                 :                "horseHitRight 480ms ease-out both";
+      setHorseAnim(anim);
     } else {
       setObstFeedback("miss");
+      setHorseAnim("horseMiss 480ms ease-out both");
     }
-    setTimeout(() => setObstFeedback(null), 500);
+    setTimeout(() => { setObstFeedback(null); setHorseAnim(""); }, 500);
   }, []);
 
   const handleSprintInput = React.useCallback((key: SprintKey) => {
@@ -297,43 +308,48 @@ export default function RacingMinigame({
       {gamePhase === "obstacle" && (
         <div className="space-y-3">
 
-          {/* Dráha — tmavý pás, 3 lajny, přijíždějící obstacle marker */}
-          <div className="relative h-28 rounded-2xl overflow-hidden bg-slate-900">
+          {/* Dráha — h-36: track area nahoře + ground strip dole s koněm */}
+          <div className="relative h-36 rounded-2xl overflow-hidden bg-slate-900">
 
-            {/* Vertikální oddělovače drah */}
-            <div className="absolute inset-0 grid grid-cols-3 pointer-events-none">
+            {/* Ground strip — tmavší podklad pro koně */}
+            <div className="absolute bottom-0 left-0 right-0 h-9 bg-slate-800 border-t border-white/10 pointer-events-none" />
+
+            {/* Lane dividers — jen track část (nad ground stripem) */}
+            <div className="absolute left-0 right-0 top-0 bottom-9 grid grid-cols-3 pointer-events-none">
               <div className="border-r border-white/10" />
               <div className="border-r border-white/10" />
               <div />
             </div>
 
-            {/* Hit-zone linie */}
+            {/* Hit-zone linie — horní hrana ground stripu */}
             <div
-              className="absolute left-3 right-3 h-px bg-white/30 pointer-events-none"
-              style={{ bottom: "28px" }}
+              className="absolute left-3 right-3 h-px bg-white/25 pointer-events-none"
+              style={{ bottom: "36px" }}
             />
 
-            {/* Popisky drah (bottom) */}
-            <div className="absolute bottom-1.5 left-0 right-0 grid grid-cols-3 pointer-events-none">
-              {(["←", "↑", "→"] as ObstacleKey[]).map(k => (
-                <div key={k} className="text-center text-[9px] text-white/20 uppercase tracking-wide">
-                  {OBSTACLE_TRACK[k].laneLabel}
-                </div>
-              ))}
+            {/* Kůň / žokej — sedí ve ground stripu, animuje se na input */}
+            <div
+              className="absolute bottom-1 pointer-events-none select-none leading-none"
+              style={horseAnim
+                ? { left: "50%", fontSize: "26px", animation: horseAnim }
+                : { left: "50%", fontSize: "26px", transform: "translateX(-50%)" }
+              }
+            >
+              {racingHorse?.emoji ?? "🏇"}
             </div>
 
-            {/* Přijíždějící obstacle marker — zobrazí se jen v aktivním okně */}
+            {/* Přijíždějící obstacle marker — obstacle emoji + action arrow */}
             {!obstFeedback && promptActive && prompt && (
               <div
-                className={`absolute w-12 h-12 rounded-xl flex items-center justify-center text-2xl font-black text-white shadow-xl ${OBSTACLE_TRACK[prompt].markerBg}`}
+                className={`absolute w-12 h-12 rounded-xl flex flex-col items-center justify-center gap-0 text-white shadow-xl ${OBSTACLE_TRACK[prompt].markerBg}`}
                 style={{
                   top: 0,
-                  // Horizontálně vycentrovat v patřičné dráze (0=←, 1=↑, 2=→)
                   left: `calc(${(["←", "↑", "→"] as ObstacleKey[]).indexOf(prompt) * 33.33 + 16.67}% - 24px)`,
                   animation: `obstacleApproach ${PROMPT_ACTIVE_MS}ms linear both`,
                 }}
               >
-                {prompt}
+                <span className="text-base leading-none">{OBSTACLE_TRACK[prompt].obstacleEmoji}</span>
+                <span className="text-lg font-black leading-none">{prompt}</span>
               </div>
             )}
 
@@ -354,7 +370,7 @@ export default function RacingMinigame({
 
             {/* Čekací stav — mezera mezi prompty */}
             {!obstFeedback && !promptActive && (
-              <div className="absolute inset-0 flex items-center justify-center">
+              <div className="absolute left-0 right-0 top-0 bottom-9 flex items-center justify-center">
                 <span className="text-xs text-white/25 uppercase tracking-widest">Připrav se…</span>
               </div>
             )}
@@ -384,13 +400,27 @@ export default function RacingMinigame({
       {/* ── Fáze 2: Sprint ── */}
       {gamePhase === "sprint" && (
         <div className="space-y-3">
-          <div className={`h-12 flex items-center justify-center rounded-2xl transition-colors ${
-            sprintFlash ? "bg-amber-100" : "bg-slate-50"
+          {/* Mini-track: kůň se pohybuje L↔R na každý stisk */}
+          <div className={`relative h-14 rounded-2xl overflow-hidden transition-colors ${
+            sprintFlash ? "bg-slate-800" : "bg-slate-900"
           }`}>
-            <p className="text-sm font-bold text-slate-600">
-              Střídej:{" "}
-              <span className="text-amber-600 font-black tracking-widest">← →</span>
-            </p>
+            {/* Ground */}
+            <div className="absolute bottom-0 left-0 right-0 h-6 bg-slate-800 border-t border-white/10 pointer-events-none" />
+            {/* Cílová páska napravo */}
+            <div className="absolute right-5 top-0 bottom-6 w-px bg-white/20 pointer-events-none" />
+            <span className="absolute right-2 bottom-6 text-[10px] text-white/25 select-none" style={{ transform: "translateY(50%)" }}>🏁</span>
+            {/* Galloping horse */}
+            <div
+              className="absolute bottom-0.5 leading-none pointer-events-none select-none"
+              style={{
+                fontSize: "22px",
+                left: lastSprintKey === "←" ? "32%" : lastSprintKey === "→" ? "58%" : "44%",
+                transform: "translateX(-50%)",
+                transition: "left 70ms ease-out",
+              }}
+            >
+              {racingHorse?.emoji ?? "🏇"}
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             {(["←", "→"] as SprintKey[]).map(k => (

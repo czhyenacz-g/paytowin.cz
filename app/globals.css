@@ -77,11 +77,36 @@
 }
 
 /* RacingMinigame — obstacle marker přijíždí shora dolů k hit-zone linii.
-   Kontejner lane je h-28 (112px). Hit-zone je na bottom:28px = top:84px.
-   Marker je 48×48px, takže při translateY(60px): top=60, střed=84 = přesně hit-zone.
+   Kontejner lane je h-36 (144px). Ground strip je 36px od spodku → hit-zone na top:108px.
+   Marker je 48×48px: při translateY(84px) je střed na 108px = přesně hit-zone.
    scale: 0.45→1.05 simuluje perspektivní přibližování z dálky. */
 @keyframes obstacleApproach {
   from { transform: translateY(-4px)  scale(0.45); opacity: 0.50; }
-  75%  { transform: translateY(60px)  scale(1.05); opacity: 1.00; }
-  to   { transform: translateY(64px)  scale(1.00); opacity: 0.90; }
+  75%  { transform: translateY(84px)  scale(1.05); opacity: 1.00; }
+  to   { transform: translateY(90px)  scale(1.00); opacity: 0.90; }
+}
+
+/* Kůň — reakce na překážku. Všechny keyframes zahrnují translateX(-50%) jako base,
+   aby bylo možné přepínat mezi transform a animation bez vizuálního skoku. */
+@keyframes horseJump {
+  0%   { transform: translateX(-50%) translateY(0px);   }
+  35%  { transform: translateX(-50%) translateY(-22px); }
+  100% { transform: translateX(-50%) translateY(0px);   }
+}
+@keyframes horseHitLeft {
+  0%   { transform: translateX(-50%)         rotate(0deg);   }
+  30%  { transform: translateX(calc(-50% - 18px)) rotate(-14deg); }
+  100% { transform: translateX(-50%)         rotate(0deg);   }
+}
+@keyframes horseHitRight {
+  0%   { transform: translateX(-50%)         rotate(0deg);   }
+  30%  { transform: translateX(calc(-50% + 18px)) rotate(14deg);  }
+  100% { transform: translateX(-50%)         rotate(0deg);   }
+}
+@keyframes horseMiss {
+  0%,100% { transform: translateX(-50%);                           }
+  20%     { transform: translateX(calc(-50% - 8px)) rotate(6deg);  }
+  40%     { transform: translateX(calc(-50% + 8px)) rotate(-6deg); }
+  60%     { transform: translateX(calc(-50% - 4px));               }
+  80%     { transform: translateX(calc(-50% + 4px));               }
 }
