@@ -2139,6 +2139,29 @@ export default function GameBoard({ gameCode }: Props) {
                   );
                 })}
 
+                {/* ── Info blok Startu — vlevo vedle pole index 0 ────────────────── */}
+                {(() => {
+                  const startBonus = board.fields.find(f => f.type === "start")?.amount ?? 200;
+                  const startTax   = getStartTax(currentRound);
+                  return (
+                    <div
+                      className="absolute pointer-events-none select-none"
+                      style={{ top: "50%", left: "0.5%", transform: "translateY(-50%)" }}
+                    >
+                      <div className="rounded-lg bg-black/35 px-2 py-1.5 backdrop-blur-sm space-y-0.5">
+                        <div className="text-[9px] font-semibold text-green-400 whitespace-nowrap">
+                          Dotace: +{startBonus} 💰
+                        </div>
+                        {startTax > 0 && (
+                          <div className="text-[9px] font-semibold text-red-400 whitespace-nowrap">
+                            Daně: −{startTax} 💰
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 <div className={`absolute left-1/2 top-1/2 flex h-[44%] w-[44%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[50%] border-2 p-4 text-center shadow-inner ${theme.colors.centerBorder} ${theme.colors.centerBackground}`}>
                   {hoveredField ? (
                     <div className="max-w-[180px]">
