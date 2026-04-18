@@ -110,6 +110,24 @@ export default function RacerRosterPanel({ racers, racerFieldCount, onChange, is
     onChange(racers.map((r) => (r.id === updated.id ? updated : r)));
   }
 
+  /**
+   * Přiřadí závodníka k danému slotu — swap:
+   * Vybraný racer dostane targetSlot, racer co v slotu seděl dostane jeho starý slot.
+   */
+  function handleSlotAssign(targetSlot: number, pickedId: string) {
+    if (!pickedId) return;
+    const picked = racers.find((r) => r.id === pickedId);
+    if (!picked) return;
+    const pickedOldSlot = picked.slotIndex ?? racers.indexOf(picked);
+    const next = racers.map((r, i) => {
+      const rSlot = r.slotIndex ?? i;
+      if (r.id === pickedId) return { ...r, slotIndex: targetSlot };
+      if (rSlot === targetSlot) return { ...r, slotIndex: pickedOldSlot };
+      return r;
+    });
+    onChange(next);
+  }
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
@@ -163,6 +181,48 @@ export default function RacerRosterPanel({ racers, racerFieldCount, onChange, is
               posledních {racers.length - racerFieldCount} závodník(ů) nebude nikde přiřazen.
             </>
           )}
+        </div>
+      )}
+
+      {/* Slot Assignment — explicitní přiřazení racer → slot */}
+      {racerFieldCount > 0 && (
+        <div className="border-b border-slate-100 px-4 py-3">
+          <div className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+            Přiřazení slotů
+          </div>
+          <div className="space-y-1.5">
+            {Array.from({ length: racerFieldCount }, (_, slotIdx) => {
+              const assigned = racers.find((r) => (r.slotIndex ?? racers.indexOf(r)) === slotIdx);
+              return (
+                <div key={slotIdx} className="flex items-center gap-2">
+                  <span className="w-5 shrink-0 text-right font-mono text-[10px] text-slate-400">
+                    {slotIdx + 1}.
+                  </span>
+                  {isBuiltInTheme ? (
+                    <span className="text-xs text-slate-600">
+                      {assigned
+                        ? <>{assigned.emoji} {assigned.name}</>
+                        : <span className="italic text-slate-300">— prázdný —</span>
+                      }
+                    </span>
+                  ) : (
+                    <select
+                      value={assigned?.id ?? ""}
+                      onChange={(e) => handleSlotAssign(slotIdx, e.target.value)}
+                      className="flex-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-amber-300"
+                    >
+                      <option value="">— prázdný —</option>
+                      {racers.map((r) => (
+                        <option key={r.id} value={r.id}>
+                          {r.emoji} {r.name} · ⚡{r.speed} · {r.price} 💰
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -267,7 +327,7 @@ export default function RacerRosterPanel({ racers, racerFieldCount, onChange, is
 
       {/* Footer nápověda */}
       <div className="border-t border-slate-100 px-4 py-2 text-[10px] text-slate-400">
-        Číslo slotu odpovídá pořadí racer polí na boardu (slot 1 → 1. racer pole zleva). ↑↓ přeřadí slot.
+        Slot 1 → 1. racer pole zleva. Přiřaď závodníka přes select výše nebo přeřaď pořadí ↑↓ v seznamu.
       </div>
 
     </div>
