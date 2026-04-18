@@ -45,6 +45,24 @@ interface RaceEventOverlayProps {
   onCloseResult: () => void;
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/** Zobrazí obrázek závodníka, nebo emoji jako fallback. */
+function RacerThumb({ horse, size = "md" }: { horse: Horse; size?: "sm" | "md" }) {
+  if (horse.image) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={horse.image}
+        alt={horse.name}
+        className={size === "sm" ? "h-7 w-7 rounded-lg object-cover bg-slate-100 shrink-0" : "h-10 w-10 rounded-lg object-cover bg-slate-100 shrink-0"}
+        onError={(e) => { e.currentTarget.style.display = "none"; }}
+      />
+    );
+  }
+  return <span className={size === "sm" ? "text-lg shrink-0" : "text-2xl shrink-0"}>{horse.emoji}</span>;
+}
+
 // ── Hlavní overlay komponenta ─────────────────────────────────────────────────
 
 export default function RaceEventOverlay({
@@ -148,7 +166,7 @@ export default function RaceEventOverlay({
                     className="w-full flex items-center gap-3 rounded-2xl border-2 border-yellow-400 bg-yellow-50 px-4 py-3 text-left hover:bg-yellow-100 transition"
                   >
                     <span className="text-yellow-500">⭐</span>
-                    <span className="text-2xl">{preferredHorse.emoji}</span>
+                    <RacerThumb horse={preferredHorse} />
                     <div>
                       <div className="font-semibold text-slate-800">{preferredHorse.name}</div>
                       <div className="text-xs text-slate-400">rychlost {preferredHorse.speed}</div>
@@ -167,7 +185,7 @@ export default function RaceEventOverlay({
                       onClick={() => onSelectRacer(key)}
                       className="w-full flex items-center gap-3 rounded-2xl border-2 border-slate-200 bg-slate-50 px-4 py-3 text-left hover:border-indigo-400 hover:bg-indigo-50 transition"
                     >
-                      <span className="text-2xl">{horse.emoji}</span>
+                      <RacerThumb horse={horse} />
                       <div>
                         <div className="font-semibold text-slate-800">{horse.name}</div>
                         <div className="text-xs text-slate-400">rychlost {horse.speed}</div>
@@ -192,7 +210,7 @@ export default function RaceEventOverlay({
                     if (!pl || !horse) return null;
                     return (
                       <div key={pid} className="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-600">
-                        <span>{horse.emoji}</span>
+                        <RacerThumb horse={horse} size="sm" />
                         <span className="font-medium">{pl.name}</span>
                         <span className="text-slate-400">→ {horse.name}</span>
                       </div>
