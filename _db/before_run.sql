@@ -54,12 +54,33 @@ insert into horse_catalog (name, speed, price, emoji) values
   ('Divoká růže', 2,  80, '🌹')
 on conflict do nothing;
 
+-- Globální Racer Registry
+create table if not exists racers (
+  id           text        primary key,
+  name         text        not null,
+  speed        int         not null check (speed between 1 and 10),
+  price        int         not null check (price >= 0),
+  emoji        text        not null default '🐴',
+  max_stamina  int         not null default 100 check (max_stamina between 0 and 100),
+  is_legendary bool        not null default false,
+  flavor_text  text,
+  image_url    text,
+  image_path   text,
+  type         text        not null default 'horse',
+  is_builtin   bool        not null default false,
+  owner_id     text,
+  is_public    bool        not null default true,
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now()
+);
+
 -- Realtime (bezpečné opakování přes DO blok)
 do $$
 begin
   begin alter publication supabase_realtime add table games;       exception when others then null; end;
   begin alter publication supabase_realtime add table players;     exception when others then null; end;
   begin alter publication supabase_realtime add table game_state;  exception when others then null; end;
+  begin alter publication supabase_realtime add table racers;      exception when others then null; end;
 end $$;
 
 -- Row Level Security
@@ -67,14 +88,17 @@ alter table games         enable row level security;
 alter table players       enable row level security;
 alter table game_state    enable row level security;
 alter table horse_catalog enable row level security;
+alter table racers        enable row level security;
 
 -- Policies (drop + recreate = idempotentní)
 drop policy if exists "public all games"         on games;
 drop policy if exists "public all players"       on players;
 drop policy if exists "public all game_state"    on game_state;
 drop policy if exists "public all horse_catalog" on horse_catalog;
+drop policy if exists "public all racers"        on racers;
 
 create policy "public all games"         on games         for all using (true) with check (true);
 create policy "public all players"       on players       for all using (true) with check (true);
 create policy "public all game_state"    on game_state    for all using (true) with check (true);
 create policy "public all horse_catalog" on horse_catalog for all using (true) with check (true);
+create policy "public all racers"        on racers        for all using (true) with check (true);
