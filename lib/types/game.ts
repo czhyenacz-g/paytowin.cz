@@ -42,6 +42,8 @@ export interface Player {
   discord_id?: string | null;
   /** Discord CDN URL avataru — null pokud hráč nemá Discord nebo URL není k dispozici. */
   discord_avatar_url?: string | null;
+  /** Počet průchodů STARTem. Daně začínají od laps=1 (druhý průchod). */
+  laps?: number;
 }
 
 // ─── Herní stav ───────────────────────────────────────────────────────────────

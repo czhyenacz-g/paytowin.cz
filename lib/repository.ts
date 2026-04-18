@@ -49,7 +49,7 @@ export async function updatePlayerSkipTurn(playerId: string, value: boolean) {
 
 export async function updatePlayerFull(
   playerId: string,
-  update: { position?: number; coins?: number; horses?: Horse[]; skip_next_turn?: boolean }
+  update: { position?: number; coins?: number; horses?: Horse[]; skip_next_turn?: boolean; laps?: number }
 ) {
   await supabase.from("players").update(update).eq("id", playerId);
 }

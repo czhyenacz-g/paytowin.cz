@@ -604,11 +604,16 @@ export default function GameBoard({ gameCode }: Props) {
       extraLog.push(`${currentPlayer.name} prošel STARTem — +200 💰`);
     }
 
-    // Daň za průchod/přistání na STARTu — roste každé kolo, od kola 2
-    const startTax = getStartTax(currentRound);
-    if (startTax > 0 && (passedStart || newPosition === 0)) {
-      movedPlayer = { ...movedPlayer, coins: movedPlayer.coins - startTax };
-      extraLog.push(`${currentPlayer.name}: Daň za průchod STARTem — -${startTax} 💰`);
+    // Daň za průchod/přistání na STARTu — roste s počtem průchodů (laps-based).
+    // laps před tímto průchodem: 0 = první průchod = bez daně, 1 = druhý = -50, atd.
+    if (passedStart || newPosition === 0) {
+      const currentLaps = currentPlayer.laps ?? 0;
+      const startTax = getStartTax(currentLaps);
+      movedPlayer = { ...movedPlayer, laps: currentLaps + 1 };
+      if (startTax > 0) {
+        movedPlayer = { ...movedPlayer, coins: movedPlayer.coins - startTax };
+        extraLog.push(`${currentPlayer.name}: Daň za průchod STARTem — -${startTax} 💰`);
+      }
     }
 
     if (field.type === "racer" && field.racer) {
@@ -628,7 +633,7 @@ export default function GameBoard({ gameCode }: Props) {
           i === gameState.current_player_index ? movedPlayer : p
         );
         const nextIndex = getNextActiveIndex(gameState.current_player_index, updatedPlayers);
-        await supabase.from("players").update({ position: newPosition, coins: movedPlayer.coins }).eq("id", currentPlayer.id);
+        await supabase.from("players").update({ position: newPosition, coins: movedPlayer.coins, laps: movedPlayer.laps ?? 0 }).eq("id", currentPlayer.id);
         await finishTurn({ nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog], lastRoll: roll });
       } else if (ownerPlayer) {
         if (canTriggerRivalsRace(movedPlayer, ownerPlayer)) {
@@ -637,7 +642,7 @@ export default function GameBoard({ gameCode }: Props) {
           const logLines = [`⚔️ ${currentPlayer.name} vstoupil na stáj ${ownerPlayer.name} — čeká je souboj!`, ...extraLog];
           const updatedPlayersForNext = players.map(p => p.id === currentPlayer.id ? movedPlayer : p);
           const nextIndex = getNextActiveIndex(gameState.current_player_index, updatedPlayersForNext);
-          await supabase.from("players").update({ position: newPosition, coins: movedPlayer.coins }).eq("id", currentPlayer.id);
+          await supabase.from("players").update({ position: newPosition, coins: movedPlayer.coins, laps: movedPlayer.laps ?? 0 }).eq("id", currentPlayer.id);
           await finishTurn({
             nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog], lastRoll: roll,
             postTurnEvent: { kind: "race_pending", raceType: "rivals_race", playerIds: [currentPlayer.id, ownerPlayer.id], reward },
@@ -674,7 +679,7 @@ export default function GameBoard({ gameCode }: Props) {
                                (updatedPlayers.length === 1 && activeAfterRent.length === 0);
 
           await Promise.all([
-            supabase.from("players").update({ position: rentedPlayer.position, coins: rentedPlayer.coins }).eq("id", rentedPlayer.id),
+            supabase.from("players").update({ position: rentedPlayer.position, coins: rentedPlayer.coins, laps: rentedPlayer.laps ?? 0 }).eq("id", rentedPlayer.id),
             supabase.from("players").update({ coins: paidOwner.coins }).eq("id", paidOwner.id),
           ]);
           await finishTurn({
@@ -686,7 +691,7 @@ export default function GameBoard({ gameCode }: Props) {
         }
       } else {
         // Čekáme na rozhodnutí hráče. horse_pending = true v DB (DB sloupec zachován).
-        await supabase.from("players").update({ position: newPosition, coins: movedPlayer.coins }).eq("id", currentPlayer.id);
+        await supabase.from("players").update({ position: newPosition, coins: movedPlayer.coins, laps: movedPlayer.laps ?? 0 }).eq("id", currentPlayer.id);
         await supabase.from("game_state").update({
           last_roll: roll,
           turn_count: newTurnCount,
@@ -704,7 +709,7 @@ export default function GameBoard({ gameCode }: Props) {
       // applyCardEffect poběží ze stale closure (timer 2.5s) — position musí být
       // v DB stabilní předtím, než se karta aplikuje.
       console.log(`[turn-flow] card field — persisting position=${newPosition} before card_pending`);
-      await supabase.from("players").update({ position: newPosition, coins: movedPlayer.coins }).eq("id", currentPlayer.id);
+      await supabase.from("players").update({ position: newPosition, coins: movedPlayer.coins, laps: movedPlayer.laps ?? 0 }).eq("id", currentPlayer.id);
       console.log(`[turn-flow] card_pending set — card="${card.id}" kind="${card.effect.kind}"`);
       await supabase.from("game_state").update({
         last_roll: roll,
@@ -738,7 +743,7 @@ export default function GameBoard({ gameCode }: Props) {
 
       // Hráč aktualizován vždy (pozice, coins, koně)
       console.log(`[turn-flow] normal field persist — pos=${finalPlayer.position} coins=${finalPlayer.coins} wentBankrupt=${wentBankrupt}`);
-      await supabase.from("players").update({ position: finalPlayer.position, coins: finalPlayer.coins, horses: finalPlayer.horses }).eq("id", currentPlayer.id);
+      await supabase.from("players").update({ position: finalPlayer.position, coins: finalPlayer.coins, horses: finalPlayer.horses, laps: finalPlayer.laps ?? 0 }).eq("id", currentPlayer.id);
 
       // Nabídka rerollu: 25 % šance, jen pokud nešel do bankrotu a nejde o reroll
       const triggerOffer = !canReroll && !wentBankrupt && Math.random() < REROLL_CHANCE;
@@ -1952,8 +1957,8 @@ export default function GameBoard({ gameCode }: Props) {
               <div className="flex flex-1 items-center justify-center gap-2 overflow-hidden">
                 <div className="rounded-[3px] bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-500 shrink-0">
                   Kolo <span className="font-bold text-slate-700">{currentRound}</span>
-                  {getStartTax(currentRound) > 0 && (
-                    <span className="ml-1 text-red-500" title={`Daň za průchod STARTem: -${getStartTax(currentRound)} 💰`}>🏛️</span>
+                  {(currentPlayer?.laps ?? 0) >= 1 && (
+                    <span className="ml-1 text-red-500" title={`Daň za průchod STARTem: -${getStartTax(currentPlayer?.laps ?? 0)} 💰`}>🏛️</span>
                   )}
                 </div>
                 <div className="rounded-[3px] bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white shrink-0 max-w-[160px] truncate">
@@ -2144,7 +2149,8 @@ export default function GameBoard({ gameCode }: Props) {
                 {/* ── Info blok Startu — pod kartou (pole 0 je rotovaná -90°, zabírá levou hranu)  */}
                 {(() => {
                   const startBonus = board.fields.find(f => f.type === "start")?.amount ?? 200;
-                  const startTax   = getStartTax(currentRound);
+                  const myLaps = (myPlayer?.laps ?? 0);
+                  const myNextTax = getStartTax(myLaps);
                   return (
                     <div
                       className="absolute pointer-events-none select-none"
@@ -2154,9 +2160,9 @@ export default function GameBoard({ gameCode }: Props) {
                         <div className="text-[9px] font-semibold text-green-400 whitespace-nowrap">
                           Dotace: +{startBonus} 💰
                         </div>
-                        {startTax > 0 && (
+                        {myNextTax > 0 && (
                           <div className="text-[9px] font-semibold text-red-400 whitespace-nowrap">
-                            Daně: −{startTax} 💰
+                            Daně: −{myNextTax} 💰
                           </div>
                         )}
                       </div>

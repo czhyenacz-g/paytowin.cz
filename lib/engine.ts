@@ -22,9 +22,8 @@ import type { BoardConfig } from "./board";
 export const REROLL_COST = 250;
 export const REROLL_CHANCE = 0.10;
 
-const BANKRUPTCY_TAX_PER_ROUND = 40;
-const BANKRUPTCY_TAX_CAP = 400;
-const BANKRUPTCY_TAX_START_ROUND = 3; // daně začínají až od kola 3
+const BANKRUPTCY_TAX_PER_LAP = 50;
+const BANKRUPTCY_TAX_CAP = 500;
 
 // ─── Typy polí ────────────────────────────────────────────────────────────────
 
@@ -70,10 +69,15 @@ export const sleep = (ms: number): Promise<void> =>
 
 // ─── Daň za START ─────────────────────────────────────────────────────────────
 
-/** Kolo 1 = 0, každé další kolo +50 coins, strop 500. */
-export function getStartTax(round: number): number {
-  if (round < BANKRUPTCY_TAX_START_ROUND) return 0;
-  return Math.min((round - BANKRUPTCY_TAX_START_ROUND + 1) * BANKRUPTCY_TAX_PER_ROUND, BANKRUPTCY_TAX_CAP);
+/**
+ * Daň za průchod STARTem — roste s počtem absolvovaných kol.
+ * laps = počet průchodů PŘED tímto průchodem.
+ * laps=0 → první průchod → daň 0 (první dotace je plná).
+ * laps=1 → druhý průchod → 50. laps=2 → 100. Strop 500.
+ */
+export function getStartTax(laps: number): number {
+  if (laps < 1) return 0;
+  return Math.min(laps * BANKRUPTCY_TAX_PER_LAP, BANKRUPTCY_TAX_CAP);
 }
 
 // ─── Bankrot ──────────────────────────────────────────────────────────────────
