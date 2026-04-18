@@ -17,7 +17,6 @@ import type { BoardConfig, BoardFieldConfig } from "@/lib/board/types";
 import BoardEditorPreview from "@/app/components/editor/BoardEditorPreview";
 import FieldEditorPanel from "@/app/components/editor/FieldEditorPanel";
 import type { AssetSectionConfig } from "@/app/components/editor/FieldEditorPanel";
-import RacerEditorPanel from "@/app/components/editor/RacerEditorPanel";
 import RacerRosterPanel from "@/app/components/editor/RacerRosterPanel";
 import DeckEditorPanel from "@/app/components/editor/DeckEditorPanel";
 import type { GameCard } from "@/lib/cards";
@@ -762,18 +761,6 @@ export default function ThemeDevTool() {
     }
   }, [selectedFieldIndex, editableBoard, liveManifest, editableFieldTextures, editableRacerImages]);
 
-  // Aktuálně vybraný závodník — jen pro racer pole
-  const currentSelectedRacer = React.useMemo<RacerConfig | null>(() => {
-    if (selectedFieldIndex === null || !liveManifest) return null;
-    const fieldConfig = editableBoard.fields.find((f) => f.index === selectedFieldIndex);
-    if (fieldConfig?.type !== "racer") return null;
-    const runtimeFields = buildFields(editableBoard, liveManifest.racers);
-    const runtimeField = runtimeFields.find((f) => f.index === selectedFieldIndex);
-    const racerId = runtimeField?.racer?.id;
-    if (!racerId) return null;
-    return liveManifest.racers.find((r) => r.id === racerId) ?? null;
-  }, [selectedFieldIndex, editableBoard, liveManifest]);
-
   // Actions
   const [saving, setSaving] = React.useState(false);
   const [savingToFiles, setSavingToFiles] = React.useState(false);
@@ -1468,17 +1455,6 @@ export default function ThemeDevTool() {
                           }
                           assetSection={currentAssetSection}
                         />
-                        {/* Racer editor — jen pro racer pole */}
-                        {currentSelectedRacer && (
-                          <RacerEditorPanel
-                            racer={currentSelectedRacer}
-                            onChange={(updated: RacerConfig) =>
-                              setEditableRacers((prev) =>
-                                prev.map((r) => (r.id === updated.id ? updated : r)),
-                              )
-                            }
-                          />
-                        )}
                       </>
                     );
                   })() : (
@@ -1496,6 +1472,15 @@ export default function ThemeDevTool() {
                 racerFieldCount={editableBoard.fields.filter((f) => f.type === "racer").length}
                 onChange={setEditableRacers}
                 isBuiltInTheme={currentSource === "built-in"}
+                catalogReadOnly={currentSource === "db"}
+                onEditRacers={() => {
+                  if (boardPreviewManifest) {
+                    window.open(
+                      `/admin/themes/dev/${boardPreviewManifest.meta.id}/racers`,
+                      "_blank",
+                    );
+                  }
+                }}
               />
 
               {/* Deck editor — Náhoda + Finance */}

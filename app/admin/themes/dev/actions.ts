@@ -2,6 +2,7 @@
 
 import { supabase } from "@/lib/supabase";
 import { THEMES } from "@/lib/themes";
+import type { RacerConfig } from "@/lib/themes";
 import { getThemeFromDb, upsertThemeToDb } from "@/lib/repository";
 import { validateThemeManifest } from "@/lib/themes/validator";
 import type { ThemeManifest } from "@/lib/themes/manifest";
@@ -183,4 +184,94 @@ export async function setPublicAction(
     .eq("id", id);
   if (error) return { ok: false, error: error.message };
   return { ok: true };
+}
+
+// ─── Patch racers in source file (dev-only) ───────────────────────────────────
+// Pomocné funkce kopírují logiku z app/api/dev/save-editor-state/route.ts.
+// Pracují jen s built-in themes — lib/themes/{themeId}.ts musí existovat.
+
+function _esc(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function _findClose(src: string, pos: number): number {
+  const open = src[pos];
+  const close = open === "{" ? "}" : open === "[" ? "]" : null;
+  if (!close) throw new Error(`Not a bracket at pos ${pos}: "${open}"`);
+  let depth = 0;
+  let i = pos;
+  while (i < src.length) {
+    const ch = src[i];
+    if (ch === '"' || ch === "'") {
+      i++;
+      while (i < src.length) {
+        if (src[i] === "\\") { i += 2; continue; }
+        if (src[i] === ch) break;
+        i++;
+      }
+    } else if (ch === "`") {
+      i++;
+      while (i < src.length) {
+        if (src[i] === "\\") { i += 2; continue; }
+        if (src[i] === "`") break;
+        i++;
+      }
+    } else if (ch === open) { depth++;
+    } else if (ch === close) { depth--; if (depth === 0) return i; }
+    i++;
+  }
+  throw new Error(`No matching "${close}" for "${open}" at pos ${pos}`);
+}
+
+function _addIndent(text: string, indent: string): string {
+  return text.split("\n").map((l, i) => (i === 0 ? l : indent + l)).join("\n");
+}
+
+function _replaceObjectKey(src: string, key: string, val: unknown, baseIndent: string): string {
+  const re = new RegExp(`([ \\t]*${_esc(key)}:\\s*)([\\[{])`);
+  const m = re.exec(src);
+  if (!m) throw new Error(`Key "${key}" not found in source`);
+  const prefixEnd = m.index + m[1].length;
+  const closeIdx = _findClose(src, prefixEnd);
+  const hasComma = src[closeIdx + 1] === ",";
+  const endIdx = closeIdx + 1 + (hasComma ? 1 : 0);
+  const serialized = _addIndent(JSON.stringify(val, null, 2), baseIndent);
+  return src.slice(0, prefixEnd) + serialized + (hasComma ? "," : "") + src.slice(endIdx);
+}
+
+/**
+ * patchRacersInFileAction — zapíše racery přímo do lib/themes/{themeId}.ts.
+ * Dev-only. Funguje jen pro built-in themes kde soubor existuje.
+ */
+export async function patchRacersInFileAction(
+  themeId: string,
+  racers: RacerConfig[],
+): Promise<{ ok: true; written: string[] } | { ok: false; error: string }> {
+  if (typeof themeId !== "string" || !/^[a-z0-9][a-z0-9_-]*$/.test(themeId)) {
+    return { ok: false, error: `Neplatné themeId: "${themeId}"` };
+  }
+
+  const fs   = await import("fs");
+  const path = await import("path");
+  const cwd  = process.cwd();
+  const rel  = `lib/themes/${themeId}.ts`;
+  const abs  = path.join(cwd, rel);
+
+  const allowedDir = path.join(cwd, "lib", "themes") + path.sep;
+  if (!abs.startsWith(allowedDir)) return { ok: false, error: "Path traversal detected" };
+  if (!fs.existsSync(abs)) {
+    return {
+      ok: false,
+      error: `Soubor nenalezen: ${rel}. patchRacersInFileAction funguje jen pro built-in themes.`,
+    };
+  }
+
+  try {
+    let src = fs.readFileSync(abs, "utf-8");
+    src = _replaceObjectKey(src, "racers", racers, "  ");
+    fs.writeFileSync(abs, src, "utf-8");
+    return { ok: true, written: [rel] };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
 }

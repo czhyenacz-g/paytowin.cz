@@ -1,21 +1,26 @@
 "use client";
 
 /**
- * RacerRosterPanel — přehled a správa celého katalogu závodníků pro board editor.
+ * RacerRosterPanel — přehled a správa katalogu závodníků.
  *
- * Zobrazuje se v ThemeDevTool pod board+field editorem.
- * Umožňuje:
- *   - vidět celý roster závodníků s přiřazením na slot (1., 2., …)
- *   - přidat nového závodníka (výchozí hodnoty)
- *   - editovat závodníka inline přes RacerEditorPanel
- *   - změnit pořadí (↑ / ↓) — přeskládání slot mappingu
- *   - smazat závodníka (s varováním)
- *   - vidět warning pokud počet závodníků neodpovídá počtu racer polí
+ * Dvě použití:
+ *
+ * 1. Theme Builder (catalogReadOnly=true, racerFieldCount=N)
+ *    — katalog je read-only (add/delete/edit zakázány)
+ *    — zobrazí "Editovat závodníky →" odkaz na Racer Admin
+ *    — slot assignment a mismatch warning aktivní
+ *
+ * 2. Racer Admin (catalogReadOnly=false, racerFieldCount=undefined)
+ *    — plná editace katalogu
+ *    — slot assignment a mismatch warning skryty (není kontext boardu)
  *
  * Props:
- *   racers        — editovatelná kopie katalogu (editableRacers z ThemeDevTool)
- *   racerFieldCount — počet polí type="racer" na boardu (počítá ThemeDevTool)
- *   onChange      — callback s novou verzí pole (ThemeDevTool → setEditableRacers)
+ *   racers          — editovatelná kopie katalogu
+ *   racerFieldCount — počet polí type="racer" na boardu; pokud undefined → slot UI skryto
+ *   onChange        — callback s novou verzí pole
+ *   isBuiltInTheme  — zamkne vše včetně slot selects (pro built-in themes v builderu)
+ *   catalogReadOnly — zamkne pouze katalog; slot selects zůstávají aktivní (builder mode)
+ *   onEditRacers    — callback pro "Editovat závodníky →" tlačítko (jen při catalogReadOnly)
  */
 
 import React from "react";
@@ -26,14 +31,25 @@ import RacerEditorPanel from "./RacerEditorPanel";
 
 interface Props {
   racers:           RacerConfig[];
-  racerFieldCount:  number;
+  /**
+   * Počet polí type="racer" na boardu.
+   * Pokud není předáno (Racer Admin), slot assignment sekce a mismatch warning jsou skryty.
+   */
+  racerFieldCount?: number;
   onChange:         (updated: RacerConfig[]) => void;
   /**
    * True pokud je celé theme vestavěné (source === "built-in").
-   * V takovém případě jsou všichni závodníci locked — nelze editovat ani smazat.
-   * Také blokuje přidání nových závodníků.
+   * Zamkne katalog i slot assignment — nic nelze měnit.
    */
   isBuiltInTheme?:  boolean;
+  /**
+   * True = katalog je read-only (builder mode): žádné add/delete/reorder/inline edit.
+   * Slot assignment a mismatch warning fungují normálně.
+   * Kombinovat s onEditRacers pro odkaz na Racer Admin.
+   */
+  catalogReadOnly?: boolean;
+  /** Callback pro přechod na Racer Admin (zobrazí se jako tlačítko při catalogReadOnly). */
+  onEditRacers?:    () => void;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -48,11 +64,20 @@ function generateId(racers: RacerConfig[]): string {
 
 // ─── Komponenta ───────────────────────────────────────────────────────────────
 
-export default function RacerRosterPanel({ racers, racerFieldCount, onChange, isBuiltInTheme = false }: Props) {
+export default function RacerRosterPanel({
+  racers,
+  racerFieldCount,
+  onChange,
+  isBuiltInTheme  = false,
+  catalogReadOnly = false,
+  onEditRacers,
+}: Props) {
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
 
-  const mismatch  = racers.length !== racerFieldCount;
-  const shortage  = racerFieldCount > racers.length; // board chce víc racerů
+  // Slot UI a mismatch jsou dostupné jen pokud je znám počet racer polí boardu.
+  const hasSlotContext = racerFieldCount !== undefined;
+  const mismatch = hasSlotContext && racers.length !== racerFieldCount;
+  const shortage = hasSlotContext && (racerFieldCount as number) > racers.length;
 
   /** True pokud je konkrétní racer locked — buď theme je built-in, nebo racer má isBuiltIn flag. */
   const isRacerLocked = (r: RacerConfig) => isBuiltInTheme || r.isBuiltIn === true;
@@ -60,13 +85,14 @@ export default function RacerRosterPanel({ racers, racerFieldCount, onChange, is
   // ── Akce ──────────────────────────────────────────────────────────────────
 
   function handleAdd() {
+    if (catalogReadOnly || isBuiltInTheme) return;
     const newRacer: RacerConfig = {
       id:        generateId(racers),
       name:      "Nový závodník",
       speed:     3,
       price:     150,
       emoji:     "🐴",
-      slotIndex: racers.length, // explicitní slot = konec katalogu
+      slotIndex: racers.length,
     };
     onChange([...racers, newRacer]);
     setSelectedId(newRacer.id);
@@ -93,7 +119,7 @@ export default function RacerRosterPanel({ racers, racerFieldCount, onChange, is
 
   function handleDelete(idx: number) {
     const r = racers[idx];
-    if (isRacerLocked(r)) return; // guard — UI to nemělo zobrazit, ale pro jistotu
+    if (isRacerLocked(r)) return;
     if (
       !window.confirm(
         `Smazat závodníka "${r.name}" (${r.id})?\n\n` +
@@ -130,6 +156,11 @@ export default function RacerRosterPanel({ racers, racerFieldCount, onChange, is
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
+  // Badge text v headeru
+  const badgeText = hasSlotContext
+    ? `${racers.length} závodníků / ${racerFieldCount} ${racerFieldCount === 1 ? "pole" : "polí"}`
+    : `${racers.length} závodník${racers.length === 1 ? "" : "ů"}`;
+
   return (
     <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
 
@@ -144,13 +175,22 @@ export default function RacerRosterPanel({ racers, racerFieldCount, onChange, is
               ? "bg-amber-100 text-amber-700"
               : "bg-emerald-100 text-emerald-700"
           }`}>
-            {racers.length} závodníků / {racerFieldCount} {racerFieldCount === 1 ? "pole" : "polí"}
+            {badgeText}
           </span>
         </div>
+
+        {/* Header action */}
         {isBuiltInTheme ? (
           <span className="text-[10px] text-slate-400 flex items-center gap-1">
             🔒 vestavěné
           </span>
+        ) : catalogReadOnly ? (
+          <button
+            onClick={onEditRacers}
+            className="rounded-lg bg-indigo-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-indigo-600 transition-colors"
+          >
+            Editovat závodníky →
+          </button>
         ) : (
           <button
             onClick={handleAdd}
@@ -161,7 +201,7 @@ export default function RacerRosterPanel({ racers, racerFieldCount, onChange, is
         )}
       </div>
 
-      {/* Mismatch warning */}
+      {/* Mismatch warning — jen pokud je znám počet racer polí */}
       {mismatch && (
         <div className={`px-4 py-2 text-xs font-medium border-b ${
           shortage
@@ -172,26 +212,26 @@ export default function RacerRosterPanel({ racers, racerFieldCount, onChange, is
             <>
               ⚠️ Board má <strong>{racerFieldCount} racer {racerFieldCount === 1 ? "pole" : "polí"}</strong>, ale
               katalog obsahuje jen <strong>{racers.length}</strong> závodníků —
-              přidej ještě {racerFieldCount - racers.length}.
+              přidej ještě {(racerFieldCount as number) - racers.length}.
             </>
           ) : (
             <>
               ℹ️ V katalogu je <strong>{racers.length}</strong> závodníků, ale board
               má jen <strong>{racerFieldCount} racer {racerFieldCount === 1 ? "pole" : "polí"}</strong> —
-              posledních {racers.length - racerFieldCount} závodník(ů) nebude nikde přiřazen.
+              posledních {racers.length - (racerFieldCount as number)} závodník(ů) nebude nikde přiřazen.
             </>
           )}
         </div>
       )}
 
-      {/* Slot Assignment — explicitní přiřazení racer → slot */}
-      {racerFieldCount > 0 && (
+      {/* Slot Assignment — jen pokud je znám počet racer polí */}
+      {hasSlotContext && (racerFieldCount as number) > 0 && (
         <div className="border-b border-slate-100 px-4 py-3">
           <div className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
             Přiřazení slotů
           </div>
           <div className="space-y-1.5">
-            {Array.from({ length: racerFieldCount }, (_, slotIdx) => {
+            {Array.from({ length: racerFieldCount as number }, (_, slotIdx) => {
               const assigned = racers.find((r) => (r.slotIndex ?? racers.indexOf(r)) === slotIdx);
               return (
                 <div key={slotIdx} className="flex items-center gap-2">
@@ -229,7 +269,10 @@ export default function RacerRosterPanel({ racers, racerFieldCount, onChange, is
       {/* Prázdný stav */}
       {racers.length === 0 && (
         <div className="px-4 py-8 text-center text-sm text-slate-400 italic">
-          Žádní závodníci — přidej prvního tlačítkem výše.
+          {catalogReadOnly
+            ? "Žádní závodníci — přidej je v Racer Adminu."
+            : "Žádní závodníci — přidej prvního tlačítkem výše."
+          }
         </div>
       )}
 
@@ -237,20 +280,25 @@ export default function RacerRosterPanel({ racers, racerFieldCount, onChange, is
       <div className="divide-y divide-slate-100">
         {racers.map((r, idx) => {
           const isSelected = selectedId === r.id;
-          const isOrphan   = idx >= racerFieldCount; // závodník bez racer pole na boardu
-          const locked     = isRacerLocked(r);
+          // isOrphan: závodník bez racer pole na boardu (jen pokud znám počet polí)
+          const isOrphan = hasSlotContext && idx >= (racerFieldCount as number);
+          const locked   = isRacerLocked(r);
 
           return (
             <div key={r.id}>
 
               {/* Row */}
               <div
-                className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors select-none ${
-                  isSelected ? (locked ? "bg-slate-100" : "bg-amber-50") : "hover:bg-slate-50"
+                className={`flex items-center gap-3 px-4 py-2.5 transition-colors select-none ${
+                  catalogReadOnly
+                    ? "cursor-default"
+                    : "cursor-pointer " + (isSelected ? (locked ? "bg-slate-100" : "bg-amber-50") : "hover:bg-slate-50")
                 }`}
-                onClick={() => setSelectedId(isSelected ? null : r.id)}
+                onClick={() => {
+                  if (!catalogReadOnly) setSelectedId(isSelected ? null : r.id);
+                }}
               >
-                {/* Slot číslo — explicitní slotIndex pokud je k dispozici, fallback na idx */}
+                {/* Slot číslo */}
                 <span className={`text-[10px] font-mono w-4 shrink-0 text-center ${
                   isOrphan ? "text-slate-300" : "text-slate-400"
                 }`}>
@@ -272,45 +320,47 @@ export default function RacerRosterPanel({ racers, racerFieldCount, onChange, is
                   </div>
                 </div>
 
-                {/* Pořadí + smazat — stopPropagation aby neklikl na row */}
-                <div
-                  className="flex items-center gap-0.5 shrink-0"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {locked ? (
-                    <span className="text-[11px] text-slate-300 px-1" title="Vestavěný závodník — nelze editovat ani smazat">🔒</span>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => handleMoveUp(idx)}
-                        disabled={idx === 0}
-                        title="Posunout nahoru (přeřadit slot)"
-                        className="rounded p-1 text-xs text-slate-400 hover:text-slate-700 disabled:opacity-20 transition-colors"
-                      >
-                        ↑
-                      </button>
-                      <button
-                        onClick={() => handleMoveDown(idx)}
-                        disabled={idx === racers.length - 1}
-                        title="Posunout dolů (přeřadit slot)"
-                        className="rounded p-1 text-xs text-slate-400 hover:text-slate-700 disabled:opacity-20 transition-colors"
-                      >
-                        ↓
-                      </button>
-                      <button
-                        onClick={() => handleDelete(idx)}
-                        title="Smazat závodníka"
-                        className="ml-1 rounded p-1 text-xs text-slate-400 hover:text-red-500 transition-colors"
-                      >
-                        ✕
-                      </button>
-                    </>
-                  )}
-                </div>
+                {/* Akce — skryty v catalogReadOnly módu */}
+                {!catalogReadOnly && (
+                  <div
+                    className="flex items-center gap-0.5 shrink-0"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {locked ? (
+                      <span className="text-[11px] text-slate-300 px-1" title="Vestavěný závodník — nelze editovat ani smazat">🔒</span>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => handleMoveUp(idx)}
+                          disabled={idx === 0}
+                          title="Posunout nahoru (přeřadit slot)"
+                          className="rounded p-1 text-xs text-slate-400 hover:text-slate-700 disabled:opacity-20 transition-colors"
+                        >
+                          ↑
+                        </button>
+                        <button
+                          onClick={() => handleMoveDown(idx)}
+                          disabled={idx === racers.length - 1}
+                          title="Posunout dolů (přeřadit slot)"
+                          className="rounded p-1 text-xs text-slate-400 hover:text-slate-700 disabled:opacity-20 transition-colors"
+                        >
+                          ↓
+                        </button>
+                        <button
+                          onClick={() => handleDelete(idx)}
+                          title="Smazat závodníka"
+                          className="ml-1 rounded p-1 text-xs text-slate-400 hover:text-red-500 transition-colors"
+                        >
+                          ✕
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
 
-              {/* Inline RacerEditorPanel — rozbalí se po kliknutí; readOnly pro locked racery */}
-              {isSelected && (
+              {/* Inline RacerEditorPanel — jen v plném módu (ne catalogReadOnly) */}
+              {isSelected && !catalogReadOnly && (
                 <div className={`px-4 pb-3 ${locked ? "bg-slate-50/60" : "bg-amber-50/40"}`}>
                   <RacerEditorPanel
                     racer={r}
@@ -327,7 +377,12 @@ export default function RacerRosterPanel({ racers, racerFieldCount, onChange, is
 
       {/* Footer nápověda */}
       <div className="border-t border-slate-100 px-4 py-2 text-[10px] text-slate-400">
-        Slot 1 → 1. racer pole zleva. Přiřaď závodníka přes select výše nebo přeřaď pořadí ↑↓ v seznamu.
+        {catalogReadOnly
+          ? "Závodníky edituj v Racer Adminu — v builderu lze měnit jen přiřazení slotů."
+          : hasSlotContext
+            ? "Slot 1 → 1. racer pole zleva. Přiřaď závodníka přes select výše nebo přeřaď pořadí ↑↓ v seznamu."
+            : "Závodníci v katalogu — uložením se změní v theme souboru / DB."
+        }
       </div>
 
     </div>
