@@ -69,10 +69,16 @@ type SprintKey   = "←" | "→";
 type GamePhase   = "obstacle" | "sprint";
 
 const OBSTACLE_KEYS: ObstacleKey[] = ["←", "→", "↑"];
-const OBSTACLE_LABELS: Record<ObstacleKey, string> = {
-  "←": "Zatáč vlevo!",
-  "→": "Zatáč vpravo!",
-  "↑": "Skok!",
+
+/** Vizuální styl každé dráhy — barva markeru a tlačítka. */
+const OBSTACLE_TRACK: Record<ObstacleKey, {
+  markerBg:  string;   // Tailwind bg pro přijíždějící marker
+  btnActive: string;   // Tailwind třídy pro aktivní tlačítko
+  laneLabel: string;   // Popisek pod dráhou
+}> = {
+  "←": { markerBg: "bg-rose-500",   btnActive: "bg-rose-500   text-white hover:bg-rose-400   active:scale-95 shadow", laneLabel: "vlevo" },
+  "→": { markerBg: "bg-orange-500", btnActive: "bg-orange-500 text-white hover:bg-orange-400 active:scale-95 shadow", laneLabel: "vpravo" },
+  "↑": { markerBg: "bg-sky-500",    btnActive: "bg-sky-500    text-white hover:bg-sky-400    active:scale-95 shadow", laneLabel: "skok" },
 };
 
 const KEY_CODE_MAP: Record<string, ObstacleKey | "↓"> = {
@@ -287,30 +293,74 @@ export default function RacingMinigame({
         </span>
       </div>
 
-      {/* ── Fáze 1: Překážky ── */}
+      {/* ── Fáze 1: Překážky — lane view ── */}
       {gamePhase === "obstacle" && (
         <div className="space-y-3">
-          {/* Prompt area */}
-          <div className={`min-h-[72px] flex flex-col items-center justify-center rounded-2xl transition-colors ${
-            obstFeedback === "hit"  ? "bg-green-50 ring-2 ring-green-400"  :
-            obstFeedback === "miss" ? "bg-red-50 ring-2 ring-red-400"      :
-            promptActive            ? "bg-indigo-50 ring-2 ring-indigo-300" :
-                                      "bg-slate-50"
-          }`}>
-            {obstFeedback === "hit"  && <p className="text-4xl font-black text-green-500">✓</p>}
-            {obstFeedback === "miss" && <p className="text-4xl font-black text-red-500">✗</p>}
+
+          {/* Dráha — tmavý pás, 3 lajny, přijíždějící obstacle marker */}
+          <div className="relative h-28 rounded-2xl overflow-hidden bg-slate-900">
+
+            {/* Vertikální oddělovače drah */}
+            <div className="absolute inset-0 grid grid-cols-3 pointer-events-none">
+              <div className="border-r border-white/10" />
+              <div className="border-r border-white/10" />
+              <div />
+            </div>
+
+            {/* Hit-zone linie */}
+            <div
+              className="absolute left-3 right-3 h-px bg-white/30 pointer-events-none"
+              style={{ bottom: "28px" }}
+            />
+
+            {/* Popisky drah (bottom) */}
+            <div className="absolute bottom-1.5 left-0 right-0 grid grid-cols-3 pointer-events-none">
+              {(["←", "↑", "→"] as ObstacleKey[]).map(k => (
+                <div key={k} className="text-center text-[9px] text-white/20 uppercase tracking-wide">
+                  {OBSTACLE_TRACK[k].laneLabel}
+                </div>
+              ))}
+            </div>
+
+            {/* Přijíždějící obstacle marker — zobrazí se jen v aktivním okně */}
             {!obstFeedback && promptActive && prompt && (
-              <>
-                <p className="text-3xl font-black text-indigo-700">{prompt}</p>
-                <p className="text-sm font-bold text-indigo-600 mt-0.5">{OBSTACLE_LABELS[prompt]}</p>
-              </>
+              <div
+                className={`absolute w-12 h-12 rounded-xl flex items-center justify-center text-2xl font-black text-white shadow-xl ${OBSTACLE_TRACK[prompt].markerBg}`}
+                style={{
+                  top: 0,
+                  // Horizontálně vycentrovat v patřičné dráze (0=←, 1=↑, 2=→)
+                  left: `calc(${(["←", "↑", "→"] as ObstacleKey[]).indexOf(prompt) * 33.33 + 16.67}% - 24px)`,
+                  animation: `obstacleApproach ${PROMPT_ACTIVE_MS}ms linear both`,
+                }}
+              >
+                {prompt}
+              </div>
             )}
+
+            {/* Feedback overlay po stisku */}
+            {obstFeedback && (
+              <div className={`absolute inset-0 flex items-center justify-center ${
+                obstFeedback === "hit"
+                  ? "bg-green-500/25 ring-2 ring-inset ring-green-400"
+                  : "bg-red-500/25 ring-2 ring-inset ring-red-400"
+              }`}>
+                <span className={`text-5xl font-black ${
+                  obstFeedback === "hit" ? "text-green-300" : "text-red-300"
+                }`}>
+                  {obstFeedback === "hit" ? "✓" : "✗"}
+                </span>
+              </div>
+            )}
+
+            {/* Čekací stav — mezera mezi prompty */}
             {!obstFeedback && !promptActive && (
-              <p className="text-xs text-slate-400">Připrav se…</p>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-xs text-white/25 uppercase tracking-widest">Připrav se…</span>
+              </div>
             )}
           </div>
 
-          {/* Tlačítka: ← ↑ → */}
+          {/* Tlačítka: ← ↑ → — barva odpovídá dráze, aktivní při promptActive */}
           <div className="grid grid-cols-3 gap-2">
             {(["←", "↑", "→"] as ObstacleKey[]).map(k => (
               <button
@@ -318,16 +368,16 @@ export default function RacingMinigame({
                 onClick={() => handleObstacleInput(k)}
                 disabled={!promptActive || obstFeedback !== null}
                 className={`rounded-xl py-4 text-2xl font-black transition-all select-none ${
-                  promptActive && obstFeedback === null && prompt === k
-                    ? "bg-indigo-600 text-white shadow-lg ring-2 ring-indigo-400 scale-105"
-                    : "bg-slate-100 text-slate-400 hover:bg-slate-200 disabled:opacity-30"
+                  promptActive && obstFeedback === null
+                    ? OBSTACLE_TRACK[k].btnActive
+                    : "bg-slate-800 text-slate-600 opacity-50 cursor-not-allowed"
                 }`}
               >
                 {k}
               </button>
             ))}
           </div>
-          <p className="text-center text-xs text-slate-400">← ↑ → klávesy nebo tlačítka</p>
+          <p className="text-center text-xs text-slate-400">Reaguj na přijíždějící překážku · ← ↑ → nebo tlačítka</p>
         </div>
       )}
 

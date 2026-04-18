@@ -75,3 +75,13 @@
   from { opacity: 0; transform: scale(0.93); }
   to   { opacity: 1; transform: scale(1); }
 }
+
+/* RacingMinigame — obstacle marker přijíždí shora dolů k hit-zone linii.
+   Kontejner lane je h-28 (112px). Hit-zone je na bottom:28px = top:84px.
+   Marker je 48×48px, takže při translateY(60px): top=60, střed=84 = přesně hit-zone.
+   scale: 0.45→1.05 simuluje perspektivní přibližování z dálky. */
+@keyframes obstacleApproach {
+  from { transform: translateY(-4px)  scale(0.45); opacity: 0.50; }
+  75%  { transform: translateY(60px)  scale(1.05); opacity: 1.00; }
+  to   { transform: translateY(64px)  scale(1.00); opacity: 0.90; }
+}
