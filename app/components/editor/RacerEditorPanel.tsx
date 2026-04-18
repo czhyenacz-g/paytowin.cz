@@ -56,6 +56,7 @@ export default function RacerEditorPanel({ racer, onChange, readOnly = false }: 
   const [isLegendary, setIsLegendary] = React.useState(racer.isLegendary ?? false);
   // flavorText: preferuj flavorText, fallback na deprecated heroText pro compat
   const [flavorText, setFlavorText] = React.useState(racer.flavorText ?? racer.heroText ?? "");
+  const [imageUrl, setImageUrl]     = React.useState(racer.image ?? "");
 
   // Sync: pokud parent změní racera (jiný racer slot), resetuj lokální stav
   React.useEffect(() => {
@@ -66,10 +67,11 @@ export default function RacerEditorPanel({ racer, onChange, readOnly = false }: 
     setMaxStamina(String(racer.maxStamina ?? racer.stamina ?? 100));
     setIsLegendary(racer.isLegendary ?? false);
     setFlavorText(racer.flavorText ?? racer.heroText ?? "");
+    setImageUrl(racer.image ?? "");
   }, [racer.id]);
 
   // Zavolá onChange jen tehdy, kdy jsou hodnoty platné a lišící se
-  function commit(overrides: Partial<{ name: string; speed: number; price: number; maxStamina: number; isLegendary: boolean; flavorText: string }>) {
+  function commit(overrides: Partial<{ name: string; speed: number; price: number; maxStamina: number; isLegendary: boolean; flavorText: string; imageUrl: string }>) {
     const parsedSpeed      = clampInt(Number(overrides.speed      ?? speed),      1, 10);
     const parsedPrice      = clampInt(Number(overrides.price      ?? price),      0, 99999);
     const parsedMaxStamina = clampInt(Number(overrides.maxStamina ?? maxStamina),  0, 100);
@@ -83,6 +85,7 @@ export default function RacerEditorPanel({ racer, onChange, readOnly = false }: 
       stamina:     undefined, // vynuluj deprecated pole po první editaci
       flavorText:  (overrides.flavorText ?? flavorText) || undefined, // prázdný string → undefined
       heroText:    undefined, // explicitně vynuluj deprecated pole po první editaci
+      image:       (overrides.imageUrl ?? imageUrl) || undefined, // prázdný string → undefined
     });
     flashSaved();
   }
@@ -261,6 +264,43 @@ export default function RacerEditorPanel({ racer, onChange, readOnly = false }: 
           <div className="text-[10px] text-amber-400 text-right">
             {flavorText.length > 0 ? `${flavorText.length} znaků` : "prázdné — popis nebude zobrazen"}
           </div>
+        </div>
+
+        {/* Obrázek */}
+        <div className="space-y-1.5">
+          <label className="block text-xs font-medium text-amber-700">
+            Obrázek
+            <span className="ml-1 font-normal text-amber-500">— URL, zobrazí se místo emoji; zatím jen v editoru</span>
+          </label>
+          <div className="flex items-start gap-3">
+            <input
+              type="url"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              onBlur={() => commit({ imageUrl })}
+              placeholder="https://…/racer.png"
+              className="flex-1 rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 font-mono focus:outline-none focus:ring-2 focus:ring-amber-300"
+            />
+            {imageUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={imageUrl}
+                alt={racer.name}
+                className="h-12 w-12 rounded-lg border border-amber-200 object-cover shrink-0 bg-slate-100"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                onLoad={(e)  => { (e.target as HTMLImageElement).style.display = ""; }}
+              />
+            )}
+          </div>
+          {imageUrl && (
+            <button
+              type="button"
+              onClick={() => { setImageUrl(""); commit({ imageUrl: "" }); }}
+              className="text-[10px] text-amber-400 hover:text-red-400 transition-colors"
+            >
+              ✕ odebrat obrázek
+            </button>
+          )}
         </div>
 
       </div>
