@@ -12,6 +12,7 @@
 
 import React from "react";
 import type { RacerConfig } from "@/lib/themes";
+import { uploadRacerImageAction } from "@/app/admin/racers/actions";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -37,7 +38,11 @@ function sanitizeId(raw: string): string {
 
 export default function RacerEditorPanel({ racer, onChange, readOnly = false }: Props) {
   // Flash "uloženo" po každém commitu
-  const [saved, setSaved] = React.useState(false);
+  const [saved, setSaved]           = React.useState(false);
+  // Upload state
+  const [uploading, setUploading]   = React.useState(false);
+  const [uploadError, setUploadError] = React.useState<string | null>(null);
+  const fileInputRef                = React.useRef<HTMLInputElement>(null);
   const savedTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   function flashSaved() {
     setSaved(true);
@@ -88,6 +93,33 @@ export default function RacerEditorPanel({ racer, onChange, readOnly = false }: 
       image:       (overrides.imageUrl ?? imageUrl) || undefined, // prázdný string → undefined
     });
     flashSaved();
+  }
+
+  // ── Upload ──────────────────────────────────────────────────────────────────
+
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setUploadError(null);
+
+    const fd = new FormData();
+    fd.append("file", file);
+
+    const result = await uploadRacerImageAction(racer.id, fd);
+    setUploading(false);
+
+    // Reset file input pro umožnění opakovaného výběru stejného souboru
+    if (fileInputRef.current) fileInputRef.current.value = "";
+
+    if (!result.ok) {
+      setUploadError(result.error);
+      return;
+    }
+
+    setImageUrl(result.imageUrl);
+    commit({ imageUrl: result.imageUrl });
   }
 
   return (
@@ -275,37 +307,72 @@ export default function RacerEditorPanel({ racer, onChange, readOnly = false }: 
         <div className="space-y-1.5">
           <label className="block text-xs font-medium text-amber-700">
             Obrázek
-            <span className="ml-1 font-normal text-amber-500">— URL, zobrazí se místo emoji; zatím jen v editoru</span>
+            <span className="ml-1 font-normal text-amber-500">— nahraje se jako WebP 512×512 do storage</span>
           </label>
+
           <div className="flex items-start gap-3">
-            <input
-              type="url"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              onBlur={() => commit({ imageUrl })}
-              placeholder="https://…/racer.png"
-              className="flex-1 rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 font-mono focus:outline-none focus:ring-2 focus:ring-amber-300"
-            />
+            {/* Preview */}
             {imageUrl && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={imageUrl}
                 alt={racer.name}
-                className="h-12 w-12 rounded-lg border border-amber-200 object-cover shrink-0 bg-slate-100"
+                className="h-14 w-14 rounded-lg border border-amber-200 object-cover shrink-0 bg-slate-100"
                 onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                 onLoad={(e)  => { (e.target as HTMLImageElement).style.display = ""; }}
               />
             )}
+
+            <div className="flex-1 space-y-1.5">
+              {/* Upload + odebrat */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-50 disabled:opacity-40 transition-colors"
+                >
+                  {uploading ? "Nahrávám…" : imageUrl ? "Změnit obrázek" : "Nahrát obrázek"}
+                </button>
+                {imageUrl && !uploading && (
+                  <button
+                    type="button"
+                    onClick={() => { setImageUrl(""); setUploadError(null); commit({ imageUrl: "" }); }}
+                    className="text-[10px] text-amber-400 hover:text-red-400 transition-colors"
+                  >
+                    ✕ odebrat
+                  </button>
+                )}
+              </div>
+
+              {/* Upload error */}
+              {uploadError && (
+                <p className="text-[10px] text-red-500 leading-snug">{uploadError}</p>
+              )}
+
+              {/* Fallback: ruční URL */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] text-slate-300 shrink-0">nebo URL:</span>
+                <input
+                  type="url"
+                  value={imageUrl}
+                  onChange={(e) => { setUploadError(null); setImageUrl(e.target.value); }}
+                  onBlur={() => commit({ imageUrl })}
+                  placeholder="https://…/racer.webp"
+                  className="flex-1 rounded border border-slate-200 bg-white px-2 py-1 text-[11px] text-slate-600 placeholder:text-slate-300 font-mono focus:outline-none focus:ring-1 focus:ring-amber-300"
+                />
+              </div>
+            </div>
           </div>
-          {imageUrl && (
-            <button
-              type="button"
-              onClick={() => { setImageUrl(""); commit({ imageUrl: "" }); }}
-              className="text-[10px] text-amber-400 hover:text-red-400 transition-colors"
-            >
-              ✕ odebrat obrázek
-            </button>
-          )}
+
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
         </div>
 
       </div>

@@ -17,6 +17,7 @@ import {
   updateRacer,
   deleteRacer,
 } from "@/lib/racers/repository";
+import { uploadRacerImage } from "@/lib/racers/storage";
 import { seedBuiltinRacers, resetBuiltinRacers } from "@/lib/racers/seed-builtin";
 import { resolveRacerRefs } from "@/lib/racers/resolver";
 import type { RacerRef } from "@/lib/racers/resolver";
@@ -69,6 +70,45 @@ export async function deleteRacerAction(
  */
 export async function resolveRacerRefsAction(refs: RacerRef[]): Promise<RacerConfig[]> {
   return resolveRacerRefs(refs);
+}
+
+// ─── Image Upload ─────────────────────────────────────────────────────────────
+
+/**
+ * uploadRacerImageAction — nahraje obrázek závodníka do Supabase Storage.
+ *
+ * FormData musí obsahovat pole 'file' (File/Blob).
+ * Server konvertuje soubor do WebP 512×512 přes sharp a uloží do bucketu 'racers'.
+ * Po úspěšném uploadu aktualizuje imageUrl a imagePath v profilu závodníka.
+ *
+ * Vyžaduje SUPABASE_SERVICE_ROLE_KEY v prostředí (viz lib/supabase-admin.ts).
+ */
+export async function uploadRacerImageAction(
+  racerId: string,
+  formData: FormData,
+): Promise<{ ok: true; imageUrl: string; imagePath: string } | { ok: false; error: string }> {
+  const file = formData.get("file");
+  if (!file || typeof file === "string") {
+    return { ok: false, error: "Chybí soubor — formData musí obsahovat pole 'file'." };
+  }
+
+  const arrayBuffer = await (file as File).arrayBuffer();
+  const uploadResult = await uploadRacerImage(racerId, arrayBuffer);
+  if (!uploadResult.ok) return uploadResult;
+
+  // Okamžitě propsat do profilu závodníka v registry
+  const updateResult = await updateRacer(racerId, {
+    imageUrl:  uploadResult.publicUrl,
+    imagePath: uploadResult.path,
+  });
+  if (!updateResult.ok) {
+    return {
+      ok:    false,
+      error: `Soubor nahrán (${uploadResult.path}), ale update profilu selhal: ${updateResult.error}`,
+    };
+  }
+
+  return { ok: true, imageUrl: uploadResult.publicUrl, imagePath: uploadResult.path };
 }
 
 // ─── Seed / Reset ─────────────────────────────────────────────────────────────
