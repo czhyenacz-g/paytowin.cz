@@ -450,7 +450,7 @@ export default function RacingMinigame({
       <div className={`space-y-1 rounded-xl px-2 py-1.5 ${burnedOut ? "bg-red-50" : ""}`}>
         <div className="flex items-center justify-between text-xs px-0.5">
           <span className={burnedOut ? "text-red-500 font-semibold" : liveStamina < 30 ? "text-amber-500 font-semibold" : "text-slate-500"}>
-            {burnedOut ? "💀 Kůň vyčerpán — bude vyřazen" : liveStamina < 30 ? "⚠️ Kritická stamina!" : "Stamina"}
+            {burnedOut ? "💀 Závodník vyčerpán — bude vyřazen" : liveStamina < 30 ? "⚠️ Kritická stamina!" : "Stamina"}
           </span>
           <span className={burnedOut ? "text-red-500 font-semibold" : liveStamina < 30 ? "text-amber-500 font-semibold" : "text-slate-400"}>
             {liveStamina}/100
@@ -459,7 +459,7 @@ export default function RacingMinigame({
         <StaminaBar value={liveStamina} />
         {liveStamina > 0 && liveStamina < 30 && (
           <p className="text-center text-xs font-semibold text-amber-500 animate-pulse">
-            Zpomal, nebo přijdeš o koně!
+            Zpomal, nebo přijdeš o závodníka!
           </p>
         )}
       </div>

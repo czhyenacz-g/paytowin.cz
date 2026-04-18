@@ -31,7 +31,7 @@ export const CHANCE_CARDS: GameCard[] = [
   {
     id: "ch2",
     type: "chance",
-    text: "Zakopl jsi u stáje a rozbil vybavení. Zaplať škodu.",
+    text: "Zakopl jsi v areálu a rozbil vybavení. Zaplať škodu.",
     effect: { kind: "coins", value: -80 },
     effectLabel: "-80 💰",
   },
@@ -85,7 +85,7 @@ export const FINANCE_CARDS: GameCard[] = [
   {
     id: "fi1",
     type: "finance",
-    text: "Obdržel jsi čtvrtletní prémii od stáje.",
+    text: "Obdržel jsi čtvrtletní prémii od týmu.",
     effect: { kind: "coins", value: 150 },
     effectLabel: "+150 💰",
   },

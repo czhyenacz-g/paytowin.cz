@@ -628,7 +628,7 @@ export default function GameBoard({ gameCode }: Props) {
       if (alreadyOwned) {
         // Hráč tohoto závodníka už vlastní — přeskočíme nabídku, pokračujeme normálně
         console.log(`[racer-rent] ${currentPlayer.name} landed on own racer "${field.racer.name}" — no rent`);
-        const logLines = [`${currentPlayer.name} přijel ke své stáji: ${field.racer.emoji} ${field.racer.name}`, ...extraLog];
+        const logLines = [`${currentPlayer.name} přijel ke své ${theme.labels.racerField.toLowerCase()}: ${field.racer.emoji} ${field.racer.name}`, ...extraLog];
         const updatedPlayers = players.map((p, i) =>
           i === gameState.current_player_index ? movedPlayer : p
         );
@@ -2282,7 +2282,7 @@ export default function GameBoard({ gameCode }: Props) {
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">
-                          Průvodce žokeje
+                          Průvodce
                         </div>
                         <div className="mt-1 text-sm font-semibold text-slate-800">
                           Chceš závodit? Nejdřív si pořiď racera.
@@ -2311,7 +2311,7 @@ export default function GameBoard({ gameCode }: Props) {
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="text-xs font-black uppercase tracking-[0.18em] text-sky-700">
-                          Průvodce žokeje
+                          Průvodce
                         </div>
                         <div className="mt-1 text-sm font-semibold text-slate-800">
                           Máš racera. Hlídej si jeho staminu, unavený závodník v závodě ztrácí.
@@ -2340,7 +2340,7 @@ export default function GameBoard({ gameCode }: Props) {
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="text-xs font-black uppercase tracking-[0.18em] text-violet-700">
-                          Průvodce žokeje
+                          Průvodce
                         </div>
                         <div className="mt-1 text-sm font-semibold text-slate-800">
                           Vyber si hlavního racera. Do dalších závodů se ti bude hodit jako první volba.

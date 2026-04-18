@@ -288,7 +288,7 @@ export default function RaceEventOverlay({
                     </span>
                     <span className="text-xs text-slate-400">
                       {score} tapů × {finalStamina}%
-                      {finalStamina === 0 && <span className="ml-1 text-red-400">💀 kůň vyřazen</span>}
+                      {finalStamina === 0 && <span className="ml-1 text-red-400">💀 závodník vyřazen</span>}
                     </span>
                   </div>
                   <span className={`ml-auto text-sm font-bold tabular-nums ${idx === 0 ? "text-amber-700" : "text-slate-500"}`}>
