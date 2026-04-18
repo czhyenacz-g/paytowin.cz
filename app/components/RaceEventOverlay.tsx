@@ -299,7 +299,7 @@ export default function RaceEventOverlay({
                   className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm ${idx === 0 ? "bg-amber-50 border border-amber-300" : "bg-slate-50"}`}
                 >
                   <span className="font-bold text-slate-400 w-4">{idx + 1}.</span>
-                  <span className="text-xl">{horse.emoji}</span>
+                  <RacerThumb horse={horse} size="sm" />
                   <div className="flex flex-col min-w-0">
                     <span className={`font-medium ${idx === 0 ? "text-amber-800" : "text-slate-700"}`}>
                       {player.name}

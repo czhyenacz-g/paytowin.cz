@@ -2676,7 +2676,11 @@ export default function GameBoard({ gameCode }: Props) {
                                         }`}
                                       >
                                         <div className={`flex items-start gap-2 text-sm font-semibold leading-snug ${h.isPreferred ? "text-amber-700" : "text-slate-700"}`}>
-                                          <span className="mt-0.5 shrink-0 text-base">{h.emoji}</span>
+                                          {h.image
+                                            ? ( // eslint-disable-next-line @next/next/no-img-element
+                                              <img src={h.image} alt={h.name} className="mt-0.5 h-6 w-6 shrink-0 rounded object-cover bg-slate-100" onError={(e) => { e.currentTarget.style.display = "none"; }} />)
+                                            : <span className="mt-0.5 shrink-0 text-base">{h.emoji}</span>
+                                          }
                                           <span className="min-w-0 flex-1 break-words">
                                             {h.name}
                                           </span>
