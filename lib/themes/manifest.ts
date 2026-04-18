@@ -179,6 +179,7 @@ export function themeToManifest(theme: Theme): ThemeManifest {
     },
     colors: theme.colors,
     racers: getThemeRacers(theme),
+    racerRefs: theme.racerRefs,
     assets: (theme.assets || racerImages)
       ? {
           boardBackgroundImage: theme.assets?.boardBgImage,
