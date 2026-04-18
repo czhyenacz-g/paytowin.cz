@@ -244,6 +244,7 @@ export default function GameBoard({ gameCode }: Props) {
   const [isMoving, setIsMoving] = React.useState(false);
   const [displayRoll, setDisplayRoll] = React.useState<number | null>(null);
   const [pendingRollDecision, setPendingRollDecision] = React.useState<PendingRollDecision | null>(null);
+  const [rollDecisionCountdown, setRollDecisionCountdown] = React.useState<number | null>(null);
   const [animPosition, setAnimPosition] = React.useState<number | null>(null);
   const [animatingPlayerIdx, setAnimatingPlayerIdx] = React.useState<number | null>(null);
   const [trailFields, setTrailFields] = React.useState<number[]>([]);
@@ -352,8 +353,19 @@ export default function GameBoard({ gameCode }: Props) {
     const resolver = pendingRollResolverRef.current;
     pendingRollResolverRef.current = null;
     setPendingRollDecision(null);
+    setRollDecisionCountdown(null);
     if (resolver) resolver(adjustment);
   }, [clearRollDecisionTimer]);
+
+  // Countdown 3→0 pro korekci tahu — zobrazí se jen aktivnímu hráči
+  React.useEffect(() => {
+    if (!pendingRollDecision) { setRollDecisionCountdown(null); return; }
+    setRollDecisionCountdown(3);
+    const interval = setInterval(() => {
+      setRollDecisionCountdown((n) => (n !== null && n > 0 ? n - 1 : n));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [pendingRollDecision]);
 
   const playStepSound = React.useCallback(() => {
     if (!soundEnabledRef.current) return;
@@ -542,7 +554,7 @@ export default function GameBoard({ gameCode }: Props) {
       clearRollDecisionTimer();
       rollDecisionTimerRef.current = setTimeout(() => {
         resolveRollDecision(0);
-      }, 6000); // DEBUG: dočasně 6 s pro testování +1/-1 (prod: 2000)
+      }, 3000);
     });
 
     const adjustmentAllowed = selectedAdjustment !== 0 &&
@@ -2460,9 +2472,11 @@ export default function GameBoard({ gameCode }: Props) {
                           Padlo <span className="text-base">{pendingRollDecision.baseRoll}</span>. Vyber finální tah.
                         </div>
                       </div>
-                      <div className="rounded-[3px] bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-500">
-                        6 s
-                      </div>
+                      {isMyPendingRollDecisionTurn && rollDecisionCountdown !== null && (
+                        <div className="rounded-[3px] bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-500 tabular-nums">
+                          {rollDecisionCountdown} s
+                        </div>
+                      )}
                     </div>
                     {isMyPendingRollDecisionTurn ? (
                       <>
