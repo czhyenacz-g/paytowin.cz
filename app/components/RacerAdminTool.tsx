@@ -15,7 +15,6 @@
 
 import React from "react";
 import type { RacerConfig } from "@/lib/themes";
-import { getThemeById, getThemeRacers } from "@/lib/themes";
 import { profileToConfig, configToProfile } from "@/lib/racers/adapters";
 import {
   listRacersAction,
@@ -87,15 +86,6 @@ export default function RacerAdminTool({ themeId }: Props) {
 
   const racerType = inferTypeFromTheme(themeId);
 
-  // IDs závodníků patřících tomuto theme (z inline racers[] — full catalog včetně off-board).
-  // null = theme není known (custom), zobraz vše z registry.
-  const themeRacerIds = React.useMemo<Set<string> | null>(() => {
-    const theme = getThemeById(themeId);
-    // getThemeById fallbackuje na horse-day pro neznámé id — netřeba rozlišovat
-    const ids = getThemeRacers(theme).map(r => r.id).filter(Boolean);
-    return ids.length > 0 ? new Set(ids) : null;
-  }, [themeId]);
-
   // ── Load z globální registry ───────────────────────────────────────────────
 
   async function loadRegistry() {
@@ -105,15 +95,11 @@ export default function RacerAdminTool({ themeId }: Props) {
     if (profiles === null) {
       setError("Chyba při načítání z Racer Registry.");
     } else {
-      // Filtr: zobraz jen racery patřící tomuto theme (z inline catalog listu)
-      const filtered = themeRacerIds
-        ? profiles.filter(p => themeRacerIds.has(p.id))
-        : profiles;
       // V dev módu: odblokuj built-in racery pro editaci (na produkci zůstanou zamčeni)
       const toConfig = process.env.NODE_ENV !== "production"
         ? (p: Parameters<typeof profileToConfig>[0]) => ({ ...profileToConfig(p), isBuiltIn: undefined })
         : profileToConfig;
-      setRacers(withSlotIndexes(filtered.map(toConfig)));
+      setRacers(withSlotIndexes(profiles.map(toConfig)));
       setDeletedIds(new Set());
     }
     setLoading(false);

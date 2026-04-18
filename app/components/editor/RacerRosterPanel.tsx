@@ -201,12 +201,12 @@ export default function RacerRosterPanel({
         )}
       </div>
 
-      {/* Mismatch warning — jen pokud je znám počet racer polí */}
+      {/* Slot count info — jen pokud je znám počet racer polí */}
       {mismatch && (
         <div className={`px-4 py-2 text-xs font-medium border-b ${
           shortage
             ? "bg-amber-50 border-amber-200 text-amber-700"
-            : "bg-sky-50 border-sky-200 text-sky-700"
+            : "bg-slate-50 border-slate-200 text-slate-500"
         }`}>
           {shortage ? (
             <>
@@ -216,9 +216,8 @@ export default function RacerRosterPanel({
             </>
           ) : (
             <>
-              ℹ️ V katalogu je <strong>{racers.length}</strong> závodníků, ale board
-              má jen <strong>{racerFieldCount} racer {racerFieldCount === 1 ? "pole" : "polí"}</strong> —
-              posledních {racers.length - (racerFieldCount as number)} závodník(ů) nebude nikde přiřazen.
+              {racers.length - (racerFieldCount as number)} závodník(ů) bez slotu na boardu —
+              mohou být dáni přes chance kartu nebo jiný herní mechanismus.
             </>
           )}
         </div>
