@@ -11,6 +11,7 @@ import {
   listThemesAction,
   setPublicAction,
 } from "@/app/admin/themes/dev/actions";
+import { resolveRacerRefsAction } from "@/app/admin/racers/actions";
 import type { ThemeMeta } from "@/app/admin/themes/dev/actions";
 import { SMALL_BOARD } from "@/lib/board/presets";
 import type { BoardConfig, BoardFieldConfig } from "@/lib/board/types";
@@ -642,6 +643,12 @@ export default function ThemeDevTool() {
   const [editableRacerImages, setEditableRacerImages] = React.useState<Record<string, string>>({});
   // Editovatelní závodníci — živá kopie manifest.racers pro editor
   const [editableRacers, setEditableRacers] = React.useState<RacerConfig[]>([]);
+  /**
+   * racersFromRegistry — true pokud editableRacers pochází z globální Racer Registry (racerRefs flow).
+   * False = legacy inline racers z manifest.racers.
+   * Ovlivňuje: liveManifest.racerRefs sync, info banner v RacerRosterPanel.
+   */
+  const [racersFromRegistry, setRacersFromRegistry] = React.useState(false);
 
   /**
    * withSlotIndexes — zajistí, že každý racer má explicitní slotIndex.
@@ -672,9 +679,19 @@ export default function ThemeDevTool() {
   const liveManifest = React.useMemo<ThemeManifest | null>(() => {
     if (!boardPreviewManifest) return null;
     const hasCustomCards = editableCards.chance.length > 0 || editableCards.finance.length > 0;
+
+    // racerRefs: pokud jsme v registry módu, synchronizujeme je s aktuálními editableRacers
+    // (slot assignment mohl být změněn přes RacerRosterPanel → swap slotů)
+    const updatedRacerRefs = racersFromRegistry
+      ? editableRacers
+          .filter((r) => r.id && r.slotIndex !== undefined)
+          .map((r) => ({ slotIndex: r.slotIndex!, racer_id: r.id }))
+      : boardPreviewManifest.racerRefs; // undefined pro legacy themes
+
     return {
       ...boardPreviewManifest,
       racers: editableRacers.length > 0 ? editableRacers : boardPreviewManifest.racers,
+      racerRefs: updatedRacerRefs,
       cards: hasCustomCards ? editableCards : boardPreviewManifest.cards,
       assets: {
         ...boardPreviewManifest.assets,
@@ -688,7 +705,7 @@ export default function ThemeDevTool() {
         },
       },
     };
-  }, [boardPreviewManifest, editableRacers, editableCards, editableFieldTextures, editableRacerImages]);
+  }, [boardPreviewManifest, editableRacers, racersFromRegistry, editableCards, editableFieldTextures, editableRacerImages]);
 
   // Asset sekce pro FieldEditorPanel — počítá se z vybraného pole + liveManifest
   const currentAssetSection = React.useMemo<AssetSectionConfig | undefined>(() => {
@@ -901,17 +918,33 @@ export default function ThemeDevTool() {
     setShowPreview(true);
   }
 
-  function handleBoardPreview() {
+  async function handleBoardPreview() {
     const manifest = parseJson();
     if (!manifest) return;
 
-    const newBoard: BoardConfig     = { ...SMALL_BOARD, fields: SMALL_BOARD.fields.map((f) => ({ ...f })) };
-    const newRacers: RacerConfig[]  = withSlotIndexes(manifest.racers.map((r) => ({ ...r })));
+    const newBoard: BoardConfig = { ...SMALL_BOARD, fields: SMALL_BOARD.fields.map((f) => ({ ...f })) };
+
+    // Resolve racers: pokud manifest používá racerRefs → načti z globální registry.
+    // Fallback na inline manifest.racers pokud registry selže nebo racerRefs chybí.
+    let newRacers: RacerConfig[];
+    let fromRegistry = false;
+    if (manifest.racerRefs?.length) {
+      const resolved = await resolveRacerRefsAction(manifest.racerRefs);
+      if (resolved.length > 0) {
+        newRacers = withSlotIndexes(resolved);
+        fromRegistry = true;
+      } else {
+        newRacers = withSlotIndexes(manifest.racers.map((r) => ({ ...r })));
+      }
+    } else {
+      newRacers = withSlotIndexes(manifest.racers.map((r) => ({ ...r })));
+    }
+
     const newCards: { chance: GameCard[]; finance: GameCard[] } = manifest.cards
       ? { chance: [...manifest.cards.chance], finance: [...manifest.cards.finance] }
       : { chance: [], finance: [] };
-    const newTextures               = manifest.assets?.fieldTextures ? { ...manifest.assets.fieldTextures } : {};
-    const newRacerImages            = manifest.assets?.racerImages   ? { ...manifest.assets.racerImages }   : {};
+    const newTextures    = manifest.assets?.fieldTextures ? { ...manifest.assets.fieldTextures } : {};
+    const newRacerImages = manifest.assets?.racerImages   ? { ...manifest.assets.racerImages }   : {};
 
     setBoardPreviewManifest(manifest);
     setPreviewAssetVersion(0);
@@ -922,6 +955,7 @@ export default function ThemeDevTool() {
     setEditableRacerImages(newRacerImages);
     setEditableRacers(newRacers);
     setEditableCards(newCards);
+    setRacersFromRegistry(fromRegistry);
 
     // Nastav čistý snapshot — žádné neuložené změny hned po otevření
     const snap = JSON.stringify({ editableBoard: newBoard, editableRacers: newRacers, editableCards: newCards, editableFieldTextures: newTextures, editableRacerImages: newRacerImages });
@@ -973,6 +1007,8 @@ export default function ThemeDevTool() {
       setEditableFieldTextures(newTextures);
       setEditableRacerImages(newImages);
       setSelectedFieldIndex(null);
+      // Obnov registry mód — draft byl pořízen z manifest s racerRefs
+      setRacersFromRegistry(!!(boardPreviewManifest?.racerRefs?.length));
       const snap = JSON.stringify({ editableBoard: newBoard, editableRacers: newRacers, editableCards: newCards, editableFieldTextures: newTextures, editableRacerImages: newImages });
       setSavedSnapshot(snap);
       const savedDate = new Date(draft.savedAt);
@@ -983,11 +1019,26 @@ export default function ThemeDevTool() {
     }
   }
 
-  function resetDraft() {
+  async function resetDraft() {
     if (!boardPreviewManifest) return;
     if (!window.confirm("Resetovat board editor? Ztratíš všechny neuložené změny a vrátíš se na výchozí stav manifestu.")) return;
-    const newBoard    = { ...SMALL_BOARD, fields: SMALL_BOARD.fields.map((f) => ({ ...f })) };
-    const newRacers   = withSlotIndexes(boardPreviewManifest.racers.map((r) => ({ ...r })));
+    const newBoard = { ...SMALL_BOARD, fields: SMALL_BOARD.fields.map((f) => ({ ...f })) };
+
+    // Pokud manifest používá racerRefs, znovu načti z registry — stejná logika jako handleBoardPreview
+    let newRacers: RacerConfig[];
+    let fromRegistry = false;
+    if (boardPreviewManifest.racerRefs?.length) {
+      const resolved = await resolveRacerRefsAction(boardPreviewManifest.racerRefs);
+      if (resolved.length > 0) {
+        newRacers = withSlotIndexes(resolved);
+        fromRegistry = true;
+      } else {
+        newRacers = withSlotIndexes(boardPreviewManifest.racers.map((r) => ({ ...r })));
+      }
+    } else {
+      newRacers = withSlotIndexes(boardPreviewManifest.racers.map((r) => ({ ...r })));
+    }
+
     const newCards    = boardPreviewManifest.cards
       ? { chance: [...boardPreviewManifest.cards.chance], finance: [...boardPreviewManifest.cards.finance] }
       : { chance: [], finance: [] };
@@ -999,6 +1050,7 @@ export default function ThemeDevTool() {
     setEditableFieldTextures(newTextures);
     setEditableRacerImages(newImages);
     setSelectedFieldIndex(null);
+    setRacersFromRegistry(fromRegistry);
     const snap = JSON.stringify({ editableBoard: newBoard, editableRacers: newRacers, editableCards: newCards, editableFieldTextures: newTextures, editableRacerImages: newImages });
     setSavedSnapshot(snap);
     setLastSavedAt(null);
@@ -1510,6 +1562,21 @@ export default function ThemeDevTool() {
                   )}
                 </div>
               </div>
+
+              {/* Info: zdroj závodníků — registry nebo inline */}
+              {racersFromRegistry ? (
+                <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs text-emerald-700">
+                  <span className="font-semibold">Závodníci z globální Racer Registry</span>
+                  <span className="text-emerald-400">·</span>
+                  <span>Slot assignment edituj níže; profily (stats, jméno) edituj v Racer Adminu.</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs text-slate-400">
+                  <span>Závodníci z inline <code className="font-mono bg-slate-100 px-1 rounded">manifest.racers</code></span>
+                  <span>·</span>
+                  <span>Legacy formát — theme ještě nepoužívá globální Racer Registry.</span>
+                </div>
+              )}
 
               {/* Roster závodníků — správa katalogu, počet, nesoulad */}
               <RacerRosterPanel
