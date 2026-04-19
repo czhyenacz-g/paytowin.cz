@@ -108,41 +108,27 @@ export const horseDayTheme: Theme = {
       "slotIndex": 4
     },
     {
-      "id": "horse_night_buran",
-      "name": "Burano",
-      "speed": 7,
-      "price": 5000,
-      "emoji": "🐴",
+      "id": "modry_blesk",
+      "name": "Blue thunder",
+      "speed": 3,
+      "price": 150,
+      "emoji": "🔵",
       "maxStamina": 95,
-      "flavorText": "Masivní černý kůň, který vítězí silou a výdrží spíš než rychlým startem.",
-      "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/horse_night_buran.webp",
-      "racerType": "horse",
-      "slotIndex": 5
+      "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/modry_blesk.webp",
+      "racerType": "car",
+      "slotIndex": 4
     },
     {
-      "id": "caballo_real",
-      "name": "Caballo Real",
-      "speed": 5,
-      "price": 3500,
-      "emoji": "👑",
-      "maxStamina": 100,
-      "flavorText": "Kůň s královskou výdrží.",
-      "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/caballo_real.webp",
+      "id": "el_relampago",
+      "name": "Křemešník",
+      "speed": 4,
+      "price": 2000,
+      "emoji": "⚡",
+      "maxStamina": 90,
+      "flavorText": "Veterán závodního okruhu, co ještě nepůjde do salámu.",
+      "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/el_relampago.webp",
       "racerType": "horse",
       "slotIndex": 1
-    },
-    {
-      "id": "zeleznik",
-      "name": "Železník",
-      "speed": 10,
-      "price": 99999,
-      "emoji": "🐴",
-      "maxStamina": 10,
-      "isLegendary": true,
-      "flavorText": "Železník — legendární kůň, který nezná strach, únavu ani druhé místo. Jeho jediný cíl je jasný: vyhrát.",
-      "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/zeleznik.webp",
-      "racerType": "horse",
-      "slotIndex": 7
     }
   ],
 
