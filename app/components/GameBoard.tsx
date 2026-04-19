@@ -1990,7 +1990,7 @@ export default function GameBoard({ gameCode }: Props) {
   }
 
   return (
-    <div className={`min-h-screen ${theme.colors.pageBackground}`}>
+    <div className={`min-h-screen ${theme.colors.arenaGradient ? "" : theme.colors.pageBackground}`}>
       {/* Background pinned to viewport — nezávislý na výšce content containeru */}
       {theme.colors.arenaGradient && (
         <div className="fixed inset-0 -z-10" style={{ background: theme.colors.arenaGradient }} />
