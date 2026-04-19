@@ -97,4 +97,9 @@ export const horseNightTheme: Theme = {
       "maxStamina": 100
     }
   ],
+  mapMeta: {
+    yearStart: 1921,
+    place: "New Orleans",
+    subtitle: "Oficiálně klid. Neoficiálně se dnes sází ve velkém.",
+  },
 };

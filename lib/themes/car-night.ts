@@ -97,4 +97,9 @@ export const carNightTheme: Theme = {
       "maxStamina": 100
     }
   ],
+  mapMeta: {
+    yearStart: 1926,
+    place: "Chicago",
+    subtitle: "Motory řvou, účet se vyrovná později.",
+  },
 };

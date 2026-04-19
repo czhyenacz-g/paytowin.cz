@@ -97,4 +97,9 @@ export const horseClassicTheme: Theme = {
       "maxStamina": 78
     }
   ],
+  mapMeta: {
+    yearStart: 1921,
+    place: "Kentucky",
+    subtitle: "Tradice na tribuně, nervy ve stáji.",
+  },
 };

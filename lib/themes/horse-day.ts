@@ -233,4 +233,9 @@ export const horseDayTheme: Theme = {
       "finance": []
     }
   },
+  mapMeta: {
+    yearStart: 1921,
+    place: "Connecticut",
+    subtitle: "Sezóna začíná. Kdo má rychlost, vydělá.",
+  },
 };

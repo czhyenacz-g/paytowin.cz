@@ -177,6 +177,18 @@ export interface ThemeAssets {
   fieldTextures?: Partial<Record<string, string>>;
 }
 
+// ─── MapMeta ──────────────────────────────────────────────────────────────────
+
+/** Příběhové metadata mapy — rok startu, místo závodu, flavor subtitle. */
+export interface MapMeta {
+  /** Rok, ve kterém tato mapa začíná. Rok se zvyšuje o 1 za každé odehrané kolo. */
+  yearStart: number;
+  /** Název místa závodu, např. "Connecticut" nebo "Chicago". */
+  place: string;
+  /** Krátký flavor text zobrazený v intro overlayi. */
+  subtitle: string;
+}
+
 // ─── ThemeContent ─────────────────────────────────────────────────────────────
 
 /** Volitelný herní obsah per theme — připraveno pro theme builder, zatím nepoužíváno. */
@@ -216,6 +228,7 @@ export interface Theme {
   racerRefs?: Array<{ slotIndex: number; racer_id: string }>;
   assets?: ThemeAssets;
   content?: ThemeContent;
+  mapMeta?: MapMeta;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

@@ -48,6 +48,7 @@ import RaceEventOverlay from "./RaceEventOverlay";
 import type { MinigameResult } from "./race/RacingMinigame";
 import BuildInfoBar from "./BuildInfoBar";
 import ThemeAssetInspector from "./ThemeAssetInspector";
+import IntroOverlay from "./IntroOverlay";
 import BrandLogo from "./BrandLogo";
 
 // Styly polí jsou součástí theme systému (lib/themes/*)
@@ -330,6 +331,8 @@ export default function GameBoard({ gameCode }: Props) {
   const [staminaGuideDismissed, setStaminaGuideDismissed] = React.useState(false);
   const [preferredGuideDismissed, setPreferredGuideDismissed] = React.useState(false);
   const [guideDismissedTurn, setGuideDismissedTurn] = React.useState<number | null>(null);
+  const [introVisible, setIntroVisible] = React.useState(false);
+  const introShownRef = React.useRef(false);
   const audioCtxRef = React.useRef<AudioContext | null>(null);
   const soundEnabledRef = React.useRef(true);
   const rollDecisionTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1666,6 +1669,17 @@ export default function GameBoard({ gameCode }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState?.current_player_index, players.map(p => p.skip_next_turn).join(",")]);
 
+  // Intro overlay — zobrazí se jednou při prvním načtení gameState
+  React.useEffect(() => {
+    if (!gameState || introShownRef.current) return;
+    introShownRef.current = true;
+    setIntroVisible(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [!!gameState]);
+
+  // Herní rok — startovní rok theme + počet odehraných kol (0-indexed)
+  const gameYear = (theme.mapMeta?.yearStart ?? 1921) + (gameState ? Math.floor(gameState.turn_count / Math.max(1, players.length)) : 0);
+
   // Pro render desky: animující hráč se zobrazuje na animPosition, ne na DB pozici
   const displayPlayers = players.map((p, i) =>
     i === animatingPlayerIdx && animPosition !== null ? { ...p, position: animPosition } : p
@@ -2451,6 +2465,9 @@ export default function GameBoard({ gameCode }: Props) {
                       <div className="text-4xl">{theme.labels.racingEmoji}</div>
                       <div className={`mt-1 text-sm font-semibold ${theme.colors.centerTitle}`}>{theme.labels.centerTitle}</div>
                       <div className={`mt-1 text-xs ${theme.colors.centerSubtitle}`}>{theme.labels.centerSubtitle}</div>
+                      <div className={`mt-2 text-[11px] font-semibold tabular-nums ${theme.colors.centerSubtitle} opacity-70`}>
+                        {gameYear}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -2919,6 +2936,14 @@ export default function GameBoard({ gameCode }: Props) {
 
         </div>
       </div>
+      {introVisible && (
+        <IntroOverlay
+          year={theme.mapMeta?.yearStart ?? 1921}
+          place={theme.mapMeta?.place ?? "místní okruh"}
+          subtitle={theme.mapMeta?.subtitle ?? "Každá mapa má svoje pravidla."}
+          onDone={() => setIntroVisible(false)}
+        />
+      )}
       <BuildInfoBar theme={theme} boardId={boardId} />
       <ThemeAssetInspector themeId={themeId} theme={theme} />
       <div className="py-2 flex items-center justify-center gap-4 text-xs text-slate-400">

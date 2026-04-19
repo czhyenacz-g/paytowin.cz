@@ -97,4 +97,9 @@ export const carDayTheme: Theme = {
       "maxStamina": 100
     }
   ],
+  mapMeta: {
+    yearStart: 1923,
+    place: "okolí Marrákeše",
+    subtitle: "Prach, horko a krátká rozhodnutí.",
+  },
 };
