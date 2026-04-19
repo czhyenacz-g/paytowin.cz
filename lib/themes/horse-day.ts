@@ -11,8 +11,8 @@ export const horseDayTheme: Theme = {
     cardBackground:     "bg-white",
     boardSurface:       "bg-emerald-50",
     boardSurfaceBorder: "border-emerald-200",
-    centerBackground:   "bg-emerald-100",
-    centerBorder:       "border-emerald-300",
+    centerBackground:   "bg-[#eeeeee]",
+    centerBorder:       "border-[#dddddd]",
     centerTitle:        "text-slate-700",
     centerSubtitle:     "text-slate-400",
     fieldStyles: {
