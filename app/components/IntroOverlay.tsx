@@ -9,27 +9,34 @@ interface Props {
   onDone: () => void;
 }
 
-const VISIBLE_MS = 2800;
+const VISIBLE_MS = 6000;
 const FADE_MS = 700;
 
 export default function IntroOverlay({ year, place, subtitle, onDone }: Props) {
   const [fading, setFading] = React.useState(false);
+  const doneRef = React.useRef(false);
+
+  const dismiss = React.useCallback(() => {
+    if (doneRef.current) return;
+    doneRef.current = true;
+    setFading(true);
+    setTimeout(onDone, FADE_MS);
+  }, [onDone]);
 
   React.useEffect(() => {
-    const t1 = setTimeout(() => setFading(true), VISIBLE_MS);
-    const t2 = setTimeout(onDone, VISIBLE_MS + FADE_MS);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const t = setTimeout(dismiss, VISIBLE_MS);
+    return () => clearTimeout(t);
+  }, [dismiss]);
 
   return (
     <div
-      className="pointer-events-none fixed inset-0 z-50 flex flex-col items-center justify-center"
+      className="fixed inset-0 flex flex-col items-center justify-center"
       style={{
         background: "rgba(0,0,0,0.80)",
         backdropFilter: "blur(6px)",
         opacity: fading ? 0 : 1,
         transition: `opacity ${FADE_MS}ms ease-out`,
+        zIndex: 9999,
       }}
     >
       <div className="text-center space-y-3 px-6">
@@ -42,6 +49,12 @@ export default function IntroOverlay({ year, place, subtitle, onDone }: Props) {
         <div className="text-base text-slate-300 max-w-xs mx-auto leading-relaxed">
           {subtitle}
         </div>
+        <button
+          onClick={dismiss}
+          className="mt-4 rounded-2xl bg-white/10 border border-white/20 px-6 py-2.5 text-sm font-semibold text-white hover:bg-white/20 transition"
+        >
+          Začít hru →
+        </button>
       </div>
     </div>
   );
