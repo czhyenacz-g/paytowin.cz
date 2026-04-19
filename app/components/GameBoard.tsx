@@ -2257,9 +2257,12 @@ export default function GameBoard({ gameCode }: Props) {
                     <div
                       key={`fig-${field.index}`}
                       className="absolute flex items-center justify-center gap-0.5"
-                      style={board.shape === "stadium"
-                        ? FIGURINE_POSITIONS_STADIUM[field.index]
-                        : FIGURINE_POSITIONS[field.index]}
+                      style={{
+                        ...(board.shape === "stadium"
+                          ? FIGURINE_POSITIONS_STADIUM[field.index]
+                          : FIGURINE_POSITIONS[field.index]),
+                        zIndex: 10,
+                      }}
                     >
                       {playersHere.map((player) => {
                         const isAnimatingThis = player.id === animatingPlayerId;
