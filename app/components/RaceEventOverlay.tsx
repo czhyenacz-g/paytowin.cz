@@ -305,7 +305,7 @@ export default function RaceEventOverlay({
                       {player.name}
                     </span>
                     <span className="text-xs text-slate-400">
-                      {score} tapů × {finalStamina}%
+                      {score} bodů × {finalStamina}% staminy
                       {finalStamina === 0 && <span className="ml-1 text-red-400">💀 závodník vyřazen</span>}
                     </span>
                   </div>
