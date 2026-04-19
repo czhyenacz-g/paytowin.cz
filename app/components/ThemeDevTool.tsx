@@ -738,7 +738,8 @@ export default function ThemeDevTool() {
       const runtimeField = runtimeFields.find((f) => f.index === selectedFieldIndex);
       const racerId = runtimeField?.racer?.id;
       const override = racerId ? editableRacerImages[racerId] : undefined;
-      const resolvedPath = resolveRacerCardImagePath(themeId, racerId, override);
+      const racerProfile = racerId ? liveManifest.racers.find((r) => r.id === racerId) : undefined;
+      const resolvedPath = resolveRacerCardImagePath(themeId, racerId, override, racerProfile?.image);
 
       return {
         assetKey: "fieldRacer",
