@@ -173,7 +173,6 @@ export default function BoardEditorPreview({
               ? resolveRacerCardImagePath(
                   themeId,
                   field.racer?.id,
-                  field.racer?.id ? manifest.assets?.racerImages?.[field.racer.id] : undefined,
                   field.racer?.image,
                 )
               : resolveFieldCardImagePath(

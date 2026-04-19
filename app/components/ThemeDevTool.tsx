@@ -737,15 +737,14 @@ export default function ThemeDevTool() {
       const runtimeFields = buildFields(editableBoard, liveManifest.racers);
       const runtimeField = runtimeFields.find((f) => f.index === selectedFieldIndex);
       const racerId = runtimeField?.racer?.id;
-      const override = racerId ? editableRacerImages[racerId] : undefined;
       const racerProfile = racerId ? liveManifest.racers.find((r) => r.id === racerId) : undefined;
-      const resolvedPath = resolveRacerCardImagePath(themeId, racerId, override, racerProfile?.image);
+      const resolvedPath = resolveRacerCardImagePath(themeId, racerId, racerProfile?.image);
 
       return {
         assetKey: "fieldRacer",
         canonicalFile: racerId ? `racer-${racerId}.webp` : null,
         resolvedPath,
-        override,
+        override: undefined,
         racerId,
         onOverrideChange: (newOverride) => {
           if (!racerId) return;

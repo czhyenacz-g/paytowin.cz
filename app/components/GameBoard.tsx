@@ -2094,7 +2094,6 @@ export default function GameBoard({ gameCode }: Props) {
                     ? resolveRacerCardImagePath(
                         themeId,
                         field.racer?.id,
-                        field.racer?.id ? themeManifest.assets?.racerImages?.[field.racer.id] : undefined,
                         field.racer?.image,
                       )
                     : resolveFieldCardImagePath(

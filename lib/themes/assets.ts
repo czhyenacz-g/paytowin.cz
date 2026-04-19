@@ -112,17 +112,14 @@ export function resolveFieldCardImagePath(
 
 /**
  * Priority: 1. profileImage (RacerConfig.image — source of truth)
- *           2. override (legacy theme-local racerImages)
- *           3. file-based canonical path (legacy fallback)
+ *           2. file-based canonical path (/themes/{themeId}/racer-{id}.webp)
  */
 export function resolveRacerCardImagePath(
   themeId: string,
   racerId?: string,
-  override?: string,
   profileImage?: string,
 ): string | null {
   if (profileImage) return profileImage;
-  if (override) return override;
   return racerId ? racerAssetPath(themeId, racerId) : null;
 }
 
