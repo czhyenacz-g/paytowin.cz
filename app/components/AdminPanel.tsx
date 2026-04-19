@@ -37,6 +37,7 @@ export default function AdminPanel() {
   const [horses, setHorses] = React.useState<Horse[]>([]);
   const [editingHorse, setEditingHorse] = React.useState<Horse | null>(null);
   const [loading, setLoading] = React.useState(true);
+  const [bulkDeleteMsg, setBulkDeleteMsg] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     loadData();
@@ -88,6 +89,53 @@ export default function AdminPanel() {
     loadData();
   };
 
+  const deleteUnfinishedGames = async () => {
+    const UNFINISHED = ["waiting", "playing", "cancelled"] as const;
+    const count = games.filter((g) => UNFINISHED.includes(g.status as typeof UNFINISHED[number])).length;
+    if (count === 0) {
+      setBulkDeleteMsg("Žádné nedokončené hry k smazání.");
+      return;
+    }
+    if (!confirm(`Smazat ${count} nedokončených her (waiting / playing / cancelled)? Finished hry zůstanou.`)) return;
+    setBulkDeleteMsg(null);
+
+    const { data: toDelete, error: fetchErr } = await supabase
+      .from("games")
+      .select("id")
+      .in("status", UNFINISHED);
+
+    if (fetchErr || !toDelete) {
+      setBulkDeleteMsg(`Chyba při načítání her: ${fetchErr?.message ?? "neznámá chyba"}`);
+      return;
+    }
+
+    const ids = toDelete.map((g) => g.id);
+    if (ids.length === 0) {
+      setBulkDeleteMsg("Žádné nedokončené hry k smazání.");
+      loadData();
+      return;
+    }
+
+    const [{ error: e1 }, { error: e2 }, { error: e3 }] = await Promise.all([
+      supabase.from("players").delete().in("game_id", ids),
+      supabase.from("game_state").delete().in("game_id", ids),
+    ]).then(async ([r1, r2]) => {
+      const r3 = await supabase.from("games").delete().in("id", ids);
+      return [r1, r2, r3];
+    });
+
+    if (e1 || e2 || e3) {
+      setBulkDeleteMsg(`Chyba při mazání: ${e1?.message ?? e2?.message ?? e3?.message}`);
+    } else {
+      setBulkDeleteMsg(`Smazáno ${ids.length} nedokončených her.`);
+      if (selectedGame && ids.includes(selectedGame.id)) {
+        setSelectedGame(null);
+        setPlayers([]);
+      }
+    }
+    loadData();
+  };
+
   if (loading) return <div className="min-h-screen bg-slate-100 flex items-center justify-center text-slate-500">Načítám...</div>;
 
   return (
@@ -100,7 +148,20 @@ export default function AdminPanel() {
 
         {/* Hry */}
         <div className="rounded-3xl bg-white p-6 shadow-lg">
-          <h2 className="mb-4 text-xl font-bold text-slate-800">Hry</h2>
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <h2 className="text-xl font-bold text-slate-800">Hry</h2>
+            <button
+              onClick={deleteUnfinishedGames}
+              className="rounded-xl border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-500 hover:bg-red-50 transition"
+            >
+              Smazat nedokončené hry
+            </button>
+          </div>
+          {bulkDeleteMsg && (
+            <div className={`mb-3 rounded-xl px-4 py-2 text-xs font-medium ${bulkDeleteMsg.startsWith("Chyba") ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700"}`}>
+              {bulkDeleteMsg}
+            </div>
+          )}
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 text-left text-slate-500">
