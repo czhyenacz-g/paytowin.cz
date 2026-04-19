@@ -244,7 +244,8 @@ export default function LandingPage() {
       .single();
 
     if (gameErr || !game) {
-      setError("Nepodařilo se vytvořit hru.");
+      console.error("[createGame] games insert failed:", gameErr?.message, gameErr?.details, gameErr?.hint);
+      setError(`Nepodařilo se vytvořit hru. (${gameErr?.message ?? "neznámá chyba"})`);
       setLoading(false);
       return;
     }
