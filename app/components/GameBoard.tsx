@@ -2049,7 +2049,7 @@ export default function GameBoard({ gameCode }: Props) {
               <span className="rounded-[3px] bg-emerald-100 px-2 py-1 text-emerald-800">🟢 {theme.labels.legend.gain}</span>
               <span className="rounded-[3px] bg-red-100 px-2 py-1 text-red-800">🔴 {theme.labels.legend.lose}</span>
               <span className="rounded-[3px] bg-violet-100 px-2 py-1 text-violet-800">🟣 {theme.labels.legend.gamble}</span>
-              <span className="rounded-[3px] bg-amber-100 px-2 py-1 text-amber-800">🟠 {theme.labels.legend.horse}</span>
+              <span className="rounded-[3px] bg-amber-100 px-2 py-1 text-amber-800">🟠 {theme.labels.legend.racer}</span>
             </div>
 
             <div className="relative mx-auto aspect-square w-full max-w-[760px] overflow-visible">

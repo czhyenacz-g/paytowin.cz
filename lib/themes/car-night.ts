@@ -44,7 +44,7 @@ export const carNightTheme: Theme = {
       gain:   "zisk",
       lose:   "ztráta",
       gamble: "hazard",
-      horse:  "auto",
+      racer:  "auto",
     },
     racer:      "Auto",
     racers:     "Auta",

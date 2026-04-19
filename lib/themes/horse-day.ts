@@ -44,7 +44,7 @@ export const horseDayTheme: Theme = {
       gain:   "zisk",
       lose:   "ztráta",
       gamble: "hazard",
-      horse:  "kůň",
+      racer:  "kůň",
     },
     racer:      "Kůň",
     racers:     "Koně",

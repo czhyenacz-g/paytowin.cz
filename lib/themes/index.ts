@@ -147,7 +147,7 @@ export interface ThemeLabels {
     gain: string;
     lose: string;
     gamble: string;
-    horse: string;  // TODO: přejmenovat na "racer" v příštím čištění labels
+    racer: string;
   };
   /** Jak theme nazývá jednoho závodníka, např. "Kůň" nebo "Auto" */
   racer: string;

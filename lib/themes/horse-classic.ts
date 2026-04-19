@@ -44,7 +44,7 @@ export const horseClassicTheme: Theme = {
       gain:   "ganancia",
       lose:   "pérdida",
       gamble: "apuesta",
-      horse:  "caballo",
+      racer:  "caballo",
     },
     racer:      "Kůň",
     racers:     "Koně",
