@@ -2360,7 +2360,7 @@ export default function GameBoard({ gameCode }: Props) {
                     >
                       <div className="rounded-lg bg-black/40 px-2 py-1.5 backdrop-blur-sm space-y-0.5">
                         <div className="text-[9px] font-semibold text-green-400 whitespace-nowrap">
-                          Dotace: +{startBonus} 💰
+                          Příspěvek: +{startBonus} 💰
                         </div>
                         {myNextTax > 0 && (
                           <div className="text-[9px] font-semibold text-red-400 whitespace-nowrap">

@@ -326,7 +326,7 @@ export default function LocalNewPage() {
               {economyOpen && (
                 <div className="border-t border-slate-200 px-4 pb-4 pt-3 grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Dotace od státu (START)</label>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Příspěvek od podporovatelů (START)</label>
                     <input type="number" min={0} step={100} value={stateSubsidy} onChange={e => setStateSubsidy(Number(e.target.value))}
                       className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none focus:border-slate-500" />
                   </div>
