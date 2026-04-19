@@ -263,7 +263,8 @@ export default function LandingPage() {
     }).select().single();
 
     if (playerErr || !newPlayer) {
-      setError("Nepodařilo se přidat hráče.");
+      console.error("[createGame] players insert failed:", playerErr?.message, playerErr?.details);
+      setError("Nepodařilo se vytvořit hráče. Zkus to znovu.");
       setLoading(false);
       return;
     }
@@ -293,7 +294,12 @@ export default function LandingPage() {
       .single();
 
     if (gameErr || !game) {
-      setError("Hra s tímto kódem neexistuje.");
+      if (!game && gameErr?.code === "PGRST116") {
+        setError("Hra s tímto kódem neexistuje.");
+      } else {
+        console.error("[joinGame] game lookup failed:", gameErr?.message, gameErr?.details);
+        setError("Nepodařilo se načíst hru. Zkontroluj připojení a zkus to znovu.");
+      }
       setLoading(false);
       return;
     }
@@ -338,7 +344,7 @@ export default function LandingPage() {
     const turnOrder = existingPlayers?.length ?? 0;
     const color = PLAYER_COLORS[turnOrder % PLAYER_COLORS.length];
 
-    const { data: newPlayer } = await supabase.from("players").insert({
+    const { data: newPlayer, error: joinPlayerErr } = await supabase.from("players").insert({
       game_id: game.id,
       name: name.trim(),
       color,
@@ -351,6 +357,7 @@ export default function LandingPage() {
     }).select().single();
 
     if (!newPlayer) {
+      console.error("[joinGame] players insert failed:", joinPlayerErr?.message, joinPlayerErr?.details);
       setError("Nepodařilo se připojit ke hře. Zkus to znovu.");
       setLoading(false);
       return;
