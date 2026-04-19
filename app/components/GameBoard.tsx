@@ -1669,13 +1669,12 @@ export default function GameBoard({ gameCode }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState?.current_player_index, players.map(p => p.skip_next_turn).join(",")]);
 
-  // Intro overlay — zobrazí se jednou při prvním načtení gameState
+  // Intro overlay — zobrazí se jednou po dokončení načítání
   React.useEffect(() => {
-    if (!gameState || introShownRef.current) return;
+    if (loading || introShownRef.current) return;
     introShownRef.current = true;
     setIntroVisible(true);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [!!gameState]);
+  }, [loading]);
 
   // Herní rok — startovní rok theme + počet průchodů STARTem lídra (player.laps)
   const gameYear = (theme.mapMeta?.yearStart ?? 1921) + players.reduce((max, p) => Math.max(max, p.laps ?? 0), 0);
@@ -1863,8 +1862,14 @@ export default function GameBoard({ gameCode }: Props) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
-        <div className="text-slate-500">Načítám hru…</div>
+      <div className="min-h-screen bg-slate-900">
+        <IntroOverlay
+          year={theme.mapMeta?.yearStart ?? 1921}
+          place={theme.mapMeta?.place ?? ""}
+          subtitle={theme.mapMeta?.subtitle ?? ""}
+          isLoading={true}
+          onDone={() => {}}
+        />
       </div>
     );
   }
