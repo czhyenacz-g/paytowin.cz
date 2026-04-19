@@ -20,7 +20,7 @@ import type { BoardConfig } from "./board";
 
 // ─── Konstanty ────────────────────────────────────────────────────────────────
 
-export const REROLL_COST = 2500;
+export const REROLL_COST = 1000;
 export const REROLL_CHANCE = 0.10;
 
 // ─── Typy polí ────────────────────────────────────────────────────────────────

@@ -580,11 +580,11 @@ export default function GameBoard({ gameCode }: Props) {
     });
 
     const adjustmentAllowed = selectedAdjustment !== 0 &&
-      currentPlayer.coins >= 100 &&
+      currentPlayer.coins >= 600 &&
       (roll + selectedAdjustment) >= 1;
     const finalAdjustment = adjustmentAllowed ? selectedAdjustment : 0;
     const finalRoll = roll + finalAdjustment;
-    const adjustmentCost = finalAdjustment === 0 ? 0 : 100;
+    const adjustmentCost = finalAdjustment === 0 ? 0 : 600;
 
     // ── 2. Animace pohybu pole po poli ────────────────────────────────────────
     const oldPosition = currentPlayer.position;
@@ -1684,13 +1684,13 @@ export default function GameBoard({ gameCode }: Props) {
   const rollDecisionOptions = pendingRollDecision
     ? ([-1, 0, 1] as RollAdjustment[]).map((adjustment) => {
         const finalRoll = pendingRollDecision.baseRoll + adjustment;
-        const isAffordable = adjustment === 0 || (currentPlayer?.coins ?? 0) >= 100;
+        const isAffordable = adjustment === 0 || (currentPlayer?.coins ?? 0) >= 600;
         const isValid = finalRoll >= 1;
         const targetField = isValid ? FIELDS[(pendingRollDecision.basePosition + finalRoll) % FIELDS.length] : null;
         return {
           adjustment,
           finalRoll,
-          cost: adjustment === 0 ? 0 : 100,
+          cost: adjustment === 0 ? 0 : 600,
           isDisabled: !isValid || !isAffordable,
           targetField,
         };
