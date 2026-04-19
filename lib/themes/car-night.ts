@@ -63,35 +63,35 @@ export const carNightTheme: Theme = {
       "id": "stary_mustang",
       "name": "Starý Mustang",
       "speed": 2,
-      "price": 80,
+      "price": 800,
       "emoji": "🚗"
     },
     {
       "id": "modra_strela",
       "name": "Modrá střela",
       "speed": 3,
-      "price": 150,
+      "price": 1500,
       "emoji": "🏎️"
     },
     {
       "id": "zlaty_blesk",
       "name": "Zlatý blesk",
       "speed": 4,
-      "price": 250,
+      "price": 2500,
       "emoji": "🟡"
     },
     {
       "id": "rychly_demon",
       "name": "Rychlý démon",
       "speed": 5,
-      "price": 400,
+      "price": 4000,
       "emoji": "🔥"
     },
     {
       "id": "car_night_r5",
       "name": "Tvuj tata",
       "speed": 8,
-      "price": 150,
+      "price": 1500,
       "emoji": "🐴",
       "maxStamina": 100
     }

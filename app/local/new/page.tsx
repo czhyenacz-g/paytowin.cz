@@ -28,6 +28,11 @@ export default function LocalNewPage() {
   const [playerNames, setPlayerNames] = React.useState<string[]>(["", ""]);
   const [selectedThemeId, setSelectedThemeId] = React.useState("horse-day");
   const [selectedBoardId, setSelectedBoardId] = React.useState("small");
+  const [stateSubsidy, setStateSubsidy] = React.useState(2000);
+  const [baseTax, setBaseTax] = React.useState(500);
+  const [lapTaxCoefficient, setLapTaxCoefficient] = React.useState(1);
+  const [maxTax, setMaxTax] = React.useState(5000);
+  const [economyOpen, setEconomyOpen] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
 
@@ -85,6 +90,7 @@ export default function LocalNewPage() {
         game_mode: "local",
         owner_discord_id: discordId,
         max_players: playerCount,
+        economy: { stateSubsidy, baseTax, lapTaxCoefficient, maxTax },
       })
       .select()
       .single();
@@ -106,7 +112,7 @@ export default function LocalNewPage() {
           name,
           color: PLAYER_COLORS[i % PLAYER_COLORS.length],
           position: 0,
-          coins: 1000,
+          coins: 10000,
           horses: [],
           turn_order: i,
         }))
@@ -305,6 +311,42 @@ export default function LocalNewPage() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Ekonomická nastavení */}
+            <div className="rounded-xl border border-slate-200 bg-slate-50">
+              <button
+                type="button"
+                onClick={() => setEconomyOpen(o => !o)}
+                className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100 transition rounded-xl"
+              >
+                <span>Ekonomická nastavení</span>
+                <span className="text-slate-400 text-xs">{economyOpen ? "▲ Skrýt" : "▼ Upravit"}</span>
+              </button>
+              {economyOpen && (
+                <div className="border-t border-slate-200 px-4 pb-4 pt-3 grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Dotace od státu (START)</label>
+                    <input type="number" min={0} step={100} value={stateSubsidy} onChange={e => setStateSubsidy(Number(e.target.value))}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none focus:border-slate-500" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Daň za průchod STARTem</label>
+                    <input type="number" min={0} step={100} value={baseTax} onChange={e => setBaseTax(Number(e.target.value))}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none focus:border-slate-500" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Koeficient růstu daně</label>
+                    <input type="number" min={0.1} step={0.1} value={lapTaxCoefficient} onChange={e => setLapTaxCoefficient(Number(e.target.value))}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none focus:border-slate-500" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Stropní daň</label>
+                    <input type="number" min={0} step={500} value={maxTax} onChange={e => setMaxTax(Number(e.target.value))}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none focus:border-slate-500" />
+                  </div>
+                </div>
+              )}
             </div>
 
             {error && <p className="text-sm text-red-600">{error}</p>}

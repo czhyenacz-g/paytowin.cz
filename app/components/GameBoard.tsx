@@ -28,7 +28,7 @@ import {
   REROLL_CHANCE,
 } from "@/lib/engine";
 
-const RACE_WINNER_REWARD = 50; // fixní odměna za 1. místo v mass_race
+const RACE_WINNER_REWARD = 500; // fixní odměna za 1. místo v mass_race
 
 /** Vrátí true pokud oba hráči mají aspoň jednoho závodníka — stejná podmínka jako race flow. */
 function canTriggerRivalsRace(p1: Player, p2: Player): boolean {
@@ -36,7 +36,8 @@ function canTriggerRivalsRace(p1: Player, p2: Player): boolean {
 }
 import { drawCard } from "@/lib/cards";
 import type { GameCard } from "@/lib/cards";
-import type { Player, Horse, GameState, OfferPending, RerollOffer, RaceOffer, BankruptAnnouncement, RacePendingEvent, PostTurnEvent, RaceType } from "@/lib/types/game";
+import type { Player, Horse, GameState, OfferPending, RerollOffer, RaceOffer, BankruptAnnouncement, RacePendingEvent, PostTurnEvent, RaceType, EconomyConfig } from "@/lib/types/game";
+import { DEFAULT_ECONOMY } from "@/lib/types/game";
 import type { CenterEvent, FlashEvent } from "@/lib/types/events";
 import CenterEventModal from "./modals/CenterEventModal";
 import FlashToast from "./modals/FlashToast";
@@ -223,6 +224,7 @@ export default function GameBoard({ gameCode }: Props) {
   const [themeId, setThemeId] = React.useState<string>("horse-day");
   const [boardId, setBoardId] = React.useState<string>("small");
   const [gameMode, setGameMode] = React.useState<"online" | "local">("online");
+  const [economy, setEconomy] = React.useState<EconomyConfig>(DEFAULT_ECONOMY);
   const [isHost, setIsHost] = React.useState(false);
   const [gameStatus, setGameStatus] = React.useState<string>("playing");
   const [players, setPlayers] = React.useState<Player[]>([]);
@@ -301,7 +303,7 @@ export default function GameBoard({ gameCode }: Props) {
   const themeManifest = themeToManifest(theme);
   const board = getBoardById(boardId);
   // resolvedRacers: závodníci z globální registry (racerRefs flow); null = inline fallback
-  const FIELDS = buildFields(board, resolvedRacers ?? getThemeRacers(theme));
+  const FIELDS = buildFields(board, resolvedRacers ?? getThemeRacers(theme), economy);
   const hoveredField = hoveredFieldIdx !== null ? FIELDS.find((field) => field.index === hoveredFieldIdx) ?? null : null;
   // Ref aby stale closures (Realtime subscriptions) vždy dostaly aktuální FIELDS
   const fieldsRef = React.useRef<Field[]>(FIELDS);
@@ -430,6 +432,9 @@ export default function GameBoard({ gameCode }: Props) {
       setBoardId(game.board_id ?? "small");
       setGameMode((game.game_mode ?? "online") as "online" | "local");
       setGameStatus(game.status);
+      if (game.economy && typeof game.economy === "object") {
+        setEconomy({ ...DEFAULT_ECONOMY, ...(game.economy as Partial<EconomyConfig>) });
+      }
 
       const { data: { user } } = await supabase.auth.getUser();
       const myDiscordId = user?.user_metadata?.provider_id as string | undefined;
@@ -629,15 +634,15 @@ export default function GameBoard({ gameCode }: Props) {
     }
 
     if (passedStart) {
-      movedPlayer = { ...movedPlayer, coins: movedPlayer.coins + 200 };
-      extraLog.push(`${currentPlayer.name} prošel STARTem — +200 💰`);
+      movedPlayer = { ...movedPlayer, coins: movedPlayer.coins + economy.stateSubsidy };
+      extraLog.push(`${currentPlayer.name} prošel STARTem — +${economy.stateSubsidy} 💰`);
     }
 
     // Daň za průchod/přistání na STARTu — roste s počtem průchodů (laps-based).
-    // laps před tímto průchodem: 0 = první průchod = bez daně, 1 = druhý = -50, atd.
+    // laps před tímto průchodem: 0 = první průchod = bez daně, 1 = druhý = baseTax, atd.
     if (passedStart || newPosition === 0) {
       const currentLaps = currentPlayer.laps ?? 0;
-      const startTax = getStartTax(currentLaps);
+      const startTax = getStartTax(currentLaps, economy);
       movedPlayer = { ...movedPlayer, laps: currentLaps + 1 };
       if (startTax > 0) {
         movedPlayer = { ...movedPlayer, coins: movedPlayer.coins - startTax };
@@ -1993,7 +1998,7 @@ export default function GameBoard({ gameCode }: Props) {
                 <div className="rounded-[3px] bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-500 shrink-0">
                   Kolo <span className="font-bold text-slate-700">{currentRound}</span>
                   {(currentPlayer?.laps ?? 0) >= 1 && (
-                    <span className="ml-1 text-red-500" title={`Daň za průchod STARTem: -${getStartTax(currentPlayer?.laps ?? 0)} 💰`}>🏛️</span>
+                    <span className="ml-1 text-red-500" title={`Daň za průchod STARTem: -${getStartTax(currentPlayer?.laps ?? 0, economy)} 💰`}>🏛️</span>
                   )}
                 </div>
                 <div className="rounded-[3px] bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white shrink-0 max-w-[160px] truncate">
@@ -2183,9 +2188,9 @@ export default function GameBoard({ gameCode }: Props) {
 
                 {/* ── Info blok Startu — pod kartou (pole 0 je rotovaná -90°, zabírá levou hranu)  */}
                 {(() => {
-                  const startBonus = board.fields.find(f => f.type === "start")?.amount ?? 200;
+                  const startBonus = economy.stateSubsidy;
                   const myLaps = (myPlayer?.laps ?? 0);
-                  const myNextTax = getStartTax(myLaps);
+                  const myNextTax = getStartTax(myLaps, economy);
                   return (
                     <div
                       className="absolute pointer-events-none select-none"

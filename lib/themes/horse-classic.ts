@@ -63,35 +63,35 @@ export const horseClassicTheme: Theme = {
       "id": "sombra_roja",
       "name": "Sombra Roja",
       "speed": 2,
-      "price": 80,
+      "price": 800,
       "emoji": "🔴"
     },
     {
       "id": "viento_dorado",
       "name": "Viento Dorado",
       "speed": 3,
-      "price": 150,
+      "price": 1500,
       "emoji": "🟤"
     },
     {
       "id": "el_relampago",
       "name": "El Relámpago",
       "speed": 4,
-      "price": 250,
+      "price": 2500,
       "emoji": "⚡"
     },
     {
       "id": "caballo_real",
       "name": "Caballo Real",
       "speed": 5,
-      "price": 400,
+      "price": 4000,
       "emoji": "👑"
     },
     {
       "id": "horse_classic_pablo",
       "name": "Pablo",
       "speed": 7,
-      "price": 150,
+      "price": 1500,
       "emoji": "🐴",
       "maxStamina": 78
     }

@@ -14,6 +14,7 @@ export interface Database {
           game_mode: string | null;
           owner_discord_id: string | null;
           max_players: number | null;
+          economy: Json | null;
         };
         Insert: {
           code: string;
@@ -23,6 +24,7 @@ export interface Database {
           game_mode?: string | null;
           owner_discord_id?: string | null;
           max_players?: number | null;
+          economy?: Json | null;
         };
         Update: {
           code?: string;
@@ -32,6 +34,7 @@ export interface Database {
           game_mode?: string | null;
           owner_discord_id?: string | null;
           max_players?: number | null;
+          economy?: Json | null;
         };
       };
       players: {

@@ -32,21 +32,21 @@ export const SMALL_BOARD: BoardConfig = {
       "type": "start",
       "label": "START",
       "emoji": "🏁",
-      "amount": 200
+      "amount": 2000
     },
     {
       "index": 1,
       "type": "coins_gain",
       "label": "Sponzor",
       "emoji": "🤝",
-      "amount": 100
+      "amount": 1000
     },
     {
       "index": 2,
       "type": "coins_lose",
       "label": "Veterinář",
       "emoji": "🩺",
-      "amount": -60
+      "amount": -600
     },
     {
       "index": 3,
@@ -59,28 +59,28 @@ export const SMALL_BOARD: BoardConfig = {
       "type": "coins_gain",
       "label": "Vítěz dostihu",
       "emoji": "🏆",
-      "amount": 150
+      "amount": 1500
     },
     {
       "index": 5,
       "type": "coins_lose",
       "label": "Daňový úřad",
       "emoji": "🏛️",
-      "amount": -80
+      "amount": -800
     },
     {
       "index": 6,
       "type": "coins_gain",
       "label": "Zlaté podkůvky",
       "emoji": "🥇",
-      "amount": 80
+      "amount": 800
     },
     {
       "index": 7,
       "type": "coins_lose",
       "label": "Korupce",
       "emoji": "💸",
-      "amount": -120
+      "amount": -1200
     },
     {
       "index": 8,
@@ -93,7 +93,7 @@ export const SMALL_BOARD: BoardConfig = {
       "type": "coins_gain",
       "label": "Dobrá sezona",
       "emoji": "🌟",
-      "amount": 90
+      "amount": 900
     },
     {
       "index": 10,
@@ -106,14 +106,14 @@ export const SMALL_BOARD: BoardConfig = {
       "type": "coins_lose",
       "label": "Krize na trhu",
       "emoji": "📉",
-      "amount": -50
+      "amount": -500
     },
     {
       "index": 12,
       "type": "coins_gain",
       "label": "Bankéř",
       "emoji": "🏦",
-      "amount": 40
+      "amount": 400
     },
     {
       "index": 13,
@@ -133,14 +133,14 @@ export const SMALL_BOARD: BoardConfig = {
       "type": "coins_gain",
       "label": "Věrnostní bonus",
       "emoji": "🎁",
-      "amount": 50
+      "amount": 500
     },
     {
       "index": 16,
       "type": "coins_lose",
       "label": "Zloděj",
       "emoji": "🦹",
-      "amount": -70
+      "amount": -700
     },
     {
       "index": 17,
@@ -153,7 +153,7 @@ export const SMALL_BOARD: BoardConfig = {
       "type": "coins_lose",
       "label": "Veterinář",
       "emoji": "💊",
-      "amount": -60
+      "amount": -600
     },
     {
       "index": 19,

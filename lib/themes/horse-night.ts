@@ -63,35 +63,35 @@ export const horseNightTheme: Theme = {
       "id": "divoka_ruze",
       "name": "Divoká růže",
       "speed": 2,
-      "price": 80,
+      "price": 800,
       "emoji": "🌹"
     },
     {
       "id": "modry_blesk",
       "name": "Modrý blesk",
       "speed": 3,
-      "price": 150,
+      "price": 1500,
       "emoji": "🔵"
     },
     {
       "id": "zlata_hriva",
       "name": "Zlatá hříva",
       "speed": 4,
-      "price": 250,
+      "price": 2500,
       "emoji": "🟡"
     },
     {
       "id": "rychly_vitr",
       "name": "Rychlý vítr",
       "speed": 5,
-      "price": 400,
+      "price": 4000,
       "emoji": "🟢"
     },
     {
       "id": "horse_night_buran",
       "name": "Buran",
       "speed": 10,
-      "price": 150,
+      "price": 1500,
       "emoji": "🐴",
       "maxStamina": 100
     }

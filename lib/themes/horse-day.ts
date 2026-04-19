@@ -65,7 +65,7 @@ export const horseDayTheme: Theme = {
       "id": "divoka_ruze",
       "name": "Divoká růže",
       "speed": 2,
-      "price": 80,
+      "price": 800,
       "emoji": "🌹",
       "maxStamina": 100
     },
@@ -73,7 +73,7 @@ export const horseDayTheme: Theme = {
       "id": "modry_blesk",
       "name": "Blue thunder",
       "speed": 3,
-      "price": 150,
+      "price": 1500,
       "emoji": "🔵",
       "maxStamina": 95
     },
@@ -81,7 +81,7 @@ export const horseDayTheme: Theme = {
       "id": "zlata_hriva",
       "name": "Zlatá hříva",
       "speed": 6,
-      "price": 250,
+      "price": 2500,
       "emoji": "🟡",
       "maxStamina": 90
     },
@@ -89,7 +89,7 @@ export const horseDayTheme: Theme = {
       "id": "r6",
       "name": "Pepík",
       "speed": 5,
-      "price": 150,
+      "price": 1500,
       "emoji": "🐴",
       "maxStamina": 100,
       "flavorText": "Pepó! Pepane! Pepíku!!"
@@ -98,7 +98,7 @@ export const horseDayTheme: Theme = {
       "id": "rychly_vitr",
       "name": "Rychlý vítr",
       "speed": 9,
-      "price": 400,
+      "price": 4000,
       "emoji": "🟢",
       "maxStamina": 80
     },
@@ -106,7 +106,7 @@ export const horseDayTheme: Theme = {
       "id": "zeleznik",
       "name": "Železník",
       "speed": 10,
-      "price": 15000,
+      "price": 150000,
       "emoji": "🐴",
       "maxStamina": 10,
       "isLegendary": true,
@@ -123,9 +123,9 @@ export const horseDayTheme: Theme = {
           "text": "Neznámý příznivec ti diskrétně poslal obálku.",
           "effect": {
             "kind": "coins",
-            "value": 100
+            "value": 1000
           },
-          "effectLabel": "+100 💰"
+          "effectLabel": "+1000 💰"
         },
         {
           "id": "ch2",
@@ -133,9 +133,9 @@ export const horseDayTheme: Theme = {
           "text": "Zakopl jsi u stáje a rozbil vybavení. Zaplať škodu.",
           "effect": {
             "kind": "coins",
-            "value": -80
+            "value": -800
           },
-          "effectLabel": "-80 💰"
+          "effectLabel": "-800 💰"
         },
         {
           "id": "ch9",
@@ -174,9 +174,9 @@ export const horseDayTheme: Theme = {
           "text": "Tisk tě označil za favorita. Sponzoři se hrnou.",
           "effect": {
             "kind": "coins",
-            "value": 150
+            "value": 1500
           },
-          "effectLabel": "+150 💰"
+          "effectLabel": "+1500 💰"
         },
         {
           "id": "ch6",
@@ -193,9 +193,9 @@ export const horseDayTheme: Theme = {
           "text": "Veterinář ti vrátil přeplatek za prohlídku.",
           "effect": {
             "kind": "coins",
-            "value": 60
+            "value": 600
           },
-          "effectLabel": "+60 💰"
+          "effectLabel": "+600 💰"
         },
         {
           "id": "ch8",

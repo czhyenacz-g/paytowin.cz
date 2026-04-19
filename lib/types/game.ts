@@ -6,6 +6,27 @@
 
 import type { GameCard } from "@/lib/cards";
 
+// ─── Ekonomika hry ────────────────────────────────────────────────────────────
+
+/** Konfigurace herní ekonomiky — ukládá se jako JSONB v games.economy. */
+export interface EconomyConfig {
+  /** Coins za průchod STARTem (dotace od státu). */
+  stateSubsidy: number;
+  /** Základ daně za každý průchod STARTem (od 2. průchodu). */
+  baseTax: number;
+  /** Koeficient růstu daně — baseTax se násobí tímto číslem pro výpočet daně za kolo. */
+  lapTaxCoefficient: number;
+  /** Stropní hodnota daně. */
+  maxTax: number;
+}
+
+export const DEFAULT_ECONOMY: EconomyConfig = {
+  stateSubsidy: 2000,
+  baseTax: 500,
+  lapTaxCoefficient: 1,
+  maxTax: 5000,
+};
+
 // Stamina cost per tap during racing minigame.
 // Keep in sync with RaceEventOverlay.tsx if defined there separately.
 export const STAMINA_PER_TAP = 2;

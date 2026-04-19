@@ -12,18 +12,16 @@
  * - "horse" v FieldType je @deprecated; buildFields generuje type "racer"
  */
 
-import type { Player, Horse, GameState, OfferPending } from "./types/game";
+import type { Player, Horse, GameState, OfferPending, EconomyConfig } from "./types/game";
+import { DEFAULT_ECONOMY } from "./types/game";
 import type { RacerConfig } from "./themes";
 import type { GameCard } from "./cards";
 import type { BoardConfig } from "./board";
 
 // ─── Konstanty ────────────────────────────────────────────────────────────────
 
-export const REROLL_COST = 250;
+export const REROLL_COST = 2500;
 export const REROLL_CHANCE = 0.10;
-
-const BANKRUPTCY_TAX_PER_LAP = 50;
-const BANKRUPTCY_TAX_CAP = 500;
 
 // ─── Typy polí ────────────────────────────────────────────────────────────────
 
@@ -73,11 +71,14 @@ export const sleep = (ms: number): Promise<void> =>
  * Daň za průchod STARTem — roste s počtem absolvovaných kol.
  * laps = počet průchodů PŘED tímto průchodem.
  * laps=0 → první průchod → daň 0 (první dotace je plná).
- * laps=1 → druhý průchod → 50. laps=2 → 100. Strop 500.
+ * Výše daně = laps × baseTax × lapTaxCoefficient, zastropeno maxTax.
+ * Defaulty (DEFAULT_ECONOMY): baseTax=500, lapTaxCoefficient=1, maxTax=5000.
  */
-export function getStartTax(laps: number): number {
+export function getStartTax(laps: number, economy?: Partial<EconomyConfig>): number {
   if (laps < 1) return 0;
-  return Math.min(laps * BANKRUPTCY_TAX_PER_LAP, BANKRUPTCY_TAX_CAP);
+  const perLap = (economy?.baseTax ?? DEFAULT_ECONOMY.baseTax)
+    * (economy?.lapTaxCoefficient ?? DEFAULT_ECONOMY.lapTaxCoefficient);
+  return Math.min(laps * perLap, economy?.maxTax ?? DEFAULT_ECONOMY.maxTax);
 }
 
 // ─── Bankrot ──────────────────────────────────────────────────────────────────
@@ -197,7 +198,7 @@ export function normalizeState(raw: unknown): GameState {
  * Coin amounts, typy polí a racer sloty jsou nyní v BoardConfig, ne hardcoded tady.
  * Engine zůstává čistý — žádná data, jen transformace.
  */
-export function buildFields(board: BoardConfig, racers: RacerConfig[]): Field[] {
+export function buildFields(board: BoardConfig, racers: RacerConfig[], economy?: Partial<EconomyConfig>): Field[] {
   // Pokud alespoň jeden racer má slotIndex, seřaď podle něj.
   // Fallback: původní pořadí v arrayi (backward compat pro data bez slotIndex).
   const hasExplicitSlots = racers.some(r => r.slotIndex !== undefined);
@@ -237,7 +238,7 @@ export function buildFields(board: BoardConfig, racers: RacerConfig[]): Field[] 
 
     // ── START pole ──────────────────────────────────────────────────────────
     if (fc.type === "start") {
-      const bonus = fc.amount ?? 200;
+      const bonus = economy?.stateSubsidy ?? fc.amount ?? DEFAULT_ECONOMY.stateSubsidy;
       return {
         index:       fc.index,
         type:        "start",
