@@ -559,36 +559,45 @@ function AssetSection({
         </div>
       </div>
 
-      {/* ── Override input ── */}
-      <div className="space-y-1.5">
-        <label className="block text-xs font-medium text-slate-500">
-          Override cesta <span className="font-normal text-slate-400">(prázdné = canonical)</span>
-        </label>
-        <div className="flex gap-1.5">
-          <input
-            type="text"
-            value={overrideInput}
-            onChange={(e) => setOverrideInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") handleApplyOverride(); }}
-            placeholder={section.canonicalFile ? `/themes/moje-theme/${section.canonicalFile}` : "/themes/..."}
-            className="flex-1 min-w-0 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-violet-300 placeholder:text-slate-400"
-          />
-          <button onClick={handleApplyOverride}
-            className="shrink-0 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-violet-700">
-            Použít
-          </button>
-          {isOverrideActive && (
-            <button onClick={handleClearOverride}
-              className="shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
-              title="Odeber override, vrátit na canonical">
-              ✕
-            </button>
-          )}
+      {/* ── Override input — skryto pro racer assety (obrázek patří profilu závodníka) ── */}
+      {section.racerId ? (
+        <div className="rounded-lg bg-indigo-50 border border-indigo-100 px-3 py-2.5 text-xs text-indigo-700 space-y-0.5">
+          <div className="font-medium">Obrázek ze závodního profilu</div>
+          <div className="text-indigo-500 leading-snug">
+            Edituj obrázek v <strong>Racer Adminu</strong> — karta ho přebírá automaticky z profilu závodníka.
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="space-y-1.5">
+          <label className="block text-xs font-medium text-slate-500">
+            Override cesta <span className="font-normal text-slate-400">(prázdné = canonical)</span>
+          </label>
+          <div className="flex gap-1.5">
+            <input
+              type="text"
+              value={overrideInput}
+              onChange={(e) => setOverrideInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleApplyOverride(); }}
+              placeholder={section.canonicalFile ? `/themes/moje-theme/${section.canonicalFile}` : "/themes/..."}
+              className="flex-1 min-w-0 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-violet-300 placeholder:text-slate-400"
+            />
+            <button onClick={handleApplyOverride}
+              className="shrink-0 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-violet-700">
+              Použít
+            </button>
+            {isOverrideActive && (
+              <button onClick={handleClearOverride}
+                className="shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                title="Odeber override, vrátit na canonical">
+                ✕
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
-      {/* ── Upload pipeline — jen pokud je uploadConfig k dispozici ── */}
-      {section.uploadConfig && (
+      {/* ── Upload pipeline — jen pro non-racer assety ── */}
+      {!section.racerId && section.uploadConfig && (
         <div className="space-y-1.5">
           <div className="flex items-center gap-2">
             <span className="text-xs font-medium text-slate-500">Nahrát obrázek</span>
