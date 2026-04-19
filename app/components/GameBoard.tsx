@@ -14,6 +14,7 @@ import {
 import { loadThemeManifestAsync } from "@/lib/themes/loader";
 import { getBoardById } from "@/lib/board";
 import { logEvent } from "@/lib/analytics";
+import { UI_TEXT } from "@/lib/ui-text";
 import type { Field } from "@/lib/engine";
 import {
   sleep,
@@ -2353,10 +2354,10 @@ export default function GameBoard({ gameCode }: Props) {
                           Průvodce
                         </div>
                         <div className="mt-1 text-sm font-semibold text-slate-800">
-                          Chceš závodit? Nejdřív si pořiď racera.
+                          {UI_TEXT.guide.noRacer.title}
                         </div>
                         <p className="mt-1 text-xs leading-relaxed text-slate-600">
-                          Bez vlastního závodníka se do většiny závodních akcí nedostaneš. Sleduj pole s racerem a kup prvního, který ti sedne do strategie.
+                          {UI_TEXT.guide.noRacer.body}
                         </p>
                       </div>
                       <button
@@ -2382,10 +2383,10 @@ export default function GameBoard({ gameCode }: Props) {
                           Průvodce
                         </div>
                         <div className="mt-1 text-sm font-semibold text-slate-800">
-                          Máš racera. Hlídej si jeho staminu, unavený závodník v závodě ztrácí.
+                          {UI_TEXT.guide.hasRacer.title}
                         </div>
                         <p className="mt-1 text-xs leading-relaxed text-slate-600">
-                          Po každém závodě sleduj, kolik mu zbývá sil. Když si označíš hlavního racera, budeš ho mít po ruce rychleji.
+                          {UI_TEXT.guide.hasRacer.body}
                         </p>
                       </div>
                       <button
@@ -2411,10 +2412,10 @@ export default function GameBoard({ gameCode }: Props) {
                           Průvodce
                         </div>
                         <div className="mt-1 text-sm font-semibold text-slate-800">
-                          Vyber si hlavního racera. Do dalších závodů se ti bude hodit jako první volba.
+                          {UI_TEXT.guide.setPreferred.title}
                         </div>
                         <p className="mt-1 text-xs leading-relaxed text-slate-600">
-                          Označený závodník je po ruce rychleji a usnadní ti výběr, když budeš chtít jít do dalšího závodu bez zdržení.
+                          {UI_TEXT.guide.setPreferred.body}
                         </p>
                       </div>
                       <button
