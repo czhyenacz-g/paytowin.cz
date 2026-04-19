@@ -1972,6 +1972,18 @@ export default function GameBoard({ gameCode }: Props) {
           </span>
         )}
       </div>
+      {isSpectator && (
+        <div className="border-b border-indigo-200 bg-indigo-50 px-4 py-2.5 text-center text-sm text-indigo-700">
+          👀 Sleduješ tuto hru jako <strong>pozorovatel</strong> — hráčské akce nejsou dostupné.
+          {gameCode && (
+            <> Chceš hrát?{" "}
+              <a href={`/?join=${gameCode}`} className="font-semibold underline hover:text-indigo-900">
+                Připoj se kódem {gameCode} →
+              </a>
+            </>
+          )}
+        </div>
+      )}
       <div className="p-6">
         <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 lg:grid-cols-[1fr_340px]">
 
@@ -1992,8 +2004,8 @@ export default function GameBoard({ gameCode }: Props) {
                   </div>
                 )}
                 {isSpectator && (
-                  <div className="rounded-[3px] bg-indigo-100 px-2 py-1 text-[11px] font-semibold text-indigo-700">
-                    👀 Divák
+                  <div className="rounded-[3px] bg-indigo-100 px-2.5 py-1 text-xs font-semibold text-indigo-700">
+                    👀 Pozorovatel
                   </div>
                 )}
               </div>
