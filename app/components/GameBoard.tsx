@@ -13,6 +13,7 @@ import {
 } from "@/lib/themes/assets";
 import { loadThemeManifestAsync } from "@/lib/themes/loader";
 import { getBoardById } from "@/lib/board";
+import { logEvent } from "@/lib/analytics";
 import type { Field } from "@/lib/engine";
 import {
   sleep,
@@ -448,7 +449,9 @@ export default function GameBoard({ gameCode }: Props) {
       if (pid) {
         setViewerRole("player");
       } else {
-        setViewerRole(myDiscordId ? "spectator" : "login_required");
+        const role = myDiscordId ? "spectator" : "login_required";
+        setViewerRole(role);
+        if (role === "spectator") logEvent({ name: "spectator_view", game_code: gameCode });
       }
 
       // Host detekce: Discord ID musí souhlasit s owner_discord_id hry
@@ -1531,6 +1534,8 @@ export default function GameBoard({ gameCode }: Props) {
     const soloLoss = updatedPlayers.length === 1 && activePlayers.length === 0;
     if (multiplayerWin || soloLoss) {
       await supabase.from("games").update({ status: "finished" }).eq("id", gameId);
+      const winner = multiplayerWin ? (activePlayers[0]?.name ?? "") : "nobody";
+      if (gameCode) logEvent({ name: "game_finish", game_code: gameCode, winner });
       // Okamžitý lokální update — stejný vzor jako cancelGame.
       // Realtime propaguje ostatním klientům, ale tento klient nečeká.
       setGameStatus("finished");

@@ -8,6 +8,7 @@ import { THEMES } from "@/lib/themes";
 import { BOARD_PRESETS } from "@/lib/board";
 import MapMenuStrip from "./MapMenuStrip";
 import BrandLogo from "./BrandLogo";
+import { logEvent } from "@/lib/analytics";
 
 interface DiscordUser {
   id: string;
@@ -245,6 +246,7 @@ export default function LandingPage() {
 
     if (gameErr || !game) {
       console.error("[createGame] games insert failed:", gameErr?.message, gameErr?.details, gameErr?.hint);
+      logEvent({ name: "create_game_fail", reason: gameErr?.message ?? "insert_failed" });
       setError(`Nepodařilo se vytvořit hru. (${gameErr?.message ?? "neznámá chyba"})`);
       setLoading(false);
       return;
@@ -276,6 +278,7 @@ export default function LandingPage() {
       log: [],
     });
 
+    logEvent({ name: "create_game_success", game_code: code, theme_id: selectedThemeId, board_id: selectedBoardId });
     localStorage.setItem(`paytowin_player_${code}`, newPlayer.id);
     setShareCode(code);
     setLoading(false);
@@ -295,9 +298,11 @@ export default function LandingPage() {
 
     if (gameErr || !game) {
       if (!game && gameErr?.code === "PGRST116") {
+        logEvent({ name: "join_game_fail", reason: "not_found" });
         setError("Hra s tímto kódem neexistuje.");
       } else {
         console.error("[joinGame] game lookup failed:", gameErr?.message, gameErr?.details);
+        logEvent({ name: "join_game_fail", reason: "lookup_error" });
         setError("Nepodařilo se načíst hru. Zkontroluj připojení a zkus to znovu.");
       }
       setLoading(false);
@@ -305,17 +310,20 @@ export default function LandingPage() {
     }
 
     if ((game.game_mode ?? "online") === "local") {
+      logEvent({ name: "join_game_fail", reason: "local_game" });
       setError("Tato hra je lokální (hot-seat) a nelze se k ní připojit online.");
       setLoading(false);
       return;
     }
 
     if (game.status === "cancelled") {
+      logEvent({ name: "join_game_fail", reason: "cancelled" });
       setError("Tato hra byla zrušena hostitelem.");
       setLoading(false);
       return;
     }
     if (game.status === "finished") {
+      logEvent({ name: "join_game_fail", reason: "finished" });
       setError("Tato hra již skončila.");
       setLoading(false);
       return;
@@ -328,6 +336,7 @@ export default function LandingPage() {
 
     const maxP = game.max_players ?? 32;
     if ((existingPlayers?.length ?? 0) >= maxP) {
+      logEvent({ name: "join_game_fail", reason: "full" });
       setError(`Hra je plná (max. ${maxP} hráčů).`);
       setLoading(false);
       return;
@@ -336,6 +345,7 @@ export default function LandingPage() {
     const turnCount = stateData?.turn_count ?? 0;
     const currentPlayerCount = existingPlayers?.length ?? 0;
     if (currentPlayerCount > 0 && turnCount >= currentPlayerCount) {
+      logEvent({ name: "join_game_fail", reason: "too_late" });
       setError("Do této hry se již nelze připojit — první kolo už skončilo.");
       setLoading(false);
       return;
@@ -358,10 +368,12 @@ export default function LandingPage() {
 
     if (!newPlayer) {
       console.error("[joinGame] players insert failed:", joinPlayerErr?.message, joinPlayerErr?.details);
+      logEvent({ name: "join_game_fail", reason: "player_insert_failed" });
       setError("Nepodařilo se připojit ke hře. Zkus to znovu.");
       setLoading(false);
       return;
     }
+    logEvent({ name: "join_game_success", game_code: game.code });
     localStorage.setItem(`paytowin_player_${game.code}`, newPlayer.id);
     router.push(`/game/${game.code}`);
   };
