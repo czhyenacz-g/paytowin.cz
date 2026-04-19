@@ -602,7 +602,7 @@ export default function GameBoard({ gameCode }: Props) {
       animPositionRef.current = pos;
       setTrailFields([...trail]);
       playStepSound();
-      await sleep(500);
+      await sleep(400);
     }
 
     setIsMoving(false);
