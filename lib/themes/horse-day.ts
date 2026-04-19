@@ -117,20 +117,32 @@ export const horseDayTheme: Theme = {
       "flavorText": "Masivní černý kůň, který vítězí silou a výdrží spíš než rychlým startem.",
       "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/horse_night_buran.webp",
       "racerType": "horse",
-      "slotIndex": 6
+      "slotIndex": 5
+    },
+    {
+      "id": "caballo_real",
+      "name": "Caballo Real",
+      "speed": 5,
+      "price": 3500,
+      "emoji": "👑",
+      "maxStamina": 100,
+      "flavorText": "Kůň s královskou výdrží.",
+      "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/caballo_real.webp",
+      "racerType": "horse",
+      "slotIndex": 1
     },
     {
       "id": "zeleznik",
       "name": "Železník",
       "speed": 10,
-      "price": 15000,
+      "price": 99999,
       "emoji": "🐴",
       "maxStamina": 10,
       "isLegendary": true,
       "flavorText": "Železník — legendární kůň, který nezná strach, únavu ani druhé místo. Jeho jediný cíl je jasný: vyhrát.",
       "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/zeleznik.webp",
       "racerType": "horse",
-      "slotIndex": 10
+      "slotIndex": 7
     }
   ],
 
