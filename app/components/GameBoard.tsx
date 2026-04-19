@@ -1677,8 +1677,8 @@ export default function GameBoard({ gameCode }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [!!gameState]);
 
-  // Herní rok — startovní rok theme + počet odehraných kol (0-indexed)
-  const gameYear = (theme.mapMeta?.yearStart ?? 1921) + (gameState ? Math.floor(gameState.turn_count / Math.max(1, players.length)) : 0);
+  // Herní rok — startovní rok theme + počet průchodů STARTem lídra (player.laps)
+  const gameYear = (theme.mapMeta?.yearStart ?? 1921) + players.reduce((max, p) => Math.max(max, p.laps ?? 0), 0);
 
   // Pro render desky: animující hráč se zobrazuje na animPosition, ne na DB pozici
   const displayPlayers = players.map((p, i) =>
