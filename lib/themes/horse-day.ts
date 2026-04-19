@@ -116,7 +116,20 @@ export const horseDayTheme: Theme = {
       "flavorText": "Masivní černý kůň, který vítězí silou a výdrží spíš než rychlým startem.",
       "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/horse_night_buran.webp",
       "racerType": "horse",
-      "slotIndex": 1
+      "slotIndex": 6
+    },
+    {
+      "id": "zeleznik",
+      "name": "Železník",
+      "speed": 10,
+      "price": 15000,
+      "emoji": "🐴",
+      "maxStamina": 10,
+      "isLegendary": true,
+      "flavorText": "Železník — legendární kůň, který nezná strach, únavu ani druhé místo. Jeho jediný cíl je jasný: vyhrát.",
+      "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/zeleznik.webp",
+      "racerType": "horse",
+      "slotIndex": 5
     }
   ],
 
