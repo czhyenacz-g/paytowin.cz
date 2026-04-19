@@ -73,17 +73,6 @@ export const horseNightTheme: Theme = {
       "slotIndex": 0
     },
     {
-      "id": "modry_blesk",
-      "name": "Blue thunder",
-      "speed": 3,
-      "price": 150,
-      "emoji": "🔵",
-      "maxStamina": 95,
-      "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/modry_blesk.webp",
-      "racerType": "car",
-      "slotIndex": 5
-    },
-    {
       "id": "zlata_hriva",
       "name": "Zlatá hříva",
       "speed": 6,

@@ -53,7 +53,7 @@ export const horseDayTheme: Theme = {
   },
   racerRefs: [
     { slotIndex: 0, racer_id: "divoka_ruze" },
-    { slotIndex: 1, racer_id: "modry_blesk" },
+    { slotIndex: 1, racer_id: "burano" },
     { slotIndex: 2, racer_id: "zlata_hriva" },
     { slotIndex: 3, racer_id: "r6" },
     { slotIndex: 4, racer_id: "rychly_vitr" },
