@@ -66,7 +66,7 @@ export const horseDayTheme: Theme = {
       "id": "divoka_ruze",
       "name": "Divoká růže",
       "speed": 2,
-      "price": 80,
+      "price": 1200,
       "emoji": "🌹",
       "maxStamina": 100,
       "flavorText": "Nějaká kůň musí být nejlevnější.",
@@ -78,7 +78,7 @@ export const horseDayTheme: Theme = {
       "id": "zlata_hriva",
       "name": "Zlatá hříva",
       "speed": 6,
-      "price": 250,
+      "price": 3000,
       "emoji": "🟡",
       "maxStamina": 90,
       "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/zlata_hriva.webp",
@@ -89,7 +89,7 @@ export const horseDayTheme: Theme = {
       "id": "r6",
       "name": "Pepík",
       "speed": 4,
-      "price": 150,
+      "price": 2500,
       "emoji": "🐴",
       "maxStamina": 100,
       "flavorText": "Pepó! Pepane! Pepíku!!",
@@ -101,7 +101,7 @@ export const horseDayTheme: Theme = {
       "id": "rychly_vitr",
       "name": "Rychlý vítr",
       "speed": 9,
-      "price": 400,
+      "price": 4000,
       "emoji": "🟢",
       "maxStamina": 80,
       "racerType": "horse",
@@ -111,7 +111,7 @@ export const horseDayTheme: Theme = {
       "id": "horse_night_buran",
       "name": "Burano",
       "speed": 7,
-      "price": 500,
+      "price": 5000,
       "emoji": "🐴",
       "maxStamina": 95,
       "flavorText": "Masivní černý kůň, který vítězí silou a výdrží spíš než rychlým startem.",
@@ -130,7 +130,7 @@ export const horseDayTheme: Theme = {
       "flavorText": "Železník — legendární kůň, který nezná strach, únavu ani druhé místo. Jeho jediný cíl je jasný: vyhrát.",
       "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/zeleznik.webp",
       "racerType": "horse",
-      "slotIndex": 5
+      "slotIndex": 10
     }
   ],
 
