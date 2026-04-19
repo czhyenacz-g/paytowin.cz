@@ -24,7 +24,7 @@ export const carDayTheme: Theme = {
       horse:      "h-[72px] w-[72px] border-sky-400 bg-sky-100 text-sky-800", // @deprecated alias
       neutral:    "h-[72px] w-[72px] border-slate-300 bg-white text-slate-700",
       chance:     "h-[72px] w-[72px] border-amber-400 bg-amber-100 text-amber-800",
-      finance:    "h-[72px] w-[72px] border-teal-400 bg-teal-100 text-teal-800",
+      finance:    "h-[72px] w-[72px] border-amber-400 bg-teal-100 text-teal-800",
     },
     activePlayerBadge: "bg-slate-900 text-white",
     rollPanelIdle:     "bg-slate-100",
