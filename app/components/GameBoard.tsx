@@ -2001,12 +2001,12 @@ export default function GameBoard({ gameCode }: Props) {
                 />
                 {isLocalGame && (
                   <div className="rounded-[3px] bg-orange-100 px-2 py-1 text-[11px] font-semibold text-orange-700">
-                    🖥️ Lokální
+                    {UI_TEXT.board.localModeBadge}
                   </div>
                 )}
                 {isSpectator && (
                   <div className="rounded-[3px] bg-indigo-100 px-2.5 py-1 text-xs font-semibold text-indigo-700">
-                    👀 Pozorovatel
+                    {UI_TEXT.board.spectatorBadge}
                   </div>
                 )}
               </div>
@@ -2014,7 +2014,7 @@ export default function GameBoard({ gameCode }: Props) {
               {/* Střední zóna: stav hry — roztáhne se */}
               <div className="flex flex-1 items-center justify-center gap-2 overflow-hidden">
                 <div className="rounded-[3px] bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-500 shrink-0">
-                  Kolo <span className="font-bold text-slate-700">{currentRound}</span>
+                  {UI_TEXT.board.roundLabel} <span className="font-bold text-slate-700">{currentRound}</span>
                   {(currentPlayer?.laps ?? 0) >= 1 && (
                     <span className="ml-1 text-red-500" title={`Daň za průchod STARTem: -${getStartTax(currentPlayer?.laps ?? 0, economy)} 💰`}>🏛️</span>
                   )}
@@ -2032,7 +2032,7 @@ export default function GameBoard({ gameCode }: Props) {
                       onClick={startRace}
                       className="rounded-[3px] bg-amber-500 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-amber-600 transition"
                     >
-                      🏁 Závod
+                      {UI_TEXT.board.raceButton}
                     </button>
                   )}
                   <button
@@ -2332,7 +2332,7 @@ export default function GameBoard({ gameCode }: Props) {
           <div className="flex flex-col gap-3">
             <div className={`rounded-[4px] p-5 shadow-xl ring-1 ring-black/[0.06] ${theme.colors.cardBackground}`}>
               <div className="flex items-center justify-between mb-4">
-                <div className={`text-[10px] font-bold uppercase tracking-widest ${theme.colors.textMuted}`}>Herní panel</div>
+                <div className={`text-[10px] font-bold uppercase tracking-widest ${theme.colors.textMuted}`}>{UI_TEXT.board.gamePanelTitle}</div>
                 <button
                   onClick={toggleSound}
                   title={soundEnabled ? "Vypnout zvuky" : "Zapnout zvuky"}
@@ -2430,7 +2430,7 @@ export default function GameBoard({ gameCode }: Props) {
                 )}
 
                 <div className={`rounded-[4px] p-4 transition-colors border border-black/[0.06] ${isRolling ? theme.colors.rollPanelRolling : theme.colors.rollPanelIdle}`}>
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Poslední hod</div>
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">{UI_TEXT.board.lastRollTitle}</div>
                   <div className="flex items-center gap-3">
                     <DiceFace
                       value={(isRolling || isMoving || hasPendingRollDecision) && displayRoll !== null ? displayRoll : (gameState?.last_roll ?? null)}
@@ -2499,8 +2499,8 @@ export default function GameBoard({ gameCode }: Props) {
                       )}
                       <div>
                         <div className="font-bold text-slate-800">{pendingRacer.racer.name}</div>
-                        <div className="text-sm text-slate-500">Rychlost: {"⭐".repeat(pendingRacer.racer.speed)}</div>
-                        <div className="text-sm font-semibold text-amber-700">Cena: {pendingRacer.racer.price} 💰</div>
+                        <div className="text-sm text-slate-500">{UI_TEXT.racer.speedLabel} {"⭐".repeat(pendingRacer.racer.speed)}</div>
+                        <div className="text-sm font-semibold text-amber-700">{UI_TEXT.racer.priceLabel} {pendingRacer.racer.price} 💰</div>
                         <div className="text-xs text-slate-400">
                           {players[pendingRacer.playerIndex]?.name} má: {players[pendingRacer.playerIndex]?.coins ?? 0} 💰
                         </div>
@@ -2513,18 +2513,18 @@ export default function GameBoard({ gameCode }: Props) {
                           disabled={(players[pendingRacer.playerIndex]?.coins ?? 0) < pendingRacer.racer.price}
                           className="flex-1 rounded-[3px] bg-amber-500 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-600 disabled:cursor-not-allowed disabled:bg-slate-300"
                         >
-                          Koupit
+                          {UI_TEXT.racer.buyButton}
                         </button>
                         <button
                           onClick={skipRacer}
                           className="flex-1 rounded-[3px] border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                         >
-                          Přeskočit
+                          {UI_TEXT.racer.skipButton}
                         </button>
                       </div>
                     ) : (
                       <div className="rounded-[3px] bg-slate-100 px-3 py-2 text-center text-sm text-slate-500">
-                        Čeká na rozhodnutí {players[pendingRacer.playerIndex]?.name}…
+                        {UI_TEXT.racer.waitingForDecision} {players[pendingRacer.playerIndex]?.name}…
                       </div>
                     )}
                   </div>
@@ -2533,7 +2533,7 @@ export default function GameBoard({ gameCode }: Props) {
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <div className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">
-                          Korekce tahu
+                          {UI_TEXT.rollDecision.title}
                         </div>
                         <div className="mt-1 text-sm font-semibold text-slate-800">
                           Padlo <span className="text-base">{pendingRollDecision.baseRoll}</span>. Vyber finální tah.
@@ -2562,13 +2562,13 @@ export default function GameBoard({ gameCode }: Props) {
                                 } disabled:cursor-not-allowed disabled:opacity-45`}
                               >
                                 <div className="text-xs font-black uppercase tracking-wide text-slate-500">
-                                  {option.adjustment === 0 ? "Normál" : `${signedLabel} krok`}
+                                  {option.adjustment === 0 ? UI_TEXT.rollDecision.normalOption : `${signedLabel} ${UI_TEXT.rollDecision.stepUnit}`}
                                 </div>
                                 <div className="mt-1 text-lg font-bold text-slate-800">
                                   {option.finalRoll}
                                 </div>
                                 <div className="mt-1 text-[11px] font-medium text-slate-500">
-                                  {option.cost === 0 ? "Zdarma" : `-${option.cost} 💰`}
+                                  {option.cost === 0 ? UI_TEXT.rollDecision.free : `-${option.cost} 💰`}
                                 </div>
                                 {option.targetField && (
                                   <div className="mt-2 text-[11px] leading-snug text-slate-600">
@@ -2580,12 +2580,12 @@ export default function GameBoard({ gameCode }: Props) {
                           })}
                         </div>
                         <div className="mt-2 text-[11px] text-slate-400">
-                          Když nic nevybereš, za chvíli se provede normální tah.
+                          {UI_TEXT.rollDecision.autoFallbackHint}
                         </div>
                       </>
                     ) : (
                       <div className="mt-3 rounded-[3px] bg-slate-100 px-3 py-3 text-center text-sm text-slate-500">
-                        Čeká se na volbu hráče {currentPlayer?.name ?? "…"}…
+                        {UI_TEXT.rollDecision.waitingForPlayer} {currentPlayer?.name ?? "…"}…
                       </div>
                     )}
                   </div>
@@ -2603,17 +2603,17 @@ export default function GameBoard({ gameCode }: Props) {
                   </div>
                 ) : isRolling ? (
                   <div className="w-full rounded-[4px] bg-amber-100 px-4 py-4 text-center text-amber-700 font-semibold animate-pulse">
-                    🎲 Háže se…
+                    {UI_TEXT.board.rollingStatus}
                   </div>
                 ) : isMoving ? (
                   <div className="w-full rounded-[4px] bg-slate-100 px-4 py-4 text-center text-slate-600 font-semibold">
-                    🐎 Figurka se pohybuje…
+                    {UI_TEXT.board.movingStatus}
                   </div>
                 ) : isMyTurn ? (
                   <div className="space-y-2">
                     {canReroll && (
                       <div className="rounded-[3px] bg-amber-100 px-3 py-2 text-center text-xs font-semibold text-amber-800">
-                        🎲 Máš druhý hod zdarma!
+                        {UI_TEXT.board.freeRerollNotice}
                       </div>
                     )}
                     <button
@@ -2621,19 +2621,19 @@ export default function GameBoard({ gameCode }: Props) {
                       disabled={!gameState || players.length === 0}
                       className={`w-full rounded-[4px] px-4 py-4 text-lg font-semibold text-white shadow transition disabled:cursor-not-allowed disabled:bg-slate-400 ${canReroll ? "bg-amber-500 hover:bg-amber-600" : "bg-slate-900 hover:bg-slate-800"}`}
                     >
-                      {canReroll ? "🎲 Hoď znovu!" : "Hoď kostkou"}
+                      {canReroll ? UI_TEXT.board.rerollButton : UI_TEXT.board.rollButton}
                     </button>
                   </div>
                 ) : (
                   <div className="w-full rounded-[4px] bg-slate-100 px-4 py-4 text-center text-slate-500">
-                    Čekej na tah hráče <span className="font-semibold text-slate-700">{currentPlayer?.name ?? "…"}</span>
+                    {UI_TEXT.board.waitingForPlayer} <span className="font-semibold text-slate-700">{currentPlayer?.name ?? "…"}</span>
                   </div>
                 )}
 
                 {/* Hráči */}
                 <div className="border-t border-black/[0.06] my-1" />
                 <div>
-                  <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">Hráči</div>
+                  <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">{UI_TEXT.board.playersTitle}</div>
                   <div className="space-y-2">
                     {players.map((player, index) => {
                       const isCurrent = gameState?.current_player_index === index;
@@ -2679,7 +2679,7 @@ export default function GameBoard({ gameCode }: Props) {
                                     {player.name}
                                   </div>
                                   {bankrupt ? (
-                                    <div className="text-xs font-semibold text-red-500">💀 Zkrachoval</div>
+                                    <div className="text-xs font-semibold text-red-500">{UI_TEXT.board.bankruptLabel}</div>
                                   ) : (
                                     <div className={`text-xs truncate ${theme.colors.textMuted}`}>{field?.emoji} {field?.label}</div>
                                   )}
@@ -2691,7 +2691,7 @@ export default function GameBoard({ gameCode }: Props) {
                                 </div>
                                 {isCurrent && !bankrupt && (
                                   <div className={`rounded-full px-2 py-0.5 text-center text-[10px] font-semibold ${theme.colors.activePlayerBadge}`}>
-                                    ▶ Na tahu
+                                    {UI_TEXT.board.activePlayerBadge}
                                   </div>
                                 )}
                               </div>
@@ -2727,13 +2727,13 @@ export default function GameBoard({ gameCode }: Props) {
                                             ⚡ {h.speed}
                                           </span>
                                           <span className="whitespace-nowrap rounded-[2px] bg-white/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
-                                            Stamina {h.stamina ?? h.maxStamina ?? 100}%
+                                            {UI_TEXT.board.staminaLabel} {h.stamina ?? h.maxStamina ?? 100}%
                                           </span>
                                           {isOwn ? (
                                             <span className="inline-flex items-center gap-1 whitespace-nowrap">
                                               {h.isPreferred && (
                                                 <span className="rounded-[2px] bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600">
-                                                  Hlavní
+                                                  {UI_TEXT.board.preferredBadge}
                                                 </span>
                                               )}
                                               <button
@@ -2775,7 +2775,7 @@ export default function GameBoard({ gameCode }: Props) {
             {/* Log */}
             {(gameState?.log?.length ?? 0) > 0 && (
               <div className={`rounded-[4px] px-4 py-3 shadow-sm ring-1 ring-black/[0.05] ${theme.colors.cardBackground}`}>
-                <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Log tahů</div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">{UI_TEXT.board.moveLogTitle}</div>
                 <div className="space-y-1 max-h-36 overflow-y-auto">
                   {(gameState?.log ?? []).map((entry, i) => (
                     <div key={i} className={`text-[11px] leading-snug ${i === 0 ? "font-medium text-slate-700" : "text-slate-400"}`}>

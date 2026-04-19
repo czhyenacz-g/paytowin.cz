@@ -67,4 +67,52 @@ export const UI_TEXT = {
     continueAction:      "Pokračovat →",
     waitingForHost:      "Čeká na hostitele…",
   },
+  /**
+   * Herní deska — panel napravo, HUD, player cards.
+   * Texty opakující se v hlavním herním UI — nezávislé na theme.
+   * Poznámka: movingStatus emoji (🐎) je horse-specific — follow-up spolu s race.types.racingTitle.
+   */
+  board: {
+    // Section labels
+    gamePanelTitle:    "Herní panel",
+    lastRollTitle:     "Poslední hod",
+    playersTitle:      "Hráči",
+    moveLogTitle:      "Log tahů",
+    roundLabel:        "Kolo",
+    // HUD badges / buttons
+    localModeBadge:    "🖥️ Lokální",
+    spectatorBadge:    "👀 Pozorovatel",
+    raceButton:        "🏁 Závod",
+    // Dice / turn states
+    rollingStatus:     "🎲 Háže se…",
+    movingStatus:      "🐎 Figurka se pohybuje…",
+    rollButton:        "Hoď kostkou",
+    rerollButton:      "🎲 Hoď znovu!",
+    freeRerollNotice:  "🎲 Máš druhý hod zdarma!",
+    waitingForPlayer:  "Čekej na tah hráče",
+    // Player card labels
+    activePlayerBadge: "▶ Na tahu",
+    bankruptLabel:     "💀 Zkrachoval",
+    staminaLabel:      "Stamina",
+    preferredBadge:    "Hlavní",
+  },
+
+  /** Racer purchase panel — nabídka koupě závodníka při přistání na racer poli. */
+  racer: {
+    buyButton:          "Koupit",
+    skipButton:         "Přeskočit",
+    speedLabel:         "Rychlost:",
+    priceLabel:         "Cena:",
+    waitingForDecision: "Čeká na rozhodnutí",
+  },
+
+  /** Korekce tahu — panel pro volbu úpravy hodu kostkou. */
+  rollDecision: {
+    title:            "Korekce tahu",
+    normalOption:     "Normál",
+    stepUnit:         "krok",
+    free:             "Zdarma",
+    autoFallbackHint: "Když nic nevybereš, za chvíli se provede normální tah.",
+    waitingForPlayer: "Čeká se na volbu hráče",
+  },
 } as const;
