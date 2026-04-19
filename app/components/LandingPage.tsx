@@ -294,9 +294,12 @@ export default function LandingPage() {
       discord_avatar_url: discordUser?.avatar ?? null,
     }).select().single();
 
-    if (newPlayer) {
-      localStorage.setItem(`paytowin_player_${game.code}`, newPlayer.id);
+    if (!newPlayer) {
+      setError("Nepodařilo se připojit ke hře. Zkus to znovu.");
+      setLoading(false);
+      return;
     }
+    localStorage.setItem(`paytowin_player_${game.code}`, newPlayer.id);
     router.push(`/game/${game.code}`);
   };
 
