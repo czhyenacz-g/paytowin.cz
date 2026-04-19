@@ -146,6 +146,27 @@ export default function AdminPanel() {
           <a href="/" className="text-sm text-slate-500 underline hover:text-slate-700">← zpět na hru</a>
         </div>
 
+        {/* Statistiky */}
+        {(() => {
+          const stats = [
+            { label: "Celkem",     value: games.length,                                          color: "bg-slate-100 text-slate-700" },
+            { label: "Čeká",       value: games.filter(g => g.status === "waiting").length,      color: "bg-amber-100 text-amber-700" },
+            { label: "Hraje",      value: games.filter(g => g.status === "playing").length,      color: "bg-emerald-100 text-emerald-700" },
+            { label: "Dokončeno",  value: games.filter(g => g.status === "finished").length,     color: "bg-indigo-100 text-indigo-700" },
+            { label: "Zrušeno",    value: games.filter(g => g.status === "cancelled").length,    color: "bg-red-100 text-red-600" },
+          ];
+          return (
+            <div className="grid grid-cols-5 gap-3">
+              {stats.map(s => (
+                <div key={s.label} className={`rounded-2xl px-4 py-3 text-center ${s.color}`}>
+                  <div className="text-2xl font-bold">{s.value}</div>
+                  <div className="mt-0.5 text-xs font-medium uppercase tracking-wide opacity-70">{s.label}</div>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+
         {/* Hry */}
         <div className="rounded-3xl bg-white p-6 shadow-lg">
           <div className="mb-4 flex items-center justify-between gap-4">
