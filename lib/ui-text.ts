@@ -88,7 +88,7 @@ export const UI_TEXT = {
     movingStatus:      "Figurka se pohybuje…",
     rollButton:        "Hoď kostkou",
     rerollButton:      "🎲 Hoď znovu!",
-    freeRerollNotice:  "🎲 Máš druhý hod zdarma!",
+    freeRerollNotice:  "🎲 Máš druhý hod navíc!",
     waitingForPlayer:  "Čekej na tah hráče",
     // Player card labels
     activePlayerBadge: "▶ Na tahu",
