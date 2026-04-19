@@ -1990,10 +1990,11 @@ export default function GameBoard({ gameCode }: Props) {
   }
 
   return (
-    <div
-      className={`min-h-screen ${theme.colors.pageBackground}`}
-      style={theme.colors.arenaGradient ? { background: theme.colors.arenaGradient } : undefined}
-    >
+    <div className={`min-h-screen ${theme.colors.pageBackground}`}>
+      {/* Background pinned to viewport — nezávislý na výšce content containeru */}
+      {theme.colors.arenaGradient && (
+        <div className="fixed inset-0 -z-10" style={{ background: theme.colors.arenaGradient }} />
+      )}
 
       {/* ── Center Event Modal (card + offer) ───────────────────────────── */}
       {centerEvent && (
