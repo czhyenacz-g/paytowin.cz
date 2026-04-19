@@ -1381,8 +1381,11 @@ export default function GameBoard({ gameCode }: Props) {
       ? gameState.offer_pending as RacePendingEvent
       : null;
     if (!evt?.playerIds?.length) return;
-    const key = `${evt.playerIds[evt.currentSelectorIndex]}_${evt.currentSelectorIndex}`;
-    if (selectionSubmittedRef.current === key) return;
+    const key = `${evt.turnCount}_${evt.playerIds[evt.currentSelectorIndex]}_${evt.currentSelectorIndex}`;
+    if (selectionSubmittedRef.current === key) {
+      console.warn(`[race-select] dedup blocked — key=${key}, previous race may have had same player at same index`);
+      return;
+    }
     selectionSubmittedRef.current = key;
 
     const currentSelectorId = evt.playerIds[evt.currentSelectorIndex];
@@ -1418,8 +1421,11 @@ export default function GameBoard({ gameCode }: Props) {
     if (!evt || evt.phase !== "racing") return;
     const idx = evt.currentRacerIndex ?? 0;
     const currentRacerId = evt.playerIds[idx];
-    const key = `${currentRacerId}_${idx}`;
-    if (pendingRaceScoreRef.current === key) return;
+    const key = `${evt.turnCount}_${currentRacerId}_${idx}`;
+    if (pendingRaceScoreRef.current === key) {
+      console.warn(`[race-score] dedup blocked — key=${key}, previous race may have had same player at same index`);
+      return;
+    }
     if (evt.scores?.[currentRacerId] !== undefined) return; // score už přišlo, nepřepisuj
     pendingRaceScoreRef.current = key;
 
