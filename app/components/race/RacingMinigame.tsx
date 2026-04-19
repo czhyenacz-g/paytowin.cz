@@ -264,7 +264,7 @@ export default function RacingMinigame({
   if (!isMyTurn) {
     return (
       <div className="text-center space-y-4 py-2">
-        <div className="text-4xl">{racingHorse?.emoji ?? "🏇"}</div>
+        <div className="text-4xl">{racingHorse?.emoji ?? "🎯"}</div>
         <p className="text-sm text-slate-500">
           Závodí:{" "}
           <span className="font-semibold text-slate-700">{racingPlayer.name}</span>
@@ -285,7 +285,7 @@ export default function RacingMinigame({
       {/* Header: kůň + celkové skóre */}
       <div className="flex items-center justify-between">
         <span className="text-lg">
-          {racingHorse?.emoji ?? "🏇"}{" "}
+          {racingHorse?.emoji ?? "🎯"}{" "}
           <span className="text-sm font-semibold text-slate-700">{racingHorse?.name ?? "Závodník"}</span>
         </span>
         <span className="text-2xl font-black text-slate-800 tabular-nums">{totalScore}</span>
@@ -335,7 +335,7 @@ export default function RacingMinigame({
                 : { left: "50%", fontSize: "26px", transform: "translateX(-50%)" }
               }
             >
-              {racingHorse?.emoji ?? "🏇"}
+              {racingHorse?.emoji ?? "🎯"}
             </div>
 
             {/* Přijíždějící obstacle marker — obstacle emoji + action arrow */}
@@ -419,7 +419,7 @@ export default function RacingMinigame({
                 transition: "left 70ms ease-out",
               }}
             >
-              {racingHorse?.emoji ?? "🏇"}
+              {racingHorse?.emoji ?? "🎯"}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">

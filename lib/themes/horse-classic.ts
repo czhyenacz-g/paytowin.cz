@@ -46,9 +46,10 @@ export const horseClassicTheme: Theme = {
       gamble: "apuesta",
       racer:  "caballo",
     },
-    racer:      "Kůň",
-    racers:     "Koně",
-    racerField: "Stáj",
+    racer:       "Kůň",
+    racers:      "Koně",
+    racerField:  "Stáj",
+    racingEmoji: "🐎",
   },
   racerRefs: [
     { slotIndex: 0, racer_id: "sombra_roja" },

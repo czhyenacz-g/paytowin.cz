@@ -1957,6 +1957,7 @@ export default function GameBoard({ gameCode }: Props) {
           raceResults={raceResults}
           isHost={isHost}
           isLocalGame={isLocalGame}
+          racingEmoji={theme.labels.racingEmoji}
           onSelectRacer={submitRaceSelection}
           onSkip={closeRacePending}
           onSubmitScore={submitPendingRaceScore}
@@ -2318,7 +2319,7 @@ export default function GameBoard({ gameCode }: Props) {
                     </div>
                   ) : (
                     <div>
-                      <div className="text-4xl">🐎</div>
+                      <div className="text-4xl">{theme.labels.racingEmoji}</div>
                       <div className={`mt-1 text-sm font-semibold ${theme.colors.centerTitle}`}>{theme.labels.centerTitle}</div>
                       <div className={`mt-1 text-xs ${theme.colors.centerSubtitle}`}>{theme.labels.centerSubtitle}</div>
                     </div>
@@ -2344,7 +2345,7 @@ export default function GameBoard({ gameCode }: Props) {
               <div className="space-y-3">
                 {shouldShowRacerGuide && (
                   <div className="relative overflow-hidden rounded-[4px] border border-amber-300 bg-gradient-to-br from-amber-50 via-white to-amber-100 p-4 shadow-sm">
-                    <div className="pointer-events-none absolute -right-4 -top-4 text-6xl opacity-10">🏇</div>
+                    <div className="pointer-events-none absolute -right-4 -top-4 text-6xl opacity-10">{theme.labels.racingEmoji}</div>
                     <div className="flex items-start gap-3">
                       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[3px] bg-amber-100 text-2xl">
                         🎩
@@ -2373,7 +2374,7 @@ export default function GameBoard({ gameCode }: Props) {
 
                 {!shouldShowRacerGuide && shouldShowStaminaGuide && (
                   <div className="relative overflow-hidden rounded-[4px] border border-sky-300 bg-gradient-to-br from-sky-50 via-white to-cyan-100 p-4 shadow-sm">
-                    <div className="pointer-events-none absolute -right-4 -top-4 text-6xl opacity-10">🐎</div>
+                    <div className="pointer-events-none absolute -right-4 -top-4 text-6xl opacity-10">{theme.labels.racingEmoji}</div>
                     <div className="flex items-start gap-3">
                       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[3px] bg-sky-100 text-2xl">
                         🎩
@@ -2607,7 +2608,7 @@ export default function GameBoard({ gameCode }: Props) {
                   </div>
                 ) : isMoving ? (
                   <div className="w-full rounded-[4px] bg-slate-100 px-4 py-4 text-center text-slate-600 font-semibold">
-                    {UI_TEXT.board.movingStatus}
+                    {theme.labels.racingEmoji} {UI_TEXT.board.movingStatus}
                   </div>
                 ) : isMyTurn ? (
                   <div className="space-y-2">

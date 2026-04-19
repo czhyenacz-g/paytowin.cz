@@ -46,9 +46,10 @@ export const horseNightTheme: Theme = {
       gamble: "hazard",
       racer:  "kůň",
     },
-    racer:      "Kůň",
-    racers:     "Koně",
-    racerField: "Stáj",
+    racer:       "Kůň",
+    racers:      "Koně",
+    racerField:  "Stáj",
+    racingEmoji: "🐎",
   },
   racerRefs: [
     { slotIndex: 0, racer_id: "divoka_ruze" },

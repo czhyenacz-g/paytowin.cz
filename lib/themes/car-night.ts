@@ -46,9 +46,10 @@ export const carNightTheme: Theme = {
       gamble: "hazard",
       racer:  "auto",
     },
-    racer:      "Auto",
-    racers:     "Auta",
-    racerField: "Garáž",
+    racer:       "Auto",
+    racers:      "Auta",
+    racerField:  "Garáž",
+    racingEmoji: "🏎️",
   },
   racerRefs: [
     { slotIndex: 0, racer_id: "stary_mustang" },

@@ -155,6 +155,8 @@ export interface ThemeLabels {
   racers: string;
   /** Jak theme nazývá místo kde závodníci stojí, např. "Stáj" nebo "Garáž" */
   racerField: string;
+  /** Emoji závodníka pro pohybové stavy UI, např. "🐎" nebo "🏎️" */
+  racingEmoji: string;
 }
 
 // ─── ThemeAssets ──────────────────────────────────────────────────────────────

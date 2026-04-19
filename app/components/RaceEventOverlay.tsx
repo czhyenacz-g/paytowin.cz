@@ -27,6 +27,7 @@ interface RaceEventOverlayProps {
   raceResults: RaceResult[] | null;
   isHost: boolean;
   isLocalGame: boolean;
+  racingEmoji: string;
   onSelectRacer: (racerKey: string) => void;
   onSkip: () => void;
   onSubmitScore: (result: MinigameResult) => void;
@@ -64,6 +65,7 @@ export default function RaceEventOverlay({
   raceResults,
   isHost,
   isLocalGame,
+  racingEmoji,
   onSelectRacer,
   onSkip,
   onSubmitScore,
@@ -234,7 +236,9 @@ export default function RaceEventOverlay({
         {phase === "racing" && racingPlayer && (
           <div className="space-y-3">
             <div className="text-center space-y-1">
-              <h2 className="text-lg font-bold text-slate-800">{labels.racingTitle}</h2>
+              <h2 className="text-lg font-bold text-slate-800">
+                {event.raceType === "mass_race" ? `${racingEmoji} ${labels.racingTitle}` : labels.racingTitle}
+              </h2>
               <p className="text-sm text-slate-400">
                 {(event.currentRacerIndex ?? 0) + 1} / {event.playerIds.length}
               </p>
@@ -244,7 +248,7 @@ export default function RaceEventOverlay({
                 showHandoff garantuje zobrazení od prvního renderu — žádný flash minigame. */}
             {showHandoff ? (
               <div className="text-center space-y-4 py-4">
-                <div className="text-5xl">{racingHorse?.emoji ?? "🏇"}</div>
+                <div className="text-5xl">{racingHorse?.emoji ?? racingEmoji}</div>
                 <p className="text-sm font-semibold text-slate-500 uppercase tracking-widest">
                   {UI_TEXT.race.handoffPrepare}
                 </p>

@@ -33,7 +33,7 @@ export const UI_TEXT = {
    * Race overlay texty.
    *
    * types: per-raceType labels dříve v RACE_TYPE_LABELS (RaceEventOverlay.tsx).
-   * Poznámka: racingTitle emoji (🏇) je horse-specific — follow-up: předat přes ThemeLabels.
+   * mass_race.racingTitle neobsahuje emoji — přidává ho RaceEventOverlay z theme.labels.racingEmoji.
    *
    * Ostatní: shared action/status texty overlay.
    */
@@ -44,7 +44,7 @@ export const UI_TEXT = {
         selectingEmoji:  "🏁",
         selectingPrompt: "Vyber závodníka pro závod",
         countdownSub:    "Závod začíná!",
-        racingTitle:     "🏇 Závod!",   // TODO: horse emoji → theme.labels.racingEmoji
+        racingTitle:     "Závod!",
         resultsTitle:    "Výsledky závodu",
       },
       rivals_race: {
@@ -70,7 +70,7 @@ export const UI_TEXT = {
   /**
    * Herní deska — panel napravo, HUD, player cards.
    * Texty opakující se v hlavním herním UI — nezávislé na theme.
-   * Poznámka: movingStatus emoji (🐎) je horse-specific — follow-up spolu s race.types.racingTitle.
+   * movingStatus neobsahuje emoji — GameBoard prepends theme.labels.racingEmoji.
    */
   board: {
     // Section labels
@@ -85,7 +85,7 @@ export const UI_TEXT = {
     raceButton:        "🏁 Závod",
     // Dice / turn states
     rollingStatus:     "🎲 Háže se…",
-    movingStatus:      "🐎 Figurka se pohybuje…",
+    movingStatus:      "Figurka se pohybuje…",
     rollButton:        "Hoď kostkou",
     rerollButton:      "🎲 Hoď znovu!",
     freeRerollNotice:  "🎲 Máš druhý hod zdarma!",
