@@ -9,7 +9,7 @@ export const horseClassicTheme: Theme = {
   colors: {
     pageBackground:     "bg-amber-50",
     cardBackground:     "bg-amber-50",
-    boardSurface:       "bg-green-700",
+    boardSurface:       "bg-green-700/80",
     boardSurfaceBorder: "border-green-900",
     centerBackground:   "bg-green-800",
     centerBorder:       "border-green-600",

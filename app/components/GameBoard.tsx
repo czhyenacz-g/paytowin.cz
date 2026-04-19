@@ -2059,7 +2059,9 @@ export default function GameBoard({ gameCode }: Props) {
         <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 lg:grid-cols-[1fr_340px]">
 
           {/* Herní plocha */}
-          <div className={`rounded-[4px] p-5 shadow-2xl ring-1 ring-black/[0.06] ${theme.colors.cardBackground}`}>
+          <div className="flex flex-col gap-3">
+            {/* HUD + legenda — vlastní panel s pozadím */}
+            <div className={`rounded-[4px] px-4 py-3 shadow-md ring-1 ring-black/[0.06] ${theme.colors.cardBackground}`}>
             {/* HUD — 3 zóny: brand | stav hry | akce */}
             <div className="mb-3 flex items-center gap-2">
               {/* Levá zóna: brand + mode badges */}
@@ -2115,12 +2117,13 @@ export default function GameBoard({ gameCode }: Props) {
               )}
             </div>
 
-            <div className="mb-2 flex flex-wrap gap-2 text-xs">
+            <div className="flex flex-wrap gap-2 text-xs">
               <span className="rounded-[3px] bg-emerald-100 px-2 py-1 text-emerald-800">🟢 {theme.labels.legend.gain}</span>
               <span className="rounded-[3px] bg-red-100 px-2 py-1 text-red-800">🔴 {theme.labels.legend.lose}</span>
               <span className="rounded-[3px] bg-violet-100 px-2 py-1 text-violet-800">🟣 {theme.labels.legend.gamble}</span>
               <span className="rounded-[3px] bg-amber-100 px-2 py-1 text-amber-800">🟠 {theme.labels.legend.racer}</span>
             </div>
+            </div>{/* konec HUD+legenda panelu */}
 
             <div className="relative mx-auto aspect-square w-full max-w-[760px] overflow-visible">
               <div
@@ -2851,10 +2854,10 @@ export default function GameBoard({ gameCode }: Props) {
             {/* Log */}
             {(gameState?.log?.length ?? 0) > 0 && (
               <div className={`rounded-[4px] px-4 py-3 shadow-sm ring-1 ring-black/[0.05] ${theme.colors.cardBackground}`}>
-                <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">{UI_TEXT.board.moveLogTitle}</div>
+                <div className={`text-[10px] font-bold uppercase tracking-widest mb-2 ${theme.colors.textMuted}`}>{UI_TEXT.board.moveLogTitle}</div>
                 <div className="space-y-1 max-h-36 overflow-y-auto">
                   {(gameState?.log ?? []).map((entry, i) => (
-                    <div key={i} className={`text-[11px] leading-snug ${i === 0 ? "font-medium text-slate-700" : "text-slate-400"}`}>
+                    <div key={i} className={`text-[11px] leading-snug ${i === 0 ? `font-medium ${theme.colors.textPrimary}` : theme.colors.textMuted}`}>
                       {entry}
                     </div>
                   ))}

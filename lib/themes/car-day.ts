@@ -9,7 +9,7 @@ export const carDayTheme: Theme = {
   colors: {
     pageBackground:     "bg-slate-100",
     cardBackground:     "bg-white",
-    boardSurface:       "bg-stone-200",
+    boardSurface:       "bg-stone-200/80",
     boardSurfaceBorder: "border-stone-300",
     centerBackground:   "bg-stone-300",
     centerBorder:       "border-stone-400",

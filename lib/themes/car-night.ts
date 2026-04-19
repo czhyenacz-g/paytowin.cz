@@ -9,7 +9,7 @@ export const carNightTheme: Theme = {
   colors: {
     pageBackground:     "bg-slate-950",
     cardBackground:     "bg-slate-800",
-    boardSurface:       "bg-slate-700",
+    boardSurface:       "bg-slate-700/80",
     boardSurfaceBorder: "border-slate-600",
     centerBackground:   "bg-stone-950",
     centerBorder:       "border-stone-700",
