@@ -1255,11 +1255,15 @@ export default function ThemeDevTool() {
 
       {/* ── Top bar ── */}
       <div className="border-b border-slate-200 bg-white px-4 py-3 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-2">
-          <span className="font-bold text-slate-800">Theme Library</span>
+        <div className="flex items-center gap-3">
+          <a href="/" className="flex items-center gap-1.5 text-sm font-bold text-slate-800 hover:text-indigo-600 transition-colors">
+            🏁 <span>paytowin</span>
+          </a>
+          <span className="text-slate-200">|</span>
+          <span className="text-sm font-medium text-slate-600">Theme Library</span>
           <span className="text-xs text-slate-400">/admin/themes/dev</span>
         </div>
-        <a href="/admin" className="text-xs text-slate-400 hover:text-slate-600 underline">← Admin</a>
+        <a href="/admin" className="text-xs text-slate-400 hover:text-slate-600 underline">← Admin panel</a>
       </div>
 
       {/* ── Main ── */}

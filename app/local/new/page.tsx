@@ -27,7 +27,7 @@ export default function LocalNewPage() {
   const [playerCount, setPlayerCount] = React.useState(2);
   const [playerNames, setPlayerNames] = React.useState<string[]>(["", ""]);
   const [selectedThemeId, setSelectedThemeId] = React.useState("horse-day");
-  const [selectedBoardId, setSelectedBoardId] = React.useState("small");
+  const [selectedBoardId, setSelectedBoardId] = React.useState("small-stadium");
   const [stateSubsidy, setStateSubsidy] = React.useState(2000);
   const [baseTax, setBaseTax] = React.useState(500);
   const [lapTaxCoefficient, setLapTaxCoefficient] = React.useState(1);

@@ -81,6 +81,60 @@ const FIELD_POSITIONS: React.CSSProperties[] = [
   { top: "62.3%", left: "9.8%",  transform: "translate(-50%, -50%)" },  // 20
 ];
 
+// ─── Stadium layout — 21 pozic na stadionovém okruhu ─────────────────────────
+// Geometrie: r=22 (poloměr zaoblení), hw=18 (polovina délky rovné strany), střed 50/50.
+// Perimetr ≈ 210.23, krok = 210.23/21 ≈ 10.01. Počátek: levý krajní bod (10, 50).
+// Traversal: CCW v matematickém prostoru = CW na obrazovce (CSS y dolů).
+const FIELD_POSITIONS_STADIUM: React.CSSProperties[] = [
+  { top: "50.00%", left: "10.00%", transform: "translate(-50%, -50%)" },  //  0 START  (levý krajní bod)
+  { top: "40.37%", left: "12.23%", transform: "translate(-50%, -50%)" },  //  1
+  { top: "32.61%", left: "18.54%", transform: "translate(-50%, -50%)" },  //  2
+  { top: "28.45%", left: "27.59%", transform: "translate(-50%, -50%)" },  //  3
+  { top: "28.00%", left: "37.48%", transform: "translate(-50%, -50%)" },  //  4  (začátek horní roviny)
+  { top: "28.00%", left: "47.50%", transform: "translate(-50%, -50%)" },  //  5
+  { top: "28.00%", left: "57.51%", transform: "translate(-50%, -50%)" },  //  6
+  { top: "28.00%", left: "67.52%", transform: "translate(-50%, -50%)" },  //  7  (konec horní roviny)
+  { top: "30.04%", left: "77.27%", transform: "translate(-50%, -50%)" },  //  8  (pravý oblouk)
+  { top: "36.13%", left: "85.08%", transform: "translate(-50%, -50%)" },  //  9
+  { top: "45.05%", left: "89.42%", transform: "translate(-50%, -50%)" },  // 10
+  { top: "54.97%", left: "89.42%", transform: "translate(-50%, -50%)" },  // 11
+  { top: "63.88%", left: "85.07%", transform: "translate(-50%, -50%)" },  // 12
+  { top: "69.97%", left: "77.25%", transform: "translate(-50%, -50%)" },  // 13
+  { top: "72.00%", left: "67.51%", transform: "translate(-50%, -50%)" },  // 14  (začátek dolní roviny)
+  { top: "72.00%", left: "57.51%", transform: "translate(-50%, -50%)" },  // 15
+  { top: "72.00%", left: "47.50%", transform: "translate(-50%, -50%)" },  // 16
+  { top: "72.00%", left: "37.48%", transform: "translate(-50%, -50%)" },  // 17  (konec dolní roviny)
+  { top: "71.55%", left: "27.56%", transform: "translate(-50%, -50%)" },  // 18  (levý oblouk dolní)
+  { top: "67.38%", left: "18.51%", transform: "translate(-50%, -50%)" },  // 19
+  { top: "59.63%", left: "12.23%", transform: "translate(-50%, -50%)" },  // 20
+];
+
+// Rotace polí pro stadium layout — tangenciální úhel na každém bodě tratě (stupně).
+// Vypočteno jako: rotDeg = 90 − α, kde α je outward normal úhel v matematické konvenci.
+const FIELD_ROTATIONS_STADIUM: number[] = [
+  -90,   //  0  (levý krajní bod, outward = vlevo 180°)
+  -64,   //  1
+  -38,   //  2
+  -12,   //  3
+    0,   //  4  (horní rovina, outward = nahoru 90°)
+    0,   //  5
+    0,   //  6
+    0,   //  7
+   25,   //  8  (pravý oblouk)
+   51,   //  9
+   77,   // 10
+  103,   // 11
+  129,   // 12
+  155,   // 13
+  180,   // 14  (dolní rovina, outward = dolů −90°)
+  180,   // 15
+  180,   // 16
+  180,   // 17
+  192,   // 18  (levý oblouk dolní)
+  218,   // 19
+  244,   // 20
+];
+
 // ─── Kostka ───────────────────────────────────────────────────────────────────
 
 // Souřadnice teček pro každou stranu kostky [cx, cy] v SVG viewBox 0–100
@@ -127,6 +181,21 @@ const FIGURINE_POSITIONS: React.CSSProperties[] = FIELD_POSITIONS.map((pos) => {
   const dy = 50 - top;
   const len = Math.sqrt(dx * dx + dy * dy) || 1;
   const offset = 10; // % směrem ke středu
+  return {
+    left: `${left + (dx / len) * offset}%`,
+    top:  `${top  + (dy / len) * offset}%`,
+    transform: "translate(-50%, -50%)",
+  };
+});
+
+// Figurky pro stadium layout — stejný výpočet (10 % ke středu), jiné vstupní pozice.
+const FIGURINE_POSITIONS_STADIUM: React.CSSProperties[] = FIELD_POSITIONS_STADIUM.map((pos) => {
+  const left = parseFloat(pos.left as string);
+  const top  = parseFloat(pos.top  as string);
+  const dx = 50 - left;
+  const dy = 50 - top;
+  const len = Math.sqrt(dx * dx + dy * dy) || 1;
+  const offset = 10;
   return {
     left: `${left + (dx / len) * offset}%`,
     top:  `${top  + (dy / len) * offset}%`,
@@ -2061,36 +2130,33 @@ export default function GameBoard({ gameCode }: Props) {
                   boxShadow: "inset 0 2px 24px rgba(0,0,0,0.09), 0 4px 32px rgba(0,0,0,0.10)",
                 }}
               >
-                {/* ── Vnitřní hranice tratě — lícuje s vnitřní hranou SVG pásu ── */}
-                <div
-                  className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-                  style={{
-                    width: "72%",
-                    height: "72%",
-                    borderRadius: "50%",
-                    border: "1.5px solid rgba(0,0,0,0.09)",
-                    boxShadow: "0 0 0 1px rgba(255,255,255,0.09), inset 0 0 16px rgba(0,0,0,0.05)",
-                  }}
-                />
 
-                {/* ── SVG traťový pás — vizuální podklad spojující pole do okruhu ── */}
+                {/* ── SVG traťový pás ── */}
                 <svg
                   className="pointer-events-none absolute inset-0 h-full w-full"
                   viewBox="0 0 100 100"
                   style={{ zIndex: 0 }}
                 >
-                  {/* Tmavý pás — viditelný na světlých tématech */}
-                  <ellipse cx="50" cy="50" rx="42" ry="42"
-                    fill="none" stroke="rgba(0,0,0,0.07)" strokeWidth="11" />
-                  {/* Bílý přesah — subtilní hrana na tmavých tématech */}
-                  <ellipse cx="50" cy="50" rx="42" ry="42"
-                    fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="11" />
+                  {board.shape === "stadium" ? (<>
+                    {/* Stadium: zaoblený obdélník, r=22, rovné strany hw=18 */}
+                    <path d="M 32 28 L 68 28 A 22 22 0 0 1 68 72 L 32 72 A 22 22 0 0 1 32 28 Z"
+                      fill="none" stroke="rgba(0,0,0,0.07)" strokeWidth="11" />
+                    <path d="M 32 28 L 68 28 A 22 22 0 0 1 68 72 L 32 72 A 22 22 0 0 1 32 28 Z"
+                      fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="11" />
+                  </>) : (<>
+                    <ellipse cx="50" cy="50" rx="42" ry="42"
+                      fill="none" stroke="rgba(0,0,0,0.07)" strokeWidth="11" />
+                    <ellipse cx="50" cy="50" rx="42" ry="42"
+                      fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="11" />
+                  </>)}
                 </svg>
               </div>
 
               <div className="absolute inset-0 overflow-visible">
                 {FIELDS.map((field) => {
-                  const pos = FIELD_POSITIONS[field.index];
+                  const pos = board.shape === "stadium"
+                    ? FIELD_POSITIONS_STADIUM[field.index]
+                    : FIELD_POSITIONS[field.index];
                   const isTrail = trailFields.includes(field.index);
                   const isHoverHighlight = hoveredPlayerId
                     ? displayPlayers.some(p => p.id === hoveredPlayerId && p.position === field.index && !isBankrupt(p))
@@ -2102,7 +2168,9 @@ export default function GameBoard({ gameCode }: Props) {
                   const tone = getFieldTone(field, themeId);
 
                   // Rotace segmentu: 0° = RIGHT, segment „spodek" míří ven od středu
-                  const rotDeg = field.index * (360 / 21) - 90;
+                  const rotDeg = board.shape === "stadium"
+                    ? (FIELD_ROTATIONS_STADIUM[field.index] ?? 0)
+                    : field.index * (360 / 21) - 90;
 
                   const glows: string[] = [];
                   if (isTrail) glows.push("drop-shadow(0 0 7px rgba(251,191,36,0.95))");
@@ -2186,7 +2254,9 @@ export default function GameBoard({ gameCode }: Props) {
                     <div
                       key={`fig-${field.index}`}
                       className="absolute flex items-center justify-center gap-0.5"
-                      style={FIGURINE_POSITIONS[field.index]}
+                      style={board.shape === "stadium"
+                        ? FIGURINE_POSITIONS_STADIUM[field.index]
+                        : FIGURINE_POSITIONS[field.index]}
                     >
                       {playersHere.map((player) => {
                         const isAnimatingThis = player.id === animatingPlayerId;
@@ -2229,7 +2299,12 @@ export default function GameBoard({ gameCode }: Props) {
                   );
                 })()}
 
-                <div className={`absolute left-1/2 top-1/2 flex h-[44%] w-[44%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[50%] border-2 p-4 text-center shadow-inner ${theme.colors.centerBorder} ${theme.colors.centerBackground}`}>
+                <div
+                  className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center border-2 p-4 text-center shadow-inner ${theme.colors.centerBorder} ${theme.colors.centerBackground}`}
+                  style={board.shape === "stadium"
+                    ? { width: "54%", height: "24%", borderRadius: "25%" }
+                    : { width: "44%", height: "44%", borderRadius: "50%" }}
+                >
                   {hoveredField ? (
                     <div className="max-w-[180px]">
                       <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">

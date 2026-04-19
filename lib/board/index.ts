@@ -6,10 +6,10 @@
  */
 
 export type { BoardPresetId, BoardFieldType, BoardFieldConfig, BoardConfig } from "./types";
-export { SMALL_BOARD } from "./presets";
+export { SMALL_BOARD, STADIUM_BOARD } from "./presets";
 export { validateBoardConfig, validateThemeManifest, crossCheckBoardAndTheme } from "./validator";
 
-import { SMALL_BOARD } from "./presets";
+import { SMALL_BOARD, STADIUM_BOARD } from "./presets";
 import type { BoardConfig } from "./types";
 
 // ─── UI metadata pro board presety ───────────────────────────────────────────
@@ -39,6 +39,13 @@ export const BOARD_PRESETS: BoardPresetMeta[] = [
     fieldCount: 21,
     available: true,
   },
+  {
+    id: "small-stadium",
+    name: "Stadion",
+    description: "21 polí, stadionový okruh.",
+    fieldCount: 21,
+    available: true,
+  },
   // {
   //   id: "large",
   //   name: "Velká deska",
@@ -53,6 +60,7 @@ export const BOARD_PRESETS: BoardPresetMeta[] = [
 /** Registr dostupných board presetů. Budoucí přidání "large" → přidat sem. */
 const BOARD_REGISTRY: Record<string, BoardConfig> = {
   small: SMALL_BOARD,
+  "small-stadium": STADIUM_BOARD,
   // large: LARGE_BOARD,  // TODO: přidat až bude LARGE_BOARD preset hotový
 };
 

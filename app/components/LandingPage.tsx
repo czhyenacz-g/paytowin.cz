@@ -25,10 +25,11 @@ interface PanelConfig {
   view?:     "launcher" | "catalog" | "account" | "placeholder";
   bgImage?:  string;       // background obrázek pro setup view (z /public)
   themeId?:  string;       // theme id automaticky vybrané při kliknutí na panel
+  boardId?:  string;       // board preset automaticky vybraný při kliknutí na panel
 }
 
 const PANEL_CONFIG: Record<string, PanelConfig> = {
-  "mapa-1":  { label: "Denní dostihy", emoji: "🏇", desc: "Denní dostihová varianta s lehčí atmosférou a klasickým flow.", teaser: "",                                                                              bgImage: "/bg_horse_day.webp",     themeId: "horse-day",     available: true,  view: "launcher" },
+  "mapa-1":  { label: "Denní dostihy", emoji: "🏇", desc: "Denní dostihová varianta s lehčí atmosférou a klasickým flow.", teaser: "",                                                                              bgImage: "/bg_horse_day.webp",     themeId: "horse-day",     boardId: "small-stadium", available: true,  view: "launcher" },
   "mapa-2":  { label: "Klasické dostihy", emoji: "🏇", desc: "Tradiční dostihová varianta s klasickým vizuálním stylem.",  teaser: "Známá dostihová atmosféra v klasickém stylu pro hráče, kteří chtějí tradiční look.", bgImage: "/bg_horse_classic.webp", themeId: "horse-classic", available: true,  view: "launcher" },
   "mapa-3":  { label: "Noční dostihy", emoji: "🌙", desc: "Noční dostihová varianta s tmavší atmosférou a ostřejším kontrastem.", teaser: "Temnější dostihová mapa pro večerní atmosféru, světla a výraznější kontrast.",                     bgImage: "/bg_horse_night.webp",   themeId: "horse-night",   available: true,  view: "launcher" },
   "mapa-4":  { label: "Pouštní sprint", emoji: "🏎️", desc: "Rychlá denní auto varianta s motivem rozpálené trati.",     teaser: "Svižná auto mapa s denní atmosférou, otevřenou tratí a jiným vizuálním rytmem.", bgImage: "/bg_car_day.webp",       themeId: "car-day",       available: true,  view: "launcher" },
@@ -106,7 +107,7 @@ export default function LandingPage() {
   const [copied, setCopied] = React.useState(false);
   const [discordUser, setDiscordUser] = React.useState<DiscordUser | null>(null);
   const [selectedThemeId, setSelectedThemeId] = React.useState("horse-day");
-  const [selectedBoardId, setSelectedBoardId] = React.useState("small");
+  const [selectedBoardId, setSelectedBoardId] = React.useState("small-stadium");
   const [maxPlayers, setMaxPlayers] = React.useState(6);
   const [stateSubsidy, setStateSubsidy] = React.useState(2000);
   const [baseTax, setBaseTax] = React.useState(500);
@@ -459,6 +460,8 @@ export default function LandingPage() {
                 setError("");
                 const themeId = PANEL_CONFIG[id]?.themeId;
                 if (themeId) setSelectedThemeId(themeId);
+                const boardId = PANEL_CONFIG[id]?.boardId;
+                if (boardId) setSelectedBoardId(boardId);
                 if (id === "ostatni") {
                   const firstCommunityTheme = communityThemes[0];
                   if (firstCommunityTheme) setSelectedThemeId(firstCommunityTheme.id);

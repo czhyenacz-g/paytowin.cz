@@ -10,8 +10,8 @@
 
 // ─── Identifikátor presetu ────────────────────────────────────────────────────
 
-/** Dostupné board presety. Zatím jen "small" (21 polí). "large" připraveno pro budoucí preset. */
-export type BoardPresetId = "small" | "large";
+/** Dostupné board presety. "small" = kruhový layout. "small-stadium" = stadionový layout. "large" připraveno pro budoucí preset. */
+export type BoardPresetId = "small" | "large" | "small-stadium";
 
 // ─── Typy polí ────────────────────────────────────────────────────────────────
 
@@ -84,4 +84,10 @@ export interface BoardConfig {
    * buildFields() mapuje: racerSlotIndexes[0] → racers[0], racerSlotIndexes[1] → racers[1], …
    */
   racerSlotIndexes: number[];
+  /**
+   * Tvar herní desky — určuje layout pozic polí a SVG tratě.
+   * "circle" (výchozí): 21 polí rovnoměrně na kružnici.
+   * "stadium": 21 polí na stadionovém okruhu (rovné strany + zaoblené konce).
+   */
+  shape?: "circle" | "stadium";
 }

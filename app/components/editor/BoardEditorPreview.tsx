@@ -35,7 +35,7 @@ import {
 } from "@/lib/themes/assets";
 import type { FieldStyleKey } from "@/lib/themes";
 
-// ─── Layout konstanta ─────────────────────────────────────────────────────────
+// ─── Layout konstanty ─────────────────────────────────────────────────────────
 
 /**
  * FIELD_POSITIONS — 21 pozic polí na kružnici r=42 % (center 50 %/50 %).
@@ -70,6 +70,35 @@ const FIELD_POSITIONS: React.CSSProperties[] = [
   { top: "82.8%", left: "23.7%", transform: "translate(-50%, -50%)" },  // 18
   { top: "73.7%", left: "15.3%", transform: "translate(-50%, -50%)" },  // 19
   { top: "62.3%", left: "9.8%",  transform: "translate(-50%, -50%)" },  // 20
+];
+
+// Stadium layout — kopie z GameBoard.tsx (záměrně, editor musí být oddělený)
+const FIELD_POSITIONS_STADIUM: React.CSSProperties[] = [
+  { top: "50.00%", left: "10.00%", transform: "translate(-50%, -50%)" },  //  0 START
+  { top: "40.37%", left: "12.23%", transform: "translate(-50%, -50%)" },  //  1
+  { top: "32.61%", left: "18.54%", transform: "translate(-50%, -50%)" },  //  2
+  { top: "28.45%", left: "27.59%", transform: "translate(-50%, -50%)" },  //  3
+  { top: "28.00%", left: "37.48%", transform: "translate(-50%, -50%)" },  //  4
+  { top: "28.00%", left: "47.50%", transform: "translate(-50%, -50%)" },  //  5
+  { top: "28.00%", left: "57.51%", transform: "translate(-50%, -50%)" },  //  6
+  { top: "28.00%", left: "67.52%", transform: "translate(-50%, -50%)" },  //  7
+  { top: "30.04%", left: "77.27%", transform: "translate(-50%, -50%)" },  //  8
+  { top: "36.13%", left: "85.08%", transform: "translate(-50%, -50%)" },  //  9
+  { top: "45.05%", left: "89.42%", transform: "translate(-50%, -50%)" },  // 10
+  { top: "54.97%", left: "89.42%", transform: "translate(-50%, -50%)" },  // 11
+  { top: "63.88%", left: "85.07%", transform: "translate(-50%, -50%)" },  // 12
+  { top: "69.97%", left: "77.25%", transform: "translate(-50%, -50%)" },  // 13
+  { top: "72.00%", left: "67.51%", transform: "translate(-50%, -50%)" },  // 14
+  { top: "72.00%", left: "57.51%", transform: "translate(-50%, -50%)" },  // 15
+  { top: "72.00%", left: "47.50%", transform: "translate(-50%, -50%)" },  // 16
+  { top: "72.00%", left: "37.48%", transform: "translate(-50%, -50%)" },  // 17
+  { top: "71.55%", left: "27.56%", transform: "translate(-50%, -50%)" },  // 18
+  { top: "67.38%", left: "18.51%", transform: "translate(-50%, -50%)" },  // 19
+  { top: "59.63%", left: "12.23%", transform: "translate(-50%, -50%)" },  // 20
+];
+
+const FIELD_ROTATIONS_STADIUM: number[] = [
+  -90, -64, -38, -12, 0, 0, 0, 0, 25, 51, 77, 103, 129, 155, 180, 180, 180, 180, 192, 218, 244,
 ];
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -134,36 +163,36 @@ export default function BoardEditorPreview({
           boxShadow: "inset 0 2px 24px rgba(0,0,0,0.09), 0 4px 32px rgba(0,0,0,0.10)",
         }}
       >
-        {/* Vnitřní hranice tratě */}
-        <div
-          className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-          style={{
-            width: "72%",
-            height: "72%",
-            borderRadius: "50%",
-            border: "1.5px solid rgba(0,0,0,0.09)",
-            boxShadow: "0 0 0 1px rgba(255,255,255,0.09), inset 0 0 16px rgba(0,0,0,0.05)",
-          }}
-        />
         {/* SVG traťový pás */}
         <svg
           className="pointer-events-none absolute inset-0 h-full w-full"
           viewBox="0 0 100 100"
           style={{ zIndex: 0 }}
         >
-          <ellipse cx="50" cy="50" rx="42" ry="42" fill="none" stroke="rgba(0,0,0,0.07)" strokeWidth="11" />
-          <ellipse cx="50" cy="50" rx="42" ry="42" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="11" />
+          {board.shape === "stadium" ? (<>
+            <path d="M 32 28 L 68 28 A 22 22 0 0 1 68 72 L 32 72 A 22 22 0 0 1 32 28 Z"
+              fill="none" stroke="rgba(0,0,0,0.07)" strokeWidth="11" />
+            <path d="M 32 28 L 68 28 A 22 22 0 0 1 68 72 L 32 72 A 22 22 0 0 1 32 28 Z"
+              fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="11" />
+          </>) : (<>
+            <ellipse cx="50" cy="50" rx="42" ry="42" fill="none" stroke="rgba(0,0,0,0.07)" strokeWidth="11" />
+            <ellipse cx="50" cy="50" rx="42" ry="42" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="11" />
+          </>)}
         </svg>
       </div>
 
       {/* Pole */}
       <div className="absolute inset-0 overflow-visible">
         {fields.map((field) => {
-          const pos = FIELD_POSITIONS[field.index];
+          const pos = board.shape === "stadium"
+            ? FIELD_POSITIONS_STADIUM[field.index]
+            : FIELD_POSITIONS[field.index];
           if (!pos) return null;
 
           const isSelected = selectedIndex === field.index;
-          const rotDeg = field.index * (360 / 21) - 90;
+          const rotDeg = board.shape === "stadium"
+            ? (FIELD_ROTATIONS_STADIUM[field.index] ?? 0)
+            : field.index * (360 / 21) - 90;
 
           const fieldStyleKey = (field.type === "horse" ? "racer" : field.type) as FieldStyleKey;
           const fieldStyleCls = manifest.colors.fieldStyles[fieldStyleKey] ?? "";
@@ -229,7 +258,10 @@ export default function BoardEditorPreview({
 
         {/* Střed desky */}
         <div
-          className={`absolute left-1/2 top-1/2 flex h-[44%] w-[44%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[50%] border-2 p-4 text-center shadow-inner ${manifest.colors.centerBorder} ${manifest.colors.centerBackground}`}
+          className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center border-2 p-4 text-center shadow-inner ${manifest.colors.centerBorder} ${manifest.colors.centerBackground}`}
+          style={board.shape === "stadium"
+            ? { width: "54%", height: "24%", borderRadius: "25%" }
+            : { width: "44%", height: "44%", borderRadius: "50%" }}
         >
           <div>
             <div className="text-3xl">{manifest.racers[0]?.emoji ?? "🏁"}</div>

@@ -169,3 +169,17 @@ export const SMALL_BOARD: BoardConfig = {
     }
   ]
 };
+
+// ─── Small-stadium board — 21 polí, stadionový okruh ─────────────────────────
+
+/**
+ * STADIUM_BOARD — stadionový preset (21 polí, stejná pole jako SMALL_BOARD).
+ *
+ * Identická herní struktura jako SMALL_BOARD — liší se pouze vizuálním layoutem
+ * (shape: "stadium"). Umožňuje porovnat oba layouty bez dopadu na gameplay.
+ */
+export const STADIUM_BOARD: BoardConfig = {
+  ...SMALL_BOARD,
+  id: "small-stadium",
+  shape: "stadium",
+};
