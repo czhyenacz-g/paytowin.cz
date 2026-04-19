@@ -2567,8 +2567,16 @@ export default function GameBoard({ gameCode }: Props) {
                     )}
                   </div>
                 ) : isSpectator ? (
-                  <div className="w-full rounded-[4px] border border-indigo-200 bg-indigo-50 px-4 py-4 text-center text-sm text-indigo-600">
-                    👀 Sleduješ hru jako pozorovatel
+                  <div className="w-full rounded-[4px] border border-indigo-200 bg-indigo-50 px-4 py-4 text-center space-y-1.5">
+                    <div className="text-sm font-semibold text-indigo-700">👀 Sleduješ hru jako pozorovatel</div>
+                    {gameCode && (
+                      <div className="text-xs text-indigo-500">
+                        Chceš hrát? Zadej kód{" "}
+                        <span className="font-mono font-bold">{gameCode}</span>{" "}
+                        na{" "}
+                        <a href={`/?join=${gameCode}`} className="underline hover:text-indigo-700">úvodní stránce</a>.
+                      </div>
+                    )}
                   </div>
                 ) : isRolling ? (
                   <div className="w-full rounded-[4px] bg-amber-100 px-4 py-4 text-center text-amber-700 font-semibold animate-pulse">
