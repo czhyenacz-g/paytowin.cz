@@ -892,7 +892,7 @@ export default function GameBoard({ gameCode }: Props) {
     setAnimatingPlayerIdx(null);
     animatingPlayerIdRef.current = null;
     animPositionRef.current = null;
-    setTimeout(() => setTrailFields([]), 1500);
+    setTimeout(() => setTrailFields([]), 3000);
   };
 
   /**
@@ -1185,7 +1185,7 @@ export default function GameBoard({ gameCode }: Props) {
   const applyCardEffectRef = React.useRef(applyCardEffect);
   React.useEffect(() => { applyCardEffectRef.current = applyCardEffect; });
 
-  // Automaticky aplikuj efekt karty po 2.5 s — jen aktivní hráčův klient
+  // Automaticky aplikuj efekt karty po 7 s — jen aktivní hráčův klient
   React.useEffect(() => {
     if (!pendingCard) return;
     const isActivePlayerClient =
@@ -1198,7 +1198,7 @@ export default function GameBoard({ gameCode }: Props) {
     const timer = setTimeout(() => {
       console.log(`[turn-flow] card timer fired — calling applyCardEffect`);
       applyCardEffectRef.current(pendingCard.card, pendingCard.playerIndex);
-    }, 15000);
+    }, 7000);
 
     return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
