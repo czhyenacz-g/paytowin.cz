@@ -64,37 +64,69 @@ export const horseNightTheme: Theme = {
       "id": "divoka_ruze",
       "name": "Divoká růže",
       "speed": 2,
-      "price": 800,
-      "emoji": "🌹"
+      "price": 1200,
+      "emoji": "🌹",
+      "maxStamina": 100,
+      "flavorText": "Nějaká kůň musí být nejlevnější.",
+      "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/divoka_ruze.webp",
+      "racerType": "horse",
+      "slotIndex": 0
     },
     {
       "id": "modry_blesk",
-      "name": "Modrý blesk",
+      "name": "Blue thunder",
       "speed": 3,
-      "price": 1500,
-      "emoji": "🔵"
+      "price": 150,
+      "emoji": "🔵",
+      "maxStamina": 95,
+      "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/modry_blesk.webp",
+      "racerType": "car",
+      "slotIndex": 5
     },
     {
       "id": "zlata_hriva",
       "name": "Zlatá hříva",
-      "speed": 4,
-      "price": 2500,
-      "emoji": "🟡"
+      "speed": 6,
+      "price": 3000,
+      "emoji": "🟡",
+      "maxStamina": 90,
+      "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/zlata_hriva.webp",
+      "racerType": "horse",
+      "slotIndex": 2
     },
     {
       "id": "rychly_vitr",
       "name": "Rychlý vítr",
-      "speed": 5,
+      "speed": 9,
       "price": 4000,
-      "emoji": "🟢"
+      "emoji": "🟢",
+      "maxStamina": 80,
+      "racerType": "horse",
+      "slotIndex": 3
     },
     {
       "id": "horse_night_buran",
-      "name": "Buran",
-      "speed": 10,
-      "price": 1500,
+      "name": "Burano",
+      "speed": 7,
+      "price": 5000,
       "emoji": "🐴",
-      "maxStamina": 100
+      "maxStamina": 95,
+      "flavorText": "Masivní černý kůň, který vítězí silou a výdrží spíš než rychlým startem.",
+      "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/horse_night_buran.webp",
+      "racerType": "horse",
+      "slotIndex": 1
+    },
+    {
+      "id": "caballo_real",
+      "name": "Caballo Real",
+      "speed": 5,
+      "price": 3500,
+      "emoji": "👑",
+      "maxStamina": 100,
+      "flavorText": "Kůň s královskou výdrží.",
+      "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/caballo_real.webp",
+      "racerType": "horse",
+      "slotIndex": 4
     }
   ],
   mapMeta: {

@@ -69,20 +69,28 @@ export async function listThemesAction(): Promise<ThemeMeta[]> {
 /**
  * loadThemeAction — načte manifest podle ID.
  * Priorita: DB → built-in registr.
+ *
+ * Built-in themes se vždy načítají z registru — DB lookup je přeskočen.
+ * Důvod: saveThemeAction blokuje zápis built-in IDs, takže DB verze built-in
+ * je vždy stará (nevalidní) a způsobuje nekonzistence v Theme Builderu.
  */
 export async function loadThemeAction(id: string): Promise<ThemeManifest | { error: string }> {
   if (!id.trim()) return { error: "Zadej ID theme." };
 
-  // 1. DB
-  const dbManifest = await getThemeFromDb(id.trim());
-  if (dbManifest) return dbManifest;
+  const trimmed = id.trim();
 
-  // 2. Built-in (loadThemeManifestAsync dělá DB→built-in chain, ověříme shodu id)
+  // 1. DB — jen pro non-built-in themes (built-in nelze uložit → DB verze je stará)
+  if (!BUILTIN_IDS.has(trimmed)) {
+    const dbManifest = await getThemeFromDb(trimmed);
+    if (dbManifest) return dbManifest;
+  }
+
+  // 2. Built-in registr
   const { loadThemeManifestAsync } = await import("@/lib/themes/loader");
-  const manifest = await loadThemeManifestAsync(id.trim());
-  if (manifest.meta.id === id.trim()) return manifest;
+  const manifest = await loadThemeManifestAsync(trimmed);
+  if (manifest.meta.id === trimmed) return manifest;
 
-  return { error: `Theme "${id}" nenalezeno (ani v DB ani v registru).` };
+  return { error: `Theme "${trimmed}" nenalezeno (ani v DB ani v registru).` };
 }
 
 // ─── Save (upsert) ────────────────────────────────────────────────────────────
