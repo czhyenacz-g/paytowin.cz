@@ -34,7 +34,7 @@ export const horseDayTheme: Theme = {
     playerCardActive:  "border-slate-900 bg-slate-50 shadow-sm",
     playerCardNormal:  "border-slate-200 bg-white",
     playerCardHover:   "border-blue-400 bg-blue-50 shadow-sm",
-    arenaGradient:     "radial-gradient(ellipse 140% 90% at 50% 50%, #fefce8 0%, #fef9c3 30%, #fef08a 65%, #fde047 100%)",
+    arenaGradient:     "url('/savana-day.png') center/cover no-repeat fixed",
   },
   labels: {
     themeName:      "Dostihy — Den",
