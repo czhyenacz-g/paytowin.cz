@@ -28,4 +28,43 @@ export const UI_TEXT = {
       body:  "Označený závodník je po ruce rychleji a usnadní ti výběr, když budeš chtít jít do dalšího závodu bez zdržení.",
     },
   },
+
+  /**
+   * Race overlay texty.
+   *
+   * types: per-raceType labels dříve v RACE_TYPE_LABELS (RaceEventOverlay.tsx).
+   * Poznámka: racingTitle emoji (🏇) je horse-specific — follow-up: předat přes ThemeLabels.
+   *
+   * Ostatní: shared action/status texty overlay.
+   */
+  race: {
+    types: {
+      mass_race: {
+        selectingTitle:  "Výběr závodníků",
+        selectingEmoji:  "🏁",
+        selectingPrompt: "Vyber závodníka pro závod",
+        countdownSub:    "Závod začíná!",
+        racingTitle:     "🏇 Závod!",   // TODO: horse emoji → theme.labels.racingEmoji
+        resultsTitle:    "Výsledky závodu",
+      },
+      rivals_race: {
+        selectingTitle:  "Souboj o závodníka",
+        selectingEmoji:  "⚔️",
+        selectingPrompt: "Vyber závodníka pro souboj",
+        countdownSub:    "Souboj začíná!",
+        racingTitle:     "⚔️ Souboj!",
+        resultsTitle:    "Výsledky souboje",
+      },
+    },
+    preferredRacer:      "Preferred závodník",
+    selectOther:         "nebo vyber jiného:",
+    speed:               "rychlost",
+    waitingForSelection: "Čeká na výběr:",
+    skipSelection:       "Přeskočit výběr",
+    handoffPrepare:      "Na start se připraví",
+    handoffInstruction:  "Předej zařízení a připrav se!",
+    racerEliminated:     "💀 závodník vyřazen",
+    continueAction:      "Pokračovat →",
+    waitingForHost:      "Čeká na hostitele…",
+  },
 } as const;

@@ -5,19 +5,7 @@ import { racerOwnershipKey } from "@/lib/engine";
 import type { Player, Horse, RacePendingEvent, RaceType } from "@/lib/types/game";
 import RacingMinigame, { StaminaBar } from "./race/RacingMinigame";
 import type { MinigameResult } from "./race/RacingMinigame";
-
-// Texty pro každý typ závodu — přidej sem řádek pro nový raceType
-const RACE_TYPE_LABELS: Record<RaceType, {
-  selectingTitle:  string;
-  selectingEmoji:  string;
-  selectingPrompt: string;
-  countdownSub:    string;
-  racingTitle:     string;
-  resultsTitle:    string;
-}> = {
-  mass_race:   { selectingTitle: "Výběr závodníků", selectingEmoji: "🏁", selectingPrompt: "Vyber závodníka pro závod",  countdownSub: "Závod začíná!",  racingTitle: "🏇 Závod!",   resultsTitle: "Výsledky závodu"  },
-  rivals_race: { selectingTitle: "Souboj o závodníka", selectingEmoji: "⚔️", selectingPrompt: "Vyber závodníka pro souboj", countdownSub: "Souboj začíná!", racingTitle: "⚔️ Souboj!", resultsTitle: "Výsledky souboje" },
-};
+import { UI_TEXT } from "@/lib/ui-text";
 
 interface RaceResult {
   player: Player | undefined;
@@ -82,7 +70,7 @@ export default function RaceEventOverlay({
   onCloseResult,
 }: RaceEventOverlayProps) {
   const phase = event.phase;
-  const labels = RACE_TYPE_LABELS[event.raceType ?? "mass_race"];
+  const labels = UI_TEXT.race.types[event.raceType ?? "mass_race"];
 
   // Hot-seat handoff: 5s "Připrav se" countdown před závodem každého hráče.
   // Dává čas fyzicky předat zařízení u jednoho počítače. Aktivní jen pro isLocalGame.
@@ -160,7 +148,7 @@ export default function RaceEventOverlay({
               </p>
               {preferredHorse && preferredKey && (
                 <div className="space-y-1">
-                  <p className="text-center text-xs text-slate-400">Preferred závodník</p>
+                  <p className="text-center text-xs text-slate-400">{UI_TEXT.race.preferredRacer}</p>
                   <button
                     onClick={() => onSelectRacer(preferredKey)}
                     className="w-full flex items-center gap-3 rounded-2xl border-2 border-yellow-400 bg-yellow-50 px-4 py-3 text-left hover:bg-yellow-100 transition"
@@ -169,11 +157,11 @@ export default function RaceEventOverlay({
                     <RacerThumb horse={preferredHorse} />
                     <div>
                       <div className="font-semibold text-slate-800">{preferredHorse.name}</div>
-                      <div className="text-xs text-slate-400">rychlost {preferredHorse.speed}</div>
+                      <div className="text-xs text-slate-400">{UI_TEXT.race.speed} {preferredHorse.speed}</div>
                       <StaminaBar value={preferredHorse.stamina ?? 100} />
                     </div>
                   </button>
-                  <p className="text-center text-xs text-slate-300">nebo vyber jiného:</p>
+                  <p className="text-center text-xs text-slate-300">{UI_TEXT.race.selectOther}</p>
                 </div>
               )}
               <div className="space-y-2">
@@ -188,7 +176,7 @@ export default function RaceEventOverlay({
                       <RacerThumb horse={horse} />
                       <div>
                         <div className="font-semibold text-slate-800">{horse.name}</div>
-                        <div className="text-xs text-slate-400">rychlost {horse.speed}</div>
+                        <div className="text-xs text-slate-400">{UI_TEXT.race.speed} {horse.speed}</div>
                         <StaminaBar value={horse.stamina ?? 100} />
                       </div>
                     </button>
@@ -199,7 +187,7 @@ export default function RaceEventOverlay({
           ) : (
             <div className="space-y-3">
               <p className="text-center text-sm text-slate-500">
-                Čeká na výběr:{" "}
+                {UI_TEXT.race.waitingForSelection}{" "}
                 <span className="font-semibold text-slate-700">{selectorPlayer?.name ?? "…"}</span>
               </p>
               {Object.keys(event.selections ?? {}).length > 0 && (
@@ -226,7 +214,7 @@ export default function RaceEventOverlay({
               onClick={onSkip}
               className="w-full rounded-2xl border border-slate-200 px-4 py-2 text-xs text-slate-400 hover:text-slate-600 transition"
             >
-              Přeskočit výběr
+              {UI_TEXT.race.skipSelection}
             </button>
           )}
         </>)}
@@ -258,7 +246,7 @@ export default function RaceEventOverlay({
               <div className="text-center space-y-4 py-4">
                 <div className="text-5xl">{racingHorse?.emoji ?? "🏇"}</div>
                 <p className="text-sm font-semibold text-slate-500 uppercase tracking-widest">
-                  Na start se připraví
+                  {UI_TEXT.race.handoffPrepare}
                 </p>
                 <p className="text-2xl font-black text-indigo-700">{racingPlayer.name}</p>
                 {handoffCountdown !== null ? (
@@ -268,7 +256,7 @@ export default function RaceEventOverlay({
                 ) : (
                   <div className="text-2xl font-semibold text-slate-400">…</div>
                 )}
-                <p className="text-sm text-slate-400">Předej zařízení a připrav se!</p>
+                <p className="text-sm text-slate-400">{UI_TEXT.race.handoffInstruction}</p>
               </div>
             ) : showMinigame ? (
               <RacingMinigame
@@ -306,7 +294,7 @@ export default function RaceEventOverlay({
                     </span>
                     <span className="text-xs text-slate-400">
                       {score} bodů × {finalStamina}% staminy
-                      {finalStamina === 0 && <span className="ml-1 text-red-400">💀 závodník vyřazen</span>}
+                      {finalStamina === 0 && <span className="ml-1 text-red-400">{UI_TEXT.race.racerEliminated}</span>}
                     </span>
                   </div>
                   <span className={`ml-auto text-sm font-bold tabular-nums ${idx === 0 ? "text-amber-700" : "text-slate-500"}`}>
@@ -320,11 +308,11 @@ export default function RaceEventOverlay({
                 onClick={onCloseResult}
                 className="w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800 transition"
               >
-                Pokračovat →
+                {UI_TEXT.race.continueAction}
               </button>
             ) : (
               <div className="rounded-2xl bg-slate-100 px-4 py-3 text-center text-sm text-slate-400">
-                Čeká na hostitele…
+                {UI_TEXT.race.waitingForHost}
               </div>
             )}
           </div>
