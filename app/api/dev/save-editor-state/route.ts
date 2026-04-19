@@ -17,7 +17,9 @@ import * as path from "path";
 // ─── Route handler ────────────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
-  // NOTE: production guard dočasně odstraněn — znovu přidat před final deploy
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ ok: false, error: "Unavailable in production" }, { status: 403 });
+  }
 
   let body: {
     themeId: string;
