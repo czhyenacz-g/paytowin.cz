@@ -65,52 +65,58 @@ export const horseDayTheme: Theme = {
       "id": "divoka_ruze",
       "name": "Divoká růže",
       "speed": 2,
-      "price": 800,
+      "price": 80,
       "emoji": "🌹",
-      "maxStamina": 100
-    },
-    {
-      "id": "modry_blesk",
-      "name": "Blue thunder",
-      "speed": 3,
-      "price": 1500,
-      "emoji": "🔵",
-      "maxStamina": 95
+      "maxStamina": 100,
+      "flavorText": "Nějaká kůň musí být nejlevnější.",
+      "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/divoka_ruze.webp",
+      "racerType": "horse",
+      "slotIndex": 0
     },
     {
       "id": "zlata_hriva",
       "name": "Zlatá hříva",
       "speed": 6,
-      "price": 2500,
+      "price": 250,
       "emoji": "🟡",
-      "maxStamina": 90
+      "maxStamina": 90,
+      "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/zlata_hriva.webp",
+      "racerType": "horse",
+      "slotIndex": 2
     },
     {
       "id": "r6",
       "name": "Pepík",
-      "speed": 5,
-      "price": 1500,
+      "speed": 4,
+      "price": 150,
       "emoji": "🐴",
       "maxStamina": 100,
-      "flavorText": "Pepó! Pepane! Pepíku!!"
+      "flavorText": "Pepó! Pepane! Pepíku!!",
+      "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/r6.webp",
+      "racerType": "horse",
+      "slotIndex": 3
     },
     {
       "id": "rychly_vitr",
       "name": "Rychlý vítr",
       "speed": 9,
-      "price": 4000,
+      "price": 400,
       "emoji": "🟢",
-      "maxStamina": 80
+      "maxStamina": 80,
+      "racerType": "horse",
+      "slotIndex": 4
     },
     {
-      "id": "zeleznik",
-      "name": "Železník",
-      "speed": 10,
-      "price": 150000,
+      "id": "horse_night_buran",
+      "name": "Burano",
+      "speed": 7,
+      "price": 500,
       "emoji": "🐴",
-      "maxStamina": 10,
-      "isLegendary": true,
-      "flavorText": "Železník — legendární kůň, který nezná strach, únavu ani druhé místo. Jeho jediný cíl je jasný: vyhrát."
+      "maxStamina": 95,
+      "flavorText": "Masivní černý kůň, který vítězí silou a výdrží spíš než rychlým startem.",
+      "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/horse_night_buran.webp",
+      "racerType": "horse",
+      "slotIndex": 1
     }
   ],
 
