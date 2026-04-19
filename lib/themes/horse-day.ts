@@ -3,7 +3,7 @@ import type { Theme } from ".";
 export const horseDayTheme: Theme = {
   id: "horse-day",
   name: "Dostihy — Den",
-  description: "Světlý vzhled, zelené závodiště, koňské dostihy.",
+  description: "Světlý vzhled, vyprahlé závodiště, koňské dostihy.",
   isPaid: false,
   priceCzk: 0,
   colors: {
