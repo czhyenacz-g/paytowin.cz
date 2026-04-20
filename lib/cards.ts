@@ -179,21 +179,39 @@ export const FINANCE_CARDS: GameCard[] = [
 // ─── Pomocné funkce ───────────────────────────────────────────────────────────
 
 /**
- * drawCard — náhodně lízne kartu daného typu.
+ * drawCard — náhodně lízne kartu daného typu s filtrováním podle theme.
  *
  * Pokud theme poskytuje vlastní karty (ThemeManifest.cards), použijí se místo globálních.
  * Fallback: pokud theme karty chybí nebo jsou prázdné, použijí se globální balíčky.
  *
- * @param type       "chance" nebo "finance"
+ * Filtrování podle themeTags:
+ *   - Karta bez themeTags → vždy zahrnuta ("common" chování)
+ *   - Karta s themeTags: ["common"] → vždy zahrnuta
+ *   - Karta s themeTags: ["horse"] → jen pokud themeTag === "horse"
+ *   - Karta s themeTags: ["car"]   → jen pokud themeTag === "car"
+ *
+ * @param type      "chance" nebo "finance"
  * @param themeCards volitelné per-theme karty (z theme.content?.cards)
+ * @param themeTag   aktuální tematický tag (z Theme.cardThemeTag); pokud chybí, jen "common" karty
  */
 export function drawCard(
   type: "chance" | "finance",
-  themeCards?: { chance?: GameCard[]; finance?: GameCard[] }
+  themeCards?: { chance?: GameCard[]; finance?: GameCard[] },
+  themeTag?: CardThemeTag,
 ): GameCard {
   const globalDeck = type === "chance" ? CHANCE_CARDS : FINANCE_CARDS;
   const themeDeck  = type === "chance" ? themeCards?.chance : themeCards?.finance;
-  // Použij theme karty jen pokud jsou neprázdné; jinak fallback na globální balíček
-  const deck = (themeDeck && themeDeck.length > 0) ? themeDeck : globalDeck;
-  return deck[Math.floor(Math.random() * deck.length)];
+  const baseDeck = (themeDeck && themeDeck.length > 0) ? themeDeck : globalDeck;
+
+  // Filtruj podle themeTags: karta bez tagu nebo s "common" vždy prochází.
+  // Karta se specifickým tagem prochází jen pokud themeTag odpovídá.
+  const deck = baseDeck.filter(c =>
+    !c.themeTags ||
+    c.themeTags.includes("common") ||
+    (themeTag !== undefined && c.themeTags.includes(themeTag))
+  );
+
+  // Fallback: pokud by filtrování vyprázdnilo balíček (neočekávané), použij nefiltrovaný.
+  const finalDeck = deck.length > 0 ? deck : baseDeck;
+  return finalDeck[Math.floor(Math.random() * finalDeck.length)];
 }

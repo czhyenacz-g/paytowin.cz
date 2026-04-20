@@ -6,6 +6,7 @@ export const horseClassicTheme: Theme = {
   description: "Zelené závodiště, krémová pole — autentický boardgame zážitek.",
   isPaid: false,
   priceCzk: 0,
+  cardThemeTag: "horse",
   colors: {
     pageBackground:     "bg-amber-50",
     cardBackground:     "bg-amber-50",

@@ -6,6 +6,7 @@ export const carDayTheme: Theme = {
   description: "Světlý vzhled, asfaltové závodiště, automobilové závody.",
   isPaid: false,
   priceCzk: 0,
+  cardThemeTag: "car",
   colors: {
     pageBackground:     "bg-slate-100",
     cardBackground:     "bg-white",

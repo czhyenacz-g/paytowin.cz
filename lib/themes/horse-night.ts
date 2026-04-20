@@ -6,6 +6,7 @@ export const horseNightTheme: Theme = {
   description: "Tmavý vzhled, koňské dostihy za noci.",
   isPaid: false,
   priceCzk: 0,
+  cardThemeTag: "horse",
   colors: {
     pageBackground:     "bg-slate-950",
     cardBackground:     "bg-slate-800",

@@ -3,7 +3,7 @@ import { horseNightTheme } from "./horse-night";
 import { horseClassicTheme } from "./horse-classic";
 import { carDayTheme } from "./car-day";
 import { carNightTheme } from "./car-night";
-import type { GameCard } from "@/lib/cards";
+import type { GameCard, CardThemeTag } from "@/lib/cards";
 import type { RacerType } from "@/lib/racers/types";
 
 // ─── Field style keys ─────────────────────────────────────────────────────────
@@ -230,6 +230,8 @@ export interface Theme {
   assets?: ThemeAssets;
   content?: ThemeContent;
   mapMeta?: MapMeta;
+  /** Tematický tag pro filtrování karetního balíčku. Pokud chybí, losují se jen "common" karty. */
+  cardThemeTag?: CardThemeTag;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

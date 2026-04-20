@@ -7,6 +7,7 @@ export const horseDayTheme: Theme = {
   version: "1.0.1",
   isPaid: false,
   priceCzk: 0,
+  cardThemeTag: "horse",
   colors: {
     pageBackground:     "bg-slate-100",
     cardBackground:     "bg-white",

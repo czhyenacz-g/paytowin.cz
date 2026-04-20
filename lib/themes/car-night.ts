@@ -6,6 +6,7 @@ export const carNightTheme: Theme = {
   description: "Tmavý vzhled, noční závodní okruh, automobilové závody.",
   isPaid: false,
   priceCzk: 0,
+  cardThemeTag: "car",
   colors: {
     pageBackground:     "bg-slate-950",
     cardBackground:     "bg-slate-800",

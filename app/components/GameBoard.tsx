@@ -818,7 +818,7 @@ export default function GameBoard({ gameCode }: Props) {
       }
     } else if (field.type === "chance" || field.type === "finance") {
       // ── Karta: lízni, zobraz všem, efekt se aplikuje automaticky po 2.5 s ──
-      const card = drawCard(field.type, theme.content?.cards);
+      const card = drawCard(field.type, theme.content?.cards, theme.cardThemeTag);
       const cardLabel = field.type === "chance" ? "🎴 Osud" : "💼 Finance";
       // FIX pořadí: nejdřív uložíme finální pozici hráče, pak card_pending.
       // applyCardEffect poběží ze stale closure (timer 2.5s) — position musí být
