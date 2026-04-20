@@ -95,6 +95,16 @@
   to   { opacity: 1; transform: scale(1); }
 }
 
+@keyframes fogCardFlip {
+  0%   { transform: rotateY(0deg); }
+  50%  { transform: rotateY(90deg); }
+  100% { transform: rotateY(0deg); }
+}
+.fog-card-flip {
+  animation: fogCardFlip 0.24s ease-in-out both;
+  transform-style: preserve-3d;
+}
+
 /* RacingMinigame — obstacle marker přijíždí shora dolů k hit-zone linii.
    Kontejner lane je h-36 (144px). Ground strip je 36px od spodku → hit-zone na top:108px.
    Marker je 48×48px: při translateY(84px) je střed na 108px = přesně hit-zone.

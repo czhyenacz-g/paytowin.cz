@@ -405,6 +405,48 @@ export default function GameBoard({ gameCode }: Props) {
     return [...revealedFields, fieldIndex];
   }
 
+  // Fog flip reveal animation
+  // seenRevealedRef: pole odhalená od mountu — nepřehrávají flip (reload, join mid-game)
+  const seenRevealedRef = React.useRef<Set<number> | null>(null);
+  // flippingFields: pole právě animující flip
+  const [flippingFields, setFlippingFields] = React.useState<Set<number>>(new Set());
+  // showingHiddenRef: pole v první půlce flipu — stále zobrazují hidden card
+  const showingHiddenRef = React.useRef<Set<number>>(new Set());
+
+  React.useEffect(() => {
+    if (!fogOfWar || revealedFields.length === 0) return;
+    if (seenRevealedRef.current === null) {
+      // První load — naseeduj bez animace
+      seenRevealedRef.current = new Set(revealedFields);
+      return;
+    }
+    const newlyRevealed = revealedFields.filter((idx) => !seenRevealedRef.current!.has(idx));
+    if (newlyRevealed.length === 0) return;
+    newlyRevealed.forEach((idx) => seenRevealedRef.current!.add(idx));
+
+    // Spusť flip: nejdřív přidej do showingHidden (stále zobrazují hidden card)
+    newlyRevealed.forEach((idx) => showingHiddenRef.current.add(idx));
+    setFlippingFields((prev) => new Set([...prev, ...newlyRevealed]));
+
+    // Po 120ms (polovina flipu) — swap na real card
+    const swapTimer = setTimeout(() => {
+      newlyRevealed.forEach((idx) => showingHiddenRef.current.delete(idx));
+      setFlippingFields((prev) => new Set(prev)); // force rerender
+    }, 120);
+
+    // Po 240ms — konec animace
+    const endTimer = setTimeout(() => {
+      setFlippingFields((prev) => {
+        const next = new Set(prev);
+        newlyRevealed.forEach((idx) => next.delete(idx));
+        return next;
+      });
+    }, 240);
+
+    return () => { clearTimeout(swapTimer); clearTimeout(endTimer); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [revealedFields.join(","), fogOfWar]);
+
   // Načti preference zvuku z localStorage
   React.useEffect(() => {
     const stored = localStorage.getItem("paytowin_sound");
@@ -2293,9 +2335,9 @@ export default function GameBoard({ gameCode }: Props) {
                       onMouseLeave={() => setHoveredFieldIdx(null)}
                     >
                       {/* Fog of War: skrytá karta — vlastní render, žádný obsah normální karty neprosvítá */}
-                      {!isFieldVisible(field) ? (
+                      {(!isFieldVisible(field) || showingHiddenRef.current.has(field.index)) ? (
                         <div
-                          className="relative h-full w-full overflow-hidden rounded-[2px] ring-1 ring-black/20 shadow-[0_10px_18px_rgba(15,23,42,0.16)]"
+                          className={`relative h-full w-full overflow-hidden rounded-[2px] ring-1 ring-black/20 shadow-[0_10px_18px_rgba(15,23,42,0.16)]${flippingFields.has(field.index) ? " fog-card-flip" : ""}`}
                           style={{
                             backgroundImage: "url('/fog-of-war-card.webp')",
                             backgroundSize: "cover",
@@ -2303,11 +2345,12 @@ export default function GameBoard({ gameCode }: Props) {
                             border: "1px solid rgba(0,0,0,0.82)",
                             borderTopWidth: "6px",
                             borderTopColor: "rgba(30,41,59,0.9)",
+                            perspective: "400px",
                           }}
                         />
                       ) : (
                       <div
-                        className={`group relative h-full w-full overflow-hidden rounded-[2px] ring-1 ring-black/10 shadow-[0_10px_18px_rgba(15,23,42,0.16)] ${theme.colors.fieldStyles[field.type]}`}
+                        className={`group relative h-full w-full overflow-hidden rounded-[2px] ring-1 ring-black/10 shadow-[0_10px_18px_rgba(15,23,42,0.16)] ${theme.colors.fieldStyles[field.type]}${flippingFields.has(field.index) ? " fog-card-flip" : ""}`}
                         style={{
                           height: "100%",
                           width: "100%",
