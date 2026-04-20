@@ -4,6 +4,7 @@ export const horseDayTheme: Theme = {
   id: "horse-day",
   name: "Dostihy — Den",
   description: "Světlý vzhled, vyprahlé závodiště, koňské dostihy.",
+  version: "1.0.1",
   isPaid: false,
   priceCzk: 0,
   colors: {
@@ -57,16 +58,16 @@ export const horseDayTheme: Theme = {
       "racer_id": "divoka_ruze"
     },
     {
+      "slotIndex": 1,
+      "racer_id": "rychly_vitr"
+    },
+    {
       "slotIndex": 2,
       "racer_id": "zlata_hriva"
     },
     {
       "slotIndex": 3,
       "racer_id": "r6"
-    },
-    {
-      "slotIndex": 1,
-      "racer_id": "rychly_vitr"
     },
     {
       "slotIndex": 4,
@@ -86,6 +87,16 @@ export const horseDayTheme: Theme = {
       "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/divoka_ruze.webp",
       "racerType": "horse",
       "slotIndex": 0
+    },
+    {
+      "id": "rychly_vitr",
+      "name": "Rychlý vítr",
+      "speed": 9,
+      "price": 4000,
+      "emoji": "🟢",
+      "maxStamina": 80,
+      "racerType": "horse",
+      "slotIndex": 1
     },
     {
       "id": "zlata_hriva",
@@ -109,16 +120,6 @@ export const horseDayTheme: Theme = {
       "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/r6.webp",
       "racerType": "horse",
       "slotIndex": 3
-    },
-    {
-      "id": "rychly_vitr",
-      "name": "Rychlý vítr",
-      "speed": 9,
-      "price": 4000,
-      "emoji": "🟢",
-      "maxStamina": 80,
-      "racerType": "horse",
-      "slotIndex": 1
     },
     {
       "id": "horse_night_buran",

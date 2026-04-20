@@ -246,10 +246,10 @@ function _replaceStringKey(src: string, key: string, val: string): string {
 function _upsertStringKey(src: string, key: string, val: string): string {
   const existing = new RegExp(`[ \\t]*${_esc(key)}:\\s*(?:"[^"]*"|'[^']*')`);
   if (existing.test(src)) return _replaceStringKey(src, key, val);
-  // Vlož za description
+  // Vlož za description — spotřebuj trailing čárku a znovu ji přidej, aby nevzniklo ,,
   return src.replace(
-    /([ \t]*description:\s*(?:"[^"]*"|'[^']*'))/,
-    `$1\n  ${key}: ${JSON.stringify(val)},`,
+    /([ \t]*description:\s*(?:"[^"]*"|'[^']*')),?/,
+    `$1,\n  ${key}: ${JSON.stringify(val)},`,
   );
 }
 
