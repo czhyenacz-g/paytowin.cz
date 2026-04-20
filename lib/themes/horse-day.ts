@@ -4,7 +4,7 @@ export const horseDayTheme: Theme = {
   id: "horse-day",
   name: "Dostihy — Den",
   description: "Světlý vzhled, vyprahlé závodiště, koňské dostihy.",
-  version: "1.0.1",
+  version: "1.0.0",
   isPaid: false,
   priceCzk: 0,
   cardThemeTag: "horse",
@@ -79,7 +79,7 @@ export const horseDayTheme: Theme = {
   racers: [
     {
       "id": "divoka_ruze",
-      "name": "Divoká růže",
+      "name": "Mariane DR",
       "speed": 2,
       "price": 1200,
       "emoji": "🌹",
@@ -91,7 +91,7 @@ export const horseDayTheme: Theme = {
     },
     {
       "id": "rychly_vitr",
-      "name": "Rychlý vítr",
+      "name": "Razor Wind",
       "speed": 9,
       "price": 4000,
       "emoji": "🟢",
@@ -101,7 +101,7 @@ export const horseDayTheme: Theme = {
     },
     {
       "id": "zlata_hriva",
-      "name": "Zlatá hříva",
+      "name": "Goldie",
       "speed": 6,
       "price": 3000,
       "emoji": "🟡",
@@ -133,25 +133,11 @@ export const horseDayTheme: Theme = {
       "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/horse_night_buran.webp",
       "racerType": "horse",
       "slotIndex": 4
-    },
-    {
-      "id": "zeleznik",
-      "name": "Železník",
-      "speed": 10,
-      "price": 99999,
-      "emoji": "🐴",
-      "maxStamina": 10,
-      "isLegendary": true,
-      "flavorText": "Železník — legendární kůň, který nezná strach, únavu ani druhé místo. Jeho jediný cíl je jasný: vyhrát.",
-      "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/zeleznik.webp",
-      "racerType": "horse",
-      "slotIndex": 5
     }
   ],
 
   assets: {},
 
-  content: {},
   mapMeta: {
     yearStart: 1921,
     place: "Connecticut",
