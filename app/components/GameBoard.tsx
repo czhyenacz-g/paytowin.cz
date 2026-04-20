@@ -727,7 +727,7 @@ export default function GameBoard({ gameCode }: Props) {
       movedPlayer = { ...movedPlayer, laps: currentLaps + 1 };
       if (startTax > 0) {
         movedPlayer = { ...movedPlayer, coins: movedPlayer.coins - startTax };
-        extraLog.push(`${currentPlayer.name}: Daň za průchod STARTem — -${startTax} 💰`);
+        extraLog.push(`${currentPlayer.name}: Výpalné (daně) za průchod STARTem — -${startTax} 💰`);
       }
     }
 
@@ -2141,7 +2141,7 @@ export default function GameBoard({ gameCode }: Props) {
                 <div className="rounded-[3px] bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-500 shrink-0">
                   {UI_TEXT.board.roundLabel} <span className="font-bold text-slate-700">{currentRound}</span>
                   {(currentPlayer?.laps ?? 0) >= 1 && (
-                    <span className="ml-1 text-red-500" title={`Daň za průchod STARTem: -${getStartTax(currentPlayer?.laps ?? 0, economy)} 💰`}>🏛️</span>
+                    <span className="ml-1 text-red-500" title={`Výpalné (daně) za průchod STARTem: -${getStartTax(currentPlayer?.laps ?? 0, economy)} 💰`}>🏛️</span>
                   )}
                 </div>
                 <div className="rounded-[3px] bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white shrink-0 max-w-[160px] truncate">
@@ -2399,7 +2399,7 @@ export default function GameBoard({ gameCode }: Props) {
                         </div>
                         {myNextTax > 0 && (
                           <div className="text-[9px] font-semibold text-red-400 whitespace-nowrap">
-                            Daně: −{myNextTax} 💰
+                            Výpalné (daně): −{myNextTax} 💰
                           </div>
                         )}
                       </div>

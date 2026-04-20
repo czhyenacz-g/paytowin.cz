@@ -58,7 +58,7 @@ export default function PravidlaPage() {
                 <span className="text-lg">🏁</span>
                 <div>
                   <strong>START</strong> — průchod nebo přistání = <strong>+200 coins</strong> státní dotace.
-                  Jenže stát se zadlužuje: od kola 3 roste daň o 40 coins za kolo (kolo 3 = −40, kolo 4 = −80 … strop −400).
+                  Jenže stát se zadlužuje: od kola 3 roste výpalné (daně) o 40 coins za kolo (kolo 3 = −40, kolo 4 = −80 … strop −400).
                   V pozdní fázi hry tak průchod STARTem přináší čím dál méně — nebo tě rovnou připraví o coins.
                   <br /><span className="text-sm text-slate-500 mt-1 block">Průchod a přistání se nepočítají dvakrát — efekt se aplikuje vždy jen jednou za tah.</span>
                 </div>

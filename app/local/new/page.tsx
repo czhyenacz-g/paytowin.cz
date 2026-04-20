@@ -331,17 +331,17 @@ export default function LocalNewPage() {
                       className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none focus:border-slate-500" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Daň za průchod STARTem</label>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Výpalné (daně) za průchod STARTem</label>
                     <input type="number" min={0} step={100} value={baseTax} onChange={e => setBaseTax(Number(e.target.value))}
                       className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none focus:border-slate-500" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Koeficient růstu daně za každé kolo</label>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Koeficient růstu výpalného za každé kolo</label>
                     <input type="number" min={0.1} step={0.1} value={lapTaxCoefficient} onChange={e => setLapTaxCoefficient(Number(e.target.value))}
                       className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none focus:border-slate-500" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Stropní daň</label>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Stropní výpalné (daně)</label>
                     <input type="number" min={0} step={500} value={maxTax} onChange={e => setMaxTax(Number(e.target.value))}
                       className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none focus:border-slate-500" />
                   </div>
