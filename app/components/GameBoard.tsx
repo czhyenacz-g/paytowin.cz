@@ -2272,12 +2272,11 @@ export default function GameBoard({ gameCode }: Props) {
                       <div
                         className={`group relative h-full w-full overflow-hidden rounded-[2px] ring-1 ring-black/10 shadow-[0_10px_18px_rgba(15,23,42,0.16)] ${theme.colors.fieldStyles[field.type]}`}
                         style={{
+                          height: "100%",
+                          width: "100%",
                           backgroundImage: fieldBgImage,
                           backgroundSize: "cover, cover",
                           backgroundPosition: "center, center",
-                          // Pokud je primární obrázek — přepíšeme theme bg-* barvu tmavou,
-                          // aby průhledné okraje obrázku neprosvítaly barevnou card barvou.
-                          ...(fieldBgPrimaryPath ? { backgroundColor: "#0a0a0a" } : {}),
                           border: "1px solid rgba(0,0,0,0.82)",
                           borderTopWidth: "6px",
                           borderTopColor: getFieldAccentColor(field),
