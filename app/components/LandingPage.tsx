@@ -109,6 +109,7 @@ export default function LandingPage() {
   const [selectedThemeId, setSelectedThemeId] = React.useState("horse-day");
   const [selectedBoardId, setSelectedBoardId] = React.useState("small-stadium");
   const [maxPlayers, setMaxPlayers] = React.useState(6);
+  const [fogOfWar, setFogOfWar] = React.useState(true);
   const [stateSubsidy, setStateSubsidy] = React.useState(2000);
   const [baseTax, setBaseTax] = React.useState(500);
   const [lapTaxCoefficient, setLapTaxCoefficient] = React.useState(1);
@@ -241,6 +242,7 @@ export default function LandingPage() {
         owner_discord_id: discordUser?.id ?? null,
         max_players: maxPlayers,
         economy: { stateSubsidy, baseTax, lapTaxCoefficient, maxTax },
+        fog_of_war: fogOfWar,
       })
       .select()
       .single();
@@ -742,6 +744,16 @@ export default function LandingPage() {
                               maxTax={maxTax} setMaxTax={setMaxTax}
                             />
 
+                            <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                              <input
+                                type="checkbox"
+                                checked={fogOfWar}
+                                onChange={(e) => setFogOfWar(e.target.checked)}
+                                className="h-4 w-4 rounded accent-slate-800"
+                              />
+                              <span className="text-sm font-medium text-slate-700">🌫️ Fog of War — pole jsou skrytá dokud na ně nevstoupíš</span>
+                            </label>
+
                             {error && <p className="text-sm text-red-600">{error}</p>}
 
                             <button
@@ -936,6 +948,16 @@ export default function LandingPage() {
                       lapTaxCoefficient={lapTaxCoefficient} setLapTaxCoefficient={setLapTaxCoefficient}
                       maxTax={maxTax} setMaxTax={setMaxTax}
                     />
+
+                    <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={fogOfWar}
+                        onChange={(e) => setFogOfWar(e.target.checked)}
+                        className="h-4 w-4 rounded accent-slate-800"
+                      />
+                      <span className="text-sm font-medium text-slate-700">🌫️ Fog of War — pole jsou skrytá dokud na ně nevstoupíš</span>
+                    </label>
 
                     {error && <p className="text-sm text-red-600">{error}</p>}
 
