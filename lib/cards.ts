@@ -12,6 +12,18 @@ export interface CardEffect {
   duration?: number;
 }
 
+/**
+ * themeTags — volitelný příznak pro filtrování karet podle světa hry.
+ *
+ * "common"  — karta dává smysl v jakémkoliv theme (výchozí, pokud pole chybí)
+ * "horse"   — tematicky patří do koňského světa
+ * "car"     — tematicky patří do závodů aut
+ *
+ * Engine zatím karty podle themeTags nefiltruje — pole slouží jen jako datový základ
+ * pro budoucí filtrování balíčků per-theme. Karta bez themeTags se chová jako "common".
+ */
+export type CardThemeTag = "common" | "horse" | "car";
+
 export interface GameCard {
   id: string;
   type: "chance" | "finance";
@@ -20,25 +32,14 @@ export interface GameCard {
   effectLabel: string; // zkratka pro UI: "+100 💰", "Vynecháš tah", "Posun +2"
   /** Volitelný obrázek zobrazovaný při reveal karty. Cesta do /public, např. "/cards/zeleznik-reveal.webp". */
   imagePath?: string;
+  /** Tematické příznaky — pro budoucí filtrování balíčku podle aktivního theme. Výchozí: "common". */
+  themeTags?: CardThemeTag[];
 }
 
 // ─── Balíček Náhoda ───────────────────────────────────────────────────────────
+// Osud = pohyb, stavové efekty, skip, helper, situační zvraty. Bez peněz.
 
 export const CHANCE_CARDS: GameCard[] = [
-  {
-    id: "ch1",
-    type: "chance",
-    text: "Neznámý příznivec ti diskrétně poslal obálku.",
-    effect: { kind: "coins", value: 1000 },
-    effectLabel: "+1000 💰",
-  },
-  {
-    id: "ch2",
-    type: "chance",
-    text: "Zakopl jsi v areálu a rozbil vybavení. Zaplať škodu.",
-    effect: { kind: "coins", value: -800 },
-    effectLabel: "-800 💰",
-  },
   {
     id: "ch3",
     type: "chance",
@@ -54,25 +55,11 @@ export const CHANCE_CARDS: GameCard[] = [
     effectLabel: "Posun -3 pole",
   },
   {
-    id: "ch5",
-    type: "chance",
-    text: "Tisk tě označil za favorita. Sponzoři se hrnou.",
-    effect: { kind: "coins", value: 1500 },
-    effectLabel: "+1500 💰",
-  },
-  {
     id: "ch6",
     type: "chance",
     text: "Chaos před startem tě rozhodil a ty jsi přehlédl signál. Čekáš.",
     effect: { kind: "skip_turn" },
     effectLabel: "Vynecháš příští tah",
-  },
-  {
-    id: "ch7",
-    type: "chance",
-    text: "Veterinář ti vrátil přeplatek za prohlídku.",
-    effect: { kind: "coins", value: 600 },
-    effectLabel: "+600 💰",
   },
   {
     id: "ch8",
@@ -87,6 +74,14 @@ export const CHANCE_CARDS: GameCard[] = [
     text: "Zákeřný sok tvým závodníkům přimíchal do krmení sedativa. Příští 2 kola závodí na poloviční výkon.",
     effect: { kind: "stamina_debuff", factor: 0.5, duration: 2 },
     effectLabel: "Stamina ×0.5 (2 kola)",
+  },
+  {
+    id: "ch10",
+    type: "chance",
+    text: "Uvědomil sis, že příští závod musíš vyhrát za každou cenu. Vtom se z mlhy vynořil Železník.",
+    effect: { kind: "give_racer", racerId: "zeleznik" },
+    effectLabel: "Získáš Železníka",
+    themeTags: ["horse"],
   },
 ];
 
@@ -141,6 +136,43 @@ export const FINANCE_CARDS: GameCard[] = [
     text: "Nepředvídané náklady na dopravu závodníků. Zasahuje to rozpočet.",
     effect: { kind: "coins", value: -800 },
     effectLabel: "-800 💰",
+  },
+  // ─── přesunuté z Osudu ────────────────────────────────────────────────────
+  {
+    id: "fi8",
+    type: "finance",
+    text: "Neznámý příznivec ti diskrétně poslal obálku.",
+    effect: { kind: "coins", value: 1000 },
+    effectLabel: "+1000 💰",
+  },
+  {
+    id: "fi9",
+    type: "finance",
+    text: "Zakopl jsi v areálu a rozbil vybavení. Zaplať škodu.",
+    effect: { kind: "coins", value: -800 },
+    effectLabel: "-800 💰",
+  },
+  {
+    id: "fi10",
+    type: "finance",
+    text: "Tisk tě označil za favorita. Sponzoři se hrnou.",
+    effect: { kind: "coins", value: 1500 },
+    effectLabel: "+1500 💰",
+  },
+  {
+    id: "fi11",
+    type: "finance",
+    text: "Veterinář ti vrátil přeplatek za prohlídku.",
+    effect: { kind: "coins", value: 600 },
+    effectLabel: "+600 💰",
+  },
+  // ─── nové Finance karty ───────────────────────────────────────────────────
+  {
+    id: "fi12",
+    type: "finance",
+    text: "Právě ses dozvěděl, že i v závodění existují odbory.",
+    effect: { kind: "coins", value: -2000 },
+    effectLabel: "-2000 💰",
   },
 ];
 
