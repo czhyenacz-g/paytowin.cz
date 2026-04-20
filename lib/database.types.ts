@@ -15,6 +15,7 @@ export interface Database {
           owner_discord_id: string | null;
           max_players: number | null;
           economy: Json | null;
+          fog_of_war: boolean;
         };
         Insert: {
           code: string;
@@ -25,6 +26,7 @@ export interface Database {
           owner_discord_id?: string | null;
           max_players?: number | null;
           economy?: Json | null;
+          fog_of_war?: boolean;
         };
         Update: {
           code?: string;
@@ -35,6 +37,7 @@ export interface Database {
           owner_discord_id?: string | null;
           max_players?: number | null;
           economy?: Json | null;
+          fog_of_war?: boolean;
         };
       };
       players: {
@@ -84,6 +87,7 @@ export interface Database {
           horse_pending: boolean;
           card_pending: Json | null;
           offer_pending: Json | null;
+          revealed_fields: Json;
           updated_at: string;
         };
         Insert: {
@@ -95,6 +99,7 @@ export interface Database {
           horse_pending?: boolean;
           card_pending?: Json | null;
           offer_pending?: Json | null;
+          revealed_fields?: Json;
         };
         Update: {
           current_player_index?: number;
@@ -104,6 +109,7 @@ export interface Database {
           horse_pending?: boolean;
           card_pending?: Json | null;
           offer_pending?: Json | null;
+          revealed_fields?: Json;
         };
       };
       horse_catalog: {

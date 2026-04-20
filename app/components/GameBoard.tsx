@@ -305,6 +305,7 @@ export default function GameBoard({ gameCode }: Props) {
   const [economy, setEconomy] = React.useState<EconomyConfig>(DEFAULT_ECONOMY);
   const [isHost, setIsHost] = React.useState(false);
   const [gameStatus, setGameStatus] = React.useState<string>("playing");
+  const [fogOfWar, setFogOfWar] = React.useState(false);
   const [players, setPlayers] = React.useState<Player[]>([]);
   const [gameState, setGameState] = React.useState<GameState | null>(null);
   const [loading, setLoading] = React.useState(!!gameCode);
@@ -391,6 +392,18 @@ export default function GameBoard({ gameCode }: Props) {
   // Ref aby stale closures (Realtime subscriptions) vždy dostaly aktuální FIELDS
   const fieldsRef = React.useRef<Field[]>(FIELDS);
   fieldsRef.current = FIELDS;
+
+  // Fog of War helpers
+  const revealedFields: number[] = gameState?.revealed_fields ?? [];
+  function isFieldVisible(field: { index: number; type: string }): boolean {
+    if (!fogOfWar) return true;
+    if (field.type === "start" || field.type === "racer") return true;
+    return revealedFields.includes(field.index);
+  }
+  function buildFogReveal(fieldIndex: number): number[] {
+    if (revealedFields.includes(fieldIndex)) return revealedFields;
+    return [...revealedFields, fieldIndex];
+  }
 
   // Načti preference zvuku z localStorage
   React.useEffect(() => {
@@ -515,6 +528,7 @@ export default function GameBoard({ gameCode }: Props) {
       setBoardId(game.board_id ?? "small");
       setGameMode((game.game_mode ?? "online") as "online" | "local");
       setGameStatus(game.status);
+      setFogOfWar(!!game.fog_of_war);
       if (game.economy && typeof game.economy === "object") {
         setEconomy({ ...DEFAULT_ECONOMY, ...(game.economy as Partial<EconomyConfig>) });
       }
@@ -817,6 +831,7 @@ export default function GameBoard({ gameCode }: Props) {
           horse_pending: true,
           card_pending: null,
           log: [`${currentPlayer.name} přišel na ${theme.labels.racerField.toLowerCase()}: ${field.racer.emoji} ${field.racer.name}`, ...extraLog, ...newLog].slice(0, 20),
+          ...(fogOfWar ? { revealed_fields: buildFogReveal(newPosition) } : {}),
         }).eq("game_id", gameId);
         setPendingRacer({ racer: field.racer, playerIndex: gameState.current_player_index });
       }
@@ -836,6 +851,7 @@ export default function GameBoard({ gameCode }: Props) {
         horse_pending: false,
         card_pending: card as unknown as Record<string, unknown>,
         log: [`${currentPlayer.name} lízl kartu ${cardLabel}`, ...extraLog, ...newLog].slice(0, 20),
+        ...(fogOfWar ? { revealed_fields: buildFogReveal(newPosition) } : {}),
       }).eq("game_id", gameId);
       // Lokální state — ostatní klienti dostanou přes Realtime
       setPendingCard({ card, playerIndex: gameState.current_player_index });
@@ -879,12 +895,14 @@ export default function GameBoard({ gameCode }: Props) {
           card_pending: null,
           offer_pending: offer as unknown as Record<string, unknown>,
           log: [...logLines, `💡 Speciální nabídka pro ${currentPlayer.name}!`, ...newLog].slice(0, 20),
+          ...(fogOfWar ? { revealed_fields: buildFogReveal(newPosition) } : {}),
         }).eq("game_id", gameId);
         setPendingOffer(offer);
       } else {
         await finishTurn({
           nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog], lastRoll: roll,
           ...(wentBankrupt && !normalGameEnds ? { postTurnEvent: { kind: "announcement" as const, playerId: finalPlayer.id, playerName: finalPlayer.name } } : {}),
+          ...(fogOfWar ? { revealedFields: buildFogReveal(newPosition) } : {}),
         });
         if (canReroll) setCanReroll(false);
       }
@@ -1265,6 +1283,8 @@ export default function GameBoard({ gameCode }: Props) {
      *  horses aktualizoval. Closure `players` je stale a bez tohoto parametru by regen
      *  přepsal nově zakoupené racery starší DB hodnotou. */
     updatedCurrentPlayerHorses?: Horse[];
+    /** Fog of War: aktualizovaný seznam odhalených polí — přidat do game_state update. */
+    revealedFields?: number[];
   }) => {
     if (!gameId) return;
 
@@ -1285,6 +1305,7 @@ export default function GameBoard({ gameCode }: Props) {
         log: params.log.slice(0, 20),
       };
       if (params.lastRoll !== undefined) announcementUpdate.last_roll = params.lastRoll;
+      if (params.revealedFields !== undefined) announcementUpdate.revealed_fields = params.revealedFields;
       await supabase.from("game_state").update(announcementUpdate).eq("game_id", gameId);
       return;
     }
@@ -1310,6 +1331,7 @@ export default function GameBoard({ gameCode }: Props) {
         log: params.log.slice(0, 20),
       };
       if (params.lastRoll !== undefined) evtUpdate.last_roll = params.lastRoll;
+      if (params.revealedFields !== undefined) evtUpdate.revealed_fields = params.revealedFields;
       await supabase.from("game_state").update(evtUpdate).eq("game_id", gameId);
       return;
     }
@@ -1323,6 +1345,7 @@ export default function GameBoard({ gameCode }: Props) {
       log: params.log.slice(0, 20),
     };
     if (params.lastRoll !== undefined) update.last_roll = params.lastRoll;
+    if (params.revealedFields !== undefined) update.revealed_fields = params.revealedFields;
 
     // Regen staminy pro aktuálního hráče (+10 za tah, strop = maxStamina ?? 100)
     // Použijeme params.updatedCurrentPlayerHorses pokud existuje — closure `players`
@@ -2286,6 +2309,15 @@ export default function GameBoard({ gameCode }: Props) {
                         {/* Jemný bílý overlay pro neracer pole — odlišuje je od hero racer karet */}
                         {field.type !== "racer" && field.type !== "start" && (
                           <div className="pointer-events-none absolute inset-0 bg-white/25 transition-opacity duration-150 group-hover:opacity-0" />
+                        )}
+                        {/* Fog of War overlay — skryje obsah pole dokud hráč na něj nevstoupí */}
+                        {!isFieldVisible(field) && (
+                          <div
+                            className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center rounded-[2px] bg-slate-900/90"
+                            style={{ transform: `rotate(${-rotDeg}deg)` }}
+                          >
+                            <span className="text-2xl opacity-60">❓</span>
+                          </div>
                         )}
                       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-2 pb-2">
                         <div className="flex justify-center">

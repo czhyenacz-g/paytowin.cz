@@ -194,4 +194,6 @@ export interface GameState {
   card_pending: GameCard | null;
   offer_pending: OfferPending | null;
   mass_race_done: boolean; // true po prvním automatickém mass race — trigger se pak nepustí znovu
+  /** Indexy polí odhalených v Fog of War módu. Prázdné = nic není odhaleno. */
+  revealed_fields: number[];
 }
