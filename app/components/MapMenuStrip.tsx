@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import SmokeOverlay from "./SmokeOverlay";
 
 /**
  * MapMenuStrip — 8 vertikálních panelů jako game-mode select / hlavní menu landing page.
@@ -169,10 +168,7 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
               }}
             />
 
-            {/* ── Mlhový overlay ── */}
-            <SmokeOverlay seed={idx} />
-
-            {/* ── Číslo slotu (top-left) ── */}
+{/* ── Číslo slotu (top-left) ── */}
             <div
               className="absolute top-3 left-3 text-[10px] font-black tracking-[0.2em] transition-opacity duration-300 select-none z-10"
               style={{
