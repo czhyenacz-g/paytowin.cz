@@ -1,11 +1,15 @@
 // ─── Karty Náhoda / Finance ───────────────────────────────────────────────────
 
-export type CardEffectKind = "coins" | "skip_turn" | "move" | "give_racer";
+export type CardEffectKind = "coins" | "skip_turn" | "move" | "give_racer" | "stamina_debuff";
 
 export interface CardEffect {
   kind: CardEffectKind;
   value?: number;    // pro coins a move
   racerId?: string;  // pro give_racer: konkrétní racer ID; pokud chybí → náhodný volný
+  /** Multiplikátor pro debuff efekty (0–1). Např. 0.5 = poloviční stamina. */
+  factor?: number;
+  /** Počet kol hráče, po která efekt trvá. */
+  duration?: number;
 }
 
 export interface GameCard {
@@ -76,6 +80,13 @@ export const CHANCE_CARDS: GameCard[] = [
     text: "Tvoje závodní číslo bylo omylem přiděleno dvakrát. Chaos.",
     effect: { kind: "move", value: -2 },
     effectLabel: "Posun -2 pole",
+  },
+  {
+    id: "ch9",
+    type: "chance",
+    text: "Zákeřný sok tvým závodníkům přimíchal do krmení sedativa. Příští 2 kola závodí na poloviční výkon.",
+    effect: { kind: "stamina_debuff", factor: 0.5, duration: 2 },
+    effectLabel: "Stamina ×0.5 (2 kola)",
   },
 ];
 

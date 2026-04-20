@@ -29,17 +29,19 @@ interface Props {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const KIND_LABELS: Record<CardEffectKind, string> = {
-  coins:      "Coins",
-  move:       "Posun",
-  skip_turn:  "Přeskoč tah",
-  give_racer: "Závodník",
+  coins:          "Coins",
+  move:           "Posun",
+  skip_turn:      "Přeskoč tah",
+  give_racer:     "Závodník",
+  stamina_debuff: "Stamina debuff",
 };
 
 const KIND_COLORS: Record<CardEffectKind, string> = {
-  coins:      "bg-emerald-100 text-emerald-700",
-  move:       "bg-sky-100 text-sky-700",
-  skip_turn:  "bg-amber-100 text-amber-700",
-  give_racer: "bg-violet-100 text-violet-700",
+  coins:          "bg-emerald-100 text-emerald-700",
+  move:           "bg-sky-100 text-sky-700",
+  skip_turn:      "bg-amber-100 text-amber-700",
+  give_racer:     "bg-violet-100 text-violet-700",
+  stamina_debuff: "bg-orange-100 text-orange-700",
 };
 
 function generateId(type: "chance" | "finance", existing: GameCard[]): string {

@@ -39,7 +39,7 @@ function canTriggerRivalsRace(p1: Player, p2: Player): boolean {
 }
 import { drawCard } from "@/lib/cards";
 import type { GameCard } from "@/lib/cards";
-import type { Player, Horse, GameState, OfferPending, RerollOffer, RaceOffer, BankruptAnnouncement, RacePendingEvent, PostTurnEvent, RaceType, EconomyConfig } from "@/lib/types/game";
+import type { Player, Horse, ActiveEffect, GameState, OfferPending, RerollOffer, RaceOffer, BankruptAnnouncement, RacePendingEvent, PostTurnEvent, RaceType, EconomyConfig } from "@/lib/types/game";
 import { DEFAULT_ECONOMY } from "@/lib/types/game";
 import type { CenterEvent, FlashEvent } from "@/lib/types/events";
 import CenterEventModal from "./modals/CenterEventModal";
@@ -1148,6 +1148,14 @@ export default function GameBoard({ gameCode }: Props) {
       } else {
         logLines.push(`${player.name}: ${card.text} — žádný volný závodník není k dispozici.`);
       }
+    } else if (card.effect.kind === "stamina_debuff") {
+      const factor = card.effect.factor ?? 0.5;
+      const duration = card.effect.duration ?? 2;
+      // No stacking: filter out any existing stamina_debuff and replace (refresh duration).
+      const existing = (updatedPlayer.active_effects ?? []).filter(e => e.kind !== "stamina_debuff");
+      const newEffect: ActiveEffect = { kind: "stamina_debuff", factor, turnsLeft: duration };
+      updatedPlayer = { ...updatedPlayer, active_effects: [...existing, newEffect] };
+      logLines.push(`${player.name}: ${card.text} (stamina závodníků ×${factor} na ${duration} kola)`);
     }
 
     const wentBankrupt = updatedPlayer.coins <= 0 && player.coins > 0;
@@ -1160,6 +1168,7 @@ export default function GameBoard({ gameCode }: Props) {
     if (card.effect.kind === "move") playerUpdate.position = updatedPlayer.position;
     if (card.effect.kind === "skip_turn") playerUpdate.skip_next_turn = true;
     if (card.effect.kind === "give_racer") playerUpdate.horses = updatedPlayer.horses;
+    if (card.effect.kind === "stamina_debuff") playerUpdate.active_effects = updatedPlayer.active_effects;
 
     console.log(`[turn-flow] applyCardEffect persisting — pos=${updatedPlayer.position} coins=${updatedPlayer.coins} wentBankrupt=${wentBankrupt}`);
     await supabase.from("players").update(playerUpdate).eq("id", player.id);
@@ -1322,10 +1331,23 @@ export default function GameBoard({ gameCode }: Props) {
           return { ...h, stamina: Math.min(cap, (h.stamina ?? cap) + 10) };
         })
       : null;
+
+    // Dekrementuj turnsLeft aktivních efektů; odstraň vypršené.
+    const currentEffects = playerForRegen?.active_effects ?? [];
+    const updatedEffects = currentEffects
+      .map(e => ({ ...e, turnsLeft: e.turnsLeft - 1 }))
+      .filter(e => e.turnsLeft > 0);
+    const effectsChanged = currentEffects.length !== updatedEffects.length ||
+      currentEffects.some((e, i) => e.turnsLeft !== updatedEffects[i]?.turnsLeft);
+
+    const playerRegenUpdate: Record<string, unknown> = {};
+    if (regenHorses) playerRegenUpdate.horses = regenHorses;
+    if (effectsChanged) playerRegenUpdate.active_effects = updatedEffects;
+
     await Promise.all([
       supabase.from("game_state").update(update).eq("game_id", gameId),
-      ...(regenHorses
-        ? [supabase.from("players").update({ horses: regenHorses }).eq("id", playerForRegen!.id)]
+      ...(Object.keys(playerRegenUpdate).length > 0 && playerForRegen
+        ? [supabase.from("players").update(playerRegenUpdate).eq("id", playerForRegen.id)]
         : []),
     ]);
   };
@@ -1400,7 +1422,10 @@ export default function GameBoard({ gameCode }: Props) {
       const rawScore = evt.scores?.[pid] ?? 0;
       const finalStamina = evt.finalStaminas?.[pid] ?? horse?.stamina ?? 100;
       const maxStamina = horse?.maxStamina ?? 100;
-      const staminaMultiplier = horse?.isLegendary ? 1 : (finalStamina / maxStamina);
+      const debuffFactor = (player?.active_effects ?? [])
+        .filter(e => e.kind === "stamina_debuff")
+        .reduce((acc, e) => acc * e.factor, 1);
+      const staminaMultiplier = horse?.isLegendary ? 1 : (finalStamina / maxStamina) * debuffFactor;
       return { player, horse, horseKey, rawScore, effectiveScore: rawScore * staminaMultiplier, speed: horse?.speed ?? 0, finalStamina, maxStamina };
     });
     const winnerEntry = [...raceEntries].sort((a, b) => b.effectiveScore - a.effectiveScore || b.speed - a.speed)[0];
@@ -1727,7 +1752,10 @@ export default function GameBoard({ gameCode }: Props) {
         const score = racePendingEvt.scores?.[pid] ?? 0;
         const finalStamina = racePendingEvt.finalStaminas?.[pid] ?? horse?.stamina ?? 100;
         const maxStamina = horse?.maxStamina ?? 100;
-        const staminaMultiplier = horse?.isLegendary ? 1 : (finalStamina / maxStamina);
+        const debuffFactor = (player?.active_effects ?? [])
+          .filter(e => e.kind === "stamina_debuff")
+          .reduce((acc, e) => acc * e.factor, 1);
+        const staminaMultiplier = horse?.isLegendary ? 1 : (finalStamina / maxStamina) * debuffFactor;
         const effectiveScore = score * staminaMultiplier;
         return { player, horse, speed: horse?.speed ?? 0, score, effectiveScore, finalStamina };
       }).sort((a, b) => b.effectiveScore - a.effectiveScore || b.speed - a.speed)

@@ -31,6 +31,24 @@ export const DEFAULT_ECONOMY: EconomyConfig = {
 // Keep in sync with RaceEventOverlay.tsx if defined there separately.
 export const STAMINA_PER_TAP = 2;
 
+// ─── Dočasné efekty ───────────────────────────────────────────────────────────
+
+/**
+ * ActiveEffect — dočasný efekt aplikovaný na hráče.
+ *
+ * turnsLeft se dekrementuje v finishTurn (= počet tahů daného hráče, ne globálních tahů).
+ * Po dosažení 0 se efekt odstraní.
+ *
+ * Rozšiřitelné: přidej nový kind do union (např. "speed_debuff") a příslušnou logiku v GameBoard.
+ */
+export interface ActiveEffect {
+  kind: "stamina_debuff";
+  /** Multiplikátor aplikovaný na staminaMultiplier při závodě. 0.5 = poloviční výkon. */
+  factor: number;
+  /** Kolik hráčových tahů ještě efekt trvá. */
+  turnsLeft: number;
+}
+
 // ─── Hráč ─────────────────────────────────────────────────────────────────────
 
 /**
@@ -91,6 +109,8 @@ export interface Player {
   discord_avatar_url?: string | null;
   /** Počet průchodů STARTem. Daně začínají od laps=1 (druhý průchod). */
   laps?: number;
+  /** Aktuálně aktivní dočasné efekty (debuffs apod.). Uloženy jako JSONB v DB. */
+  active_effects?: ActiveEffect[];
 }
 
 // ─── Herní stav ───────────────────────────────────────────────────────────────

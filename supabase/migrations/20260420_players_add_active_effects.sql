@@ -1,0 +1,1 @@
+ALTER TABLE players ADD COLUMN IF NOT EXISTS active_effects JSONB DEFAULT '[]'::JSONB;
