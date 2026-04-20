@@ -2112,11 +2112,11 @@ export default function GameBoard({ gameCode }: Props) {
           )}
         </div>
       )}
-      <div className="p-6">
+      <div className="p-4 sm:p-6 lg:p-8">
         <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 lg:grid-cols-[1fr_340px]">
 
           {/* Herní plocha */}
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 lg:pl-36">
             {/* HUD + legenda — vlastní panel s pozadím */}
             <div className={`rounded-[4px] px-4 py-3 shadow-md ring-1 ring-black/[0.06] ${theme.colors.cardBackground}`}>
             {/* HUD — 3 zóny: brand | stav hry | akce */}
