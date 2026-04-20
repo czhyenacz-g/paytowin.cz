@@ -192,7 +192,7 @@ const FIGURINE_POSITIONS: React.CSSProperties[] = FIELD_POSITIONS.map((pos) => {
 });
 
 // Figurky pro stadium layout.
-// Kontejner má aspect-[20/14] (= STADIUM_ASPECT) — 1 % horiz ≠ 1 % vert v pixelech.
+// Kontejner má aspect-[20/16] (= STADIUM_ASPECT) — 1 % horiz ≠ 1 % vert v pixelech.
 // Správný inward offset: normalizuj vektor v pixelovém prostoru (dx škálujeme A=W/H),
 // poté převeď zpět na % — výsledkem je fyzicky stejný inset ve všech směrech po okruhu.
 const FIGURINE_POSITIONS_STADIUM: React.CSSProperties[] = FIELD_POSITIONS_STADIUM.map((pos) => {
@@ -2182,8 +2182,8 @@ export default function GameBoard({ gameCode }: Props) {
             </div>
             </div>{/* konec HUD+legenda panelu */}
 
-            {/* aspect-[20/14] musí odpovídat STADIUM_ASPECT v lib/board/constants.ts */}
-            <div className={`relative mx-auto w-full overflow-visible ${board.shape === "stadium" ? "aspect-[20/14]" : "aspect-square max-w-[760px]"}`}>
+            {/* aspect-[20/16] musí odpovídat STADIUM_ASPECT v lib/board/constants.ts */}
+            <div className={`relative mx-auto w-full overflow-visible ${board.shape === "stadium" ? "aspect-[20/16]" : "aspect-square max-w-[760px]"}`}>
               <div
                 className={`absolute inset-0 overflow-hidden rounded-[4px] border-2 ${theme.colors.boardSurfaceBorder} ${theme.colors.boardSurface}`}
                 style={{
@@ -2414,7 +2414,7 @@ export default function GameBoard({ gameCode }: Props) {
                 <div
                   className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center border-2 p-4 text-center shadow-inner ${theme.colors.centerBorder} ${theme.colors.centerBackground}`}
                   style={board.shape === "stadium"
-                    ? { width: "54%", height: "24%", borderRadius: "25%" }
+                    ? { width: "50%", height: "40%", borderRadius: "25%" }
                     : { width: "44%", height: "44%", borderRadius: "50%" }}
                 >
                   {hoveredField ? (

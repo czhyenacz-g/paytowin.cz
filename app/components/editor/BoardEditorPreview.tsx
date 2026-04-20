@@ -150,9 +150,9 @@ export default function BoardEditorPreview({
     onFieldClick?.(field);
   }
 
-  // aspect-[20/14] musí odpovídat STADIUM_ASPECT v lib/board/constants.ts
+  // aspect-[20/16] musí odpovídat STADIUM_ASPECT v lib/board/constants.ts
   return (
-    <div className={`relative mx-auto w-full overflow-visible ${board.shape === "stadium" ? "aspect-[20/14] max-w-[700px]" : "aspect-square max-w-[600px]"}`}>
+    <div className={`relative mx-auto w-full overflow-visible ${board.shape === "stadium" ? "aspect-[20/16] max-w-[700px]" : "aspect-square max-w-[600px]"}`}>
 
       {/* Pozadí a SVG pásy — vizuálně identické s GameBoard */}
       <div
