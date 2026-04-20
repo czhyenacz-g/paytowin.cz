@@ -189,14 +189,19 @@ const FIGURINE_POSITIONS: React.CSSProperties[] = FIELD_POSITIONS.map((pos) => {
   };
 });
 
-// Figurky pro stadium layout — stejný výpočet (10 % ke středu), jiné vstupní pozice.
+// Figurky pro stadium layout.
+// Kontejner má aspect-[20/11] — 1 % horiz ≠ 1 % vert v pixelech.
+// Správný inward offset: normalizuj vektor v pixelovém prostoru (dx škálujeme A=W/H),
+// poté převeď zpět na % — výsledkem je fyzicky stejný inset ve všech směrech po okruhu.
+const STADIUM_ASPECT = 20 / 11; // W/H kontejneru, musí odpovídat aspect-[20/11]
 const FIGURINE_POSITIONS_STADIUM: React.CSSProperties[] = FIELD_POSITIONS_STADIUM.map((pos) => {
   const left = parseFloat(pos.left as string);
   const top  = parseFloat(pos.top  as string);
   const dx = 50 - left;
   const dy = 50 - top;
-  const len = Math.sqrt(dx * dx + dy * dy) || 1;
-  const offset = 10;
+  // Normalizace v pixelovém prostoru: dx škálujeme poměrem W/H
+  const len = Math.sqrt((STADIUM_ASPECT * dx) ** 2 + dy ** 2) || 1;
+  const offset = 6; // % výšky kontejneru — fyzicky konzistentní inset ve všech směrech
   return {
     left: `${left + (dx / len) * offset}%`,
     top:  `${top  + (dy / len) * offset}%`,
