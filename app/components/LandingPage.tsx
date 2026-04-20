@@ -446,7 +446,7 @@ export default function LandingPage() {
                   className="mx-auto"
                   onClick={() => window.open("/", "_blank")}
                 />
-                <p className="mt-2 text-slate-500">Dostihy, sázky a finanční chaos.</p>
+                <p className="mt-2 text-slate-500">Závody, sázky a finanční chaos.</p>
               </div>
 
               <MapMenuStrip onPanelClick={(id) => {

@@ -5,10 +5,10 @@ import Script from "next/script";
 import { GOATCOUNTER_CODE } from "./config/analytics";
 
 export const metadata: Metadata = {
-  title: "PayToWin.cz — Dostihy, sázky a finanční chaos",
+  title: "PayToWin.cz — Závody, sázky a finanční chaos",
   description: "Multiplayerová desková hra v prohlížeči. Závoď, sázej a přežij finanční chaos.",
   openGraph: {
-    title: "PayToWin.cz — Dostihy, sázky a finanční chaos",
+    title: "PayToWin.cz — Závody, sázky a finanční chaos",
     description: "Multiplayerová desková hra v prohlížeči. Závoď, sázej a přežij finanční chaos.",
     url: "https://paytowin.cz",
     siteName: "PayToWin.cz",
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "PayToWin.cz — Dostihy, sázky a finanční chaos",
+    title: "PayToWin.cz — Závody, sázky a finanční chaos",
     description: "Multiplayerová desková hra v prohlížeči. Závoď, sázej a přežij finanční chaos.",
   },
 };
