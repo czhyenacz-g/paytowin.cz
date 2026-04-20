@@ -2275,7 +2275,7 @@ export default function GameBoard({ gameCode }: Props) {
                           height: "100%",
                           width: "100%",
                           backgroundImage: fieldBgImage,
-                          backgroundSize: "cover, cover",
+                          backgroundSize: "120% auto, cover",
                           backgroundPosition: "center, center",
                           border: "1px solid rgba(0,0,0,0.82)",
                           borderTopWidth: "6px",
