@@ -123,7 +123,9 @@ export default function RacerEditorPanel({ racer, onChange, readOnly = false }: 
       return;
     }
 
-    setImageUrl(result.imageUrl);
+    // Cache-bust preview URL — Supabase přepíše stejný soubor, browser by jinak zobrazil starý
+    const freshUrl = `${result.imageUrl}?v=${Date.now()}`;
+    setImageUrl(freshUrl);
     commit({ imageUrl: result.imageUrl });
   }
 

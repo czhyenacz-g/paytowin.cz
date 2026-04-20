@@ -27,7 +27,7 @@ export type ImageUploadResult =
 // ─── WebP konverze ────────────────────────────────────────────────────────────
 
 /**
- * toWebp — převede vstupní buffer do WebP 512×512 contain.
+ * toWebp — převede vstupní buffer do WebP 512×512 cover (center crop, bez paddingu).
  *
  * Dynamic import sharp — modul zůstane server-only; tree-shaker nepromítne do bundlu.
  * Pokud sharp není dostupný (edge runtime), výjimka se propaguje do volajícího.
@@ -37,8 +37,7 @@ async function toWebp(input: Buffer): Promise<Buffer> {
   const sharp = (await import("sharp")).default;
   return sharp(input)
     .resize(512, 512, {
-      fit:        "contain",
-      background: { r: 0, g: 0, b: 0, alpha: 0 },
+      fit:        "cover",
     })
     .webp({ quality: 85 })
     .toBuffer();
