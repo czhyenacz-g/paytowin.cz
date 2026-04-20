@@ -2297,29 +2297,14 @@ export default function GameBoard({ gameCode }: Props) {
                         <div
                           className="relative h-full w-full overflow-hidden rounded-[2px] ring-1 ring-black/20 shadow-[0_10px_18px_rgba(15,23,42,0.16)]"
                           style={{
-                            background: "linear-gradient(145deg, #1e293b 0%, #0f172a 60%, #1e293b 100%)",
-                            border: "1px solid rgba(255,255,255,0.08)",
+                            backgroundImage: "url('/fog-of-war-card.webp')",
+                            backgroundSize: "cover",
+                            backgroundPosition: "center",
+                            border: "1px solid rgba(0,0,0,0.82)",
                             borderTopWidth: "6px",
-                            borderTopColor: "rgba(255,255,255,0.12)",
+                            borderTopColor: "rgba(30,41,59,0.9)",
                           }}
-                        >
-                          {/* Kostkovaný vzor — klasický rub karty */}
-                          <div
-                            className="absolute inset-0 opacity-[0.07]"
-                            style={{
-                              backgroundImage: "repeating-linear-gradient(45deg, #fff 0, #fff 1px, transparent 0, transparent 50%)",
-                              backgroundSize: "8px 8px",
-                            }}
-                          />
-                          {/* Střed — ikona */}
-                          <div
-                            className="absolute inset-0 flex flex-col items-center justify-center gap-1"
-                            style={{ transform: `rotate(${-rotDeg}deg)` }}
-                          >
-                            <span className="text-xl opacity-40">🌫️</span>
-                            <span className="text-[7px] font-bold uppercase tracking-widest text-white/25">???</span>
-                          </div>
-                        </div>
+                        />
                       ) : (
                       <div
                         className={`group relative h-full w-full overflow-hidden rounded-[2px] ring-1 ring-black/10 shadow-[0_10px_18px_rgba(15,23,42,0.16)] ${theme.colors.fieldStyles[field.type]}`}
