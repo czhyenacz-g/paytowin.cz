@@ -227,7 +227,7 @@ function getFieldMetaLabel(field: Field, ownerName: string | null): string | nul
   }
   if (field.type === "coins_gain") return field.description || "odměna";
   if (field.type === "coins_lose") return field.description || "ztráta";
-  if (field.type === "chance") return "náhoda";
+  if (field.type === "chance") return "osud";
   if (field.type === "finance") return "finance";
   if (field.type === "gamble") return "hazard";
   return field.description || null;
@@ -814,7 +814,7 @@ export default function GameBoard({ gameCode }: Props) {
     } else if (field.type === "chance" || field.type === "finance") {
       // ── Karta: lízni, zobraz všem, efekt se aplikuje automaticky po 2.5 s ──
       const card = drawCard(field.type, theme.content?.cards);
-      const cardLabel = field.type === "chance" ? "🎴 Náhoda" : "💼 Finance";
+      const cardLabel = field.type === "chance" ? "🎴 Osud" : "💼 Finance";
       // FIX pořadí: nejdřív uložíme finální pozici hráče, pak card_pending.
       // applyCardEffect poběží ze stale closure (timer 2.5s) — position musí být
       // v DB stabilní předtím, než se karta aplikuje.
@@ -1073,7 +1073,7 @@ export default function GameBoard({ gameCode }: Props) {
       if (landingField) {
         const lt = landingField.type;
         if (lt === "chance" || lt === "finance") {
-          const label = lt === "chance" ? "Náhoda" : "Finance";
+          const label = lt === "chance" ? "Osud" : "Finance";
           logLines.push(`${player.name}: přistál na poli ${label} — karta se nevylosuje (přesun byl kartou).`);
           console.log(`[turn-flow] card move landed on ${lt} — skipped (chain guard depth=1)`);
         } else if (lt === "racer" || lt === "horse") {
@@ -2145,7 +2145,7 @@ export default function GameBoard({ gameCode }: Props) {
             </div>
             </div>{/* konec HUD+legenda panelu */}
 
-            <div className="relative mx-auto aspect-square w-full max-w-[760px] overflow-visible">
+            <div className={`relative mx-auto w-full overflow-visible ${board.shape === "stadium" ? "aspect-[20/11]" : "aspect-square max-w-[760px]"}`}>
               <div
                 className={`absolute inset-0 overflow-hidden rounded-[4px] border-2 ${theme.colors.boardSurfaceBorder} ${theme.colors.boardSurface}`}
                 style={{
@@ -2616,7 +2616,7 @@ export default function GameBoard({ gameCode }: Props) {
                     <div className={`text-xs font-bold uppercase tracking-widest ${
                       pendingCard.card.type === "chance" ? "text-sky-600" : "text-teal-600"
                     }`}>
-                      {pendingCard.card.type === "chance" ? "🎴 Náhoda" : "💼 Finance"}
+                      {pendingCard.card.type === "chance" ? "🎴 Osud" : "💼 Finance"}
                     </div>
                     <div className="text-sm font-medium text-slate-800 leading-snug">
                       {pendingCard.card.text}
@@ -2982,7 +2982,7 @@ function mapToCenterEvent(
     return {
       type: "card",
       cardType: card.type,
-      category: card.type === "chance" ? "Náhoda" : "Finance",
+      category: card.type === "chance" ? "Osud" : "Finance",
       emoji: card.type === "chance" ? "🎴" : "💼",
       playerName: players[playerIndex]?.name ?? "?",
       text: card.text,

@@ -84,7 +84,7 @@ export default function PravidlaPage() {
               </div>
               <div className="flex items-start gap-3 rounded-xl bg-sky-50 px-4 py-3">
                 <span className="text-lg">🎴</span>
-                <div><strong>Náhoda / Finance</strong> — lízneš kartu s jednorázovým efektem (zisk, ztráta nebo jiná událost).</div>
+                <div><strong>Osud / Finance</strong> — lízneš kartu s jednorázovým efektem (zisk, ztráta nebo jiná událost).</div>
               </div>
             </div>
           </section>

@@ -48,7 +48,7 @@ const DEFAULT_TEMPLATE: ThemeManifest = {
     gain: "Zisk",
     loss: "Ztráta",
     hazard: "Hazard",
-    chance: "Náhoda",
+    chance: "Osud",
     finance: "Finance",
     racer: "Kůň",
     racers: "Koně",
@@ -482,7 +482,7 @@ function EditorExportPanel({
         <div className="border-t border-slate-100 px-4 py-2.5 space-y-2">
           {(["chance", "finance"] as const).map((deckType) => {
             const deckCards = editableCards[deckType];
-            const deckLabel = deckType === "chance" ? "🎴 Náhoda" : "💼 Finance";
+            const deckLabel = deckType === "chance" ? "🎴 Osud" : "💼 Finance";
             return (
               <div key={deckType}>
                 <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1">
@@ -568,7 +568,7 @@ function LegendaryRacerGuide() {
               },
               {
                 n: 4,
-                title: "Otevři Deck editor — Náhoda",
+                title: "Otevři Deck editor — Osud",
                 body: <>Pokud je deck prázdný, klikni <strong>Importovat globální</strong> (zkopíruje výchozí karty k editaci). Nebo rovnou klikni <strong>+ Přidat</strong> pro novou kartu.</>,
               },
               {

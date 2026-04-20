@@ -85,7 +85,7 @@ export const SMALL_BOARD: BoardConfig = {
     {
       "index": 8,
       "type": "chance",
-      "label": "Náhoda",
+      "label": "Osud",
       "emoji": "🎴"
     },
     {
@@ -164,7 +164,7 @@ export const SMALL_BOARD: BoardConfig = {
     {
       "index": 20,
       "type": "chance",
-      "label": "Náhoda",
+      "label": "Osud",
       "emoji": "🎴"
     }
   ]

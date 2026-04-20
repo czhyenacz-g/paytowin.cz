@@ -79,7 +79,7 @@ const FIELD_TYPE_LABELS: Record<BoardFieldType, string> = {
   gamble:     "Hazard",
   racer:      "Závodník (racer slot)",
   neutral:    "Neutrální",
-  chance:     "Náhoda (karta)",
+  chance:     "Osud (karta)",
   finance:    "Finance (karta)",
 };
 

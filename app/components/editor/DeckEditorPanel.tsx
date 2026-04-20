@@ -381,7 +381,7 @@ export default function DeckEditorPanel({ chanceDeck, financeDeck, onChangeChanc
   return (
     <div className="space-y-3">
       <DeckPanel
-        type="chance" label="Náhoda" emoji="🎴" accentBg="bg-sky-50"
+        type="chance" label="Osud" emoji="🎴" accentBg="bg-sky-50"
         cards={chanceDeck} globalCards={CHANCE_CARDS} onChange={onChangeChance}
       />
       <DeckPanel

@@ -170,7 +170,7 @@ export function themeToManifest(theme: Theme): ThemeManifest {
       gain:       theme.labels.legend.gain,
       loss:       theme.labels.legend.lose,
       hazard:     theme.labels.legend.gamble,
-      chance:     "Náhoda",
+      chance:     "Osud",
       finance:    "Finance",
       racer:      theme.labels.racer,
       racers:     theme.labels.racers,
