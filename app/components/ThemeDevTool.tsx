@@ -1163,7 +1163,17 @@ export default function ThemeDevTool() {
 
     // Built-in theme na localhostu — zapíše racery a racerRefs přímo do lib/themes/{id}.ts
     if (currentSource === "built-in" && currentId) {
-      const result = await patchRacersInFileAction(currentId, editableRacers, liveManifest?.racerRefs);
+      const racerRefs = liveManifest?.racerRefs;
+      if (racerRefs) {
+        const slots = racerRefs.map((r) => r.slotIndex);
+        const dupes = slots.filter((s, i) => slots.indexOf(s) !== i);
+        if (dupes.length > 0) {
+          setSaving(false);
+          notify("error", `Duplicitní sloty [${dupes.join(", ")}] — dva závodníci mají stejný slot. Oprav přiřazení a zkus znovu.`);
+          return;
+        }
+      }
+      const result = await patchRacersInFileAction(currentId, editableRacers, racerRefs);
       setSaving(false);
       if (result.ok) {
         notify("success", `Zapsáno do souboru: ${result.written.join(", ")}`);

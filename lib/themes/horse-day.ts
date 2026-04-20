@@ -57,7 +57,7 @@ export const horseDayTheme: Theme = {
       "racer_id": "divoka_ruze"
     },
     {
-      "slotIndex": 1,
+      "slotIndex": 2,
       "racer_id": "zlata_hriva"
     },
     {
@@ -65,7 +65,7 @@ export const horseDayTheme: Theme = {
       "racer_id": "r6"
     },
     {
-      "slotIndex": 2,
+      "slotIndex": 1,
       "racer_id": "rychly_vitr"
     },
     {
@@ -96,7 +96,7 @@ export const horseDayTheme: Theme = {
       "maxStamina": 90,
       "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/zlata_hriva.webp",
       "racerType": "horse",
-      "slotIndex": 1
+      "slotIndex": 2
     },
     {
       "id": "r6",
@@ -118,7 +118,7 @@ export const horseDayTheme: Theme = {
       "emoji": "🟢",
       "maxStamina": 80,
       "racerType": "horse",
-      "slotIndex": 2
+      "slotIndex": 1
     },
     {
       "id": "horse_night_buran",
