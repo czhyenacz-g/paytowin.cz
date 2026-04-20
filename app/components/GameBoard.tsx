@@ -2178,8 +2178,8 @@ export default function GameBoard({ gameCode }: Props) {
             </div>
             </div>{/* konec HUD+legenda panelu */}
 
-            {/* aspect-[20/11] musí odpovídat STADIUM_ASPECT v lib/board/constants.ts */}
-            <div className={`relative mx-auto w-full overflow-visible ${board.shape === "stadium" ? "aspect-[20/11]" : "aspect-square max-w-[760px]"}`}>
+            {/* aspect-[20/12] musí odpovídat STADIUM_ASPECT v lib/board/constants.ts */}
+            <div className={`relative mx-auto w-full overflow-visible ${board.shape === "stadium" ? "aspect-[20/12]" : "aspect-square max-w-[760px]"}`}>
               <div
                 className={`absolute inset-0 overflow-hidden rounded-[4px] border-2 ${theme.colors.boardSurfaceBorder} ${theme.colors.boardSurface}`}
                 style={{
@@ -2323,8 +2323,8 @@ export default function GameBoard({ gameCode }: Props) {
                         return (
                           <div
                             key={player.id}
-                            className={`flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-black text-black ring-2 ring-black/20 transition-transform duration-200 ${player.color} ${isAnimatingThis ? "scale-125 animate-bounce" : ""}`}
-                            style={{ boxShadow: "0 3px 0 rgba(0,0,0,0.35), 0 4px 6px rgba(0,0,0,0.25)" }}
+                            className={`flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-black text-black ring-2 ring-black/20 ${player.color} ${isAnimatingThis ? "scale-125 animate-bounce" : "animate-figurine-bob"}`}
+                            style={{ boxShadow: "0 3px 0 rgba(0,0,0,0.35), 0 4px 6px rgba(0,0,0,0.25)", animationDelay: isAnimatingThis ? "0s" : `${(player.turn_order % 4) * 0.28}s` }}
                             title={player.name}
                           >
                             {player.name.charAt(0).toUpperCase()}

@@ -40,8 +40,8 @@ export const horseDayTheme: Theme = {
   },
   labels: {
     themeName:      "Dostihy — Den",
-    centerTitle:    "Dostihiště",
-    centerSubtitle: "Přijdou závody.",
+    centerTitle:    "Connecticut",
+    centerSubtitle: "Sezóna začíná.",
     legend: {
       gain:   "zisk",
       lose:   "ztráta",
@@ -251,6 +251,6 @@ export const horseDayTheme: Theme = {
   mapMeta: {
     yearStart: 1921,
     place: "Connecticut",
-    subtitle: "Sezóna začíná. Kdo má rychlost, vydělá.",
+    subtitle: "Sezóna začíná.",
   },
 };
