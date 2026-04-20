@@ -71,6 +71,17 @@
   }
 }
 
+@keyframes smoke-a {
+  0%   { transform: translate(0px,  0px)  scale(1);    }
+  50%  { transform: translate(22px, -14px) scale(1.07); }
+  100% { transform: translate(0px,  0px)  scale(1);    }
+}
+@keyframes smoke-b {
+  0%   { transform: translate(0px,  0px)  scale(1);    }
+  50%  { transform: translate(-16px, 18px) scale(0.95); }
+  100% { transform: translate(0px,  0px)  scale(1);    }
+}
+
 @keyframes figurine-bob {
   0%, 100% { transform: translateY(0px); }
   50%      { transform: translateY(-4px); }
