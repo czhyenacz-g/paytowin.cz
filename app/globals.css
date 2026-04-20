@@ -71,6 +71,14 @@
   }
 }
 
+@keyframes figurine-bob {
+  0%, 100% { transform: translateY(0px); }
+  50%      { transform: translateY(-4px); }
+}
+.animate-figurine-bob {
+  animation: figurine-bob 1.0s ease-in-out infinite;
+}
+
 @keyframes cardFadeIn {
   from { opacity: 0; transform: scale(0.93); }
   to   { opacity: 1; transform: scale(1); }
