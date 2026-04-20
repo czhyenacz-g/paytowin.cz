@@ -1173,7 +1173,8 @@ export default function ThemeDevTool() {
           return;
         }
       }
-      const result = await patchRacersInFileAction(currentId, editableRacers, racerRefs);
+      const meta = liveManifest ? { name: liveManifest.meta.name, description: liveManifest.meta.description, version: liveManifest.meta.version } : undefined;
+      const result = await patchRacersInFileAction(currentId, editableRacers, racerRefs, meta);
       setSaving(false);
       if (result.ok) {
         notify("success", `Zapsáno do souboru: ${result.written.join(", ")}`);

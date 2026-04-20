@@ -235,6 +235,24 @@ function _addIndent(text: string, indent: string): string {
   return text.split("\n").map((l, i) => (i === 0 ? l : indent + l)).join("\n");
 }
 
+function _replaceStringKey(src: string, key: string, val: string): string {
+  const re = new RegExp(`([ \\t]*${_esc(key)}:\\s*)("(?:[^"\\\\]|\\\\.)*"|'(?:[^'\\\\]|\\\\.)*'|\`(?:[^\`\\\\]|\\\\.)*\`)`);
+  const m = re.exec(src);
+  if (!m) throw new Error(`String key "${key}" not found in source`);
+  const quoted = JSON.stringify(val);
+  return src.slice(0, m.index + m[1].length) + quoted + src.slice(m.index + m[1].length + m[2].length);
+}
+
+function _upsertStringKey(src: string, key: string, val: string): string {
+  const existing = new RegExp(`[ \\t]*${_esc(key)}:\\s*(?:"[^"]*"|'[^']*')`);
+  if (existing.test(src)) return _replaceStringKey(src, key, val);
+  // Vlož za description
+  return src.replace(
+    /([ \t]*description:\s*(?:"[^"]*"|'[^']*'))/,
+    `$1\n  ${key}: ${JSON.stringify(val)},`,
+  );
+}
+
 function _replaceObjectKey(src: string, key: string, val: unknown, baseIndent: string): string {
   const re = new RegExp(`([ \\t]*${_esc(key)}:\\s*)([\\[{])`);
   const m = re.exec(src);
@@ -255,6 +273,7 @@ export async function patchRacersInFileAction(
   themeId: string,
   racers: RacerConfig[],
   racerRefs?: Array<{ slotIndex: number; racer_id: string }>,
+  meta?: { name?: string; description?: string; version?: string },
 ): Promise<{ ok: true; written: string[] } | { ok: false; error: string }> {
   if (typeof themeId !== "string" || !/^[a-z0-9][a-z0-9_-]*$/.test(themeId)) {
     return { ok: false, error: `Neplatné themeId: "${themeId}"` };
@@ -281,6 +300,9 @@ export async function patchRacersInFileAction(
     if (racerRefs !== undefined) {
       src = _replaceObjectKey(src, "racerRefs", racerRefs, "  ");
     }
+    if (meta?.name !== undefined)        src = _replaceStringKey(src, "name", meta.name);
+    if (meta?.description !== undefined) src = _replaceStringKey(src, "description", meta.description);
+    if (meta?.version !== undefined)     src = _upsertStringKey(src, "version", meta.version);
     fs.writeFileSync(abs, src, "utf-8");
     return { ok: true, written: [rel] };
   } catch (err) {

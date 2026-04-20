@@ -205,6 +205,7 @@ export interface Theme {
   id: string;
   name: string;
   description: string;
+  version?: string;
   isPaid: boolean;
   priceCzk: number;
   colors: ThemeColors;
