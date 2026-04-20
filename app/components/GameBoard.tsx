@@ -192,7 +192,7 @@ const FIGURINE_POSITIONS: React.CSSProperties[] = FIELD_POSITIONS.map((pos) => {
 });
 
 // Figurky pro stadium layout.
-// Kontejner má aspect-[20/11] (= STADIUM_ASPECT) — 1 % horiz ≠ 1 % vert v pixelech.
+// Kontejner má aspect-[20/14] (= STADIUM_ASPECT) — 1 % horiz ≠ 1 % vert v pixelech.
 // Správný inward offset: normalizuj vektor v pixelovém prostoru (dx škálujeme A=W/H),
 // poté převeď zpět na % — výsledkem je fyzicky stejný inset ve všech směrech po okruhu.
 const FIGURINE_POSITIONS_STADIUM: React.CSSProperties[] = FIELD_POSITIONS_STADIUM.map((pos) => {
@@ -2182,8 +2182,8 @@ export default function GameBoard({ gameCode }: Props) {
             </div>
             </div>{/* konec HUD+legenda panelu */}
 
-            {/* aspect-[20/12] musí odpovídat STADIUM_ASPECT v lib/board/constants.ts */}
-            <div className={`relative mx-auto w-full overflow-visible ${board.shape === "stadium" ? "aspect-[20/12]" : "aspect-square max-w-[760px]"}`}>
+            {/* aspect-[20/14] musí odpovídat STADIUM_ASPECT v lib/board/constants.ts */}
+            <div className={`relative mx-auto w-full overflow-visible ${board.shape === "stadium" ? "aspect-[20/14]" : "aspect-square max-w-[760px]"}`}>
               <div
                 className={`absolute inset-0 overflow-hidden rounded-[4px] border-2 ${theme.colors.boardSurfaceBorder} ${theme.colors.boardSurface}`}
                 style={{

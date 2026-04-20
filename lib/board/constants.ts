@@ -4,4 +4,4 @@
  * Musí odpovídat Tailwind třídě `aspect-[20/12]` v GameBoard.tsx a BoardEditorPreview.tsx.
  * Používá se pro fyzicky správnou normalizaci vektorů figurek (% x ≠ % y v pixelech).
  */
-export const STADIUM_ASPECT = 20 / 12;
+export const STADIUM_ASPECT = 20 / 14;
