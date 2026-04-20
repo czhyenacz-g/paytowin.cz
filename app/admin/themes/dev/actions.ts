@@ -254,6 +254,7 @@ function _replaceObjectKey(src: string, key: string, val: unknown, baseIndent: s
 export async function patchRacersInFileAction(
   themeId: string,
   racers: RacerConfig[],
+  racerRefs?: Array<{ slotIndex: number; racer_id: string }>,
 ): Promise<{ ok: true; written: string[] } | { ok: false; error: string }> {
   if (typeof themeId !== "string" || !/^[a-z0-9][a-z0-9_-]*$/.test(themeId)) {
     return { ok: false, error: `Neplatné themeId: "${themeId}"` };
@@ -277,6 +278,9 @@ export async function patchRacersInFileAction(
   try {
     let src = fs.readFileSync(abs, "utf-8");
     src = _replaceObjectKey(src, "racers", racers, "  ");
+    if (racerRefs !== undefined) {
+      src = _replaceObjectKey(src, "racerRefs", racerRefs, "  ");
+    }
     fs.writeFileSync(abs, src, "utf-8");
     return { ok: true, written: [rel] };
   } catch (err) {

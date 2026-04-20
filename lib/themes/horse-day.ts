@@ -52,13 +52,26 @@ export const horseDayTheme: Theme = {
     racingEmoji: "🐎",
   },
   racerRefs: [
-    { slotIndex: 0, racer_id: "divoka_ruze" },
-    { slotIndex: 1, racer_id: "burano" },
-    { slotIndex: 2, racer_id: "zlata_hriva" },
-    { slotIndex: 3, racer_id: "r6" },
-    { slotIndex: 4, racer_id: "rychly_vitr" },
-    // zeleznik záměrně vynechán — off-board legendary, dán přes chance kartu ch9,
-    // ne přes boardové pole. Zůstává v inline racers[] pro give_racer off-board lookup.
+    {
+      "slotIndex": 0,
+      "racer_id": "divoka_ruze"
+    },
+    {
+      "slotIndex": 1,
+      "racer_id": "zlata_hriva"
+    },
+    {
+      "slotIndex": 3,
+      "racer_id": "r6"
+    },
+    {
+      "slotIndex": 2,
+      "racer_id": "rychly_vitr"
+    },
+    {
+      "slotIndex": 4,
+      "racer_id": "horse_night_buran"
+    }
   ],
   /** @fallback inline data — seed source + runtime fallback pokud registry není dostupná */
   racers: [
@@ -83,7 +96,7 @@ export const horseDayTheme: Theme = {
       "maxStamina": 90,
       "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/zlata_hriva.webp",
       "racerType": "horse",
-      "slotIndex": 2
+      "slotIndex": 1
     },
     {
       "id": "r6",
@@ -105,30 +118,19 @@ export const horseDayTheme: Theme = {
       "emoji": "🟢",
       "maxStamina": 80,
       "racerType": "horse",
-      "slotIndex": 4
+      "slotIndex": 2
     },
     {
-      "id": "modry_blesk",
-      "name": "Blue thunder",
-      "speed": 3,
-      "price": 150,
-      "emoji": "🔵",
+      "id": "horse_night_buran",
+      "name": "Burano",
+      "speed": 7,
+      "price": 5000,
+      "emoji": "🐴",
       "maxStamina": 95,
-      "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/modry_blesk.webp",
-      "racerType": "car",
-      "slotIndex": 4
-    },
-    {
-      "id": "el_relampago",
-      "name": "Křemešník",
-      "speed": 4,
-      "price": 2000,
-      "emoji": "⚡",
-      "maxStamina": 90,
-      "flavorText": "Veterán závodního okruhu, co ještě nepůjde do salámu.",
-      "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/el_relampago.webp",
+      "flavorText": "Masivní černý kůň, který vítězí silou a výdrží spíš než rychlým startem.",
+      "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/horse_night_buran.webp",
       "racerType": "horse",
-      "slotIndex": 1
+      "slotIndex": 4
     },
     {
       "id": "zeleznik",
@@ -141,7 +143,7 @@ export const horseDayTheme: Theme = {
       "flavorText": "Železník — legendární kůň, který nezná strach, únavu ani druhé místo. Jeho jediný cíl je jasný: vyhrát.",
       "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/zeleznik.webp",
       "racerType": "horse",
-      "slotIndex": 6
+      "slotIndex": 5
     }
   ],
 

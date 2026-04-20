@@ -10,6 +10,7 @@ import {
   archiveThemeAction,
   listThemesAction,
   setPublicAction,
+  patchRacersInFileAction,
 } from "@/app/admin/themes/dev/actions";
 import { resolveRacerRefsAction, listRacersAction } from "@/app/admin/racers/actions";
 import { profileToConfig } from "@/lib/racers/adapters";
@@ -1159,6 +1160,22 @@ export default function ThemeDevTool() {
     const manifest = resolveManifestForSave();
     if (!manifest) return;
     setSaving(true);
+
+    // Built-in theme na localhostu — zapíše racery a racerRefs přímo do lib/themes/{id}.ts
+    if (currentSource === "built-in" && currentId) {
+      const result = await patchRacersInFileAction(currentId, editableRacers, liveManifest?.racerRefs);
+      setSaving(false);
+      if (result.ok) {
+        notify("success", `Zapsáno do souboru: ${result.written.join(", ")}`);
+        const snap = JSON.stringify({ editableBoard, editableRacers, editableCards, editableFieldTextures, editableRacerImages });
+        setSavedSnapshot(snap);
+        setLastSavedAt(new Date());
+      } else {
+        notify("error", result.error);
+      }
+      return;
+    }
+
     const result = await saveThemeAction(manifest);
     setSaving(false);
     if (result.ok) {
@@ -1463,10 +1480,15 @@ export default function ThemeDevTool() {
 
               <div className="flex-1" />
 
-              {/* Save — TODO: dočasně povoleno i pro built-in; před finálním nasazením vrátit blokaci pro currentSource === "built-in" */}
               <button onClick={handleSave} disabled={saving}
-                className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50">
-                {saving ? "Ukládám…" : "Uložit"}
+                className={`rounded-lg px-3 py-2 text-sm font-medium text-white disabled:opacity-50 ${
+                  currentSource === "built-in"
+                    ? "bg-red-600 hover:bg-red-700"
+                    : "bg-emerald-600 hover:bg-emerald-700"
+                }`}
+                title={currentSource === "built-in" ? "Zapíše racery přímo do lib/themes/*.ts" : undefined}
+              >
+                {saving ? "Ukládám…" : currentSource === "built-in" ? "Uložit do souboru" : "Uložit"}
               </button>
 
               <button onClick={handleSaveAsNew} disabled={saving}
