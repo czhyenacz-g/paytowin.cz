@@ -13,6 +13,7 @@ import {
 } from "@/lib/themes/assets";
 import { loadThemeManifestAsync } from "@/lib/themes/loader";
 import { getBoardById } from "@/lib/board";
+import { STADIUM_ASPECT } from "@/lib/board/constants";
 import { logEvent } from "@/lib/analytics";
 import { UI_TEXT } from "@/lib/ui-text";
 import type { Field } from "@/lib/engine";
@@ -190,10 +191,9 @@ const FIGURINE_POSITIONS: React.CSSProperties[] = FIELD_POSITIONS.map((pos) => {
 });
 
 // Figurky pro stadium layout.
-// Kontejner má aspect-[20/11] — 1 % horiz ≠ 1 % vert v pixelech.
+// Kontejner má aspect-[20/11] (= STADIUM_ASPECT) — 1 % horiz ≠ 1 % vert v pixelech.
 // Správný inward offset: normalizuj vektor v pixelovém prostoru (dx škálujeme A=W/H),
 // poté převeď zpět na % — výsledkem je fyzicky stejný inset ve všech směrech po okruhu.
-const STADIUM_ASPECT = 20 / 11; // W/H kontejneru, musí odpovídat aspect-[20/11]
 const FIGURINE_POSITIONS_STADIUM: React.CSSProperties[] = FIELD_POSITIONS_STADIUM.map((pos) => {
   const left = parseFloat(pos.left as string);
   const top  = parseFloat(pos.top  as string);
@@ -2150,6 +2150,7 @@ export default function GameBoard({ gameCode }: Props) {
             </div>
             </div>{/* konec HUD+legenda panelu */}
 
+            {/* aspect-[20/11] musí odpovídat STADIUM_ASPECT v lib/board/constants.ts */}
             <div className={`relative mx-auto w-full overflow-visible ${board.shape === "stadium" ? "aspect-[20/11]" : "aspect-square max-w-[760px]"}`}>
               <div
                 className={`absolute inset-0 overflow-hidden rounded-[4px] border-2 ${theme.colors.boardSurfaceBorder} ${theme.colors.boardSurface}`}
