@@ -59,7 +59,7 @@ function CardEventContent({
     return (
       <>
         {/* Art karta — horní overlay jen pro kategorii/emoji/jméno */}
-        <div className="rounded-3xl overflow-hidden shadow-2xl relative" style={{ minHeight: "400px" }}>
+        <div className="rounded-3xl overflow-hidden shadow-2xl relative bg-black" style={{ minHeight: "400px" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={event.imagePath}

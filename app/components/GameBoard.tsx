@@ -2275,8 +2275,9 @@ export default function GameBoard({ gameCode }: Props) {
                           backgroundImage: fieldBgImage,
                           backgroundSize: "cover, cover",
                           backgroundPosition: "center, center",
-                          // Vrchní hrana = vzdálená od středu: výrazný barevný akcent
-                          // Ostatní 3 hrany: 2px černá
+                          // Pokud je primární obrázek — přepíšeme theme bg-* barvu tmavou,
+                          // aby průhledné okraje obrázku neprosvítaly barevnou card barvou.
+                          ...(fieldBgPrimaryPath ? { backgroundColor: "#0a0a0a" } : {}),
                           border: "1px solid rgba(0,0,0,0.82)",
                           borderTopWidth: "6px",
                           borderTopColor: getFieldAccentColor(field),
