@@ -51,6 +51,7 @@ import BuildInfoBar from "./BuildInfoBar";
 import ThemeAssetInspector from "./ThemeAssetInspector";
 import IntroOverlay from "./IntroOverlay";
 import BrandLogo from "./BrandLogo";
+import { useBgMusic } from "@/lib/audio/music";
 
 // Styly polí jsou součástí theme systému (lib/themes/*)
 // Přistupuj přes: theme.colors.fieldStyles[field.type]
@@ -380,6 +381,9 @@ export default function GameBoard({ gameCode }: Props) {
   // Theme + FIELDS — odvozeno ze stavu themeId/boardId, aktualizuje se při každém renderu
   const theme = getThemeById(themeId);
   const themeManifest = themeToManifest(theme);
+
+  // Background music — no-op pokud theme.music není definováno
+  useBgMusic(theme.music, soundEnabled);
   const board = getBoardById(boardId);
   // resolvedRacers: závodníci z globální registry (racerRefs flow); null = inline fallback
   const FIELDS = buildFields(board, resolvedRacers ?? getThemeRacers(theme), economy);
