@@ -2816,7 +2816,10 @@ export default function GameBoard({ gameCode }: Props) {
                                 </div>
                                 {option.targetField && (
                                   <div className="mt-2 text-[11px] leading-snug text-slate-600">
-                                    {option.targetField.emoji} {option.targetField.label}
+                                    {isFieldVisible(option.targetField)
+                                      ? <>{option.targetField.emoji} {option.targetField.label}</>
+                                      : <>🌫️ ???</>
+                                    }
                                   </div>
                                 )}
                               </button>
