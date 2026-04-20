@@ -417,7 +417,7 @@ export default function LandingPage() {
   const selectedCommunityCountLabel = `${communityThemes.length} map${communityThemes.length === 1 ? "a" : communityThemes.length < 5 ? "y" : ""}`;
 
   return (
-    <div className="flex flex-col bg-slate-100 overflow-hidden" style={{ height: "100dvh" }}>
+    <div className="flex flex-col bg-slate-900 overflow-hidden" style={{ height: "100dvh" }}>
       {/* Amber banner — shrink-0, bere svou přirozenou výšku */}
       <div className="shrink-0 bg-amber-100 border-b border-amber-300 px-4 py-2 text-center text-sm text-amber-800">
         Experimentální projekt · kontakt:{" "}
@@ -446,7 +446,7 @@ export default function LandingPage() {
                   className="mx-auto"
                   onClick={() => window.open("/", "_blank")}
                 />
-                <p className="mt-2 text-slate-500">Závody, sázky a finanční chaos.</p>
+                <p className="mt-2 text-slate-400">Závody, sázky a finanční chaos.</p>
               </div>
 
               <MapMenuStrip onPanelClick={(id) => {
@@ -516,12 +516,12 @@ export default function LandingPage() {
                   <p className="text-center text-sm text-red-600">{error}</p>
                 )}
 
-                <div className="flex items-center justify-center gap-4 text-xs text-slate-500">
-                  <a href="/pravidla" className="hover:text-slate-700 underline">Pravidla</a>
+                <div className="flex items-center justify-center gap-4 text-xs text-slate-400">
+                  <a href="/pravidla" className="hover:text-slate-200 underline">Pravidla</a>
                   <span>·</span>
-                  <a href="/o-nas" className="hover:text-slate-700 underline">O nás</a>
+                  <a href="/o-nas" className="hover:text-slate-200 underline">O nás</a>
                   <span>·</span>
-                  <a href="mailto:info@paytowin.cz" className="hover:text-slate-700 underline">info@paytowin.cz</a>
+                  <a href="mailto:info@paytowin.cz" className="hover:text-slate-200 underline">info@paytowin.cz</a>
                 </div>
               </div>
             </div>
@@ -537,7 +537,7 @@ export default function LandingPage() {
               backgroundImage: `linear-gradient(rgba(0,0,0,0.62), rgba(0,0,0,0.62)), url(${PANEL_CONFIG[activePanel].bgImage})`,
               backgroundSize: "cover",
               backgroundPosition: "center",
-            } : { backgroundColor: "#f1f5f9" /* slate-100 fallback */ }),
+            } : { backgroundColor: "#0f172a" /* slate-900 fallback */ }),
           }}
           className="overflow-y-auto"
         >
