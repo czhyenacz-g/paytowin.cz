@@ -148,13 +148,14 @@ export const horseDayTheme: Theme = {
       "slotIndex": 5
     },
     {
-      "id": "horse_classic_pablo",
-      "name": "Pablo",
-      "speed": 7,
-      "price": 4500,
-      "emoji": "🐴",
-      "maxStamina": 78,
-      "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/horse_classic_pablo.webp",
+      "id": "viento_dorado",
+      "name": "Hogo fogo",
+      "speed": 3,
+      "price": 1500,
+      "emoji": "🟤",
+      "maxStamina": 100,
+      "flavorText": "Umí zabrat, ale i shodit jezdce!",
+      "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/viento_dorado.webp",
       "racerType": "horse",
       "slotIndex": 6
     }

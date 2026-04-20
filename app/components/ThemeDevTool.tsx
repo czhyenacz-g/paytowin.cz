@@ -671,6 +671,17 @@ export default function ThemeDevTool() {
   function withSlotIndexes(racers: RacerConfig[]): RacerConfig[] {
     return racers.map((r, i) => r.slotIndex !== undefined ? r : { ...r, slotIndex: i });
   }
+
+  /**
+   * mergeOffBoardRacers — k slotovaným racerům z registry připojí off-board racery z manifest.racers.
+   * Off-board = jsou v manifest.racers, ale nemají odpovídající záznam v racerRefs.
+   * Zachovává jejich slotIndex z manifestu (přiřazený při uložení).
+   */
+  function mergeOffBoardRacers(resolved: RacerConfig[], refs: Array<{ racer_id: string }>, inlineRacers: RacerConfig[]): RacerConfig[] {
+    const slottedIds = new Set(refs.map((r) => r.racer_id));
+    const offBoard = inlineRacers.filter((r) => r.id && !slottedIds.has(r.id)).map((r) => ({ ...r }));
+    return [...resolved, ...offBoard];
+  }
   // Editovatelné decky — živá kopie manifest.cards; prázdné = hra používá globální balíčky
   const [editableCards, setEditableCards] = React.useState<{ chance: GameCard[]; finance: GameCard[] }>({ chance: [], finance: [] });
 
@@ -949,7 +960,7 @@ export default function ThemeDevTool() {
     if (manifest.racerRefs?.length) {
       const resolved = await resolveRacerRefsAction(manifest.racerRefs);
       if (resolved.length > 0) {
-        newRacers = withSlotIndexes(resolved);
+        newRacers = withSlotIndexes(mergeOffBoardRacers(resolved, manifest.racerRefs, manifest.racers));
         fromRegistry = true;
       } else {
         newRacers = withSlotIndexes(manifest.racers.map((r) => ({ ...r })));
@@ -1048,7 +1059,7 @@ export default function ThemeDevTool() {
     if (boardPreviewManifest.racerRefs?.length) {
       const resolved = await resolveRacerRefsAction(boardPreviewManifest.racerRefs);
       if (resolved.length > 0) {
-        newRacers = withSlotIndexes(resolved);
+        newRacers = withSlotIndexes(mergeOffBoardRacers(resolved, boardPreviewManifest.racerRefs, boardPreviewManifest.racers));
         fromRegistry = true;
       } else {
         newRacers = withSlotIndexes(boardPreviewManifest.racers.map((r) => ({ ...r })));
