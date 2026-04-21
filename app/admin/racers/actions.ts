@@ -10,6 +10,8 @@
  * (ukládání celého ThemeManifest, board dat apod.) — nejsou dotčeny.
  */
 
+import path from "path";
+import fs from "fs/promises";
 import {
   listRacers,
   getRacerById,
@@ -116,6 +118,59 @@ export async function uploadRacerImageAction(
   }
 
   return { ok: true, imageUrl: uploadResult.publicUrl, imagePath: uploadResult.path };
+}
+
+// ─── Built-in asset save (localhost only) ─────────────────────────────────────
+
+/**
+ * saveBuiltinRacerImageAction — uloží obrázek built-in závodníka přímo do public/themes/.
+ *
+ * Funguje POUZE v development prostředí (NODE_ENV !== "production").
+ * Přijme soubor, zkonvertuje na WebP 512×512 přes sharp a zapíše na disk.
+ *
+ * Výsledná cesta: public/themes/<themeId>/racer-<racerId>.webp
+ * Vrácená veřejná URL: /themes/<themeId>/racer-<racerId>.webp
+ */
+export async function saveBuiltinRacerImageAction(
+  racerId: string,
+  formData: FormData,
+  themeId?: string,
+): Promise<{ ok: true; imageUrl: string } | { ok: false; error: string }> {
+  if (process.env.NODE_ENV === "production") {
+    return { ok: false, error: "Tato akce je dostupná pouze na localhostu." };
+  }
+
+  const file = formData.get("file");
+  if (!file || typeof file === "string") {
+    return { ok: false, error: "Chybí soubor." };
+  }
+
+  if (!racerId) {
+    return { ok: false, error: "Chybí racerId." };
+  }
+
+  const targetTheme = themeId || "_shared";
+
+  try {
+    const arrayBuffer = await (file as File).arrayBuffer();
+    const inputBuffer = Buffer.from(arrayBuffer);
+
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const sharp = (await import("sharp")).default;
+    const webpBuffer = await sharp(inputBuffer)
+      .resize(512, 512, { fit: "cover", position: "centre" })
+      .webp({ quality: 85 })
+      .toBuffer();
+
+    const filename = `racer-${racerId}.webp`;
+    const destDir = path.join(process.cwd(), "public", "themes", targetTheme);
+    await fs.mkdir(destDir, { recursive: true });
+    await fs.writeFile(path.join(destDir, filename), webpBuffer);
+
+    return { ok: true, imageUrl: `/themes/${targetTheme}/${filename}` };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
 }
 
 // ─── Seed / Reset ─────────────────────────────────────────────────────────────

@@ -101,11 +101,8 @@ export default function RacerAdminTool({ themeId }: Props) {
     if (profiles === null) {
       setError("Chyba při načítání z Racer Registry.");
     } else {
-      // V dev módu: odblokuj built-in racery pro editaci (na produkci zůstanou zamčeni)
-      const toConfig = process.env.NODE_ENV !== "production"
-        ? (p: Parameters<typeof profileToConfig>[0]) => ({ ...profileToConfig(p), isBuiltIn: undefined })
-        : profileToConfig;
-      setRacers(withSlotIndexes(profiles.map(toConfig)));
+      // V dev módu: zachovej isBuiltIn flag pro editaci (toggle je v RacerEditorPanel)
+      setRacers(withSlotIndexes(profiles.map(profileToConfig)));
       setDeletedIds(new Set());
     }
     setLoading(false);

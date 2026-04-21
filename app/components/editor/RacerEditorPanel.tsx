@@ -12,7 +12,7 @@
 
 import React from "react";
 import type { RacerConfig } from "@/lib/themes";
-import { uploadRacerImageAction } from "@/app/admin/racers/actions";
+import { uploadRacerImageAction, saveBuiltinRacerImageAction } from "@/app/admin/racers/actions";
 import { RACER_TYPE_LABELS, RACER_TYPE_ORDER } from "@/lib/racers/types";
 import type { RacerType } from "@/lib/racers/types";
 
@@ -23,6 +23,8 @@ interface Props {
   onChange: (updated: RacerConfig) => void;
   /** Pokud true, editor je jen pro čtení — built-in racer nelze editovat. */
   readOnly?: boolean;
+  /** ID aktuálního theme — potřebné pro built-in asset save na localhostu. */
+  themeId?: string;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -38,7 +40,7 @@ function sanitizeId(raw: string): string {
 
 // ─── Komponenta ───────────────────────────────────────────────────────────────
 
-export default function RacerEditorPanel({ racer, onChange, readOnly = false }: Props) {
+export default function RacerEditorPanel({ racer, onChange, readOnly = false, themeId }: Props) {
   // Flash "uloženo" po každém commitu
   const [saved, setSaved]           = React.useState(false);
   // Upload state
@@ -62,6 +64,7 @@ export default function RacerEditorPanel({ racer, onChange, readOnly = false }: 
   const [maxStamina, setMaxStamina] = React.useState(String(racer.maxStamina ?? racer.stamina ?? 100));
   const [racerType, setRacerType]     = React.useState<RacerType>(racer.racerType ?? "unset");
   const [isLegendary, setIsLegendary] = React.useState(racer.isLegendary ?? false);
+  const [isBuiltIn, setIsBuiltIn]     = React.useState(racer.isBuiltIn ?? false);
   // flavorText: preferuj flavorText, fallback na deprecated heroText pro compat
   const [flavorText, setFlavorText] = React.useState(racer.flavorText ?? racer.heroText ?? "");
   const [imageUrl, setImageUrl]     = React.useState(racer.image ?? "");
@@ -75,12 +78,13 @@ export default function RacerEditorPanel({ racer, onChange, readOnly = false }: 
     setMaxStamina(String(racer.maxStamina ?? racer.stamina ?? 100));
     setRacerType(racer.racerType ?? "unset");
     setIsLegendary(racer.isLegendary ?? false);
+    setIsBuiltIn(racer.isBuiltIn ?? false);
     setFlavorText(racer.flavorText ?? racer.heroText ?? "");
     setImageUrl(racer.image ?? "");
   }, [racer.id]);
 
   // Zavolá onChange jen tehdy, kdy jsou hodnoty platné a lišící se
-  function commit(overrides: Partial<{ name: string; speed: number; price: number; maxStamina: number; racerType: RacerType; isLegendary: boolean; flavorText: string; imageUrl: string }>) {
+  function commit(overrides: Partial<{ name: string; speed: number; price: number; maxStamina: number; racerType: RacerType; isLegendary: boolean; isBuiltIn: boolean; flavorText: string; imageUrl: string }>) {
     const parsedSpeed      = clampInt(Number(overrides.speed      ?? speed),      1, 10);
     const parsedPrice      = clampInt(Number(overrides.price      ?? price),      0, 99999);
     const parsedMaxStamina = clampInt(Number(overrides.maxStamina ?? maxStamina),  0, 100);
@@ -91,7 +95,8 @@ export default function RacerEditorPanel({ racer, onChange, readOnly = false }: 
       price:       parsedPrice,
       maxStamina:  parsedMaxStamina,
       racerType:   overrides.racerType   ?? racerType,
-      isLegendary: (overrides.isLegendary ?? isLegendary) || undefined, // false → undefined (čistší data)
+      isLegendary: (overrides.isLegendary ?? isLegendary) || undefined,
+      isBuiltIn:   (overrides.isBuiltIn   ?? isBuiltIn)   || undefined,
       stamina:     undefined, // vynuluj deprecated pole po první editaci
       flavorText:  (overrides.flavorText ?? flavorText) || undefined, // prázdný string → undefined
       heroText:    undefined, // explicitně vynuluj deprecated pole po první editaci
@@ -112,10 +117,13 @@ export default function RacerEditorPanel({ racer, onChange, readOnly = false }: 
     const fd = new FormData();
     fd.append("file", file);
 
-    const result = await uploadRacerImageAction(racer.id, fd);
+    const useLocalSave = process.env.NODE_ENV !== "production" && racer.isBuiltIn;
+    const result = useLocalSave
+      ? await saveBuiltinRacerImageAction(racer.id, fd, themeId)
+      : await uploadRacerImageAction(racer.id, fd);
+
     setUploading(false);
 
-    // Reset file input pro umožnění opakovaného výběru stejného souboru
     if (fileInputRef.current) fileInputRef.current.value = "";
 
     if (!result.ok) {
@@ -123,7 +131,7 @@ export default function RacerEditorPanel({ racer, onChange, readOnly = false }: 
       return;
     }
 
-    // Cache-bust preview URL — Supabase přepíše stejný soubor, browser by jinak zobrazil starý
+    // Cache-bust pro případ že browser má starší verzi
     const freshUrl = `${result.imageUrl}?v=${Date.now()}`;
     setImageUrl(freshUrl);
     commit({ imageUrl: result.imageUrl });
@@ -309,6 +317,25 @@ export default function RacerEditorPanel({ racer, onChange, readOnly = false }: 
           </span>
         </label>
 
+        {/* Built-in flag — jen v dev módu */}
+        {process.env.NODE_ENV !== "production" && (
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={isBuiltIn}
+              onChange={(e) => {
+                setIsBuiltIn(e.target.checked);
+                commit({ isBuiltIn: e.target.checked });
+              }}
+              className="h-4 w-4 rounded border-slate-300 text-slate-500 focus:ring-slate-300"
+            />
+            <span className="text-xs font-medium text-slate-600">
+              Built-in
+              <span className="ml-1 font-normal text-slate-400">— součást výchozích témat, obrázek se uloží do /themes</span>
+            </span>
+          </label>
+        )}
+
         {/* Flavor text */}
         <div className="space-y-1">
           <label className="block text-xs font-medium text-amber-700">
@@ -349,8 +376,8 @@ export default function RacerEditorPanel({ racer, onChange, readOnly = false }: 
             )}
 
             <div className="flex-1 space-y-1.5">
-              {/* Upload + odebrat — na localhostu povoleno i pro built-in raceři */}
-              {(!racer.isBuiltIn || (typeof window !== "undefined" && window.location.hostname === "localhost")) && (
+              {/* Upload skrytý jen pro built-in racery v produkci */}
+              {(!racer.isBuiltIn || process.env.NODE_ENV !== "production") && (
                 <>
                   <div className="flex items-center gap-2">
                     <button

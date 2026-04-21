@@ -50,6 +50,8 @@ interface Props {
   catalogReadOnly?: boolean;
   /** Callback pro přechod na Racer Admin (zobrazí se jako tlačítko při catalogReadOnly). */
   onEditRacers?:    () => void;
+  /** ID aktuálního theme — předáváno do RacerEditorPanel pro built-in asset save. */
+  themeId?:         string;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -71,6 +73,7 @@ export default function RacerRosterPanel({
   isBuiltInTheme  = false,
   catalogReadOnly = false,
   onEditRacers,
+  themeId,
 }: Props) {
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
 
@@ -79,8 +82,10 @@ export default function RacerRosterPanel({
   const mismatch = hasSlotContext && racers.length !== racerFieldCount;
   const shortage = hasSlotContext && (racerFieldCount as number) > racers.length;
 
-  /** True pokud je konkrétní racer locked — buď theme je built-in, nebo racer má isBuiltIn flag. */
-  const isRacerLocked = (r: RacerConfig) => isBuiltInTheme || r.isBuiltIn === true;
+  /** True pokud je konkrétní racer locked — buď theme je built-in, nebo racer má isBuiltIn flag.
+   *  Na localhostu (dev) se isBuiltIn ignoruje — built-in racery jdou editovat. */
+  const isRacerLocked = (r: RacerConfig) =>
+    isBuiltInTheme || (r.isBuiltIn === true && process.env.NODE_ENV === "production");
 
   // ── Akce ──────────────────────────────────────────────────────────────────
 
@@ -401,6 +406,7 @@ export default function RacerRosterPanel({
                     racer={r}
                     onChange={handleChange}
                     readOnly={locked}
+                    themeId={themeId}
                   />
                 </div>
               )}
