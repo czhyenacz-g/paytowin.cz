@@ -41,6 +41,7 @@ import { drawCard } from "@/lib/cards";
 import type { GameCard } from "@/lib/cards";
 import type { Player, Horse, ActiveEffect, GameState, OfferPending, RerollOffer, RaceOffer, BankruptAnnouncement, RacePendingEvent, PostTurnEvent, RaceType, EconomyConfig } from "@/lib/types/game";
 import { DEFAULT_ECONOMY } from "@/lib/types/game";
+import { getYearEvent } from "@/lib/year-events";
 import type { CenterEvent, FlashEvent } from "@/lib/types/events";
 import CenterEventModal from "./modals/CenterEventModal";
 import FlashToast from "./modals/FlashToast";
@@ -400,9 +401,18 @@ export default function GameBoard({ gameCode }: Props) {
     if (field.type === "start" || field.type === "racer") return true;
     return revealedFields.includes(field.index);
   }
-  function buildFogReveal(fieldIndex: number): number[] {
-    if (revealedFields.includes(fieldIndex)) return revealedFields;
-    return [...revealedFields, fieldIndex];
+  function buildFogReveal(fieldIndex: number, base?: number[]): number[] {
+    const current = base ?? revealedFields;
+    if (current.includes(fieldIndex)) return current;
+    return [...current, fieldIndex];
+  }
+  /** Krizový reset — zachová jen racer/start pole, všechna ostatní schová. */
+  function buildCrisisReset(fields: typeof FIELDS): number[] {
+    const keepTypes = new Set(["start", "racer"]);
+    return revealedFields.filter((idx) => {
+      const f = fields.find((f) => f.index === idx);
+      return f ? keepTypes.has(f.type) : false;
+    });
   }
 
   // Fog flip reveal animation
@@ -770,6 +780,8 @@ export default function GameBoard({ gameCode }: Props) {
 
     let movedPlayer = { ...currentPlayer, position: newPosition, coins: currentPlayer.coins - adjustmentCost };
     const extraLog: string[] = [];
+    // Fog: base pro reveal tohoto tahu — může být přepsán krizovým resetem
+    let fogRevealBase: number[] | undefined = undefined;
 
     if (finalAdjustment !== 0) {
       const signed = finalAdjustment > 0 ? `+${finalAdjustment}` : `${finalAdjustment}`;
@@ -790,6 +802,19 @@ export default function GameBoard({ gameCode }: Props) {
       if (startTax > 0) {
         movedPlayer = { ...movedPlayer, coins: movedPlayer.coins - startTax };
         extraLog.push(`${currentPlayer.name}: Výpalné (daně) za průchod STARTem — -${startTax} 💰`);
+      }
+      // Roční event — vyhodnotí se jednou při průchodu STARTem pro nový rok
+      const yearStart = theme.mapMeta?.yearStart ?? 1921;
+      const newYear = yearStart + (movedPlayer.laps ?? 0);
+      const yearEvent = getYearEvent(newYear);
+      if (yearEvent) {
+        extraLog.push(`📅 ${newYear}: ${yearEvent.title}`);
+      }
+      // Krizový reset — schová všechna non-racer pole zpět na hidden
+      if (fogOfWar && yearEvent?.crisis) {
+        fogRevealBase = buildCrisisReset(FIELDS);
+        seenRevealedRef.current = new Set(fogRevealBase);
+        extraLog.push(`💥 Krize roku ${newYear} — karty znovu skryté.`);
       }
     }
 
@@ -875,7 +900,7 @@ export default function GameBoard({ gameCode }: Props) {
           horse_pending: true,
           card_pending: null,
           log: [`${currentPlayer.name} přišel na ${theme.labels.racerField.toLowerCase()}: ${field.racer.emoji} ${field.racer.name}`, ...extraLog, ...newLog].slice(0, 20),
-          ...(fogOfWar ? { revealed_fields: buildFogReveal(newPosition) } : {}),
+          ...(fogOfWar ? { revealed_fields: buildFogReveal(newPosition, fogRevealBase) } : {}),
         }).eq("game_id", gameId);
         setPendingRacer({ racer: field.racer, playerIndex: gameState.current_player_index });
       }
@@ -895,7 +920,7 @@ export default function GameBoard({ gameCode }: Props) {
         horse_pending: false,
         card_pending: card as unknown as Record<string, unknown>,
         log: [`${currentPlayer.name} lízl kartu ${cardLabel}`, ...extraLog, ...newLog].slice(0, 20),
-        ...(fogOfWar ? { revealed_fields: buildFogReveal(newPosition) } : {}),
+        ...(fogOfWar ? { revealed_fields: buildFogReveal(newPosition, fogRevealBase) } : {}),
       }).eq("game_id", gameId);
       // Lokální state — ostatní klienti dostanou přes Realtime
       setPendingCard({ card, playerIndex: gameState.current_player_index });
@@ -939,14 +964,14 @@ export default function GameBoard({ gameCode }: Props) {
           card_pending: null,
           offer_pending: offer as unknown as Record<string, unknown>,
           log: [...logLines, `💡 Speciální nabídka pro ${currentPlayer.name}!`, ...newLog].slice(0, 20),
-          ...(fogOfWar ? { revealed_fields: buildFogReveal(newPosition) } : {}),
+          ...(fogOfWar ? { revealed_fields: buildFogReveal(newPosition, fogRevealBase) } : {}),
         }).eq("game_id", gameId);
         setPendingOffer(offer);
       } else {
         await finishTurn({
           nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog], lastRoll: roll,
           ...(wentBankrupt && !normalGameEnds ? { postTurnEvent: { kind: "announcement" as const, playerId: finalPlayer.id, playerName: finalPlayer.name } } : {}),
-          ...(fogOfWar ? { revealedFields: buildFogReveal(newPosition) } : {}),
+          ...(fogOfWar ? { revealedFields: buildFogReveal(newPosition, fogRevealBase) } : {}),
         });
         if (canReroll) setCanReroll(false);
       }
@@ -1779,6 +1804,7 @@ export default function GameBoard({ gameCode }: Props) {
 
   // Herní rok — startovní rok theme + počet průchodů STARTem lídra (player.laps)
   const gameYear = (theme.mapMeta?.yearStart ?? 1921) + players.reduce((max, p) => Math.max(max, p.laps ?? 0), 0);
+  const currentYearEvent = getYearEvent(gameYear);
 
   // Pro render desky: animující hráč se zobrazuje na animPosition, ne na DB pozici
   const displayPlayers = players.map((p, i) =>
@@ -2601,6 +2627,11 @@ export default function GameBoard({ gameCode }: Props) {
                       <div className={`mt-2 text-[11px] font-semibold tabular-nums ${theme.colors.centerSubtitle} opacity-70`}>
                         {gameYear}
                       </div>
+                      {currentYearEvent && (
+                        <div className={`mt-1 text-[10px] italic leading-tight ${theme.colors.centerSubtitle} opacity-60 max-w-[120px]`}>
+                          {currentYearEvent.title}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
