@@ -355,6 +355,8 @@ export default function GameBoard({ gameCode }: Props) {
   const [resolvedRacers, setResolvedRacers] = React.useState<RacerConfig[] | null>(null);
   const [flashEvent, setFlashEvent] = React.useState<FlashEvent | null>(null);
   const flashTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flashActiveRef = React.useRef(false);
+  const deferredOfferRef = React.useRef<RerollOffer | null>(null);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -687,9 +689,17 @@ export default function GameBoard({ gameCode }: Props) {
   /** Zobrazí krátký centrální spotlight — auto-dismiss po dané době. */
   const showFlash = React.useCallback((event: FlashEvent) => {
     if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    flashActiveRef.current = true;
     setFlashEvent(event);
     const ms = event.type === "legendary_gone" ? 3000 : 2000;
-    flashTimerRef.current = setTimeout(() => setFlashEvent(null), ms);
+    flashTimerRef.current = setTimeout(() => {
+      setFlashEvent(null);
+      flashActiveRef.current = false;
+      if (deferredOfferRef.current) {
+        setPendingOffer(deferredOfferRef.current);
+        deferredOfferRef.current = null;
+      }
+    }, ms);
   }, []);
 
   const rollDice = async () => {
@@ -966,7 +976,11 @@ export default function GameBoard({ gameCode }: Props) {
           log: [...logLines, `💡 Speciální nabídka pro ${currentPlayer.name}!`, ...newLog].slice(0, 20),
           ...(fogOfWar ? { revealed_fields: buildFogReveal(newPosition, fogRevealBase) } : {}),
         }).eq("game_id", gameId);
-        setPendingOffer(offer);
+        if (flashActiveRef.current) {
+          deferredOfferRef.current = offer as RerollOffer;
+        } else {
+          setPendingOffer(offer);
+        }
       } else {
         await finishTurn({
           nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog], lastRoll: roll,
@@ -1761,8 +1775,13 @@ export default function GameBoard({ gameCode }: Props) {
       setPendingCard(null);
     }
     if (gameState.offer_pending?.type === "reroll") {
-      setPendingOffer(gameState.offer_pending as RerollOffer);
+      if (flashActiveRef.current) {
+        deferredOfferRef.current = gameState.offer_pending as RerollOffer;
+      } else {
+        setPendingOffer(gameState.offer_pending as RerollOffer);
+      }
     } else {
+      deferredOfferRef.current = null;
       setPendingOffer(null);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
