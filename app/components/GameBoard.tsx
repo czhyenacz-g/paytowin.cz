@@ -1163,6 +1163,33 @@ export default function GameBoard({ gameCode }: Props) {
     setPendingRacer(null);
   };
 
+  /**
+   * sellRacerToBank — hráč prodá jednoho racera zpět bance za 80 % původní ceny.
+   *
+   * Povoleno jen ve vlastním tahu bez aktivní pending akce.
+   * Neukončuje tah — hráč pokračuje dál (hodí nebo provede další akci).
+   */
+  const sellRacerToBank = async (player: Player, racer: Horse) => {
+    if (!gameState) return;
+    const sellPrice = Math.floor(racer.price * 0.8);
+    const updatedCoins = player.coins + sellPrice;
+    const racerKey = racerOwnershipKey(racer);
+    const updatedHorses = player.horses.filter(h => racerOwnershipKey(h) !== racerKey);
+
+    const newLog = [
+      `${player.name} prodal ${racer.emoji} ${racer.name} bance za ${sellPrice} 💰`,
+      ...(gameState.log ?? []),
+    ].slice(0, 20);
+
+    await supabase.from("players").update({ coins: updatedCoins, horses: updatedHorses }).eq("id", player.id);
+    await supabase.from("game_state").update({ log: newLog }).eq("game_id", player.game_id);
+
+    setPlayers(prev => prev.map(p =>
+      p.id === player.id ? { ...p, coins: updatedCoins, horses: updatedHorses } : p
+    ));
+    showCoinsFeedback(sellPrice, "gain", player.name, `Prodej ${racer.name}`);
+  };
+
   // Označí jednoho koně jako preferred (ostatní se odznačí); racerKey=null = zrušit výběr
   const setPreferredRacer = async (playerId: string, racerKey: string | null) => {
     const player = players.find(p => p.id === playerId);
@@ -1200,6 +1227,9 @@ export default function GameBoard({ gameCode }: Props) {
 
     const player = players.find(p => p.id === pendingOffer.playerId);
     if (!player || player.coins < pendingOffer.cost) return;
+
+    // Optimisticky skryj modal hned — předchází Realtime race (players.update fires před game_state.update)
+    setPendingOffer(null);
 
     const newLog = gameState.log ?? [];
     await supabase.from("players").update({ coins: player.coins - pendingOffer.cost }).eq("id", player.id);
@@ -1884,10 +1914,15 @@ export default function GameBoard({ gameCode }: Props) {
       setPendingCard(null);
     }
     if (gameState.offer_pending?.type === "reroll") {
+      const offer = gameState.offer_pending as RerollOffer;
+      // Guard: pokud byla tato nabídka již přijata v tomto sessionu, neobnovuj ji.
+      // Bez toho by Players Realtime (fired před game_state.update) obnovil modal.
+      const offerKey = offer.playerId + "_" + gameState.turn_count;
+      if (offerAcceptedRef.current === offerKey) return;
       if (flashActiveRef.current) {
-        deferredOfferRef.current = gameState.offer_pending as RerollOffer;
+        deferredOfferRef.current = offer;
       } else {
-        setPendingOffer(gameState.offer_pending as RerollOffer);
+        setPendingOffer(offer);
       }
     } else {
       deferredOfferRef.current = null;
@@ -3236,6 +3271,15 @@ export default function GameBoard({ gameCode }: Props) {
                                               >
                                                 {h.isPreferred ? "★" : "☆"}
                                               </button>
+                                              {isCurrent && !gameState?.horse_pending && !gameState?.card_pending && !gameState?.offer_pending && (
+                                                <button
+                                                  onClick={() => sellRacerToBank(player, h)}
+                                                  className="shrink-0 rounded-[2px] bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors"
+                                                  title={`Prodat bance za ${Math.floor(h.price * 0.8)} 💰 (80 % ceny)`}
+                                                >
+                                                  Prodat
+                                                </button>
+                                              )}
                                             </span>
                                           ) : h.isPreferred ? (
                                             <span className="inline-flex items-center gap-1 whitespace-nowrap">

@@ -32,7 +32,6 @@ const supabase = createClient(
 const BUILTIN_RACERS = [
   // ── horse-day ──
   { id: "divoka_ruze",       name: "Divoká růže",    speed: 2,  price: 80,    emoji: "🌹", max_stamina: 100, is_legendary: false, flavor_text: null,                                                                                                               type: "horse" },
-  { id: "modry_blesk",       name: "Blue thunder",   speed: 3,  price: 150,   emoji: "🔵", max_stamina: 95,  is_legendary: false, flavor_text: null,                                                                                                               type: "horse" },
   { id: "zlata_hriva",       name: "Zlatá hříva",    speed: 6,  price: 250,   emoji: "🟡", max_stamina: 90,  is_legendary: false, flavor_text: null,                                                                                                               type: "horse" },
   { id: "r6",                name: "Pepík",          speed: 5,  price: 150,   emoji: "🐴", max_stamina: 100, is_legendary: false, flavor_text: "Pepó! Pepane! Pepíku!!",                                                                                          type: "horse" },
   { id: "rychly_vitr",       name: "Rychlý vítr",    speed: 9,  price: 400,   emoji: "🟢", max_stamina: 80,  is_legendary: false, flavor_text: null,                                                                                                               type: "horse" },
