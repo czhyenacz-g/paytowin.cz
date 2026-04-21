@@ -85,7 +85,7 @@ export const horseNightTheme: Theme = {
       "image": "/themes/_shared/racer-modry_blesk.webp",
       "isBuiltIn": true,
       "racerType": "car",
-      "slotIndex": 5
+      "slotIndex": 1
     },
     {
       "id": "zlata_hriva",
@@ -121,7 +121,7 @@ export const horseNightTheme: Theme = {
       "image": "/themes/_shared/racer-horse_night_buran.webp",
       "isBuiltIn": true,
       "racerType": "horse",
-      "slotIndex": 2
+      "slotIndex": 4
     },
     {
       "id": "caballo_real",

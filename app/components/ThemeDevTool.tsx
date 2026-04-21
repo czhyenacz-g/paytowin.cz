@@ -691,9 +691,7 @@ export default function ThemeDevTool() {
   // savedSnapshot: JSON otisk stavu při posledním otevření/uložení — slouží pro isDirty
   const [savedSnapshot, setSavedSnapshot] = React.useState<string | null>(null);
   const [lastSavedAt, setLastSavedAt] = React.useState<Date | null>(null);
-  const [hasDraft, setHasDraft] = React.useState<boolean>(() => {
-    try { return !!localStorage.getItem("ptw_board_draft"); } catch { return false; }
-  });
+  const [hasDraft, setHasDraft] = React.useState<boolean>(false);
 
   const isDirty = React.useMemo(() => {
     if (!showBoardPreview || savedSnapshot === null) return false;
@@ -899,6 +897,15 @@ export default function ThemeDevTool() {
     setValidation(null);
     setShowPreview(false);
     setParseError(null);
+    // Zavři board editor a resetuj jeho state — zabrání přenosu dat mezi variantami
+    setShowBoardPreview(false);
+    setBoardPreviewManifest(null);
+    setEditableBoard({ ...SMALL_BOARD, fields: SMALL_BOARD.fields.map((f) => ({ ...f })) });
+    setSelectedFieldIndex(null);
+    setSavedSnapshot(null);
+    setLastSavedAt(null);
+    // Aktualizuj hasDraft pro nové theme
+    try { setHasDraft(!!localStorage.getItem(`ptw_board_draft_${theme.id}`)); } catch { /* noop */ }
     notify("info", `Načteno: ${theme.name}`);
   }, [notify]);
 
@@ -994,11 +1001,15 @@ export default function ThemeDevTool() {
     setLastSavedAt(null);
   }
 
+  /** Vrátí localStorage klíč pro draft aktivního theme. */
+  function draftKey(themeId: string) { return `ptw_board_draft_${themeId}`; }
+
   function saveDraft() {
     if (!liveManifest) return;
+    const themeId = liveManifest.meta.id;
     const draft = {
       savedAt: new Date().toISOString(),
-      themeId: liveManifest.meta.id,
+      themeId,
       editableBoard,
       editableRacers,
       editableCards,
@@ -1006,7 +1017,7 @@ export default function ThemeDevTool() {
       editableRacerImages,
     };
     try {
-      localStorage.setItem("ptw_board_draft", JSON.stringify(draft));
+      localStorage.setItem(draftKey(themeId), JSON.stringify(draft));
       const snap = JSON.stringify({ editableBoard, editableRacers, editableCards, editableFieldTextures, editableRacerImages });
       setSavedSnapshot(snap);
       setLastSavedAt(new Date());
@@ -1018,8 +1029,9 @@ export default function ThemeDevTool() {
   }
 
   function loadDraft() {
+    if (!currentId) { notify("info", "Žádné aktivní theme — nelze načíst draft."); return; }
     try {
-      const raw = localStorage.getItem("ptw_board_draft");
+      const raw = localStorage.getItem(draftKey(currentId));
       if (!raw) { notify("info", "Žádný lokální draft nenalezen."); return; }
       const draft = JSON.parse(raw) as {
         savedAt: string; themeId: string;
