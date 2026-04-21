@@ -64,34 +64,49 @@ export const horseNightTheme: Theme = {
   racers: [
     {
       "id": "divoka_ruze",
-      "name": "Divoká růže",
+      "name": "Mariane DR",
       "speed": 2,
       "price": 1200,
       "emoji": "🌹",
       "maxStamina": 100,
       "flavorText": "Nějaká kůň musí být nejlevnější.",
       "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/divoka_ruze.webp",
+      "isBuiltIn": true,
       "racerType": "horse",
       "slotIndex": 0
     },
     {
+      "id": "modry_blesk",
+      "name": "Blue thunder",
+      "speed": 3,
+      "price": 150,
+      "emoji": "🔵",
+      "maxStamina": 95,
+      "image": "/themes/_shared/racer-modry_blesk.webp",
+      "isBuiltIn": true,
+      "racerType": "car",
+      "slotIndex": 6
+    },
+    {
       "id": "zlata_hriva",
-      "name": "Zlatá hříva",
+      "name": "Goldie",
       "speed": 6,
       "price": 3000,
       "emoji": "🟡",
       "maxStamina": 90,
       "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/zlata_hriva.webp",
+      "isBuiltIn": true,
       "racerType": "horse",
-      "slotIndex": 2
+      "slotIndex": 1
     },
     {
       "id": "rychly_vitr",
-      "name": "Rychlý vítr",
+      "name": "Razor Wind",
       "speed": 9,
       "price": 4000,
       "emoji": "🟢",
       "maxStamina": 80,
+      "isBuiltIn": true,
       "racerType": "horse",
       "slotIndex": 3
     },
@@ -103,9 +118,10 @@ export const horseNightTheme: Theme = {
       "emoji": "🐴",
       "maxStamina": 95,
       "flavorText": "Masivní černý kůň, který vítězí silou a výdrží spíš než rychlým startem.",
-      "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/horse_night_buran.webp",
+      "image": "/themes/_shared/racer-horse_night_buran.webp",
+      "isBuiltIn": true,
       "racerType": "horse",
-      "slotIndex": 1
+      "slotIndex": 4
     },
     {
       "id": "caballo_real",
@@ -118,6 +134,33 @@ export const horseNightTheme: Theme = {
       "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/caballo_real.webp",
       "racerType": "horse",
       "slotIndex": 4
+    },
+    {
+      "id": "viento_dorado",
+      "name": "Hogo fogo",
+      "speed": 3,
+      "price": 1500,
+      "emoji": "🟤",
+      "maxStamina": 100,
+      "flavorText": "Umí zabrat, ale i shodit jezdce!",
+      "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/viento_dorado.webp",
+      "isBuiltIn": true,
+      "racerType": "horse",
+      "slotIndex": 2
+    },
+    {
+      "id": "zeleznik",
+      "name": "Železník",
+      "speed": 10,
+      "price": 99999,
+      "emoji": "🐴",
+      "maxStamina": 10,
+      "isLegendary": true,
+      "flavorText": "Železník — legendární kůň, který nezná strach, únavu ani druhé místo. Jeho jediný cíl je jasný: vyhrát.",
+      "image": "/themes/_shared/racer-zeleznik.webp",
+      "isBuiltIn": true,
+      "racerType": "horse",
+      "slotIndex": 7
     }
   ],
   mapMeta: {

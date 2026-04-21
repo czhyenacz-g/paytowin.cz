@@ -70,6 +70,7 @@ const FIELD_TYPES: BoardFieldType[] = [
   "neutral",
   "chance",
   "finance",
+  "mafia",
 ];
 
 const FIELD_TYPE_LABELS: Record<BoardFieldType, string> = {
