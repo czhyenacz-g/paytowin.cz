@@ -20,8 +20,9 @@ export default function PravidlaPage() {
           <section>
             <h2 className="text-xl font-bold text-slate-800">Příprava</h2>
             <ul className="mt-2 space-y-1 list-disc list-inside">
-              <li>Každý hráč začíná s <strong>1 000 coins</strong> a na poli START.</li>
+              <li>Každý hráč začíná s <strong>10 000 coins</strong> a na poli START.</li>
               <li>Hráči se střídají v pořadí, v jakém se připojili ke hře.</li>
+              <li>Hostitel může před začátkem nastavit ekonomiku hry (dotace, daně, strop).</li>
             </ul>
           </section>
 
@@ -52,13 +53,22 @@ export default function PravidlaPage() {
           </section>
 
           <section>
+            <h2 className="text-xl font-bold text-slate-800">Druhý hod navíc (Reroll)</h2>
+            <p className="mt-2">
+              Po přistání na poli se s <strong>25% šancí</strong> nabídne možnost hodit ještě jednou —
+              za cenu <strong>1 000 coins</strong>. Pokud nabídku odmítneš nebo ji ignoruješ, tah pokračuje normálně.
+            </p>
+          </section>
+
+          <section>
             <h2 className="text-xl font-bold text-slate-800">Typy polí</h2>
             <div className="mt-2 space-y-2">
               <div className="flex items-start gap-3 rounded-xl bg-red-50 px-4 py-3">
                 <span className="text-lg">🏁</span>
                 <div>
-                  <strong>START</strong> — průchod nebo přistání = <strong>+200 coins</strong> státní dotace.
-                  Jenže stát se zadlužuje: od kola 3 roste výpalné (daně) o 40 coins za kolo (kolo 3 = −40, kolo 4 = −80 … strop −400).
+                  <strong>START</strong> — průchod nebo přistání = státní dotace (výchozí <strong>+2 000 coins</strong>).
+                  Zároveň se při průchodu odečtou daně: výše daně roste s každým dokonaným kolem
+                  (výchozí 500 coins × počet kol, strop 5 000 coins).
                   V pozdní fázi hry tak průchod STARTem přináší čím dál méně — nebo tě rovnou připraví o coins.
                   <br /><span className="text-sm text-slate-500 mt-1 block">Průchod a přistání se nepočítají dvakrát — efekt se aplikuje vždy jen jednou za tah.</span>
                 </div>
@@ -86,6 +96,10 @@ export default function PravidlaPage() {
                 <span className="text-lg">🎴</span>
                 <div><strong>Osud / Finance</strong> — lízneš kartu s jednorázovým efektem (zisk, ztráta nebo jiná událost).</div>
               </div>
+              <div className="flex items-start gap-3 rounded-xl bg-purple-50 px-4 py-3">
+                <span className="text-lg">🃏</span>
+                <div><strong>Mafie</strong> — speciální karta s nečekaným efektem. Může ovlivnit tebe i ostatní hráče.</div>
+              </div>
             </div>
           </section>
 
@@ -98,9 +112,13 @@ export default function PravidlaPage() {
                 Pokud jiný hráč přistane na poli, které vlastníš, zaplatí ti <strong>nájemné</strong>.
               </li>
               <li>
-                <strong>Ztráta závodníka:</strong> Pokud hráč zkrachuje nebo přijde o závodníka jiným způsobem,
-                závodník zmizí z jeho inventáře a <strong>příslušné pole se znovu uvolní</strong> —
-                může si ho koupit kdokoliv, kdo na něj příště přistane.
+                <strong>Prodej závodníka bance:</strong> Kdykoliv mimo aktivní nabídku či kartu
+                můžeš závodníka prodat zpět bance za <strong>80 % původní ceny</strong>.
+                Tah se neukončí — jde o nouzový finanční ventil.
+              </li>
+              <li>
+                <strong>Ztráta závodníka:</strong> Pokud hráč zkrachuje, závodníci zmizí z jeho inventáře
+                a příslušná pole se znovu uvolní pro ostatní hráče.
               </li>
             </ul>
           </section>
@@ -148,16 +166,34 @@ export default function PravidlaPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-slate-800">Konec hry</h2>
+            <h2 className="text-xl font-bold text-slate-800">Konec hry a XP</h2>
             <p className="mt-2">
               Hra pokračuje, dokud nezůstane jediný aktivní hráč. Ten vyhrává.
+            </p>
+            <p className="mt-2">
+              Po skončení hry se přihlášeným Discord hráčům automaticky přidělí XP:
+            </p>
+            <ul className="mt-2 space-y-1 list-disc list-inside">
+              <li><strong>+50 XP</strong> — všichni, kdo se zúčastnili</li>
+              <li><strong>+100 XP</strong> — vítěz hry</li>
+              <li><strong>+50 XP</strong> — 2. místo (zkrachoval jako poslední)</li>
+              <li><strong>+25 XP</strong> — 3. místo</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-bold text-slate-800">Mlha války (Fog of War)</h2>
+            <p className="mt-2">
+              Volitelný režim, který hostitel může zapnout při zakládání hry.
+              V tomto režimu hráč vidí jen pole v bezprostředním okolí své figurky —
+              zbytek desky je skrytý, dokud na něj někdo nepřistane.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-slate-800">Komunitní mapy a editor</h2>
             <p className="mt-2 text-slate-600">
-              Kromě základní mapy budou k dispozici <strong>komunitní mapy</strong> — fan-made, sezónní a event mapy
+              Kromě základní mapy jsou k dispozici <strong>komunitní mapy</strong> — fan-made, sezónní a event mapy
               s jiným rozvržením polí a ekonomikou.
               V <strong>editoru</strong> si budeš moct navrhnout vlastní mapu, rozmístit pole a sdílet ji s ostatními hráči.
             </p>

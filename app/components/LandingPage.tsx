@@ -475,7 +475,10 @@ export default function LandingPage() {
                   className="mx-auto"
                   onClick={() => window.open("/", "_blank")}
                 />
-                <p className="mt-2 text-slate-400">Závody, sázky a finanční chaos.</p>
+                <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Multiplayer závodní deskovka
+                </p>
+                <p className="mt-1.5 text-slate-400">Závody, sázky a finanční chaos.</p>
               </div>
 
               <MapMenuStrip onPanelClick={(id) => {
