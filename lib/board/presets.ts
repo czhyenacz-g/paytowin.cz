@@ -36,10 +36,10 @@ export const SMALL_BOARD: BoardConfig = {
     },
     {
       "index": 1,
-      "type": "coins_gain",
-      "label": "Drobné po kapsách",
-      "emoji": "",
-      "amount": 20
+      "type": "mafia",
+      "label": "Consigliere",
+      "emoji": "🎭",
+      "amount": 50
     },
     {
       "index": 2,
