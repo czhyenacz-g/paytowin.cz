@@ -36,9 +36,9 @@ export const SMALL_BOARD: BoardConfig = {
     },
     {
       "index": 1,
-      "type": "mafia",
-      "label": "Consigliere",
-      "emoji": "🎭",
+      "type": "coins_gain",
+      "label": "Drobné po kapsách",
+      "emoji": "",
       "amount": 20
     },
     {

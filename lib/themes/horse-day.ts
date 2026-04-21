@@ -4,7 +4,7 @@ export const horseDayTheme: Theme = {
   id: "horse-day",
   name: "Dostihy — Den",
   description: "Světlý vzhled, vyprahlé závodiště, koňské dostihy.",
-  version: "1.0.0",
+  version: "1.0.5",
   isPaid: false,
   priceCzk: 0,
   cardThemeTag: "horse",
@@ -173,5 +173,156 @@ export const horseDayTheme: Theme = {
     yearStart: 1921,
     place: "Connecticut",
     subtitle: "Sezóna začíná.",
+  },
+  board: {
+    "id": "small",
+    "fieldCount": 21,
+    "racerSlotIndexes": [
+      3,
+      10,
+      17,
+      19
+    ],
+    "fields": [
+      {
+        "index": 0,
+        "type": "start",
+        "label": "START",
+        "emoji": "🏁",
+        "amount": 2000
+      },
+      {
+        "index": 1,
+        "type": "coins_gain",
+        "label": "Drobné po kapsách",
+        "emoji": "",
+        "amount": 20
+      },
+      {
+        "index": 2,
+        "type": "coins_lose",
+        "label": "Veterinář",
+        "emoji": "🩺",
+        "amount": -600
+      },
+      {
+        "index": 3,
+        "type": "racer",
+        "label": "Závodník",
+        "emoji": "🐎"
+      },
+      {
+        "index": 4,
+        "type": "coins_gain",
+        "label": "Vítěz dostihu",
+        "emoji": "🏆",
+        "amount": 1500
+      },
+      {
+        "index": 5,
+        "type": "coins_lose",
+        "label": "Daňový úřad",
+        "emoji": "🏛️",
+        "amount": -800
+      },
+      {
+        "index": 6,
+        "type": "coins_gain",
+        "label": "Zlaté podkůvky",
+        "emoji": "🥇",
+        "amount": 800
+      },
+      {
+        "index": 7,
+        "type": "coins_lose",
+        "label": "Korupce",
+        "emoji": "💸",
+        "amount": -1200
+      },
+      {
+        "index": 8,
+        "type": "chance",
+        "label": "Osud",
+        "emoji": "🎴"
+      },
+      {
+        "index": 9,
+        "type": "coins_gain",
+        "label": "Dobrá sezona",
+        "emoji": "🌟",
+        "amount": 900
+      },
+      {
+        "index": 10,
+        "type": "racer",
+        "label": "Závodník",
+        "emoji": "🐎"
+      },
+      {
+        "index": 11,
+        "type": "coins_lose",
+        "label": "Krize na trhu",
+        "emoji": "📉",
+        "amount": -500
+      },
+      {
+        "index": 12,
+        "type": "mafia",
+        "label": "Don",
+        "emoji": "🎭"
+      },
+      {
+        "index": 13,
+        "type": "racer",
+        "label": "Zlatá hříva",
+        "emoji": "😈",
+        "amount": -70
+      },
+      {
+        "index": 14,
+        "type": "finance",
+        "label": "Finance",
+        "emoji": "💼"
+      },
+      {
+        "index": 15,
+        "type": "coins_gain",
+        "label": "Věrnostní bonus",
+        "emoji": "🎁",
+        "amount": 500
+      },
+      {
+        "index": 16,
+        "type": "coins_lose",
+        "label": "Zloděj",
+        "emoji": "🦹",
+        "amount": -700
+      },
+      {
+        "index": 17,
+        "type": "racer",
+        "label": "Závodník",
+        "emoji": "🐎"
+      },
+      {
+        "index": 18,
+        "type": "coins_lose",
+        "label": "Veterinář",
+        "emoji": "💊",
+        "amount": -600
+      },
+      {
+        "index": 19,
+        "type": "racer",
+        "label": "Závodník",
+        "emoji": "🐎"
+      },
+      {
+        "index": 20,
+        "type": "chance",
+        "label": "Osud",
+        "emoji": "🎴"
+      }
+    ]
   },
 };
