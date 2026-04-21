@@ -47,6 +47,8 @@ export const THEME_ASSETS = {
   fieldChance:  "field-chance.webp",
   /** Pole: finance (finance karta) */
   fieldFinance: "field-finance.webp",
+  /** Pole: mafie (mafia karta) */
+  fieldMafia:   "field-mafia.webp",
   /** Pole: neutrální */
   fieldNeutral: "field-neutral.webp",
 } as const;
@@ -153,6 +155,7 @@ export function fieldAssetKey(fieldType: string): ThemeAssetKey | null {
     horse:      "fieldRacer",  // legacy alias
     chance:     "fieldChance",
     finance:    "fieldFinance",
+    mafia:      "fieldMafia",
     neutral:    "fieldNeutral",
   };
   return map[fieldType] ?? null;

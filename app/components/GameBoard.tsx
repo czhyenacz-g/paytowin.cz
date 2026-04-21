@@ -16,6 +16,7 @@ import { getBoardById } from "@/lib/board";
 import { STADIUM_ASPECT } from "@/lib/board/constants";
 import { logEvent } from "@/lib/analytics";
 import { UI_TEXT } from "@/lib/ui-text";
+import { applyBoardShuffle } from "@/lib/board/shuffle";
 import type { Field } from "@/lib/engine";
 import {
   sleep,
@@ -392,8 +393,9 @@ export default function GameBoard({ gameCode }: Props) {
   // Background music — no-op pokud theme.music není definováno
   useBgMusic(theme.music, soundEnabled);
   const board = getBoardById(boardId);
+  const shuffledBoard = applyBoardShuffle(board, gameId);
   // resolvedRacers: závodníci z globální registry (racerRefs flow); null = inline fallback
-  const FIELDS = buildFields(board, resolvedRacers ?? getThemeRacers(theme), economy);
+  const FIELDS = buildFields(shuffledBoard, resolvedRacers ?? getThemeRacers(theme), economy);
   const hoveredField = hoveredFieldIdx !== null ? FIELDS.find((field) => field.index === hoveredFieldIdx) ?? null : null;
   // Ref aby stale closures (Realtime subscriptions) vždy dostaly aktuální FIELDS
   const fieldsRef = React.useRef<Field[]>(FIELDS);
