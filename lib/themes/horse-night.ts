@@ -40,8 +40,8 @@ export const horseNightTheme: Theme = {
   },
   labels: {
     themeName:      "Dostihy — Noc",
-    centerTitle:    "Dostihiště",
-    centerSubtitle: "Přijdou závody.",
+    centerTitle:    "Noční závody",
+    centerSubtitle: "Soukromá akce!",
     legend: {
       gain:   "zisk",
       lose:   "ztráta",
