@@ -891,21 +891,50 @@ export default function ThemeDevTool() {
   const handleOpenTheme = React.useCallback(async (theme: ThemeMeta) => {
     const result = await loadThemeAction(theme.id);
     if ("error" in result) { notify("error", result.error); return; }
-    setJson(JSON.stringify(result, null, 2));
+    const manifestJson = JSON.stringify(result, null, 2);
+    setJson(manifestJson);
     setCurrentId(theme.id);
     setCurrentSource(theme.source);
     setValidation(null);
     setShowPreview(false);
     setParseError(null);
-    // Zavři board editor a resetuj jeho state — zabrání přenosu dat mezi variantami
-    setShowBoardPreview(false);
-    setBoardPreviewManifest(null);
-    setEditableBoard({ ...SMALL_BOARD, fields: SMALL_BOARD.fields.map((f) => ({ ...f })) });
-    setSelectedFieldIndex(null);
-    setSavedSnapshot(null);
-    setLastSavedAt(null);
     // Aktualizuj hasDraft pro nové theme
     try { setHasDraft(!!localStorage.getItem(`ptw_board_draft_${theme.id}`)); } catch { /* noop */ }
+
+    // Automaticky otevři board editor — stejná logika jako handleBoardPreview
+    const manifest = result as import("@/lib/themes/manifest").ThemeManifest;
+    const newBoard: BoardConfig = { ...SMALL_BOARD, fields: SMALL_BOARD.fields.map((f) => ({ ...f })) };
+    let newRacers: RacerConfig[];
+    let fromRegistry = false;
+    if (manifest.racerRefs?.length) {
+      const resolved = await resolveRacerRefsAction(manifest.racerRefs);
+      if (resolved.length > 0) {
+        newRacers = withSlotIndexes(mergeOffBoardRacers(resolved, manifest.racerRefs, manifest.racers));
+        fromRegistry = true;
+      } else {
+        newRacers = withSlotIndexes(manifest.racers.map((r) => ({ ...r })));
+      }
+    } else {
+      newRacers = withSlotIndexes(manifest.racers.map((r) => ({ ...r })));
+    }
+    const newCards = manifest.cards
+      ? { chance: [...manifest.cards.chance], finance: [...manifest.cards.finance] }
+      : { chance: [], finance: [] };
+    const newTextures    = manifest.assets?.fieldTextures ? { ...manifest.assets.fieldTextures } : {};
+    const newRacerImages = manifest.assets?.racerImages   ? { ...manifest.assets.racerImages }   : {};
+    setBoardPreviewManifest(manifest);
+    setPreviewAssetVersion(0);
+    setShowBoardPreview(true);
+    setSelectedFieldIndex(null);
+    setEditableBoard(newBoard);
+    setEditableFieldTextures(newTextures);
+    setEditableRacerImages(newRacerImages);
+    setEditableRacers(newRacers);
+    setEditableCards(newCards);
+    setRacersFromRegistry(fromRegistry);
+    const snap = JSON.stringify({ editableBoard: newBoard, editableRacers: newRacers, editableCards: newCards, editableFieldTextures: newTextures, editableRacerImages: newRacerImages });
+    setSavedSnapshot(snap);
+    setLastSavedAt(null);
     notify("info", `Načteno: ${theme.name}`);
   }, [notify]);
 
@@ -1522,12 +1551,15 @@ export default function ThemeDevTool() {
                     ? "bg-red-600 hover:bg-red-700"
                     : "bg-emerald-600 hover:bg-emerald-700"
                 }`}
-                title={currentSource === "built-in" ? "Zapíše racery přímo do lib/themes/*.ts" : undefined}
+                title={currentSource === "built-in"
+                  ? `Zapíše závodníky, racerRefs a meta přímo do lib/themes/${currentId ?? "{themeId}"}.ts na disku. Board se nezapisuje — ten exportuj přes board editor. Nutno commitnout.`
+                  : `Uloží manifest (meta, barvy, labely, závodníky, karty, assety) do databáze Supabase. Theme bude dostupné přes DB loader. Board se nezapisuje — ten je zatím součástí sdíleného presetu.`}
               >
                 {saving ? "Ukládám…" : currentSource === "built-in" ? "Uložit do souboru" : "Uložit"}
               </button>
 
               <button onClick={handleSaveAsNew} disabled={saving}
+                title="Uloží manifest jako nový záznam v Supabase DB s novým ID. Selže pokud ID už existuje nebo je built-in. Vhodné pro duplikáty a vlastní varianty."
                 className="rounded-lg border border-emerald-400 px-3 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50 disabled:opacity-50">
                 Uložit jako nové
               </button>
@@ -1626,6 +1658,7 @@ export default function ThemeDevTool() {
                 {/* Draft actions */}
                 <button
                   onClick={saveDraft}
+                  title={`Uloží board (pole + layout), závodníky, karty a assety do localStorage prohlížeče pod klíčem ptw_board_draft_${currentId ?? "theme"}. Jen pro tebe lokálně — ostatní to neuvidí. Použij pro rychlé přerušení práce.`}
                   className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
                     isDirty
                       ? "bg-emerald-600 text-white hover:bg-emerald-700"
@@ -1637,6 +1670,7 @@ export default function ThemeDevTool() {
                 {hasDraft && (
                   <button
                     onClick={loadDraft}
+                    title={`Načte dříve uložený lokální draft pro toto theme (${currentId ?? "?"}). Přepíše aktuální stav editoru.`}
                     className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
                   >
                     📂 Načíst draft
@@ -1644,16 +1678,16 @@ export default function ThemeDevTool() {
                 )}
                 <button
                   onClick={resetDraft}
+                  title="Zahodí všechny neuložené změny a resetuje board editor zpět na výchozí SMALL_BOARD preset. Lokální draft zůstane — načti ho znovu přes Načíst draft."
                   className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
-                  title="Resetovat na výchozí stav manifestu"
                 >
                   ↺ Reset
                 </button>
                 <button
                   onClick={handleSaveToFiles}
                   disabled={savingToFiles}
+                  title={`Zapíše přímo do zdrojových souborů na disku:\n• Board → lib/board/presets.ts\n• Závodníci + racerRefs + meta → lib/themes/${currentId ?? "{themeId}"}.ts\n• Karty → lib/themes/${currentId ?? "{themeId}"}.ts\nNutno pak commitnout a pushnout. Funguje pouze na localhostu.`}
                   className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
-                  title="Zapsat board, raceře a decky přímo do zdrojových souborů (jen v dev)"
                 >
                   {savingToFiles ? "Zapisuji…" : "💾 Uložit do souborů"}
                 </button>
