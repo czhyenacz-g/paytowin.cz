@@ -903,7 +903,8 @@ export default function ThemeDevTool() {
 
     // Automaticky otevři board editor — stejná logika jako handleBoardPreview
     const manifest = result as import("@/lib/themes/manifest").ThemeManifest;
-    const newBoard: BoardConfig = { ...SMALL_BOARD, fields: SMALL_BOARD.fields.map((f) => ({ ...f })) };
+    const sourceBoard = manifest.board ?? SMALL_BOARD;
+    const newBoard: BoardConfig = { ...sourceBoard, fields: sourceBoard.fields.map((f) => ({ ...f })) };
     let newRacers: RacerConfig[];
     let fromRegistry = false;
     if (manifest.racerRefs?.length) {
@@ -989,7 +990,8 @@ export default function ThemeDevTool() {
     const manifest = parseJson();
     if (!manifest) return;
 
-    const newBoard: BoardConfig = { ...SMALL_BOARD, fields: SMALL_BOARD.fields.map((f) => ({ ...f })) };
+    const boardSource = manifest.board ?? SMALL_BOARD;
+    const newBoard: BoardConfig = { ...boardSource, fields: boardSource.fields.map((f) => ({ ...f })) };
 
     // Resolve racers: pokud manifest používá racerRefs → načti z globální registry.
     // Fallback na inline manifest.racers pokud registry selže nebo racerRefs chybí.
@@ -1227,8 +1229,9 @@ export default function ThemeDevTool() {
           return;
         }
       }
-      const meta = liveManifest ? { name: liveManifest.meta.name, description: liveManifest.meta.description, version: liveManifest.meta.version } : undefined;
-      const result = await patchRacersInFileAction(currentId, editableRacers, racerRefs, meta);
+      const parsedForMeta = parseJson();
+      const meta = parsedForMeta ? { name: parsedForMeta.meta.name, description: parsedForMeta.meta.description, version: parsedForMeta.meta.version } : undefined;
+      const result = await patchRacersInFileAction(currentId, editableRacers, racerRefs, meta, editableBoard ?? undefined);
       setSaving(false);
       if (result.ok) {
         notify("success", `Zapsáno do souboru: ${result.written.join(", ")}`);

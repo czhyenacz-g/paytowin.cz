@@ -7,6 +7,7 @@ import type { GameCard, CardThemeTag } from "@/lib/cards";
 import type { MusicSource } from "@/lib/audio/music";
 import type { RacerType } from "@/lib/racers/types";
 import type { YearEventOverrides } from "@/lib/year-events";
+import type { BoardConfig } from "@/lib/board";
 
 // ─── Field style keys ─────────────────────────────────────────────────────────
 
@@ -244,6 +245,12 @@ export interface Theme {
    * Viz YearEventOverrides v lib/year-events.ts.
    */
   yearEvents?: YearEventOverrides;
+  /**
+   * Volitelné přetížení board konfiguraci pro toto theme.
+   * Pokud přítomno: runtime i editor použijí tuto desku místo sdíleného presetu.
+   * Pokud chybí: fallback na SMALL_BOARD (výchozí preset).
+   */
+  board?: BoardConfig;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

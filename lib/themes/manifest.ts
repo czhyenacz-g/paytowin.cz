@@ -15,6 +15,7 @@
 
 import type { ThemeColors, RacerConfig } from "./index";
 import type { GameCard } from "@/lib/cards";
+import type { BoardConfig } from "@/lib/board";
 import { getThemeRacers } from "./index";
 import type { Theme } from "./index";
 
@@ -127,6 +128,13 @@ export interface ThemeManifest {
   tone?: {
     style?: "neutral" | "funny" | "satirical" | "cute" | "dark" | "retro";
   };
+
+  /**
+   * Volitelný per-theme board snapshot.
+   * Pokud přítomno: editor i runtime použijí tuto desku místo sdíleného SMALL_BOARD presetu.
+   * Pokud chybí: fallback na SMALL_BOARD.
+   */
+  board?: BoardConfig;
 }
 
 // ─── Adapter: Theme → ThemeManifest ──────────────────────────────────────────
@@ -202,5 +210,6 @@ export function themeToManifest(theme: Theme): ThemeManifest {
         }
       : undefined,
     supportedBoards: ["small"],
+    board: theme.board,
   };
 }

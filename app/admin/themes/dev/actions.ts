@@ -6,6 +6,7 @@ import type { RacerConfig } from "@/lib/themes";
 import { getThemeFromDb, upsertThemeToDb } from "@/lib/repository";
 import { validateThemeManifest } from "@/lib/themes/validator";
 import type { ThemeManifest } from "@/lib/themes/manifest";
+import type { BoardConfig } from "@/lib/board";
 
 /** IDs zabudovaných themes — chráněny před přepsáním a archivací. */
 const BUILTIN_IDS = new Set(THEMES.map((t) => t.id));
@@ -253,6 +254,15 @@ function _upsertStringKey(src: string, key: string, val: string): string {
   );
 }
 
+function _upsertObjectKey(src: string, key: string, val: unknown, baseIndent: string): string {
+  const existsRe = new RegExp(`[ \\t]*${_esc(key)}:\\s*[\\[{]`);
+  if (existsRe.test(src)) return _replaceObjectKey(src, key, val, baseIndent);
+  const serialized = _addIndent(JSON.stringify(val, null, 2), baseIndent);
+  const lastClose = src.lastIndexOf("\n};");
+  if (lastClose === -1) throw new Error(`Cannot find closing "};" to insert key "${key}"`);
+  return src.slice(0, lastClose) + `\n  ${key}: ${serialized},` + src.slice(lastClose);
+}
+
 function _replaceObjectKey(src: string, key: string, val: unknown, baseIndent: string): string {
   const re = new RegExp(`([ \\t]*${_esc(key)}:\\s*)([\\[{])`);
   const m = re.exec(src);
@@ -274,6 +284,7 @@ export async function patchRacersInFileAction(
   racers: RacerConfig[],
   racerRefs?: Array<{ slotIndex: number; racer_id: string }>,
   meta?: { name?: string; description?: string; version?: string },
+  board?: BoardConfig,
 ): Promise<{ ok: true; written: string[] } | { ok: false; error: string }> {
   if (typeof themeId !== "string" || !/^[a-z0-9][a-z0-9_-]*$/.test(themeId)) {
     return { ok: false, error: `Neplatné themeId: "${themeId}"` };
@@ -303,6 +314,7 @@ export async function patchRacersInFileAction(
     if (meta?.name !== undefined)        src = _replaceStringKey(src, "name", meta.name);
     if (meta?.description !== undefined) src = _replaceStringKey(src, "description", meta.description);
     if (meta?.version !== undefined)     src = _upsertStringKey(src, "version", meta.version);
+    if (board !== undefined)             src = _upsertObjectKey(src, "board", board, "  ");
     fs.writeFileSync(abs, src, "utf-8");
     return { ok: true, written: [rel] };
   } catch (err) {

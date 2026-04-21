@@ -87,6 +87,7 @@ export const horseDayTheme: Theme = {
       "maxStamina": 100,
       "flavorText": "Nějaká kůň musí být nejlevnější.",
       "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/divoka_ruze.webp",
+      "isBuiltIn": true,
       "racerType": "horse",
       "slotIndex": 0
     },
@@ -97,6 +98,7 @@ export const horseDayTheme: Theme = {
       "price": 4000,
       "emoji": "🟢",
       "maxStamina": 80,
+      "isBuiltIn": true,
       "racerType": "horse",
       "slotIndex": 1
     },
@@ -108,6 +110,7 @@ export const horseDayTheme: Theme = {
       "emoji": "🟡",
       "maxStamina": 90,
       "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/zlata_hriva.webp",
+      "isBuiltIn": true,
       "racerType": "horse",
       "slotIndex": 2
     },
@@ -119,7 +122,8 @@ export const horseDayTheme: Theme = {
       "emoji": "🐴",
       "maxStamina": 100,
       "flavorText": "Pepó! Pepane! Pepíku!!",
-      "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/r6.webp",
+      "image": "/themes/_shared/racer-r6.webp",
+      "isBuiltIn": true,
       "racerType": "horse",
       "slotIndex": 3
     },
@@ -131,7 +135,8 @@ export const horseDayTheme: Theme = {
       "emoji": "🐴",
       "maxStamina": 95,
       "flavorText": "Masivní černý kůň, který vítězí silou a výdrží spíš než rychlým startem.",
-      "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/horse_night_buran.webp",
+      "image": "/themes/_shared/racer-horse_night_buran.webp",
+      "isBuiltIn": true,
       "racerType": "horse",
       "slotIndex": 4
     },

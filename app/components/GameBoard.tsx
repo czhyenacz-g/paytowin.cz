@@ -444,7 +444,7 @@ export default function GameBoard({ gameCode }: Props) {
 
   // Background music — no-op pokud theme.music není definováno
   useBgMusic(theme.music, soundEnabled);
-  const board = getBoardById(boardId);
+  const board = theme.board ?? getBoardById(boardId);
   const shuffledBoard = applyBoardShuffle(board, gameId);
   // resolvedRacers: závodníci z globální registry (racerRefs flow); null = inline fallback
   const FIELDS = buildFields(shuffledBoard, resolvedRacers ?? getThemeRacers(theme), economy);
