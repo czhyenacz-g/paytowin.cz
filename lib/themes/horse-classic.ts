@@ -67,36 +67,90 @@ export const horseClassicTheme: Theme = {
       "name": "Sombra Roja",
       "speed": 2,
       "price": 800,
-      "emoji": "🔴"
+      "emoji": "🔴",
+      "maxStamina": 100,
+      "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/sombra_roja.webp",
+      "isBuiltIn": true,
+      "racerType": "car",
+      "slotIndex": 7
     },
     {
       "id": "viento_dorado",
-      "name": "Viento Dorado",
+      "name": "Hogo fogo",
       "speed": 3,
       "price": 1500,
-      "emoji": "🟤"
+      "emoji": "🟤",
+      "maxStamina": 100,
+      "flavorText": "Umí zabrat, ale i shodit jezdce!",
+      "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/viento_dorado.webp",
+      "isBuiltIn": true,
+      "racerType": "horse",
+      "slotIndex": 1
     },
     {
       "id": "el_relampago",
-      "name": "El Relámpago",
+      "name": "Křemešník",
       "speed": 4,
-      "price": 2500,
-      "emoji": "⚡"
+      "price": 2000,
+      "emoji": "⚡",
+      "maxStamina": 90,
+      "flavorText": "Veterán závodního okruhu, co ještě nepůjde do salámu.",
+      "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/el_relampago.webp",
+      "isBuiltIn": true,
+      "racerType": "horse",
+      "slotIndex": 2
     },
     {
       "id": "caballo_real",
       "name": "Caballo Real",
       "speed": 5,
-      "price": 4000,
-      "emoji": "👑"
+      "price": 3500,
+      "emoji": "👑",
+      "maxStamina": 100,
+      "flavorText": "Kůň s královskou výdrží.",
+      "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/caballo_real.webp",
+      "isBuiltIn": true,
+      "racerType": "horse",
+      "slotIndex": 3
     },
     {
       "id": "horse_classic_pablo",
       "name": "Pablo",
       "speed": 7,
-      "price": 1500,
+      "price": 4500,
       "emoji": "🐴",
-      "maxStamina": 78
+      "maxStamina": 78,
+      "image": "/themes/_shared/racer-horse_classic_pablo.webp",
+      "isBuiltIn": true,
+      "racerType": "horse",
+      "slotIndex": 4
+    },
+    {
+      "id": "zeleznik",
+      "name": "Železník",
+      "speed": 10,
+      "price": 99999,
+      "emoji": "🐴",
+      "maxStamina": 10,
+      "isLegendary": true,
+      "flavorText": "Železník — legendární kůň, který nezná strach, únavu ani druhé místo. Jeho jediný cíl je jasný: vyhrát.",
+      "image": "/themes/_shared/racer-zeleznik.webp",
+      "isBuiltIn": true,
+      "racerType": "horse",
+      "slotIndex": 5
+    },
+    {
+      "id": "r6",
+      "name": "Pepík",
+      "speed": 4,
+      "price": 2500,
+      "emoji": "🐴",
+      "maxStamina": 100,
+      "flavorText": "Pepó! Pepane! Pepíku!!",
+      "image": "/themes/_shared/racer-r6.webp",
+      "isBuiltIn": true,
+      "racerType": "horse",
+      "slotIndex": 0
     }
   ],
   mapMeta: {
