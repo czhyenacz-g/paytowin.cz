@@ -407,22 +407,17 @@ export default function GameBoard({ gameCode }: Props) {
 
   // Fog flip reveal animation
   // seenRevealedRef: pole odhalená od mountu — nepřehrávají flip (reload, join mid-game)
-  const seenRevealedRef = React.useRef<Set<number> | null>(null);
+  const seenRevealedRef = React.useRef<Set<number>>(new Set());
   // flippingFields: pole právě animující flip
   const [flippingFields, setFlippingFields] = React.useState<Set<number>>(new Set());
   // showingHiddenRef: pole v první půlce flipu — stále zobrazují hidden card
   const showingHiddenRef = React.useRef<Set<number>>(new Set());
 
   React.useEffect(() => {
-    if (!fogOfWar || revealedFields.length === 0) return;
-    if (seenRevealedRef.current === null) {
-      // První load — naseeduj bez animace
-      seenRevealedRef.current = new Set(revealedFields);
-      return;
-    }
-    const newlyRevealed = revealedFields.filter((idx) => !seenRevealedRef.current!.has(idx));
+    if (!fogOfWar) return;
+    const newlyRevealed = revealedFields.filter((idx) => !seenRevealedRef.current.has(idx));
     if (newlyRevealed.length === 0) return;
-    newlyRevealed.forEach((idx) => seenRevealedRef.current!.add(idx));
+    newlyRevealed.forEach((idx) => seenRevealedRef.current.add(idx));
 
     // Spusť flip: nejdřív přidej do showingHidden (stále zobrazují hidden card)
     newlyRevealed.forEach((idx) => showingHiddenRef.current.add(idx));
@@ -629,7 +624,14 @@ export default function GameBoard({ gameCode }: Props) {
     }
 
     setPlayers(normalized);
-    if (stateData) setGameState(normalizeState(stateData));
+    if (stateData) {
+      const ns = normalizeState(stateData);
+      // Seed seenRevealedRef s aktuálně odhalenými poli — nepřehrávají flip při načtení
+      if (seenRevealedRef.current.size === 0 && ns.revealed_fields.length > 0) {
+        seenRevealedRef.current = new Set(ns.revealed_fields);
+      }
+      setGameState(ns);
+    }
     return { players: normalized, state: stateData ? normalizeState(stateData) : null };
   };
 
