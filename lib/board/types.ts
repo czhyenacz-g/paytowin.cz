@@ -29,7 +29,8 @@ export type BoardFieldType =
   | "racer"
   | "neutral"
   | "chance"
-  | "finance";
+  | "finance"
+  | "mafia";
 
 // ─── Konfigurace pole ─────────────────────────────────────────────────────────
 

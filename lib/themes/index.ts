@@ -23,7 +23,8 @@ export type FieldStyleKey =
   | "horse"    // @deprecated legacy alias — zachováno pro kompatibilitu
   | "neutral"
   | "chance"
-  | "finance";
+  | "finance"
+  | "mafia";
 
 // ─── RacerConfig ──────────────────────────────────────────────────────────────
 
@@ -197,6 +198,7 @@ export interface ThemeContent {
   cards?: {
     chance?: GameCard[];
     finance?: GameCard[];
+    mafia?: GameCard[];
   };
 }
 

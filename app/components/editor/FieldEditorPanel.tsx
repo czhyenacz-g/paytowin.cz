@@ -81,6 +81,7 @@ const FIELD_TYPE_LABELS: Record<BoardFieldType, string> = {
   neutral:    "Neutrální",
   chance:     "Osud (karta)",
   finance:    "Finance (karta)",
+  mafia:      "Mafie (karta)",
 };
 
 /** Typy polí kde amount dává smysl */

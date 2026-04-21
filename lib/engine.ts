@@ -34,7 +34,8 @@ export type FieldType =
   | "horse"    // @deprecated legacy — zachováno pro zpětnou kompatibilitu
   | "neutral"
   | "chance"
-  | "finance";
+  | "finance"
+  | "mafia";
 
 export interface Field {
   index: number;

@@ -221,6 +221,7 @@ function getFieldDetail(field: Field, ownerName: string | null): string | null {
   }
   if (field.type === "chance")  return "🎴 náhodná karta";
   if (field.type === "finance") return "💼 finance karta";
+  if (field.type === "mafia")   return "🎭 Mafie karta";
   if (field.type === "gamble")  return "🎲 hazard";
   return field.description || null;
 }
@@ -235,7 +236,8 @@ function getFieldMetaLabel(field: Field, ownerName: string | null): string | nul
   if (field.type === "coins_gain") return field.description || "odměna";
   if (field.type === "coins_lose") return field.description || "ztráta";
   if (field.type === "chance") return "osud";
-  if (field.type === "finance") return "finance";
+  if (field.type === "finance") return "Finance";
+  if (field.type === "mafia")   return "Mafie";
   if (field.type === "gamble") return "hazard";
   return field.description || null;
 }
@@ -254,6 +256,7 @@ function getFieldAccentColor(field: Field): string {
     case "horse":      return "#fbbf24"; // amber-400
     case "chance":     return "#38bdf8"; // sky-400
     case "finance":    return "#2dd4bf"; // teal-400
+    case "mafia":      return "#a855f7"; // purple-500
     default:           return "#94a3b8"; // slate-400 (neutral)
   }
 }
@@ -914,10 +917,10 @@ export default function GameBoard({ gameCode }: Props) {
         }).eq("game_id", gameId);
         setPendingRacer({ racer: field.racer, playerIndex: gameState.current_player_index });
       }
-    } else if (field.type === "chance" || field.type === "finance") {
+    } else if (field.type === "chance" || field.type === "finance" || field.type === "mafia") {
       // ── Karta: lízni, zobraz všem, efekt se aplikuje automaticky po 2.5 s ──
       const card = drawCard(field.type, theme.content?.cards, theme.cardThemeTag);
-      const cardLabel = field.type === "chance" ? "🎴 Osud" : "💼 Finance";
+      const cardLabel = field.type === "chance" ? "🎴 Osud" : field.type === "mafia" ? "🎭 Mafie" : "💼 Finance";
       // FIX pořadí: nejdřív uložíme finální pozici hráče, pak card_pending.
       // applyCardEffect poběží ze stale closure (timer 2.5s) — position musí být
       // v DB stabilní předtím, než se karta aplikuje.
@@ -1182,8 +1185,8 @@ export default function GameBoard({ gameCode }: Props) {
       const landingField = fieldsRef.current[newPos];
       if (landingField) {
         const lt = landingField.type;
-        if (lt === "chance" || lt === "finance") {
-          const label = lt === "chance" ? "Osud" : "Finance";
+        if (lt === "chance" || lt === "finance" || lt === "mafia") {
+          const label = lt === "chance" ? "Osud" : lt === "mafia" ? "Mafie" : "Finance";
           logLines.push(`${player.name}: přistál na poli ${label} — karta se nevylosuje (přesun byl kartou).`);
           console.log(`[turn-flow] card move landed on ${lt} — skipped (chain guard depth=1)`);
         } else if (lt === "racer" || lt === "horse") {
@@ -1263,15 +1266,30 @@ export default function GameBoard({ gameCode }: Props) {
       logLines.push(`${player.name}: ${card.text} (stamina závodníků ×${factor} na ${duration} kola)`);
     }
 
+    // effect2 — Mafia trade-off druhý efekt (coins nebo move)
+    if (card.effect2) {
+      const e2 = card.effect2;
+      if (e2.kind === "coins" && e2.value !== undefined) {
+        updatedPlayer = { ...updatedPlayer, coins: updatedPlayer.coins + e2.value };
+      } else if (e2.kind === "move" && e2.value !== undefined) {
+        const fc = fieldsRef.current.length;
+        updatedPlayer = { ...updatedPlayer, position: ((updatedPlayer.position + e2.value) % fc + fc) % fc };
+      } else if (e2.kind === "skip_turn") {
+        // skip se propíše do playerUpdate níže
+      }
+    }
+
     const wentBankrupt = updatedPlayer.coins <= 0 && player.coins > 0;
     if (wentBankrupt) logLines.push(`💀 ${player.name} zkrachoval!`);
 
     // FIX: position do DB jen pokud ji karta skutečně změnila (kind==="move").
     // Coins a skip_turn karty pozici nemění — záměrně ji nezapisujeme,
     // aby se nepřepsala správná pozice z rollDice (která mohla být v closure stale).
+    const anyMove = card.effect.kind === "move" || card.effect2?.kind === "move";
+    const anySkip = card.effect.kind === "skip_turn" || card.effect2?.kind === "skip_turn";
     const playerUpdate: Record<string, unknown> = { coins: updatedPlayer.coins };
-    if (card.effect.kind === "move") playerUpdate.position = updatedPlayer.position;
-    if (card.effect.kind === "skip_turn") playerUpdate.skip_next_turn = true;
+    if (anyMove) playerUpdate.position = updatedPlayer.position;
+    if (anySkip) playerUpdate.skip_next_turn = true;
     if (card.effect.kind === "give_racer") playerUpdate.horses = updatedPlayer.horses;
     if (card.effect.kind === "stamina_debuff") playerUpdate.active_effects = updatedPlayer.active_effects;
 
@@ -3162,8 +3180,8 @@ function mapToCenterEvent(
     return {
       type: "card",
       cardType: card.type,
-      category: card.type === "chance" ? "Osud" : "Finance",
-      emoji: card.type === "chance" ? "🎴" : "💼",
+      category: card.type === "chance" ? "Osud" : card.type === "mafia" ? "Mafie" : "Finance",
+      emoji: card.type === "chance" ? "🎴" : card.type === "mafia" ? "🎭" : "💼",
       playerName: players[playerIndex]?.name ?? "?",
       text: card.text,
       effectLabel: card.effectLabel,

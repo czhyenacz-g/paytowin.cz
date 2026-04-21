@@ -38,8 +38,8 @@ export type FlashEvent =
 export type CenterEvent =
   | {
       type: "card";
-      /** "chance" | "finance" — pro výběr barev v komponentě */
-      cardType: "chance" | "finance";
+      /** "chance" | "finance" | "mafia" — pro výběr barev v komponentě */
+      cardType: "chance" | "finance" | "mafia";
       /** Zobrazovaný název kategorie: "Náhoda" / "Finance" */
       category: string;
       emoji: string;

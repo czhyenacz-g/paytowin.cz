@@ -49,6 +49,7 @@ export interface ThemeManifest {
     hazard: string;        // legenda: typ pole "hazard"
     chance: string;        // název karty Náhoda
     finance: string;       // název karty Finance
+    mafia: string;         // název karty Mafie
     racer: string;         // závodník v jednotném čísle, např. "Kůň"
     racers: string;        // závodníci v množném čísle, např. "Koně"
     racerField: string;    // místo kde závodníci stojí, např. "Stáj"
@@ -110,6 +111,7 @@ export interface ThemeManifest {
   cards?: {
     chance: GameCard[];
     finance: GameCard[];
+    mafia?: GameCard[];
   };
 
   /**
@@ -172,6 +174,7 @@ export function themeToManifest(theme: Theme): ThemeManifest {
       hazard:     theme.labels.legend.gamble,
       chance:     "Osud",
       finance:    "Finance",
+      mafia:      "Mafie",
       racer:      theme.labels.racer,
       racers:     theme.labels.racers,
       racerField: theme.labels.racerField,
@@ -195,6 +198,7 @@ export function themeToManifest(theme: Theme): ThemeManifest {
       ? {
           chance:  theme.content.cards.chance  ?? [],
           finance: theme.content.cards.finance ?? [],
+          mafia:   theme.content.cards.mafia   ?? [],
         }
       : undefined,
     supportedBoards: ["small"],

@@ -14,6 +14,11 @@ const CARD_ACCENT = {
     badgeBg:     "bg-teal-100",
     badgeText:   "text-teal-800",
   },
+  mafia: {
+    headerBg:    "bg-purple-600",
+    badgeBg:     "bg-purple-100",
+    badgeText:   "text-purple-800",
+  },
 };
 
 interface Props {

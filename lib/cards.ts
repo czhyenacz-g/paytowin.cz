@@ -26,9 +26,11 @@ export type CardThemeTag = "common" | "horse" | "car";
 
 export interface GameCard {
   id: string;
-  type: "chance" | "finance";
+  type: "chance" | "finance" | "mafia";
   text: string;
   effect: CardEffect;
+  /** Druhý efekt — jen pro Mafia karty (trade-off: vždy + i -). */
+  effect2?: CardEffect;
   effectLabel: string; // zkratka pro UI: "+100 💰", "Vynecháš tah", "Posun +2"
   /** Volitelný obrázek zobrazovaný při reveal karty. Cesta do /public, např. "/cards/zeleznik-reveal.webp". */
   imagePath?: string;
@@ -86,6 +88,7 @@ export const CHANCE_CARDS: GameCard[] = [
 ];
 
 // ─── Balíček Finance ──────────────────────────────────────────────────────────
+// Čistě peněžní efekty — žádný pohyb, žádný skip, jen coins.
 
 export const FINANCE_CARDS: GameCard[] = [
   {
@@ -119,60 +122,99 @@ export const FINANCE_CARDS: GameCard[] = [
   {
     id: "fi5",
     type: "finance",
-    text: "Účetní chyba ve tvůj neprospěch. Celý příští tah řešíš papírování.",
-    effect: { kind: "skip_turn" },
-    effectLabel: "Vynecháš příští tah",
-  },
-  {
-    id: "fi6",
-    type: "finance",
     text: "Věrnostní bonus od sponzora za tři roky spolupráce.",
     effect: { kind: "coins", value: 2000 },
     effectLabel: "+2000 💰",
   },
   {
-    id: "fi7",
+    id: "fi6",
     type: "finance",
     text: "Nepředvídané náklady na dopravu závodníků. Zasahuje to rozpočet.",
     effect: { kind: "coins", value: -800 },
     effectLabel: "-800 💰",
   },
-  // ─── přesunuté z Osudu ────────────────────────────────────────────────────
   {
-    id: "fi8",
+    id: "fi7",
     type: "finance",
     text: "Neznámý příznivec ti diskrétně poslal obálku.",
     effect: { kind: "coins", value: 1000 },
     effectLabel: "+1000 💰",
   },
   {
-    id: "fi9",
-    type: "finance",
-    text: "Zakopl jsi v areálu a rozbil vybavení. Zaplať škodu.",
-    effect: { kind: "coins", value: -800 },
-    effectLabel: "-800 💰",
-  },
-  {
-    id: "fi10",
+    id: "fi8",
     type: "finance",
     text: "Tisk tě označil za favorita. Sponzoři se hrnou.",
     effect: { kind: "coins", value: 1500 },
     effectLabel: "+1500 💰",
   },
   {
-    id: "fi11",
-    type: "finance",
-    text: "Veterinář ti vrátil přeplatek za prohlídku.",
-    effect: { kind: "coins", value: 600 },
-    effectLabel: "+600 💰",
-  },
-  // ─── nové Finance karty ───────────────────────────────────────────────────
-  {
-    id: "fi12",
+    id: "fi9",
     type: "finance",
     text: "Právě ses dozvěděl, že i v závodění existují odbory.",
     effect: { kind: "coins", value: -2000 },
     effectLabel: "-2000 💰",
+  },
+];
+
+// ─── Balíček Mafie ────────────────────────────────────────────────────────────
+// Princip: vždy + i - zároveň — Don nikdy nedá ani nevezme zadarmo.
+
+export const MAFIA_CARDS: GameCard[] = [
+  {
+    id: "ma1",
+    type: "mafia",
+    text: "Odměna za mlčenlivost. Don tě ale nenechal odejít bez zdržení.",
+    effect:  { kind: "coins", value: 1200 },
+    effect2: { kind: "move",  value: -3 },
+    effectLabel: "+1200 💰 / -3 pole",
+  },
+  {
+    id: "ma2",
+    type: "mafia",
+    text: "Zkratka přes zákulisí závodiště. Průchodné za diskrétní poplatek.",
+    effect:  { kind: "move",  value: 3 },
+    effect2: { kind: "coins", value: -800 },
+    effectLabel: "+3 pole / -800 💰",
+  },
+  {
+    id: "ma3",
+    type: "mafia",
+    text: "Don tě zadržel přes noc na pracovní poradě. Ranní obálka stála za to.",
+    effect:  { kind: "skip_turn" },
+    effect2: { kind: "coins", value: 1500 },
+    effectLabel: "Vynecháš tah / +1500 💰",
+  },
+  {
+    id: "ma4",
+    type: "mafia",
+    text: "Dobrá zpráva přišla s háčkem — obálka plná, cesta kratší.",
+    effect:  { kind: "coins", value: 1000 },
+    effect2: { kind: "move",  value: -4 },
+    effectLabel: "+1000 💰 / -4 pole",
+  },
+  {
+    id: "ma5",
+    type: "mafia",
+    text: "Checkpoint na cestě. Zástupce Dona zdržel, ale přihodil na útěchu.",
+    effect:  { kind: "move",  value: -2 },
+    effect2: { kind: "coins", value: 600 },
+    effectLabel: "-2 pole / +600 💰",
+  },
+  {
+    id: "ma6",
+    type: "mafia",
+    text: "Zaplatil jsi za průchod. Otevřela se zkratka, o které málokdo ví.",
+    effect:  { kind: "coins", value: -1000 },
+    effect2: { kind: "move",  value: 4 },
+    effectLabel: "-1000 💰 / +4 pole",
+  },
+  {
+    id: "ma7",
+    type: "mafia",
+    text: "Malá provize za tip Donovi. Tvůj čas si vzal, peněz přidal.",
+    effect:  { kind: "skip_turn" },
+    effect2: { kind: "coins", value: 800 },
+    effectLabel: "Vynecháš tah / +800 💰",
   },
 ];
 
@@ -195,12 +237,12 @@ export const FINANCE_CARDS: GameCard[] = [
  * @param themeTag   aktuální tematický tag (z Theme.cardThemeTag); pokud chybí, jen "common" karty
  */
 export function drawCard(
-  type: "chance" | "finance",
-  themeCards?: { chance?: GameCard[]; finance?: GameCard[] },
+  type: "chance" | "finance" | "mafia",
+  themeCards?: { chance?: GameCard[]; finance?: GameCard[]; mafia?: GameCard[] },
   themeTag?: CardThemeTag,
 ): GameCard {
-  const globalDeck = type === "chance" ? CHANCE_CARDS : FINANCE_CARDS;
-  const themeDeck  = type === "chance" ? themeCards?.chance : themeCards?.finance;
+  const globalDeck = type === "chance" ? CHANCE_CARDS : type === "finance" ? FINANCE_CARDS : MAFIA_CARDS;
+  const themeDeck  = type === "chance" ? themeCards?.chance : type === "finance" ? themeCards?.finance : themeCards?.mafia;
   const baseDeck = (themeDeck && themeDeck.length > 0) ? themeDeck : globalDeck;
 
   // Filtruj podle themeTags: karta bez tagu nebo s "common" vždy prochází.

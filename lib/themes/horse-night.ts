@@ -26,6 +26,7 @@ export const horseNightTheme: Theme = {
       neutral:    "h-[72px] w-[72px] border-slate-600 bg-slate-700 text-slate-300",
       chance:     "h-[72px] w-[72px] border-sky-500 bg-sky-900 text-sky-300",
       finance:    "h-[72px] w-[72px] border-sky-500 bg-teal-900 text-teal-300",
+      mafia:     "h-[72px] w-[72px] border-purple-500 bg-purple-900 text-purple-300",
     },
     activePlayerBadge: "bg-amber-400 text-slate-900",
     rollPanelIdle:     "bg-slate-700",

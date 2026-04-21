@@ -110,10 +110,9 @@ export const SMALL_BOARD: BoardConfig = {
     },
     {
       "index": 12,
-      "type": "coins_gain",
-      "label": "Bankéř",
-      "emoji": "🏦",
-      "amount": 400
+      "type": "mafia",
+      "label": "Mafie",
+      "emoji": "🎭"
     },
     {
       "index": 13,
