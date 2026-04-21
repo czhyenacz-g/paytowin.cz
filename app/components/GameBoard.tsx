@@ -13,6 +13,7 @@ import {
 } from "@/lib/themes/assets";
 import { loadThemeManifestAsync } from "@/lib/themes/loader";
 import { getBoardById } from "@/lib/board";
+import { awardXpAction } from "@/app/game/actions";
 import { STADIUM_ASPECT } from "@/lib/board/constants";
 import { logEvent } from "@/lib/analytics";
 import { UI_TEXT } from "@/lib/ui-text";
@@ -1891,6 +1892,8 @@ export default function GameBoard({ gameCode }: Props) {
       // Okamžitý lokální update — stejný vzor jako cancelGame.
       // Realtime propaguje ostatním klientům, ale tento klient nečeká.
       setGameStatus("finished");
+      // XP — fire and forget; duplikaci hlídá games.xp_awarded guard
+      awardXpAction(gameId).catch(() => {});
     }
   };
 
