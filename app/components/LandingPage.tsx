@@ -131,6 +131,7 @@ export default function LandingPage() {
   const [communityThemes, setCommunityThemes] = React.useState<CommunityThemeSummary[]>([]);
   const [communityLoading, setCommunityLoading] = React.useState(false);
   const [hostedGamesCount, setHostedGamesCount] = React.useState<number | null>(null);
+  const [xpTotal, setXpTotal] = React.useState<number | null>(null);
   // Načti session + předvyplň ?join=KOD z URL
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -213,6 +214,12 @@ export default function LandingPage() {
       .select("id", { count: "exact", head: true })
       .eq("owner_discord_id", discordUser.id)
       .then(({ count }) => setHostedGamesCount(count ?? 0));
+    supabase
+      .from("user_profiles")
+      .select("xp_total")
+      .eq("discord_id", discordUser.id)
+      .single()
+      .then(({ data }) => setXpTotal(data?.xp_total ?? 0));
   }, [activePanel, discordUser?.id]);
 
   const handleBack = () => {
@@ -809,7 +816,7 @@ export default function LandingPage() {
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                       {[
                         { label: "Odehrané hry", value: hostedGamesCount !== null ? String(hostedGamesCount) : "…" },
-                        { label: "Výhry",         value: "–" },
+                        { label: "XP",            value: discordUser ? (xpTotal !== null ? String(xpTotal) : "…") : "–" },
                         { label: "Závody",        value: "–" },
                         { label: "Ztracení raceři", value: "–" },
                       ].map((s) => (
