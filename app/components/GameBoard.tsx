@@ -256,7 +256,7 @@ function getFieldAccentColor(field: Field): string {
     case "racer":
     case "horse":      return "#fbbf24"; // amber-400
     case "chance":     return "#38bdf8"; // sky-400
-    case "finance":    return "#2dd4bf"; // teal-400
+    case "finance":    return "#38bdf8"; // sky-400
     case "mafia":      return "#a855f7"; // purple-500
     default:           return "#94a3b8"; // slate-400 (neutral)
   }
