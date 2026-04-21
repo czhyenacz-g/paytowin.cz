@@ -349,8 +349,8 @@ export default function RacerEditorPanel({ racer, onChange, readOnly = false }: 
             )}
 
             <div className="flex-1 space-y-1.5">
-              {/* Upload + odebrat — skryto pro built-in raceři (spravují se přes builtin asset pipeline) */}
-              {!racer.isBuiltIn && (
+              {/* Upload + odebrat — na localhostu povoleno i pro built-in raceři */}
+              {(!racer.isBuiltIn || (typeof window !== "undefined" && window.location.hostname === "localhost")) && (
                 <>
                   <div className="flex items-center gap-2">
                     <button

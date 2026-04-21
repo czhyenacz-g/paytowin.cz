@@ -17,6 +17,9 @@ import { STADIUM_ASPECT } from "@/lib/board/constants";
 import { logEvent } from "@/lib/analytics";
 import { UI_TEXT } from "@/lib/ui-text";
 import { applyBoardShuffle } from "@/lib/board/shuffle";
+import { textToMorse, extractCapsSegment } from "@/lib/morse";
+import TelegramStrip from "./TelegramStrip";
+import type { TelegramMessage } from "./TelegramStrip";
 import type { Field } from "@/lib/engine";
 import {
   sleep,
@@ -42,7 +45,7 @@ import { drawCard } from "@/lib/cards";
 import type { GameCard } from "@/lib/cards";
 import type { Player, Horse, ActiveEffect, GameState, OfferPending, RerollOffer, RaceOffer, BankruptAnnouncement, RacePendingEvent, PostTurnEvent, RaceType, EconomyConfig } from "@/lib/types/game";
 import { DEFAULT_ECONOMY } from "@/lib/types/game";
-import { getYearEvent } from "@/lib/year-events";
+import { resolveYearEvent } from "@/lib/year-events";
 import type { CenterEvent, FlashEvent } from "@/lib/types/events";
 import CenterEventModal from "./modals/CenterEventModal";
 import FlashToast from "./modals/FlashToast";
@@ -52,6 +55,7 @@ import type { MinigameResult } from "./race/RacingMinigame";
 import BuildInfoBar from "./BuildInfoBar";
 import ThemeAssetInspector from "./ThemeAssetInspector";
 import IntroOverlay from "./IntroOverlay";
+import ScoreTable from "./ScoreTable";
 import BrandLogo from "./BrandLogo";
 import { useBgMusic } from "@/lib/audio/music";
 
@@ -244,6 +248,49 @@ function getFieldMetaLabel(field: Field, ownerName: string | null): string | nul
 }
 
 /**
+ * scheduleMorseAudio — naplánuje přehrání morseovky na WebAudio timeline.
+ *
+ * Timing (UNIT = 35 ms):
+ *   dit = 1 UNIT, dah = 3 UNIT, inter-element gap = 1 UNIT,
+ *   inter-letter gap = 3 UNIT, inter-word gap = 7 UNIT.
+ */
+function scheduleMorseAudio(ctx: AudioContext, morse: string): void {
+  const UNIT = 0.035; // 35 ms
+  const FREQ = 660;
+  const VOL  = 0.22;
+  let t = ctx.currentTime + 0.05;
+
+  function beep(dur: number) {
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = "sine";
+    osc.frequency.value = FREQ;
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(VOL, t + 0.004);
+    gain.gain.setValueAtTime(VOL, t + dur - 0.004);
+    gain.gain.linearRampToValueAtTime(0, t + dur);
+    osc.start(t);
+    osc.stop(t + dur + 0.01);
+    t += dur + UNIT; // symbol + inter-element gap
+  }
+
+  const words = morse.split("  /  ");
+  for (let wi = 0; wi < words.length; wi++) {
+    const letters = words[wi].split(" ");
+    for (let li = 0; li < letters.length; li++) {
+      for (const sym of letters[li]) {
+        if (sym === "·") beep(UNIT);
+        else if (sym === "−") beep(3 * UNIT);
+      }
+      if (li < letters.length - 1) t += 2 * UNIT; // inter-letter = 3 UNIT total
+    }
+    if (wi < words.length - 1) t += 6 * UNIT; // inter-word = 7 UNIT total
+  }
+}
+
+/**
  * getFieldAccentColor — barva akcentní horní hrany karty (strana od středu).
  * Nezávislé na theme — jde o herní sémantiku pole, ne o theme barvu.
  */
@@ -359,6 +406,11 @@ export default function GameBoard({ gameCode }: Props) {
   const [resolvedRacers, setResolvedRacers] = React.useState<RacerConfig[] | null>(null);
   const [flashEvent, setFlashEvent] = React.useState<FlashEvent | null>(null);
   const flashTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [telegramMessage, setTelegramMessage] = React.useState<TelegramMessage | null>(null);
+  const telegramTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [coinsFeedback, setCoinsFeedback] = React.useState<{ amount: number; kind: "gain" | "lose"; playerName: string; fieldLabel: string } | null>(null);
+  const coinsFeedbackTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [scorePopupOpen, setScorePopupOpen] = React.useState(false);
   const flashActiveRef = React.useRef(false);
   const deferredOfferRef = React.useRef<RerollOffer | null>(null);
 
@@ -411,6 +463,9 @@ export default function GameBoard({ gameCode }: Props) {
   function buildFogReveal(fieldIndex: number, base?: number[]): number[] {
     const current = base ?? revealedFields;
     if (current.includes(fieldIndex)) return current;
+    // Racer a start pole jsou vždy viditelné — nepřidávat do revealedFields (zamezí zbytečnému flipu)
+    const fieldType = FIELDS.find(f => f.index === fieldIndex)?.type;
+    if (fieldType === "racer" || fieldType === "start") return current;
     return [...current, fieldIndex];
   }
   /** Krizový reset — zachová jen racer/start pole, všechna ostatní schová. */
@@ -691,6 +746,29 @@ export default function GameBoard({ gameCode }: Props) {
 
   // ── Herní akce ────────────────────────────────────────────────────────────────
 
+  /** Zobrazí dočasný center feedback pro coins_gain / coins_lose — auto-hide po 3 s. */
+  const showCoinsFeedback = React.useCallback((amount: number, kind: "gain" | "lose", playerName: string, fieldLabel: string) => {
+    if (coinsFeedbackTimerRef.current) clearTimeout(coinsFeedbackTimerRef.current);
+    setCoinsFeedback({ amount, kind, playerName, fieldLabel });
+    coinsFeedbackTimerRef.current = setTimeout(() => setCoinsFeedback(null), 3000);
+  }, []);
+
+  /** Zobrazí telegramový proužek + přehraje morse cue prvního CAPS segmentu. */
+  const showTelegram = React.useCallback((text: string) => {
+    if (telegramTimerRef.current) clearTimeout(telegramTimerRef.current);
+    setTelegramMessage({ text, morse: textToMorse(text) });
+    if (soundEnabledRef.current) {
+      const capsSegment = extractCapsSegment(text);
+      if (capsSegment) {
+        try {
+          if (!audioCtxRef.current) audioCtxRef.current = new AudioContext();
+          scheduleMorseAudio(audioCtxRef.current, textToMorse(capsSegment));
+        } catch { /* AudioContext nedostupný */ }
+      }
+    }
+    telegramTimerRef.current = setTimeout(() => setTelegramMessage(null), 4000);
+  }, []);
+
   /** Zobrazí krátký centrální spotlight — auto-dismiss po dané době. */
   const showFlash = React.useCallback((event: FlashEvent) => {
     if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
@@ -730,6 +808,7 @@ export default function GameBoard({ gameCode }: Props) {
     setDisplayRoll(roll);
     await sleep(300);
     setIsRolling(false);
+
 
     const selectedAdjustment = await new Promise<RollAdjustment>((resolve) => {
       const decision: PendingRollDecision = {
@@ -820,16 +899,18 @@ export default function GameBoard({ gameCode }: Props) {
       }
       // Roční event — vyhodnotí se jednou při průchodu STARTem pro nový rok
       const yearStart = theme.mapMeta?.yearStart ?? 1921;
-      const newYear = yearStart + (movedPlayer.laps ?? 0);
-      const yearEvent = getYearEvent(newYear);
+      const campaignOffset = movedPlayer.laps ?? 0; // po inkrementu
+      const displayYear = yearStart + campaignOffset;
+      const yearEvent = resolveYearEvent(campaignOffset, displayYear, theme.yearEvents);
       if (yearEvent) {
-        extraLog.push(`📅 ${newYear}: ${yearEvent.title}`);
+        extraLog.push(`📅 ${displayYear}: ${yearEvent.title}`);
+        showTelegram(`${yearEvent.title} — ${displayYear}: ${yearEvent.body ?? yearEvent.title}`);
       }
-      // Krizový reset — schová všechna non-racer pole zpět na hidden
-      if (fogOfWar && yearEvent?.crisis) {
+      // Reset non-racer karet — řízeno flagem v eventu, ne hardcoded rokem
+      if (fogOfWar && (yearEvent?.resetNonRacerCards || yearEvent?.crisis)) {
         fogRevealBase = buildCrisisReset(FIELDS);
         seenRevealedRef.current = new Set(fogRevealBase);
-        extraLog.push(`💥 Krize roku ${newYear} — karty znovu skryté.`);
+        extraLog.push(`💥 Krize roku ${displayYear} — karty znovu skryté.`);
       }
     }
 
@@ -902,6 +983,7 @@ export default function GameBoard({ gameCode }: Props) {
           await finishTurn({
             nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog], lastRoll: roll,
             ...(wentBankrupt && !rentGameEnds ? { postTurnEvent: { kind: "announcement" as const, playerId: rentedPlayer.id, playerName: rentedPlayer.name } } : {}),
+            ...(wentBankrupt ? { bustPlayerId: rentedPlayer.id } : {}),
           });
 
           if (wentBankrupt) await checkAndFinishGame(updatedPlayers);
@@ -944,11 +1026,11 @@ export default function GameBoard({ gameCode }: Props) {
       const finalPlayer = afterField;
       const logLines = [...(fieldLog ? [fieldLog] : []), ...extraLog];
 
-      // Flash spotlight pro finanční pole
+      // Center feedback pro finanční pole
       if (field.type === "coins_lose") {
-        showFlash({ type: "coins_penalty", emoji: field.emoji, playerName: movedPlayer.name, amount: afterField.coins - movedPlayer.coins, fieldLabel: field.label });
+        showCoinsFeedback(afterField.coins - movedPlayer.coins, "lose", movedPlayer.name, field.label);
       } else if (field.type === "coins_gain") {
-        showFlash({ type: "coins_gain", emoji: field.emoji, playerName: movedPlayer.name, amount: afterField.coins - movedPlayer.coins, fieldLabel: field.label });
+        showCoinsFeedback(afterField.coins - movedPlayer.coins, "gain", movedPlayer.name, field.label);
       }
 
       // Bankrot? — nextIndex počítáme s AKTUALIZOVANÝM hráčem, aby se přeskočil i sám sebe pokud zkrachoval
@@ -978,7 +1060,7 @@ export default function GameBoard({ gameCode }: Props) {
           horse_pending: false,
           card_pending: null,
           offer_pending: offer as unknown as Record<string, unknown>,
-          log: [...logLines, `💡 Speciální nabídka pro ${currentPlayer.name}!`, ...newLog].slice(0, 20),
+          log: [...logLines, `💡 Nabídka, co lze odmítnout — pro ${currentPlayer.name}`, ...newLog].slice(0, 20),
           ...(fogOfWar ? { revealed_fields: buildFogReveal(newPosition, fogRevealBase) } : {}),
         }).eq("game_id", gameId);
         if (flashActiveRef.current) {
@@ -991,6 +1073,7 @@ export default function GameBoard({ gameCode }: Props) {
           nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog], lastRoll: roll,
           ...(wentBankrupt && !normalGameEnds ? { postTurnEvent: { kind: "announcement" as const, playerId: finalPlayer.id, playerName: finalPlayer.name } } : {}),
           ...(fogOfWar ? { revealedFields: buildFogReveal(newPosition, fogRevealBase) } : {}),
+          ...(wentBankrupt ? { bustPlayerId: finalPlayer.id } : {}),
         });
         if (canReroll) setCanReroll(false);
       }
@@ -1071,8 +1154,9 @@ export default function GameBoard({ gameCode }: Props) {
 
     await finishTurn({
       nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog],
-      updatedCurrentPlayerHorses: updatedHorses, // předej aktuální seznam, regen nepřepíše nový nákup
+      updatedCurrentPlayerHorses: updatedHorses,
       ...(postTurnEvent ? { postTurnEvent } : {}),
+      ...(wentBankrupt ? { bustPlayerId: player.id } : {}),
     });
 
     if (wentBankrupt) await checkAndFinishGame(updatedPlayers);
@@ -1314,6 +1398,7 @@ export default function GameBoard({ gameCode }: Props) {
       // přepsal horses a nový racer by zmizel. Stejná třída bugu jako buyRacer.
       ...(card.effect.kind === "give_racer" ? { updatedCurrentPlayerHorses: updatedPlayer.horses } : {}),
       ...(wentBankrupt && !cardGameEnds ? { postTurnEvent: { kind: "announcement" as const, playerId: updatedPlayer.id, playerName: updatedPlayer.name } } : {}),
+      ...(wentBankrupt ? { bustPlayerId: updatedPlayer.id } : {}),
     });
 
     if (wentBankrupt) await checkAndFinishGame(updatedPlayers);
@@ -1388,6 +1473,8 @@ export default function GameBoard({ gameCode }: Props) {
     updatedCurrentPlayerHorses?: Horse[];
     /** Fog of War: aktualizovaný seznam odhalených polí — přidat do game_state update. */
     revealedFields?: number[];
+    /** ID hráče, který v tomto tahu zkrachoval — appendne se do bust_order. */
+    bustPlayerId?: string;
   }) => {
     if (!gameId) return;
 
@@ -1409,6 +1496,7 @@ export default function GameBoard({ gameCode }: Props) {
       };
       if (params.lastRoll !== undefined) announcementUpdate.last_roll = params.lastRoll;
       if (params.revealedFields !== undefined) announcementUpdate.revealed_fields = params.revealedFields;
+      if (params.bustPlayerId) announcementUpdate.bust_order = [...(gameState?.bust_order ?? []), params.bustPlayerId];
       await supabase.from("game_state").update(announcementUpdate).eq("game_id", gameId);
       return;
     }
@@ -1449,6 +1537,7 @@ export default function GameBoard({ gameCode }: Props) {
     };
     if (params.lastRoll !== undefined) update.last_roll = params.lastRoll;
     if (params.revealedFields !== undefined) update.revealed_fields = params.revealedFields;
+    if (params.bustPlayerId) update.bust_order = [...(gameState?.bust_order ?? []), params.bustPlayerId];
 
     // Regen staminy pro aktuálního hráče (+10 za tah, strop = maxStamina ?? 100)
     // Použijeme params.updatedCurrentPlayerHorses pokud existuje — closure `players`
@@ -1842,8 +1931,9 @@ export default function GameBoard({ gameCode }: Props) {
   }, [loading]);
 
   // Herní rok — startovní rok theme + počet průchodů STARTem lídra (player.laps)
-  const gameYear = (theme.mapMeta?.yearStart ?? 1921) + players.reduce((max, p) => Math.max(max, p.laps ?? 0), 0);
-  const currentYearEvent = getYearEvent(gameYear);
+  const leadLaps = players.reduce((max, p) => Math.max(max, p.laps ?? 0), 0);
+  const gameYear = (theme.mapMeta?.yearStart ?? 1921) + leadLaps;
+  const currentYearEvent = resolveYearEvent(leadLaps, gameYear, theme.yearEvents);
 
   // Pro render desky: animující hráč se zobrazuje na animPosition, ne na DB pozici
   const displayPlayers = players.map((p, i) =>
@@ -2178,6 +2268,9 @@ export default function GameBoard({ gameCode }: Props) {
       {/* ── Flash Toast (auto-dismiss spotlight pro výrazné momenty) ─────── */}
       {flashEvent && <FlashToast event={flashEvent} />}
 
+      {/* ── Telegram Strip (roční eventy / test mode) ────────────────────── */}
+      <TelegramStrip message={telegramMessage} />
+
       {/* ── Race Modal ───────────────────────────────────────────────────── */}
       {pendingRace && (
         <RaceModal
@@ -2273,11 +2366,39 @@ export default function GameBoard({ gameCode }: Props) {
               </div>
 
               {/* Střední zóna: stav hry — roztáhne se */}
-              <div className="flex flex-1 items-center justify-center gap-2 overflow-hidden">
-                <div className="rounded-[3px] bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-500 shrink-0">
-                  {UI_TEXT.board.roundLabel} <span className="font-bold text-slate-700">{currentRound}</span>
-                  {(currentPlayer?.laps ?? 0) >= 1 && (
-                    <span className="ml-1 text-red-500" title={`Výpalné (daně) za průchod STARTem: -${getStartTax(currentPlayer?.laps ?? 0, economy)} 💰`}>🏛️</span>
+              <div className="flex flex-1 items-center justify-center gap-2 min-w-0">
+                {/* Score popup */}
+                <div className="relative shrink-0">
+                  <button
+                    onClick={() => setScorePopupOpen(v => !v)}
+                    className="rounded-[3px] bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-500 hover:bg-slate-200 transition select-none"
+                    title="Zobrazit score"
+                  >
+                    {UI_TEXT.board.roundLabel} <span className="font-bold text-slate-700">{currentRound}</span>
+                    {(currentPlayer?.laps ?? 0) >= 1 && (
+                      <span className="ml-1 text-red-500" title={`Výpalné (daně) za průchod STARTem: -${getStartTax(currentPlayer?.laps ?? 0, economy)} 💰`}>🏛️</span>
+                    )}
+                    <span className="ml-1 opacity-50">📊</span>
+                  </button>
+                  {scorePopupOpen && (
+                    <>
+                      {/* Průhledný backdrop pro close-on-outside-click */}
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setScorePopupOpen(false)}
+                      />
+                      <div
+                        className="absolute left-0 top-full z-50 mt-1.5 w-56 rounded-lg bg-white shadow-xl ring-1 ring-black/10 p-3"
+                      >
+                        <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                          Průběžné skóre
+                        </div>
+                        <ScoreTable
+                          players={players}
+                          bustOrder={gameState?.bust_order ?? []}
+                        />
+                      </div>
+                    </>
                   )}
                 </div>
                 <div className="rounded-[3px] bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white shrink-0 max-w-[160px] truncate">
@@ -2657,6 +2778,21 @@ export default function GameBoard({ gameCode }: Props) {
                           {hoveredField.flavorText}
                         </div>
                       )}
+                    </div>
+                  ) : coinsFeedback ? (
+                    <div style={{ transition: "opacity 0.25s ease" }}>
+                      <div
+                        className="text-5xl font-black tabular-nums leading-none"
+                        style={{ color: coinsFeedback.kind === "gain" ? "#34d399" : "#f87171" }}
+                      >
+                        {coinsFeedback.kind === "gain" ? "+" : ""}{coinsFeedback.amount} 💰
+                      </div>
+                      <div className={`mt-2 text-xs font-semibold uppercase tracking-wide ${theme.colors.centerTitle}`}>
+                        {coinsFeedback.playerName}
+                      </div>
+                      <div className={`mt-0.5 text-[10px] ${theme.colors.centerSubtitle} opacity-70`}>
+                        {coinsFeedback.fieldLabel}
+                      </div>
                     </div>
                   ) : (
                     <div>

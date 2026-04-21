@@ -6,6 +6,7 @@ import { carNightTheme } from "./car-night";
 import type { GameCard, CardThemeTag } from "@/lib/cards";
 import type { MusicSource } from "@/lib/audio/music";
 import type { RacerType } from "@/lib/racers/types";
+import type { YearEventOverrides } from "@/lib/year-events";
 
 // ─── Field style keys ─────────────────────────────────────────────────────────
 
@@ -237,6 +238,12 @@ export interface Theme {
   cardThemeTag?: CardThemeTag;
   /** Background music pro tuto mapu/theme. Pokud není definováno, hraje ticho. */
   music?: MusicSource;
+  /**
+   * Volitelné přetížení year eventů pro toto theme.
+   * Partial — theme definuje jen eventy které chce změnit, zbytek se vezme z globalů.
+   * Viz YearEventOverrides v lib/year-events.ts.
+   */
+  yearEvents?: YearEventOverrides;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

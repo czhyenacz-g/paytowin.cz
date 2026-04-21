@@ -157,7 +157,7 @@ function OfferEventContent({
     <div className="rounded-3xl shadow-2xl overflow-hidden">
       <div className="bg-amber-500 px-6 pt-6 pb-4">
         <div className="text-xs font-bold uppercase tracking-widest text-white/70">
-          Speciální nabídka
+          Nabídka, co lze odmítnout
         </div>
         <div className="mt-1 text-3xl">🎲</div>
         <div className="mt-2 text-xs font-semibold text-white/80">

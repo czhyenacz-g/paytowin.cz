@@ -196,4 +196,11 @@ export interface GameState {
   mass_race_done: boolean; // true po prvním automatickém mass race — trigger se pak nepustí znovu
   /** Indexy polí odhalených v Fog of War módu. Prázdné = nic není odhaleno. */
   revealed_fields: number[];
+  /**
+   * Pořadí krachu — player ID appendnuté v momentě bankrotu.
+   * Index 0 = první hráč, který zkrachoval (nejnižší rank).
+   * Poslední prvek = nejčerstvější bankrot (vyšší rank mezi bankrotovanými).
+   * Optional pro backward kompatibilitu se staršími záznamy bez sloupce.
+   */
+  bust_order?: string[];
 }
