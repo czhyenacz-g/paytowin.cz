@@ -130,8 +130,9 @@ export default function LandingPage() {
   const [activePanel, setActivePanel] = React.useState<string | null>(null);
   const [communityThemes, setCommunityThemes] = React.useState<CommunityThemeSummary[]>([]);
   const [communityLoading, setCommunityLoading] = React.useState(false);
-  const [hostedGamesCount, setHostedGamesCount] = React.useState<number | null>(null);
+  const [playedGamesCount, setPlayedGamesCount] = React.useState<number | null>(null);
   const [xpTotal, setXpTotal] = React.useState<number | null>(null);
+  const [winsTotal, setWinsTotal] = React.useState<number | null>(null);
   // Načti session + předvyplň ?join=KOD z URL
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -209,17 +210,23 @@ export default function LandingPage() {
   // Načti statistiky profilu při otevření panelu
   React.useEffect(() => {
     if (activePanel !== "profil" || !discordUser?.id) return;
+    // Odehrané hry = hry kde byl hráč přihlášen (players.discord_id), status finished
     supabase
-      .from("games")
-      .select("id", { count: "exact", head: true })
-      .eq("owner_discord_id", discordUser.id)
-      .then(({ count }) => setHostedGamesCount(count ?? 0));
+      .from("players")
+      .select("games!inner(status)", { count: "exact", head: true })
+      .eq("discord_id", discordUser.id)
+      .eq("games.status", "finished")
+      .then(({ count }) => setPlayedGamesCount(count ?? 0));
+    // XP + výhry z user_profiles
     supabase
       .from("user_profiles")
-      .select("xp_total")
+      .select("xp_total, wins_total")
       .eq("discord_id", discordUser.id)
       .single()
-      .then(({ data }) => setXpTotal(data?.xp_total ?? 0));
+      .then(({ data }) => {
+        setXpTotal(data?.xp_total ?? 0);
+        setWinsTotal(data?.wins_total ?? 0);
+      });
   }, [activePanel, discordUser?.id]);
 
   const handleBack = () => {
@@ -815,10 +822,10 @@ export default function LandingPage() {
                     {/* Stats grid */}
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                       {[
-                        { label: "Odehrané hry", value: hostedGamesCount !== null ? String(hostedGamesCount) : "…" },
-                        { label: "XP",            value: discordUser ? (xpTotal !== null ? String(xpTotal) : "…") : "–" },
-                        { label: "Závody",        value: "–" },
-                        { label: "Ztracení raceři", value: "–" },
+                        { label: "Odehrané hry", value: discordUser ? (playedGamesCount !== null ? String(playedGamesCount) : "…") : "–" },
+                        { label: "Výhry",        value: discordUser ? (winsTotal !== null ? String(winsTotal) : "…") : "–" },
+                        { label: "XP",           value: discordUser ? (xpTotal !== null ? String(xpTotal) : "…") : "–" },
+                        { label: "Závody",       value: "–" },
                       ].map((s) => (
                         <div key={s.label} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-center">
                           <div className="text-2xl font-black text-slate-900">{s.value}</div>
