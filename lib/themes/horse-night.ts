@@ -133,7 +133,7 @@ export const horseNightTheme: Theme = {
       "flavorText": "Kůň s královskou výdrží.",
       "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/caballo_real.webp",
       "racerType": "horse",
-      "slotIndex": 1
+      "slotIndex": 4
     },
     {
       "id": "viento_dorado",
@@ -146,7 +146,7 @@ export const horseNightTheme: Theme = {
       "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/viento_dorado.webp",
       "isBuiltIn": true,
       "racerType": "horse",
-      "slotIndex": 4
+      "slotIndex": 1
     },
     {
       "id": "zeleznik",
