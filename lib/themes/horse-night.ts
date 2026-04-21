@@ -85,7 +85,7 @@ export const horseNightTheme: Theme = {
       "image": "/themes/_shared/racer-modry_blesk.webp",
       "isBuiltIn": true,
       "racerType": "car",
-      "slotIndex": 6
+      "slotIndex": 5
     },
     {
       "id": "zlata_hriva",
@@ -97,7 +97,7 @@ export const horseNightTheme: Theme = {
       "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/zlata_hriva.webp",
       "isBuiltIn": true,
       "racerType": "horse",
-      "slotIndex": 1
+      "slotIndex": 2
     },
     {
       "id": "rychly_vitr",
@@ -121,7 +121,7 @@ export const horseNightTheme: Theme = {
       "image": "/themes/_shared/racer-horse_night_buran.webp",
       "isBuiltIn": true,
       "racerType": "horse",
-      "slotIndex": 4
+      "slotIndex": 2
     },
     {
       "id": "caballo_real",
@@ -133,7 +133,7 @@ export const horseNightTheme: Theme = {
       "flavorText": "Kůň s královskou výdrží.",
       "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/caballo_real.webp",
       "racerType": "horse",
-      "slotIndex": 4
+      "slotIndex": 1
     },
     {
       "id": "viento_dorado",
@@ -146,7 +146,7 @@ export const horseNightTheme: Theme = {
       "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/viento_dorado.webp",
       "isBuiltIn": true,
       "racerType": "horse",
-      "slotIndex": 2
+      "slotIndex": 4
     },
     {
       "id": "zeleznik",

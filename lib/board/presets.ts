@@ -36,9 +36,9 @@ export const SMALL_BOARD: BoardConfig = {
     },
     {
       "index": 1,
-      "type": "coins_gain",
-      "label": "Sponzor",
-      "emoji": "🤝",
+      "type": "mafia",
+      "label": "Mafie",
+      "emoji": "🎭",
       "amount": 1000
     },
     {
