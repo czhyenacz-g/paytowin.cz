@@ -74,9 +74,14 @@ export async function awardXpAction(
     addXp(third?.discord_id, XP_THIRD);
   }
 
-  // Upsert do user_profiles
+  // Upsert do user_profiles — XP pro všechny + výhra pro vítěze
   for (const [discordId, xp] of xpMap.entries()) {
-    const { error } = await supabase.rpc("increment_xp", { p_discord_id: discordId, p_xp: xp });
+    const isWinner = discordId === winner?.discord_id;
+    const { error } = await supabase.rpc("increment_xp_and_wins", {
+      p_discord_id: discordId,
+      p_xp: xp,
+      p_win: isWinner,
+    });
     if (error) return { ok: false, error: `XP upsert selhal pro ${discordId}: ${error.message}` };
   }
 

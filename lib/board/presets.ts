@@ -38,7 +38,7 @@ export const SMALL_BOARD: BoardConfig = {
       "index": 1,
       "type": "mafia",
       "label": "Consigliere",
-      "emoji": "🎭",
+      "emoji": "",
       "amount": 50
     },
     {
