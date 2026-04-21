@@ -10,9 +10,9 @@ const CARD_ACCENT = {
     badgeText:   "text-sky-800",
   },
   finance: {
-    headerBg:    "bg-teal-600",
-    badgeBg:     "bg-teal-100",
-    badgeText:   "text-teal-800",
+    headerBg:    "bg-sky-600",
+    badgeBg:     "bg-sky-100",
+    badgeText:   "text-sky-800",
   },
   mafia: {
     headerBg:    "bg-purple-600",
