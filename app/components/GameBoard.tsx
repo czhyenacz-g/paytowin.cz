@@ -2498,7 +2498,13 @@ export default function GameBoard({ gameCode }: Props) {
                     ? { width: "50%", height: "40%", borderRadius: "25%" }
                     : { width: "44%", height: "44%", borderRadius: "50%" }}
                 >
-                  {hoveredField ? (
+                  {hoveredField && !isFieldVisible(hoveredField) ? (
+                    <div className="max-w-[180px] text-center">
+                      <div className="text-3xl">🌫️</div>
+                      <div className={`mt-2 text-sm font-semibold ${theme.colors.centerTitle}`}>Zakryté mlhou</div>
+                      <div className={`mt-1 text-xs ${theme.colors.centerSubtitle}`}>Sem ještě nikdo nedošel</div>
+                    </div>
+                  ) : hoveredField ? (
                     <div className="max-w-[180px]">
                       <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
                         {hoveredField.type === "racer" ? (hoveredField.racer ? "racer" : "slot") : hoveredField.type === "coins_gain" ? "reward" : hoveredField.type === "coins_lose" ? "risk" : hoveredField.type}

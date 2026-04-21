@@ -92,6 +92,13 @@ export async function uploadRacerImageAction(
     return { ok: false, error: "Chybí soubor — formData musí obsahovat pole 'file'." };
   }
 
+  // Built-in raceři používají sdílené builtin assety, ne per-upload soubory v DB storage.
+  // Upload pro is_builtin=true by vytvořil zbytečnou kopii a obešel správu official content.
+  const existing = await getRacerById(racerId);
+  if (existing?.isBuiltin) {
+    return { ok: false, error: "Obrázek built-in závodníka nelze změnit přes upload — použij builtin asset pipeline." };
+  }
+
   const arrayBuffer = await (file as File).arrayBuffer();
   const uploadResult = await uploadRacerImage(racerId, arrayBuffer);
   if (!uploadResult.ok) return uploadResult;

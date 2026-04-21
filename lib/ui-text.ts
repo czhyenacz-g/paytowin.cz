@@ -20,7 +20,7 @@ export const UI_TEXT = {
       body:  "Bez vlastního závodníka se do většiny závodních akcí nedostaneš. Sleduj pole s racerem a kup prvního, který ti sedne do strategie.",
     },
     hasRacer: {
-      title: "Máš racera. Hlídej si jeho staminu, unavený závodník v závodě ztrácí.",
+      title: "Máš racera. Pokud ho úplně vyčerpáš, přijdeš o něj!",
       body:  "Po každém závodě sleduj, kolik mu zbývá sil. Když si označíš hlavního racera, budeš ho mít po ruce rychleji.",
     },
     setPreferred: {

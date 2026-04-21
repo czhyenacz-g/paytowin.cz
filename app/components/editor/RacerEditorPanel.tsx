@@ -349,30 +349,34 @@ export default function RacerEditorPanel({ racer, onChange, readOnly = false }: 
             )}
 
             <div className="flex-1 space-y-1.5">
-              {/* Upload + odebrat */}
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-50 disabled:opacity-40 transition-colors"
-                >
-                  {uploading ? "Nahrávám…" : imageUrl ? "Změnit obrázek" : "Nahrát obrázek"}
-                </button>
-                {imageUrl && !uploading && (
-                  <button
-                    type="button"
-                    onClick={() => { setImageUrl(""); setUploadError(null); commit({ imageUrl: "" }); }}
-                    className="text-[10px] text-amber-400 hover:text-red-400 transition-colors"
-                  >
-                    ✕ odebrat
-                  </button>
-                )}
-              </div>
+              {/* Upload + odebrat — skryto pro built-in raceři (spravují se přes builtin asset pipeline) */}
+              {!racer.isBuiltIn && (
+                <>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-50 disabled:opacity-40 transition-colors"
+                    >
+                      {uploading ? "Nahrávám…" : imageUrl ? "Změnit obrázek" : "Nahrát obrázek"}
+                    </button>
+                    {imageUrl && !uploading && (
+                      <button
+                        type="button"
+                        onClick={() => { setImageUrl(""); setUploadError(null); commit({ imageUrl: "" }); }}
+                        className="text-[10px] text-amber-400 hover:text-red-400 transition-colors"
+                      >
+                        ✕ odebrat
+                      </button>
+                    )}
+                  </div>
 
-              {/* Upload error */}
-              {uploadError && (
-                <p className="text-[10px] text-red-500 leading-snug">{uploadError}</p>
+                  {/* Upload error */}
+                  {uploadError && (
+                    <p className="text-[10px] text-red-500 leading-snug">{uploadError}</p>
+                  )}
+                </>
               )}
 
               {/* Fallback: ruční URL */}
