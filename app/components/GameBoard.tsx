@@ -2206,6 +2206,25 @@ export default function GameBoard({ gameCode }: Props) {
     const winner = players.find(p => !isBankrupt(p));
     const losers = players.filter(p => isBankrupt(p));
     const isSoloLoss = players.length === 1 && !winner;
+    const bustOrder = gameState?.bust_order ?? [];
+    const BUST_LINES = [
+      "Mafii se dluhy musí splácet. Bohužel jsi neměl už z čeho.",
+      "Sázky nevyšly. Zůstaly jen dluhy a prázdná stáj.",
+      "Věřitelé byli rychlejší než tvůj další tah.",
+      "Když dojdou peníze, dojdou i přátelé.",
+      "Tvůj závod skončil dřív, než ses dostal do cíle.",
+    ];
+    // Stabilní přiřazení hlášky: index v bustOrder % počet hlášek.
+    const bustLine = (playerId: string) => {
+      const idx = bustOrder.indexOf(playerId);
+      return BUST_LINES[(idx >= 0 ? idx : 0) % BUST_LINES.length];
+    };
+    // Zkrachovalí seřazeni dle bustOrder (pozdější = výše, jako v ScoreTable)
+    const sortedLosers = [...losers].sort((a, b) => {
+      const ia = bustOrder.indexOf(a.id);
+      const ib = bustOrder.indexOf(b.id);
+      return ib - ia;
+    });
     return (
       <div className={`min-h-screen ${theme.colors.pageBackground} flex items-center justify-center p-6`}>
         <div className={`w-full max-w-md rounded-3xl ${theme.colors.cardBackground} p-8 shadow-lg space-y-5`}>
@@ -2230,6 +2249,16 @@ export default function GameBoard({ gameCode }: Props) {
               <div className={`rounded-2xl border px-4 py-3 ${theme.colors.boardSurface} ${theme.colors.boardSurfaceBorder}`}>
                 <ScoreTable players={players} bustOrder={gameState?.bust_order ?? []} />
               </div>
+              {sortedLosers.length > 0 && (
+                <div className="space-y-2">
+                  {sortedLosers.map(p => (
+                    <div key={p.id} className={`rounded-xl px-4 py-3 ${theme.colors.boardSurface} border ${theme.colors.boardSurfaceBorder}`}>
+                      <div className={`text-xs font-semibold ${theme.colors.textPrimary}`}>💀 {p.name}</div>
+                      <div className={`mt-0.5 text-xs ${theme.colors.textMuted}`}>{bustLine(p.id)}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </>
           )}
 
