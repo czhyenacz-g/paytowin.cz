@@ -83,7 +83,7 @@ export const horseClassicTheme: Theme = {
     ],
   },
   assets: {
-    boardBgImage: "/chuchle.png",
+    boardBgImage: "/chuchle.webp",
   },
   racerRefs: [
     { slotIndex: 0, racer_id: "r6" },
