@@ -85,6 +85,24 @@ export const CHANCE_CARDS: GameCard[] = [
     effectLabel: "Získáš Železníka",
     themeTags: ["horse"],
   },
+  {
+    id: "ch11",
+    type: "chance",
+    text: "Policie dnes chrání zákon a pořádek ve společnosti… před tebou. Příliš rychlá jízda. Peněženka to odnesla.",
+    effect: { kind: "coins", value: -1500 },
+    effectLabel: "-1500 💰",
+    imagePath: "/card-police.webp",
+    themeTags: ["car"],
+  },
+  {
+    id: "ch12",
+    type: "chance",
+    text: "Policie dnes chrání zákon a pořádek ve společnosti… před tebou. Dnes nikam nepojedeš.",
+    effect: { kind: "skip_turn" },
+    effectLabel: "Vynecháš příští tah",
+    imagePath: "/card-police.webp",
+    themeTags: ["car"],
+  },
 ];
 
 // ─── Balíček Finance ──────────────────────────────────────────────────────────
