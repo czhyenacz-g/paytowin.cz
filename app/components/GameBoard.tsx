@@ -1982,13 +1982,17 @@ export default function GameBoard({ gameCode }: Props) {
   // Zapíše skóre aktuálního závodníka a posune na dalšího (nebo results).
   // Přijímá MinigameResult od RacingMinigame nebo watchdog fallback { score: 0 }.
   // Pokud finalStamina chybí (watchdog), zachová aktuální staminu koně.
-  const submitPendingRaceScore = async ({ score, finalStamina }: { score: number; finalStamina?: number }) => {
+  // watchdogForIndex: index hráče pro který byl watchdog nastaven — ochrana proti
+  // situaci kdy watchdog vystřelí po přechodu na dalšího závodníka a přepíše jeho skóre.
+  const submitPendingRaceScore = async ({ score, finalStamina, watchdogForIndex }: { score: number; finalStamina?: number; watchdogForIndex?: number }) => {
     if (!gameId || !gameState) return;
     const evt = gameState.offer_pending?.type === "race_pending"
       ? gameState.offer_pending as RacePendingEvent
       : null;
     if (!evt || evt.phase !== "racing") return;
     const idx = evt.currentRacerIndex ?? 0;
+    // Watchdog guard: zamítni pokud watchdog patří jinému hráči než aktuálnímu
+    if (watchdogForIndex !== undefined && idx !== watchdogForIndex) return;
     const currentRacerId = evt.playerIds[idx];
     const key = `${evt.turnCount}_${currentRacerId}_${idx}`;
     if (pendingRaceScoreRef.current === key) {
@@ -2334,8 +2338,11 @@ export default function GameBoard({ gameCode }: Props) {
     // Online: 10 s minihra + 2 s buffer = 12 s
     // Hot-seat: 5 s handoff + 10 s minihra + 2 s buffer = 17 s
     const watchdogMs = isLocalGame ? 17000 : 12000;
+    // Zachyť index závodníka teď — submitPendingRaceScoreRef může být aktualizován
+    // na novějšího hráče dříve než watchdog vystřelí, proto předáváme watchdogForIndex.
+    const watchdogForIndex = racePendingEvt.currentRacerIndex ?? 0;
     const timer = setTimeout(() => {
-      submitPendingRaceScoreRef.current({ score: 0 });
+      submitPendingRaceScoreRef.current({ score: 0, watchdogForIndex });
     }, watchdogMs);
     return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
