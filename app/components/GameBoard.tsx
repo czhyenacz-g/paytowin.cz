@@ -2511,27 +2511,46 @@ export default function GameBoard({ gameCode }: Props) {
                   </button>
                   {scorePopupOpen && (
                     <>
-                      {/* Průhledný backdrop pro close-on-outside-click */}
+                      {/* Backdrop — klik mimo zavře popup */}
                       <div
                         className="fixed inset-0 z-40"
                         onClick={() => setScorePopupOpen(false)}
                       />
-                      <div
-                        className="absolute left-0 top-full z-50 mt-1.5 w-64 border-2 border-stone-600 shadow-xl overflow-hidden"
-                        style={{ backgroundImage: "url('/gazete.webp')", backgroundSize: "cover", backgroundPosition: "top center" }}
-                      >
-                        {/* overlay */}
-                        <div className="absolute inset-0 bg-[#f4efe4]/82 z-0" />
-                        <div className="relative z-10">
-                          <div className="px-3 pt-3 pb-2 border-b-2 border-stone-800 text-center">
-                            <div className="text-[7px] font-bold uppercase tracking-[0.28em] text-stone-500">Pay to Win Gazette</div>
-                            <div className="mt-0.5 font-serif text-sm font-black text-stone-900 leading-tight">Průběžné výsledky dostihů</div>
-                          </div>
-                          <div className="px-3 py-2.5">
-                            <ScoreTable
-                              players={players}
-                              bustOrder={gameState?.bust_order ?? []}
-                            />
+                      {/* Novinový list — centrovaný modal */}
+                      <div className="fixed inset-0 z-50 flex items-center justify-center p-6 pointer-events-none">
+                        <div
+                          className="relative w-full max-w-sm border-2 border-stone-600 shadow-2xl overflow-hidden pointer-events-auto"
+                          style={{ backgroundImage: "url('/gazete.webp')", backgroundSize: "cover", backgroundPosition: "top center" }}
+                        >
+                          <div className="absolute inset-0 bg-[#f4efe4]/82 z-0" />
+                          <div className="relative z-10">
+                            {/* Masthead */}
+                            <div className="px-6 pt-5 pb-3 border-b-[3px] border-stone-800 text-center">
+                              <div className="text-[8px] font-bold uppercase tracking-[0.32em] text-stone-500">— Průběžná zpráva —</div>
+                              <div className="mt-1 font-serif text-xl font-black uppercase tracking-[0.12em] text-stone-900 leading-none">Pay to Win Gazette</div>
+                              <div className="mt-1 text-[7px] uppercase tracking-[0.2em] text-stone-400">Nezávislé noviny ze světa dostihů</div>
+                            </div>
+                            {/* Headline sekce */}
+                            <div className="px-6 pt-4 pb-3 border-b border-stone-400/60">
+                              <div className="text-[9px] font-bold uppercase tracking-[0.22em] text-stone-500">Aktuální pořadí</div>
+                              <h2 className="mt-1 font-serif text-2xl font-black leading-tight text-stone-900">Průběžné výsledky dostihů</h2>
+                            </div>
+                            {/* Tabulka */}
+                            <div className="px-6 py-4">
+                              <ScoreTable
+                                players={players}
+                                bustOrder={gameState?.bust_order ?? []}
+                              />
+                            </div>
+                            {/* Zavřít */}
+                            <div className="px-6 pb-5">
+                              <button
+                                onClick={() => setScorePopupOpen(false)}
+                                className="w-full bg-stone-900 px-4 py-2.5 text-center text-sm font-semibold text-[#f4efe4] hover:bg-stone-700 transition"
+                              >
+                                Zavřít
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
