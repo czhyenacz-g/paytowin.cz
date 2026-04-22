@@ -203,4 +203,10 @@ export interface GameState {
    * Optional pro backward kompatibilitu se staršími záznamy bez sloupce.
    */
   bust_order?: string[];
+  /**
+   * Globální year event telegram — uloží aktivní hráč při průchodu STARTem.
+   * Všichni klienti ho přečtou přes Realtime a zobrazí jednou (guard: seenYearEventTurnRef).
+   * `turn` je unikátní klíč — zabraňuje opakovanému zobrazení při každém refreshi.
+   */
+  year_event_telegram?: { text: string; turn: number } | null;
 }

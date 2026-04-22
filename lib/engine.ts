@@ -183,6 +183,8 @@ export function normalizeState(raw: unknown): GameState {
     offer_pending: (r.offer_pending as OfferPending | null) ?? null,
     mass_race_done: Boolean(r.mass_race_done ?? false),
     revealed_fields: Array.isArray(r.revealed_fields) ? (r.revealed_fields as number[]) : [],
+    bust_order: Array.isArray(r.bust_order) ? (r.bust_order as string[]) : undefined,
+    year_event_telegram: (r.year_event_telegram as { text: string; turn: number } | null) ?? null,
   };
 }
 

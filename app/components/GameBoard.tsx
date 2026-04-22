@@ -495,6 +495,8 @@ export default function GameBoard({ gameCode }: Props) {
   // Fog flip reveal animation
   // seenRevealedRef: pole odhalená od mountu — nepřehrávají flip (reload, join mid-game)
   const seenRevealedRef = React.useRef<Set<number>>(new Set());
+  // Guard: turn číslo posledního zobrazeného year event telegramu — brání dvojímu zobrazení
+  const seenYearEventTurnRef = React.useRef<number>(0);
   // flippingFields: pole právě animující flip
   const [flippingFields, setFlippingFields] = React.useState<Set<number>>(new Set());
   // showingHiddenRef: pole v první půlce flipu — stále zobrazují hidden card
@@ -652,6 +654,18 @@ export default function GameBoard({ gameCode }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState?.offer_pending?.type]);
 
+  // Year event telegram — globální broadcast pro všechny klienty a pozorovatele.
+  // seenYearEventTurnRef brání dvojímu zobrazení na aktivním hráčovi (který už zavolal
+  // showTelegram lokálně a ref nastavil před zápisem do DB).
+  React.useEffect(() => {
+    const yet = gameState?.year_event_telegram;
+    if (!yet) return;
+    if (yet.turn <= seenYearEventTurnRef.current) return;
+    seenYearEventTurnRef.current = yet.turn;
+    showTelegram(yet.text);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState?.year_event_telegram?.turn]);
+
   // ── Načtení hry ze Supabase ──────────────────────────────────────────────────
   React.useEffect(() => {
     if (!gameCode) return;
@@ -733,6 +747,10 @@ export default function GameBoard({ gameCode }: Props) {
       // Seed seenRevealedRef s aktuálně odhalenými poli — nepřehrávají flip při načtení
       if (seenRevealedRef.current.size === 0 && ns.revealed_fields.length > 0) {
         seenRevealedRef.current = new Set(ns.revealed_fields);
+      }
+      // Seed seenYearEventTurnRef — telegram z minulých tahů se při (re)načtení nezobrazí
+      if (seenYearEventTurnRef.current === 0 && ns.year_event_telegram?.turn) {
+        seenYearEventTurnRef.current = ns.year_event_telegram.turn;
       }
       setGameState(ns);
     }
@@ -942,6 +960,8 @@ export default function GameBoard({ gameCode }: Props) {
     const extraLog: string[] = [];
     // Fog: base pro reveal tohoto tahu — může být přepsán krizovým resetem
     let fogRevealBase: number[] | undefined = undefined;
+    // Year event telegram payload — naplní se pokud player projde STARTem a spustí rok. event
+    let yearEventTelegramPayload: { text: string; turn: number } | undefined;
 
     if (finalAdjustment !== 0) {
       const signed = finalAdjustment > 0 ? `+${finalAdjustment}` : `${finalAdjustment}`;
@@ -970,7 +990,11 @@ export default function GameBoard({ gameCode }: Props) {
       const yearEvent = resolveYearEvent(campaignOffset, displayYear, theme.yearEvents);
       if (yearEvent) {
         extraLog.push(`📅 ${displayYear}: ${yearEvent.title}`);
-        showTelegram(`${yearEvent.title} — ${displayYear}: ${yearEvent.body ?? yearEvent.title}`);
+        const telegramText = `${yearEvent.title} — ${displayYear}: ${yearEvent.body ?? yearEvent.title}`;
+        yearEventTelegramPayload = { text: telegramText, turn: newTurnCount };
+        // Aktivní hráč vidí okamžitě; seenRef zabrání dvojímu zobrazení přes Realtime
+        seenYearEventTurnRef.current = newTurnCount;
+        showTelegram(telegramText);
       }
       // Reset non-racer karet — řízeno flagem v eventu, ne hardcoded rokem
       if (fogOfWar && (yearEvent?.resetNonRacerCards || yearEvent?.crisis)) {
@@ -998,7 +1022,7 @@ export default function GameBoard({ gameCode }: Props) {
         );
         const nextIndex = getNextActiveIndex(gameState.current_player_index, updatedPlayers);
         await supabase.from("players").update({ position: newPosition, coins: movedPlayer.coins, laps: movedPlayer.laps ?? 0 }).eq("id", currentPlayer.id);
-        await finishTurn({ nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog], lastRoll: roll });
+        await finishTurn({ nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog], lastRoll: roll, ...(yearEventTelegramPayload ? { yearEventTelegram: yearEventTelegramPayload } : {}) });
       } else if (ownerPlayer) {
         if (canTriggerRivalsRace(movedPlayer, ownerPlayer)) {
           // ── Rivals race: oba hráči mají závodníky → duel místo rentu ──────────
@@ -1010,6 +1034,7 @@ export default function GameBoard({ gameCode }: Props) {
           await finishTurn({
             nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog], lastRoll: roll,
             postTurnEvent: { kind: "race_pending", raceType: "rivals_race", playerIds: [currentPlayer.id, ownerPlayer.id], reward },
+            ...(yearEventTelegramPayload ? { yearEventTelegram: yearEventTelegramPayload } : {}),
           });
         } else {
           // ── Rent fallback: jeden nebo oba hráči nemají závodníka ──────────────
@@ -1056,6 +1081,7 @@ export default function GameBoard({ gameCode }: Props) {
             ...(wouldBankruptRent ? { updatedCurrentPlayerHorses: finalRentedPlayer.horses } : {}),
             ...(wentBankrupt && !rentGameEnds ? { postTurnEvent: { kind: "announcement" as const, playerId: finalRentedPlayer.id, playerName: finalRentedPlayer.name } } : {}),
             ...(wentBankrupt ? { bustPlayerId: finalRentedPlayer.id } : {}),
+            ...(yearEventTelegramPayload ? { yearEventTelegram: yearEventTelegramPayload } : {}),
           });
 
           if (wentBankrupt) await checkAndFinishGame(updatedPlayers);
@@ -1070,6 +1096,7 @@ export default function GameBoard({ gameCode }: Props) {
           card_pending: null,
           offer_pending: null,
           log: [`${currentPlayer.name} přišel na ${theme.labels.racerField.toLowerCase()}: ${field.racer.emoji} ${field.racer.name}`, ...extraLog, ...newLog].slice(0, 20),
+          year_event_telegram: yearEventTelegramPayload ?? null,
           ...(fogOfWar ? { revealed_fields: buildFogReveal(newPosition, fogRevealBase) } : {}),
         }).eq("game_id", gameId);
         if (canReroll) setCanReroll(false);
@@ -1092,6 +1119,7 @@ export default function GameBoard({ gameCode }: Props) {
         card_pending: card as unknown as Record<string, unknown>,
         offer_pending: null,
         log: [`${currentPlayer.name} lízl kartu ${cardLabel}`, ...extraLog, ...newLog].slice(0, 20),
+        year_event_telegram: yearEventTelegramPayload ?? null,
         ...(fogOfWar ? { revealed_fields: buildFogReveal(newPosition, fogRevealBase) } : {}),
       }).eq("game_id", gameId);
       if (canReroll) setCanReroll(false);
@@ -1139,6 +1167,7 @@ export default function GameBoard({ gameCode }: Props) {
           card_pending: null,
           offer_pending: offer as unknown as Record<string, unknown>,
           log: [...logLines, `💡 Nabídka, co lze odmítnout — pro ${currentPlayer.name}`, ...newLog].slice(0, 20),
+          year_event_telegram: yearEventTelegramPayload ?? null,
           ...(fogOfWar ? { revealed_fields: buildFogReveal(newPosition, fogRevealBase) } : {}),
         }).eq("game_id", gameId);
         if (flashActiveRef.current) {
@@ -1153,6 +1182,7 @@ export default function GameBoard({ gameCode }: Props) {
           ...(wentBankrupt && !normalGameEnds ? { postTurnEvent: { kind: "announcement" as const, playerId: finalPlayer.id, playerName: finalPlayer.name } } : {}),
           ...(fogOfWar ? { revealedFields: buildFogReveal(newPosition, fogRevealBase) } : {}),
           ...(wentBankrupt ? { bustPlayerId: finalPlayer.id } : {}),
+          ...(yearEventTelegramPayload ? { yearEventTelegram: yearEventTelegramPayload } : {}),
         });
         if (canReroll) setCanReroll(false);
       }
@@ -1369,6 +1399,7 @@ export default function GameBoard({ gameCode }: Props) {
     const logLines: string[] = [];
     const newLog = gameState.log ?? [];
     let cardMovedToRacer: Horse | undefined;
+    let cardYearEventTelegram: { text: string; turn: number } | undefined;
 
     if (card.effect.kind === "coins" && card.effect.value !== undefined) {
       updatedPlayer = { ...updatedPlayer, coins: updatedPlayer.coins + card.effect.value };
@@ -1403,7 +1434,10 @@ export default function GameBoard({ gameCode }: Props) {
         const yearEvent = resolveYearEvent(campaignOffset, displayYear, theme.yearEvents);
         if (yearEvent) {
           logLines.push(`📅 ${displayYear}: ${yearEvent.title}`);
-          showTelegram(`${yearEvent.title} — ${displayYear}: ${yearEvent.body ?? yearEvent.title}`);
+          const telegramText = `${yearEvent.title} — ${displayYear}: ${yearEvent.body ?? yearEvent.title}`;
+          cardYearEventTelegram = { text: telegramText, turn: gameState.turn_count + 1 };
+          seenYearEventTurnRef.current = gameState.turn_count + 1;
+          showTelegram(telegramText);
         }
       }
 
@@ -1542,6 +1576,7 @@ export default function GameBoard({ gameCode }: Props) {
         card_pending: null,
         offer_pending: null,
         log: [...logLines, ...newLog].slice(0, 20),
+        year_event_telegram: cardYearEventTelegram ?? null,
       }).eq("game_id", gameId);
       setPendingRacer({ racer: cardMovedToRacer, playerIndex });
       setPendingCard(null);
@@ -1565,6 +1600,7 @@ export default function GameBoard({ gameCode }: Props) {
       ...(card.effect.kind === "give_racer" || wouldBankruptCard ? { updatedCurrentPlayerHorses: finalUpdatedPlayer.horses } : {}),
       ...(wentBankrupt && !cardGameEnds ? { postTurnEvent: { kind: "announcement" as const, playerId: finalUpdatedPlayer.id, playerName: finalUpdatedPlayer.name } } : {}),
       ...(wentBankrupt ? { bustPlayerId: finalUpdatedPlayer.id } : {}),
+      ...(cardYearEventTelegram ? { yearEventTelegram: cardYearEventTelegram } : {}),
     });
 
     if (wentBankrupt) await checkAndFinishGame(updatedPlayers);
@@ -1641,6 +1677,8 @@ export default function GameBoard({ gameCode }: Props) {
     revealedFields?: number[];
     /** ID hráče, který v tomto tahu zkrachoval — appendne se do bust_order. */
     bustPlayerId?: string;
+    /** Year event telegram payload — uloží se do game_state, přečtou všichni klienti přes Realtime. */
+    yearEventTelegram?: { text: string; turn: number };
   }) => {
     if (!gameId) return;
 
@@ -1663,6 +1701,7 @@ export default function GameBoard({ gameCode }: Props) {
       if (params.lastRoll !== undefined) announcementUpdate.last_roll = params.lastRoll;
       if (params.revealedFields !== undefined) announcementUpdate.revealed_fields = params.revealedFields;
       if (params.bustPlayerId) announcementUpdate.bust_order = [...(gameState?.bust_order ?? []), params.bustPlayerId];
+      announcementUpdate.year_event_telegram = params.yearEventTelegram ?? null;
       await supabase.from("game_state").update(announcementUpdate).eq("game_id", gameId);
       return;
     }
@@ -1689,6 +1728,7 @@ export default function GameBoard({ gameCode }: Props) {
       };
       if (params.lastRoll !== undefined) evtUpdate.last_roll = params.lastRoll;
       if (params.revealedFields !== undefined) evtUpdate.revealed_fields = params.revealedFields;
+      evtUpdate.year_event_telegram = params.yearEventTelegram ?? null;
       await supabase.from("game_state").update(evtUpdate).eq("game_id", gameId);
       return;
     }
@@ -1704,6 +1744,7 @@ export default function GameBoard({ gameCode }: Props) {
     if (params.lastRoll !== undefined) update.last_roll = params.lastRoll;
     if (params.revealedFields !== undefined) update.revealed_fields = params.revealedFields;
     if (params.bustPlayerId) update.bust_order = [...(gameState?.bust_order ?? []), params.bustPlayerId];
+    update.year_event_telegram = params.yearEventTelegram ?? null;
 
     // Regen staminy pro aktuálního hráče (+10 za tah, strop = maxStamina ?? 100)
     // Použijeme params.updatedCurrentPlayerHorses pokud existuje — closure `players`
