@@ -3001,17 +3001,19 @@ export default function GameBoard({ gameCode }: Props) {
                 })()}
 
                 <div
-                  className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center border-2 p-4 text-center shadow-inner overflow-hidden ${theme.colors.centerBorder} ${theme.colors.centerBackground}`}
-                  style={board.shape === "stadium"
-                    ? { width: "50%", height: "40%", borderRadius: "25%" }
-                    : { width: "44%", height: "44%", borderRadius: "50%" }}
+                  className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center p-4 text-center ${theme.assets?.centerBgImage ? "" : `overflow-hidden border-2 shadow-inner ${theme.colors.centerBorder}`} ${theme.colors.centerBackground}`}
+                  style={theme.assets?.centerBgImage
+                    ? { width: "62%", height: "42%" }
+                    : board.shape === "stadium"
+                      ? { width: "50%", height: "40%", borderRadius: "25%" }
+                      : { width: "44%", height: "44%", borderRadius: "50%" }}
                 >
                   {theme.assets?.centerBgImage && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={theme.assets.centerBgImage}
                       alt=""
-                      className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+                      className="pointer-events-none absolute inset-0 h-full w-full object-contain"
                     />
                   )}
                   {hoveredField && !isFieldVisible(hoveredField) ? (
