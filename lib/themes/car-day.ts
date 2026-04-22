@@ -153,6 +153,9 @@ export const carDayTheme: Theme = {
       "slotIndex": 5
     }
   ],
+  assets: {
+    centerBgImage: "/plaketa-light.webp",
+  },
   mapMeta: {
     yearStart: 1923,
     place: "okolí Marrákeše",

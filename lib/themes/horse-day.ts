@@ -167,7 +167,9 @@ export const horseDayTheme: Theme = {
     }
   ],
 
-  assets: {},
+  assets: {
+    centerBgImage: "/plaketa-light.webp",
+  },
 
   mapMeta: {
     yearStart: 1921,
