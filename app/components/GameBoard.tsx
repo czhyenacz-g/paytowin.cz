@@ -2479,7 +2479,7 @@ export default function GameBoard({ gameCode }: Props) {
                       {sortedLosers.map(p => (
                         <div key={p.id} className="text-xs leading-snug">
                           <span className="font-bold text-stone-800">💀 {p.name} —</span>
-                          <span className="italic text-stone-500"> {bustLine(p.id)}</span>
+                          <span className="italic text-stone-700"> {bustLine(p.id)}</span>
                         </div>
                       ))}
                     </div>
