@@ -549,7 +549,7 @@ export default function LandingPage() {
                 )}
 
                 <div className="flex items-center justify-center gap-4 text-xs text-slate-400">
-                  <a href="/pravidla" className="hover:text-slate-200 underline">Pravidla</a>
+                  <a href="/pravidla" className="hover:text-slate-200 underline">Pravidla hry</a>
                   <span>·</span>
                   <a href="/o-nas" className="hover:text-slate-200 underline">O nás</a>
                   <span>·</span>

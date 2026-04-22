@@ -997,9 +997,11 @@ export default function GameBoard({ gameCode }: Props) {
           turn_count: newTurnCount,
           horse_pending: true,
           card_pending: null,
+          offer_pending: null,
           log: [`${currentPlayer.name} přišel na ${theme.labels.racerField.toLowerCase()}: ${field.racer.emoji} ${field.racer.name}`, ...extraLog, ...newLog].slice(0, 20),
           ...(fogOfWar ? { revealed_fields: buildFogReveal(newPosition, fogRevealBase) } : {}),
         }).eq("game_id", gameId);
+        if (canReroll) setCanReroll(false);
         setPendingRacer({ racer: field.racer, playerIndex: gameState.current_player_index });
       }
     } else if (field.type === "chance" || field.type === "finance" || field.type === "mafia") {
@@ -1017,9 +1019,11 @@ export default function GameBoard({ gameCode }: Props) {
         turn_count: newTurnCount,
         horse_pending: false,
         card_pending: card as unknown as Record<string, unknown>,
+        offer_pending: null,
         log: [`${currentPlayer.name} lízl kartu ${cardLabel}`, ...extraLog, ...newLog].slice(0, 20),
         ...(fogOfWar ? { revealed_fields: buildFogReveal(newPosition, fogRevealBase) } : {}),
       }).eq("game_id", gameId);
+      if (canReroll) setCanReroll(false);
       // Lokální state — ostatní klienti dostanou přes Realtime
       setPendingCard({ card, playerIndex: gameState.current_player_index });
     } else {
@@ -3336,7 +3340,7 @@ export default function GameBoard({ gameCode }: Props) {
       <BuildInfoBar theme={theme} boardId={boardId} />
       <ThemeAssetInspector themeId={themeId} theme={theme} />
       <div className="py-2 flex items-center justify-center gap-4 text-xs text-slate-400">
-        <a href="/pravidla" className="hover:text-slate-600 underline">Pravidla</a>
+        <a href="/pravidla" className="hover:text-slate-600 underline">Pravidla hry</a>
         <span>·</span>
         <a href="/o-nas" className="hover:text-slate-600 underline">O nás</a>
         <span>·</span>
