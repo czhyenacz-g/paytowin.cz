@@ -3,3 +3,5 @@ node_modules/
 .env*
 *.tsbuildinfo
 .tokens
+.vercel
+public/tmp_prepare/
