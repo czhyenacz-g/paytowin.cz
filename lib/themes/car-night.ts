@@ -140,7 +140,7 @@ export const carNightTheme: Theme = {
     }
   ],
   assets: {
-    centerBgImage: "/car-night-center.webp",
+    centerBgImage: "/car-night-center-dark.webp",
   },
   mapMeta: {
     yearStart: 1926,
