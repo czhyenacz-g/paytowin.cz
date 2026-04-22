@@ -38,6 +38,15 @@ import {
 
 const RACE_WINNER_REWARD = 500; // fixní odměna za 1. místo v mass_race
 
+/** Vrátí "horse" nebo "car" podle racerType v theme konfiguraci; null pro ostatní/neznámé typy. */
+function racerSoundType(h: { id?: string }, themeRacers: import("@/lib/themes").RacerConfig[]): "horse" | "car" | null {
+  if (!h.id) return null;
+  const cfg = themeRacers.find(r => r.id === h.id);
+  if (cfg?.racerType === "horse") return "horse";
+  if (cfg?.racerType === "car") return "car";
+  return null;
+}
+
 /** Vrátí true pokud oba hráči mají aspoň jednoho závodníka — stejná podmínka jako race flow. */
 function canTriggerRivalsRace(p1: Player, p2: Player): boolean {
   return p1.horses.length > 0 && p2.horses.length > 0;
@@ -894,6 +903,14 @@ export default function GameBoard({ gameCode }: Props) {
     // Nastav refs — refreshGame je bude číst i ze stale closure v Realtime handleru
     animatingPlayerIdRef.current = currentPlayer.id;
     animPositionRef.current = oldPosition;
+
+    // Jeden typový zvuk na začátku pohybu — horse = klapot, car = motor
+    const movePrimaryHorse = currentPlayer.horses.find(h => h.isPreferred) ?? currentPlayer.horses[0];
+    if (movePrimaryHorse) {
+      const mst = racerSoundType(movePrimaryHorse, getThemeRacers(theme));
+      if (mst === "horse") playSfx("hoof_move");
+      else if (mst === "car") playSfx("engine_move");
+    }
 
     const trail: number[] = [];
     for (let step = 1; step <= finalRoll; step++) {
@@ -3221,7 +3238,14 @@ export default function GameBoard({ gameCode }: Props) {
                     </div>
                   </div>
                 ) : pendingRacer ? (
-                  <div className="rounded-[4px] border-2 border-amber-400 bg-amber-50 p-4 space-y-3">
+                  <div
+                    className="rounded-[4px] border-2 border-amber-400 bg-amber-50 p-4 space-y-3"
+                    onMouseEnter={() => {
+                      const rst = racerSoundType(pendingRacer.racer, getThemeRacers(theme));
+                      if (rst === "horse") playSfx("hoof_hover");
+                      else if (rst === "car") playSfx("engine_hover");
+                    }}
+                  >
                     <div className="text-sm font-semibold text-amber-900">
                       {/* theme.labels.racerField + racer — UI text z theme */}
                       {theme.labels.racerField} nabízí {theme.labels.racer.toLowerCase()}:
@@ -3460,6 +3484,11 @@ export default function GameBoard({ gameCode }: Props) {
                                             ? "border border-yellow-200 bg-yellow-50"
                                             : "border border-black/[0.06] bg-slate-50"
                                         }`}
+                                        onMouseEnter={() => {
+                                          const rst = racerSoundType(h, getThemeRacers(theme));
+                                          if (rst === "horse") playSfx("hoof_hover");
+                                          else if (rst === "car") playSfx("engine_hover");
+                                        }}
                                       >
                                         <div className={`flex items-start gap-2 text-sm font-semibold leading-snug ${h.isPreferred ? "text-amber-700" : "text-slate-700"}`}>
                                           {h.image
