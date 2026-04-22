@@ -380,6 +380,10 @@ export default function GameBoard({ gameCode }: Props) {
   const [isMoving, setIsMoving] = React.useState(false);
   const [displayRoll, setDisplayRoll] = React.useState<number | null>(null);
   const [pendingRollDecision, setPendingRollDecision] = React.useState<PendingRollDecision | null>(null);
+  const [bankruptWarning, setBankruptWarning] = React.useState<{
+    playerName: string; horses: Horse[]; totalSellValue: number; willSurvive: boolean;
+  } | null>(null);
+  const bankruptWarningResolverRef = React.useRef<((sellAll: boolean) => void) | null>(null);
   const [rollDecisionCountdown, setRollDecisionCountdown] = React.useState<number | null>(null);
   const [animPosition, setAnimPosition] = React.useState<number | null>(null);
   const [animatingPlayerIdx, setAnimatingPlayerIdx] = React.useState<number | null>(null);
@@ -786,11 +790,34 @@ export default function GameBoard({ gameCode }: Props) {
     }, ms);
   }, []);
 
+  // Zobrazí nouzové varování před bankrotem. Vrací hráče po prodeji (nebo beze změny).
+  const confirmBankruptOrSell = React.useCallback((player: Player): Promise<Player> => {
+    if (player.horses.length === 0) return Promise.resolve(player);
+    return new Promise(resolve => {
+      const totalSellValue = player.horses.reduce((sum, h) => sum + Math.floor(h.price * 0.8), 0);
+      bankruptWarningResolverRef.current = (sellAll: boolean) => {
+        setBankruptWarning(null);
+        bankruptWarningResolverRef.current = null;
+        if (sellAll) {
+          resolve({ ...player, coins: player.coins + totalSellValue, horses: [] });
+        } else {
+          resolve(player);
+        }
+      };
+      setBankruptWarning({
+        playerName: player.name,
+        horses: player.horses,
+        totalSellValue,
+        willSurvive: player.coins + totalSellValue > 0,
+      });
+    });
+  }, []);
+
   const rollDice = async () => {
     const activePendingRace = gameState?.offer_pending?.type === "race" ? gameState.offer_pending as RaceOffer : null;
     const activePendingBankrupt = gameState?.offer_pending?.type === "bankrupt_announcement";
     const activePendingRacePlaceholder = gameState?.offer_pending?.type === "race_pending";
-    if (!gameState || pendingRacer || pendingCard || pendingOffer || pendingRollDecision || activePendingRace || activePendingBankrupt || activePendingRacePlaceholder || isRolling || isMoving) return;
+    if (!gameState || pendingRacer || pendingCard || pendingOffer || pendingRollDecision || activePendingRace || activePendingBankrupt || activePendingRacePlaceholder || isRolling || isMoving || bankruptWarning) return;
 
     const roll = Math.floor(Math.random() * 6) + 1;
     const currentPlayer = players[gameState.current_player_index];
@@ -955,18 +982,22 @@ export default function GameBoard({ gameCode }: Props) {
           console.log(`[racer-rent] ${currentPlayer.name} (id=${currentPlayer.id}) landed on "${field.racer.name}" (racer.id=${field.racer.id ?? "none"}) owned by ${ownerPlayer.name} (id=${ownerPlayer.id}) → rent=${rent}`);
           console.log(`[racer-rent] transfer: ${currentPlayer.name} ${movedPlayer.coins}→${rentedPlayer.coins}, ${ownerPlayer.name} ${ownerPlayer.coins}→${paidOwner.coins}`);
 
-          const wentBankrupt = rentedPlayer.coins <= 0 && currentPlayer.coins > 0;
+          const wouldBankruptRent = rentedPlayer.coins <= 0 && currentPlayer.coins > 0;
+          const finalRentedPlayer = wouldBankruptRent ? await confirmBankruptOrSell(rentedPlayer) : rentedPlayer;
+          const wentBankrupt = finalRentedPlayer.coins <= 0 && currentPlayer.coins > 0;
           const logLines = [
             `${currentPlayer.name} zaplatil ${rent} 💰 hráči ${ownerPlayer.name} za ${field.racer.emoji} ${field.racer.name}`,
             ...extraLog,
           ];
           if (wentBankrupt) {
-            logLines.push(`💀 ${rentedPlayer.name} zkrachoval!`);
-            console.log(`[racer-rent] ${rentedPlayer.name} went bankrupt after paying rent`);
+            logLines.push(`💀 ${finalRentedPlayer.name} zkrachoval!`);
+            console.log(`[racer-rent] ${finalRentedPlayer.name} went bankrupt after paying rent`);
+          } else if (wouldBankruptRent) {
+            logLines.push(`${finalRentedPlayer.name} prodal koně a přežil! 💰`);
           }
 
           const updatedPlayers = players.map(p => {
-            if (p.id === rentedPlayer.id) return rentedPlayer;
+            if (p.id === finalRentedPlayer.id) return finalRentedPlayer;
             if (p.id === paidOwner.id) return paidOwner;
             return p;
           });
@@ -978,13 +1009,13 @@ export default function GameBoard({ gameCode }: Props) {
                                (updatedPlayers.length === 1 && activeAfterRent.length === 0);
 
           await Promise.all([
-            supabase.from("players").update({ position: rentedPlayer.position, coins: rentedPlayer.coins, laps: rentedPlayer.laps ?? 0 }).eq("id", rentedPlayer.id),
+            supabase.from("players").update({ position: finalRentedPlayer.position, coins: finalRentedPlayer.coins, horses: finalRentedPlayer.horses, laps: finalRentedPlayer.laps ?? 0 }).eq("id", finalRentedPlayer.id),
             supabase.from("players").update({ coins: paidOwner.coins }).eq("id", paidOwner.id),
           ]);
           await finishTurn({
             nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog], lastRoll: roll,
-            ...(wentBankrupt && !rentGameEnds ? { postTurnEvent: { kind: "announcement" as const, playerId: rentedPlayer.id, playerName: rentedPlayer.name } } : {}),
-            ...(wentBankrupt ? { bustPlayerId: rentedPlayer.id } : {}),
+            ...(wentBankrupt && !rentGameEnds ? { postTurnEvent: { kind: "announcement" as const, playerId: finalRentedPlayer.id, playerName: finalRentedPlayer.name } } : {}),
+            ...(wentBankrupt ? { bustPlayerId: finalRentedPlayer.id } : {}),
           });
 
           if (wentBankrupt) await checkAndFinishGame(updatedPlayers);
@@ -1028,7 +1059,6 @@ export default function GameBoard({ gameCode }: Props) {
       setPendingCard({ card, playerIndex: gameState.current_player_index });
     } else {
       const { player: afterField, log: fieldLog } = field.action(movedPlayer);
-      const finalPlayer = afterField;
       const logLines = [...(fieldLog ? [fieldLog] : []), ...extraLog];
 
       // Center feedback pro finanční pole
@@ -1038,9 +1068,12 @@ export default function GameBoard({ gameCode }: Props) {
         showCoinsFeedback(afterField.coins - movedPlayer.coins, "gain", movedPlayer.name, field.label);
       }
 
-      // Bankrot? — nextIndex počítáme s AKTUALIZOVANÝM hráčem, aby se přeskočil i sám sebe pokud zkrachoval
-      const wentBankrupt = finalPlayer.coins <= 0 && currentPlayer.coins > 0;
+      // Bankrot? — dej hráči šanci prodat koně, pak znovu vyhodnoť
+      const wouldBankrupt = afterField.coins <= 0 && currentPlayer.coins > 0;
+      const finalPlayer = wouldBankrupt ? await confirmBankruptOrSell(afterField) : afterField;
+      const wentBankrupt = finalPlayer.coins <= 0;
       if (wentBankrupt) logLines.push(`💀 ${finalPlayer.name} zkrachoval!`);
+      else if (wouldBankrupt) logLines.push(`${finalPlayer.name} prodal koně a přežil! 💰`);
 
       const updatedPlayers = players.map((p, i) =>
         i === gameState.current_player_index ? finalPlayer : p
@@ -1125,13 +1158,23 @@ export default function GameBoard({ gameCode }: Props) {
     const newLog = gameState.log ?? [];
     const newTurnCount = gameState.turn_count + 1;
 
-    const wentBankrupt = updatedCoins <= 0;
+    const wouldBankruptBuy = updatedCoins <= 0;
+    let finalCoins = updatedCoins;
+    let finalHorses = updatedHorses;
+    if (wouldBankruptBuy) {
+      const playerAfterBuy = { ...player, coins: updatedCoins, horses: updatedHorses };
+      const resolved = await confirmBankruptOrSell(playerAfterBuy);
+      finalCoins = resolved.coins;
+      finalHorses = resolved.horses;
+    }
+    const wentBankrupt = finalCoins <= 0;
     const logLines = [`${player.name} koupil ${racer.emoji} ${racer.name} za ${racer.price} 💰`];
     if (wentBankrupt) logLines.push(`💀 ${player.name} zkrachoval!`);
+    else if (wouldBankruptBuy) logLines.push(`${player.name} prodal koně a přežil! 💰`);
 
-    // Zahrnuje nové koně — race trigger potřebuje vidět aktuální ownership
+    // Zahrnuje finální koně — race trigger potřebuje vidět aktuální ownership
     const updatedPlayers = players.map((p, i) =>
-      i === playerIndex ? { ...player, coins: updatedCoins, horses: updatedHorses } : p
+      i === playerIndex ? { ...player, coins: finalCoins, horses: finalHorses } : p
     );
     const nextIndex = getNextActiveIndex(playerIndex, updatedPlayers);
 
@@ -1148,18 +1191,16 @@ export default function GameBoard({ gameCode }: Props) {
       logLines.push("🏁 Závod se připravuje!");
     }
 
-    await supabase.from("players").update({ coins: updatedCoins, horses: updatedHorses }).eq("id", player.id);
+    await supabase.from("players").update({ coins: finalCoins, horses: finalHorses }).eq("id", player.id);
 
-    // Optimistický update: okamžitě promítni nové horses + coins do lokálního stavu,
-    // aby racerOwnership a panel hráče nemusely čekat na Supabase realtime.
-    // Analogie: rollDice dělá totéž pro position (viz setPlayers níže u animace).
+    // Optimistický update: okamžitě promítni nové horses + coins do lokálního stavu
     setPlayers(prev => prev.map(p =>
-      p.id === player.id ? { ...p, coins: updatedCoins, horses: updatedHorses } : p
+      p.id === player.id ? { ...p, coins: finalCoins, horses: finalHorses } : p
     ));
 
     await finishTurn({
       nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog],
-      updatedCurrentPlayerHorses: updatedHorses,
+      updatedCurrentPlayerHorses: finalHorses,
       ...(postTurnEvent ? { postTurnEvent } : {}),
       ...(wentBankrupt ? { bustPlayerId: player.id } : {}),
     });
@@ -1400,25 +1441,26 @@ export default function GameBoard({ gameCode }: Props) {
       }
     }
 
-    const wentBankrupt = updatedPlayer.coins <= 0 && player.coins > 0;
+    const wouldBankruptCard = updatedPlayer.coins <= 0 && player.coins > 0;
+    const finalUpdatedPlayer = wouldBankruptCard ? await confirmBankruptOrSell(updatedPlayer) : updatedPlayer;
+    const wentBankrupt = finalUpdatedPlayer.coins <= 0;
     if (wentBankrupt) logLines.push(`💀 ${player.name} zkrachoval!`);
+    else if (wouldBankruptCard) logLines.push(`${player.name} prodal koně a přežil! 💰`);
 
     // FIX: position do DB jen pokud ji karta skutečně změnila (kind==="move").
-    // Coins a skip_turn karty pozici nemění — záměrně ji nezapisujeme,
-    // aby se nepřepsala správná pozice z rollDice (která mohla být v closure stale).
     const anyMove = card.effect.kind === "move" || card.effect2?.kind === "move";
     const anySkip = card.effect.kind === "skip_turn" || card.effect2?.kind === "skip_turn";
-    const playerUpdate: Record<string, unknown> = { coins: updatedPlayer.coins };
-    if (anyMove) playerUpdate.position = updatedPlayer.position;
+    const playerUpdate: Record<string, unknown> = { coins: finalUpdatedPlayer.coins };
+    if (anyMove) playerUpdate.position = finalUpdatedPlayer.position;
     if (anySkip) playerUpdate.skip_next_turn = true;
-    if (card.effect.kind === "give_racer") playerUpdate.horses = updatedPlayer.horses;
-    if (card.effect.kind === "stamina_debuff") playerUpdate.active_effects = updatedPlayer.active_effects;
+    if (card.effect.kind === "give_racer" || wouldBankruptCard) playerUpdate.horses = finalUpdatedPlayer.horses;
+    if (card.effect.kind === "stamina_debuff") playerUpdate.active_effects = finalUpdatedPlayer.active_effects;
 
-    console.log(`[turn-flow] applyCardEffect persisting — pos=${updatedPlayer.position} coins=${updatedPlayer.coins} wentBankrupt=${wentBankrupt}`);
+    console.log(`[turn-flow] applyCardEffect persisting — pos=${finalUpdatedPlayer.position} coins=${finalUpdatedPlayer.coins} wentBankrupt=${wentBankrupt}`);
     await supabase.from("players").update(playerUpdate).eq("id", player.id);
 
     // Urči dalšího hráče
-    const updatedPlayers = players.map((p, i) => i === playerIndex ? updatedPlayer : p);
+    const updatedPlayers = players.map((p, i) => i === playerIndex ? finalUpdatedPlayer : p);
     const nextIndex = getNextActiveIndex(playerIndex, updatedPlayers);
 
     const activeAfterCard = updatedPlayers.filter(p => !isBankrupt(p));
@@ -1431,9 +1473,9 @@ export default function GameBoard({ gameCode }: Props) {
       // finishTurn dělá stamina regen write ze closure `players` — která je stale a
       // neobsahuje právě přidaného racera. Bez tohoto parametru by regen write
       // přepsal horses a nový racer by zmizel. Stejná třída bugu jako buyRacer.
-      ...(card.effect.kind === "give_racer" ? { updatedCurrentPlayerHorses: updatedPlayer.horses } : {}),
-      ...(wentBankrupt && !cardGameEnds ? { postTurnEvent: { kind: "announcement" as const, playerId: updatedPlayer.id, playerName: updatedPlayer.name } } : {}),
-      ...(wentBankrupt ? { bustPlayerId: updatedPlayer.id } : {}),
+      ...(card.effect.kind === "give_racer" ? { updatedCurrentPlayerHorses: finalUpdatedPlayer.horses } : {}),
+      ...(wentBankrupt && !cardGameEnds ? { postTurnEvent: { kind: "announcement" as const, playerId: finalUpdatedPlayer.id, playerName: finalUpdatedPlayer.name } } : {}),
+      ...(wentBankrupt ? { bustPlayerId: finalUpdatedPlayer.id } : {}),
     });
 
     if (wentBankrupt) await checkAndFinishGame(updatedPlayers);
@@ -3002,7 +3044,34 @@ export default function GameBoard({ gameCode }: Props) {
                   </div>
                 </div>
 
-                {pendingCard ? (
+                {bankruptWarning ? (
+                  <div className="rounded-[4px] border-2 border-red-500 bg-red-950 p-4 space-y-3">
+                    <div className="text-sm font-bold text-red-300">💀 Hrozí ti bankrot!</div>
+                    <div className="text-xs text-red-400">
+                      Máš {bankruptWarning.horses.length} {bankruptWarning.horses.length === 1 ? "koně" : "koní"} v hodnotě{" "}
+                      <strong className="text-white">{bankruptWarning.totalSellValue} 💰</strong> (80 % ceny).
+                    </div>
+                    {bankruptWarning.willSurvive ? (
+                      <div className="text-xs text-emerald-400">✓ Prodej tě zachrání.</div>
+                    ) : (
+                      <div className="text-xs text-red-400">⚠ Ani prodej nestačí — zkrachuješ tak či tak.</div>
+                    )}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => bankruptWarningResolverRef.current?.(true)}
+                        className="flex-1 rounded-[3px] bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 transition"
+                      >
+                        Prodat všechny koně
+                      </button>
+                      <button
+                        onClick={() => bankruptWarningResolverRef.current?.(false)}
+                        className="flex-1 rounded-[3px] border border-red-700 px-3 py-2 text-sm font-semibold text-red-300 hover:bg-red-900 transition"
+                      >
+                        Nechat zkrachovat
+                      </button>
+                    </div>
+                  </div>
+                ) : pendingCard ? (
                   <div className={`rounded-[4px] border-2 p-4 space-y-2 ${
                     pendingCard.card.type === "chance"
                       ? "border-sky-400 bg-sky-50"
