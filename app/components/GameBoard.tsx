@@ -1036,6 +1036,7 @@ export default function GameBoard({ gameCode }: Props) {
           ]);
           await finishTurn({
             nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog], lastRoll: roll,
+            ...(wouldBankruptRent ? { updatedCurrentPlayerHorses: finalRentedPlayer.horses } : {}),
             ...(wentBankrupt && !rentGameEnds ? { postTurnEvent: { kind: "announcement" as const, playerId: finalRentedPlayer.id, playerName: finalRentedPlayer.name } } : {}),
             ...(wentBankrupt ? { bustPlayerId: finalRentedPlayer.id } : {}),
           });
@@ -1131,6 +1132,7 @@ export default function GameBoard({ gameCode }: Props) {
       } else {
         await finishTurn({
           nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog], lastRoll: roll,
+          ...(wouldBankrupt ? { updatedCurrentPlayerHorses: finalPlayer.horses } : {}),
           ...(wentBankrupt && !normalGameEnds ? { postTurnEvent: { kind: "announcement" as const, playerId: finalPlayer.id, playerName: finalPlayer.name } } : {}),
           ...(fogOfWar ? { revealedFields: buildFogReveal(newPosition, fogRevealBase) } : {}),
           ...(wentBankrupt ? { bustPlayerId: finalPlayer.id } : {}),
@@ -1495,7 +1497,7 @@ export default function GameBoard({ gameCode }: Props) {
       // finishTurn dělá stamina regen write ze closure `players` — která je stale a
       // neobsahuje právě přidaného racera. Bez tohoto parametru by regen write
       // přepsal horses a nový racer by zmizel. Stejná třída bugu jako buyRacer.
-      ...(card.effect.kind === "give_racer" ? { updatedCurrentPlayerHorses: finalUpdatedPlayer.horses } : {}),
+      ...(card.effect.kind === "give_racer" || wouldBankruptCard ? { updatedCurrentPlayerHorses: finalUpdatedPlayer.horses } : {}),
       ...(wentBankrupt && !cardGameEnds ? { postTurnEvent: { kind: "announcement" as const, playerId: finalUpdatedPlayer.id, playerName: finalUpdatedPlayer.name } } : {}),
       ...(wentBankrupt ? { bustPlayerId: finalUpdatedPlayer.id } : {}),
     });
