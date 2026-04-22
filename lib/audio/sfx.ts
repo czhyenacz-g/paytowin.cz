@@ -7,7 +7,8 @@
  */
 
 export type SoundId = "dice" | "coin_gain" | "coin_loss" | "race" | "newspaper" | "bankrupt"
-  | "hoof_hover" | "engine_hover" | "hoof_move" | "engine_move";
+  | "hoof_hover" | "engine_hover" | "hoof_move" | "engine_move"
+  | "hoof_step" | "engine_step";
 
 // Cooldown guard — zabraňuje spamování (ms)
 const COOLDOWNS: Record<SoundId, number> = {
@@ -21,6 +22,8 @@ const COOLDOWNS: Record<SoundId, number> = {
   engine_hover:  350,
   hoof_move:     500,
   engine_move:   500,
+  hoof_step:     130,
+  engine_step:   130,
 };
 const lastPlayed = new Map<SoundId, number>();
 
@@ -216,6 +219,95 @@ function synthEngineMove(ctx: AudioContext): void {
   sub.start(t); sub.stop(t + 0.28);
 }
 
+// Jeden krok koně — dvojklik (dva krátké noise hity ~45 ms od sebe)
+function synthHoofStep(ctx: AudioContext): void {
+  const base = ctx.currentTime;
+  const r = () => Math.random();
+
+  for (let i = 0; i < 2; i++) {
+    const t = base + i * 0.045 + (r() * 2 - 1) * 0.005;
+    const g = i === 0 ? 1.0 : 0.7;
+    const size = Math.floor(ctx.sampleRate * 0.018);
+    const buf = ctx.createBuffer(1, size, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let j = 0; j < size; j++) d[j] = (r() * 2 - 1) * Math.pow(1 - j / size, 5);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const filt = ctx.createBiquadFilter();
+    filt.type = "bandpass";
+    filt.frequency.value = (900 + r() * 200) * (1 + (r() * 2 - 1) * 0.05);
+    filt.Q.value = 2.0;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.38 * g, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.018);
+    src.connect(filt); filt.connect(gain); gain.connect(ctx.destination);
+    src.start(t); src.stop(t + 0.03);
+  }
+}
+
+// Jeden krok auta — pattern 4 hitů, každý s engine thump + click + exhaust noise
+function synthEngineStep(ctx: AudioContext): void {
+  const base = ctx.currentTime;
+  const r = () => Math.random();
+
+  const hits: [number, number][] = [
+    [0,       1.00],
+    [0.040,   0.65],
+    [0.085,   0.80],
+    [0.125,   0.40],
+  ];
+
+  for (const [offset, gainScale] of hits) {
+    const jitter = (r() * 2 - 1) * 0.008;
+    const t = base + offset + jitter;
+    const freqVar = 1 + (r() * 2 - 1) * 0.05;
+    const gVar    = 1 + (r() * 2 - 1) * 0.12;
+    const g = gainScale * gVar;
+
+    // — Engine thump (sawtooth, 110→80 Hz sweep) —
+    const thumpOsc = ctx.createOscillator();
+    thumpOsc.type = "sawtooth";
+    thumpOsc.frequency.setValueAtTime(110 * freqVar, t);
+    thumpOsc.frequency.exponentialRampToValueAtTime(80 * freqVar, t + 0.040);
+    const thumpGain = ctx.createGain();
+    thumpGain.gain.setValueAtTime(0, t);
+    thumpGain.gain.linearRampToValueAtTime(0.28 * g, t + 0.005);
+    thumpGain.gain.exponentialRampToValueAtTime(0.001, t + 0.042);
+    thumpOsc.connect(thumpGain); thumpGain.connect(ctx.destination);
+    thumpOsc.start(t); thumpOsc.stop(t + 0.05);
+
+    // — Mechanical click (noise burst, bandpass ~2.5 kHz, 10 ms) —
+    const clickSize = Math.floor(ctx.sampleRate * 0.010);
+    const clickBuf  = ctx.createBuffer(1, clickSize, ctx.sampleRate);
+    const cd = clickBuf.getChannelData(0);
+    for (let i = 0; i < clickSize; i++) cd[i] = (r() * 2 - 1) * Math.pow(1 - i / clickSize, 6);
+    const clickSrc = ctx.createBufferSource();
+    clickSrc.buffer = clickBuf;
+    const clickFilt = ctx.createBiquadFilter();
+    clickFilt.type = "bandpass"; clickFilt.frequency.value = 2500 * freqVar; clickFilt.Q.value = 1.2;
+    const clickGain = ctx.createGain();
+    clickGain.gain.setValueAtTime(0.12 * g, t);
+    clickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.010);
+    clickSrc.connect(clickFilt); clickFilt.connect(clickGain); clickGain.connect(ctx.destination);
+    clickSrc.start(t); clickSrc.stop(t + 0.02);
+
+    // — Exhaust noise (noise burst, lowpass ~300 Hz, 30 ms) —
+    const exhSize = Math.floor(ctx.sampleRate * 0.030);
+    const exhBuf  = ctx.createBuffer(1, exhSize, ctx.sampleRate);
+    const ed = exhBuf.getChannelData(0);
+    for (let i = 0; i < exhSize; i++) ed[i] = (r() * 2 - 1) * Math.pow(1 - i / exhSize, 2);
+    const exhSrc = ctx.createBufferSource();
+    exhSrc.buffer = exhBuf;
+    const exhFilt = ctx.createBiquadFilter();
+    exhFilt.type = "lowpass"; exhFilt.frequency.value = 300;
+    const exhGain = ctx.createGain();
+    exhGain.gain.setValueAtTime(0.10 * g, t);
+    exhGain.gain.exponentialRampToValueAtTime(0.001, t + 0.030);
+    exhSrc.connect(exhFilt); exhFilt.connect(exhGain); exhGain.connect(ctx.destination);
+    exhSrc.start(t); exhSrc.stop(t + 0.04);
+  }
+}
+
 // ─── Dispatch tabulka ─────────────────────────────────────────────────────────
 
 const SYNTHS: Record<SoundId, (ctx: AudioContext) => void> = {
@@ -229,6 +321,8 @@ const SYNTHS: Record<SoundId, (ctx: AudioContext) => void> = {
   engine_hover:  synthEngineHover,
   hoof_move:     synthHoofMove,
   engine_move:   synthEngineMove,
+  hoof_step:     synthHoofStep,
+  engine_step:   synthEngineStep,
 };
 
 // ─── Public API ───────────────────────────────────────────────────────────────

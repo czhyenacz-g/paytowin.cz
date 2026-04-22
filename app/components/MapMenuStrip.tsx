@@ -61,29 +61,32 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
     try {
       if (!audioCtxRef.current) audioCtxRef.current = new AudioContext();
       const ctx = audioCtxRef.current;
-      // Pokud browser pozastavil kontext (bez user interaction), pokus o resume
-      if (ctx.state === "suspended") ctx.resume();
 
-      // Krátký rising sweep — "game menu whoosh" charakter
-      // Pokud chceš místo syntetického zvuku soubor, ulož /public/audio/menu-hover.mp3
-      // a nahraď tento blok: new Audio("/audio/menu-hover.mp3").play().catch(() => {});
-      const t   = ctx.currentTime;
-      const dur = 0.13; // 130 ms — krátké, táhlé
-      const osc  = ctx.createOscillator();
-      const gain = ctx.createGain();
+      const play = () => {
+        const t   = ctx.currentTime;
+        const dur = 0.13;
+        const osc  = ctx.createOscillator();
+        const gain = ctx.createGain();
 
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(260, t);
-      osc.frequency.exponentialRampToValueAtTime(680, t + dur);
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(260, t);
+        osc.frequency.exponentialRampToValueAtTime(680, t + dur);
 
-      gain.gain.setValueAtTime(0, t);
-      gain.gain.linearRampToValueAtTime(0.10, t + 0.018); // attack
-      gain.gain.exponentialRampToValueAtTime(0.001, t + dur); // decay
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.10, t + 0.018);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
 
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(t);
-      osc.stop(t + dur);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + dur);
+      };
+
+      if (ctx.state === "suspended") {
+        ctx.resume().then(play).catch(() => {});
+      } else {
+        play();
+      }
     } catch {
       // AudioContext nedostupný (SSR, blokovaný prohlížečem) — ticho
     }
