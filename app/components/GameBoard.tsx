@@ -1351,6 +1351,7 @@ export default function GameBoard({ gameCode }: Props) {
     let updatedPlayer = { ...player };
     const logLines: string[] = [];
     const newLog = gameState.log ?? [];
+    let cardMovedToRacer: Horse | undefined;
 
     if (card.effect.kind === "coins" && card.effect.value !== undefined) {
       updatedPlayer = { ...updatedPlayer, coins: updatedPlayer.coins + card.effect.value };
@@ -1358,16 +1359,40 @@ export default function GameBoard({ gameCode }: Props) {
       logLines.push(`${player.name}: ${card.text} (${sign}${card.effect.value} 💰)`);
     } else if (card.effect.kind === "move" && card.effect.value !== undefined) {
       const fc = fieldsRef.current.length;
-      const newPos = ((updatedPlayer.position + card.effect.value) % fc + fc) % fc;
-      console.log(`[turn-flow] card move: from pos=${updatedPlayer.position} by ${card.effect.value} → pos=${newPos}`);
+      const oldPos = updatedPlayer.position;
+      const newPos = ((oldPos + card.effect.value) % fc + fc) % fc;
+      console.log(`[turn-flow] card move: from pos=${oldPos} by ${card.effect.value} → pos=${newPos}`);
       updatedPlayer = { ...updatedPlayer, position: newPos };
       const sign = card.effect.value > 0 ? "+" : "";
       logLines.push(`${player.name}: ${card.text} (posun ${sign}${card.effect.value})`);
 
-      // Vyhodnoť efekt cílového pole.
-      // Guard depth=1: chance/finance by spustily další card_pending flow (nekonečný řetězec),
-      // racer by spustil horse_pending buy/rent flow — obě věci nelze bezpečně zanořit do
-      // applyCardEffect. Pro tato pole pouze logujeme, efekt se nespustí.
+      // START crossing — forward card move that wraps past field 0
+      const passedStartCard = card.effect.value > 0 && newPos < oldPos;
+      if (passedStartCard || newPos === 0) {
+        if (passedStartCard) {
+          updatedPlayer = { ...updatedPlayer, coins: updatedPlayer.coins + economy.stateSubsidy };
+          logLines.push(`${player.name} prošel STARTem — +${economy.stateSubsidy} 💰`);
+        }
+        const currentLaps = updatedPlayer.laps ?? 0;
+        const startTax = getStartTax(currentLaps, economy);
+        updatedPlayer = { ...updatedPlayer, laps: currentLaps + 1 };
+        if (startTax > 0) {
+          updatedPlayer = { ...updatedPlayer, coins: updatedPlayer.coins - startTax };
+          logLines.push(`${player.name}: Výpalné (daně) za průchod STARTem — -${startTax} 💰`);
+        }
+        const yearStart = theme.mapMeta?.yearStart ?? 1921;
+        const campaignOffset = updatedPlayer.laps ?? 0;
+        const displayYear = yearStart + campaignOffset;
+        const yearEvent = resolveYearEvent(campaignOffset, displayYear, theme.yearEvents);
+        if (yearEvent) {
+          logLines.push(`📅 ${displayYear}: ${yearEvent.title}`);
+          showTelegram(`${yearEvent.title} — ${displayYear}: ${yearEvent.body ?? yearEvent.title}`);
+        }
+      }
+
+      // Landing field effects.
+      // Guard depth=1: chance/finance/mafia blocked (card chain).
+      // racer: volný racer → spustí horse_pending flow; vlastněný → skip.
       const landingField = fieldsRef.current[newPos];
       if (landingField) {
         const lt = landingField.type;
@@ -1375,9 +1400,17 @@ export default function GameBoard({ gameCode }: Props) {
           const label = lt === "chance" ? "Osud" : lt === "mafia" ? "Mafie" : "Finance";
           logLines.push(`${player.name}: přistál na poli ${label} — karta se nevylosuje (přesun byl kartou).`);
           console.log(`[turn-flow] card move landed on ${lt} — skipped (chain guard depth=1)`);
-        } else if (lt === "racer" || lt === "horse") {
-          logLines.push(`${player.name}: přistál u stáje ${landingField.racer?.emoji ?? ""} ${landingField.label} — nabídka se nespustí (přesun byl kartou).`);
-          console.log(`[turn-flow] card move landed on racer — skipped (chain guard depth=1)`);
+        } else if ((lt === "racer" || lt === "horse") && landingField.racer) {
+          const alreadyOwned = playerOwnsRacer(updatedPlayer, landingField.racer);
+          const ownerPlayer = players.find(p => p.id !== player.id && playerOwnsRacer(p, landingField.racer!));
+          if (!alreadyOwned && !ownerPlayer) {
+            cardMovedToRacer = landingField.racer as Horse;
+            logLines.push(`${player.name}: přišel na ${landingField.racer.emoji} ${landingField.label} — možnost koupě.`);
+            console.log(`[turn-flow] card move landed on free racer — horse_pending will be set`);
+          } else {
+            logLines.push(`${player.name}: přistál u stáje ${landingField.racer.emoji} ${landingField.label} — nabídka se nespustí (přesun byl kartou).`);
+            console.log(`[turn-flow] card move landed on owned racer — skipped (chain guard depth=1)`);
+          }
         } else {
           // coins_gain, coins_lose, start, gamble, neutral — bezpečné synchronní akce
           const { player: afterField, log: fieldLog } = landingField.action(updatedPlayer);
@@ -1476,12 +1509,27 @@ export default function GameBoard({ gameCode }: Props) {
     const anySkip = card.effect.kind === "skip_turn" || card.effect2?.kind === "skip_turn";
     const playerUpdate: Record<string, unknown> = { coins: finalUpdatedPlayer.coins };
     if (anyMove) playerUpdate.position = finalUpdatedPlayer.position;
+    if (anyMove && finalUpdatedPlayer.laps !== player.laps) playerUpdate.laps = finalUpdatedPlayer.laps ?? 0;
     if (anySkip) playerUpdate.skip_next_turn = true;
     if (card.effect.kind === "give_racer" || wouldBankruptCard) playerUpdate.horses = finalUpdatedPlayer.horses;
     if (card.effect.kind === "stamina_debuff") playerUpdate.active_effects = finalUpdatedPlayer.active_effects;
 
     console.log(`[turn-flow] applyCardEffect persisting — pos=${finalUpdatedPlayer.position} coins=${finalUpdatedPlayer.coins} wentBankrupt=${wentBankrupt}`);
     await supabase.from("players").update(playerUpdate).eq("id", player.id);
+
+    // Card → volný racer: spustíme horse_pending purchase flow (buyRacer/skipRacer dokončí tah)
+    if (cardMovedToRacer && !wentBankrupt) {
+      await supabase.from("game_state").update({
+        turn_count: gameState.turn_count + 1,
+        horse_pending: true,
+        card_pending: null,
+        offer_pending: null,
+        log: [...logLines, ...newLog].slice(0, 20),
+      }).eq("game_id", gameId);
+      setPendingRacer({ racer: cardMovedToRacer, playerIndex });
+      setPendingCard(null);
+      return;
+    }
 
     // Urči dalšího hráče
     const updatedPlayers = players.map((p, i) => i === playerIndex ? finalUpdatedPlayer : p);
