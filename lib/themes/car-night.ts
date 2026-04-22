@@ -112,7 +112,7 @@ export const carNightTheme: Theme = {
       "flavorText": "Blesk!",
       "image": "/themes/_shared/racer-zlaty_blesk.webp",
       "isBuiltIn": true,
-      "racerType": "camel",
+      "racerType": "car",
       "slotIndex": 2
     },
     {
@@ -149,7 +149,7 @@ export const carNightTheme: Theme = {
       "isLegendary": true,
       "image": "/themes/_shared/racer-r8.webp",
       "isBuiltIn": true,
-      "racerType": "unset",
+      "racerType": "car",
       "slotIndex": 5
     }
   ],

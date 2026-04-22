@@ -54,7 +54,7 @@ export const horseClassicTheme: Theme = {
     racingEmoji: "🐎",
   },
   racerRefs: [
-    { slotIndex: 0, racer_id: "sombra_roja" },
+    { slotIndex: 0, racer_id: "r6" },
     { slotIndex: 1, racer_id: "viento_dorado" },
     { slotIndex: 2, racer_id: "el_relampago" },
     { slotIndex: 3, racer_id: "caballo_real" },
@@ -62,18 +62,6 @@ export const horseClassicTheme: Theme = {
   ],
   /** @fallback inline data — seed source + runtime fallback pokud registry není dostupná */
   racers: [
-    {
-      "id": "sombra_roja",
-      "name": "Sombra Roja",
-      "speed": 2,
-      "price": 800,
-      "emoji": "🔴",
-      "maxStamina": 100,
-      "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/sombra_roja.webp",
-      "isBuiltIn": true,
-      "racerType": "car",
-      "slotIndex": 7
-    },
     {
       "id": "viento_dorado",
       "name": "Hogo fogo",
