@@ -3140,7 +3140,7 @@ export default function GameBoard({ gameCode }: Props) {
                         {gameYear}
                       </div>
                       {currentYearEvent && (
-                        <div className={`mt-1 text-[10px] italic leading-tight ${theme.colors.centerSubtitle} opacity-60 max-w-[120px]`}>
+                        <div className={`mt-1 text-[10px] font-semibold leading-tight ${theme.colors.centerSubtitle}`}>
                           {currentYearEvent.title}
                         </div>
                       )}
