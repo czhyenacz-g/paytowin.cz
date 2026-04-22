@@ -250,61 +250,27 @@ function synthEngineStep(ctx: AudioContext): void {
   const base = ctx.currentTime;
   const r = () => Math.random();
 
+  // Čistý motor thump — 2 údery, sine sweep, bez šumu
   const hits: [number, number][] = [
-    [0,       1.00],
-    [0.040,   0.65],
-    [0.085,   0.80],
-    [0.125,   0.40],
+    [0,     1.00],
+    [0.120, 0.65],
   ];
 
   for (const [offset, gainScale] of hits) {
-    const jitter = (r() * 2 - 1) * 0.008;
-    const t = base + offset + jitter;
-    const freqVar = 1 + (r() * 2 - 1) * 0.05;
-    const gVar    = 1 + (r() * 2 - 1) * 0.12;
-    const g = gainScale * gVar;
+    const t = base + offset + (r() * 2 - 1) * 0.008;
+    const fv = 1 + (r() * 2 - 1) * 0.04;
+    const g  = gainScale * (1 + (r() * 2 - 1) * 0.08);
 
-    // — Engine thump (sawtooth, 110→80 Hz sweep) —
-    const thumpOsc = ctx.createOscillator();
-    thumpOsc.type = "sawtooth";
-    thumpOsc.frequency.setValueAtTime(110 * freqVar, t);
-    thumpOsc.frequency.exponentialRampToValueAtTime(80 * freqVar, t + 0.040);
-    const thumpGain = ctx.createGain();
-    thumpGain.gain.setValueAtTime(0, t);
-    thumpGain.gain.linearRampToValueAtTime(0.28 * g, t + 0.005);
-    thumpGain.gain.exponentialRampToValueAtTime(0.001, t + 0.042);
-    thumpOsc.connect(thumpGain); thumpGain.connect(ctx.destination);
-    thumpOsc.start(t); thumpOsc.stop(t + 0.05);
-
-    // — Mechanical click (noise burst, bandpass ~2.5 kHz, 10 ms) —
-    const clickSize = Math.floor(ctx.sampleRate * 0.010);
-    const clickBuf  = ctx.createBuffer(1, clickSize, ctx.sampleRate);
-    const cd = clickBuf.getChannelData(0);
-    for (let i = 0; i < clickSize; i++) cd[i] = (r() * 2 - 1) * Math.pow(1 - i / clickSize, 6);
-    const clickSrc = ctx.createBufferSource();
-    clickSrc.buffer = clickBuf;
-    const clickFilt = ctx.createBiquadFilter();
-    clickFilt.type = "bandpass"; clickFilt.frequency.value = 2500 * freqVar; clickFilt.Q.value = 1.2;
-    const clickGain = ctx.createGain();
-    clickGain.gain.setValueAtTime(0.12 * g, t);
-    clickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.010);
-    clickSrc.connect(clickFilt); clickFilt.connect(clickGain); clickGain.connect(ctx.destination);
-    clickSrc.start(t); clickSrc.stop(t + 0.02);
-
-    // — Exhaust noise (noise burst, lowpass ~300 Hz, 30 ms) —
-    const exhSize = Math.floor(ctx.sampleRate * 0.030);
-    const exhBuf  = ctx.createBuffer(1, exhSize, ctx.sampleRate);
-    const ed = exhBuf.getChannelData(0);
-    for (let i = 0; i < exhSize; i++) ed[i] = (r() * 2 - 1) * Math.pow(1 - i / exhSize, 2);
-    const exhSrc = ctx.createBufferSource();
-    exhSrc.buffer = exhBuf;
-    const exhFilt = ctx.createBiquadFilter();
-    exhFilt.type = "lowpass"; exhFilt.frequency.value = 300;
-    const exhGain = ctx.createGain();
-    exhGain.gain.setValueAtTime(0.10 * g, t);
-    exhGain.gain.exponentialRampToValueAtTime(0.001, t + 0.030);
-    exhSrc.connect(exhFilt); exhFilt.connect(exhGain); exhGain.connect(ctx.destination);
-    exhSrc.start(t); exhSrc.stop(t + 0.04);
+    const osc = ctx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(80 * fv, t);
+    osc.frequency.exponentialRampToValueAtTime(42 * fv, t + 0.080);
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(0.18 * g, t + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.090);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(t); osc.stop(t + 0.10);
   }
 }
 

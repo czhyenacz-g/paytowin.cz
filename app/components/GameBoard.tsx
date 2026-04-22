@@ -2664,7 +2664,7 @@ export default function GameBoard({ gameCode }: Props) {
                 {/* Score popup */}
                 <div className="relative shrink-0">
                   <button
-                    onClick={() => { const next = !scorePopupOpen; setScorePopupOpen(next); if (next) playSfx("newspaper"); }}
+                    onClick={() => { setScorePopupOpen((prev) => !prev); }}
                     className="rounded-[3px] bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-500 hover:bg-slate-200 transition select-none"
                     title="Zobrazit score"
                   >
@@ -3319,11 +3319,6 @@ export default function GameBoard({ gameCode }: Props) {
                 ) : pendingRacer ? (
                   <div
                     className="rounded-[4px] border-2 border-amber-400 bg-amber-50 p-4 space-y-3"
-                    onMouseEnter={() => {
-                      const rst = racerSoundType(pendingRacer.racer, getThemeRacers(theme));
-                      if (rst === "horse") playSfx("hoof_hover");
-                      else if (rst === "car") playSfx("engine_hover");
-                    }}
                   >
                     <div className="text-sm font-semibold text-amber-900">
                       {/* theme.labels.racerField + racer — UI text z theme */}
