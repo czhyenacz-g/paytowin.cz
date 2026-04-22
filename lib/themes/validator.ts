@@ -16,7 +16,7 @@ import type { BoardConfig } from "@/lib/board/types";
 
 // ─── Validní hodnoty ──────────────────────────────────────────────────────────
 
-const VALID_EFFECTS = new Set(["coins", "skip_turn", "move", "give_racer"]);
+const VALID_EFFECTS = new Set(["coins", "skip_turn", "move", "give_racer", "stamina_debuff"]);
 const VALID_BOARD_IDS = new Set(["small", "large"]);
 const VALID_TONE_STYLES = new Set(["neutral", "funny", "satirical", "cute", "dark", "retro"]);
 

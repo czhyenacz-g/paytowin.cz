@@ -3,8 +3,8 @@ import type { Theme } from ".";
 export const carNightTheme: Theme = {
   id: "car-night",
   name: "Závody aut — Noc",
-  description: "Tmavý vzhled, noční závodní okruh, automobilové závody.",
-  version: "1.0.0",
+  description: "Ilegální noční závody. Bez licence, bez svědků, bez slitování.",
+  version: "1.0.1",
   isPaid: false,
   priceCzk: 0,
   cardThemeTag: "car",
@@ -23,11 +23,11 @@ export const carNightTheme: Theme = {
       coins_lose: "h-[72px] w-[72px] border-red-600 bg-red-950 text-red-300",
       gamble:     "h-[72px] w-[72px] border-violet-500 bg-violet-900 text-violet-300",
       racer:      "h-[72px] w-[72px] border-sky-500 bg-sky-900 text-sky-300",
-      horse:      "h-[72px] w-[72px] border-sky-500 bg-sky-900 text-sky-300", // @deprecated alias
+      horse:      "h-[72px] w-[72px] border-sky-500 bg-sky-900 text-sky-300",
       neutral:    "h-[72px] w-[72px] border-slate-600 bg-slate-700 text-slate-300",
       chance:     "h-[72px] w-[72px] border-amber-500 bg-amber-900 text-amber-300",
       finance:    "h-[72px] w-[72px] border-amber-500 bg-teal-900 text-teal-300",
-      mafia:     "h-[72px] w-[72px] border-purple-500 bg-purple-900 text-purple-300",
+      mafia:      "h-[72px] w-[72px] border-purple-500 bg-purple-900 text-purple-300",
     },
     activePlayerBadge: "bg-sky-400 text-slate-900",
     rollPanelIdle:     "bg-slate-700",
@@ -41,8 +41,8 @@ export const carNightTheme: Theme = {
   },
   labels: {
     themeName:      "Závody aut — Noc",
-    centerTitle:    "Závodiště",
-    centerSubtitle: "Připravte motory.",
+    centerTitle:    "Ilegální závody",
+    centerSubtitle: "Bez licence. Bez svědků.",
     legend: {
       gain:   "zisk",
       lose:   "ztráta",
@@ -55,26 +55,11 @@ export const carNightTheme: Theme = {
     racingEmoji: "🏎️",
   },
   racerRefs: [
-    {
-      "slotIndex": 0,
-      "racer_id": "stary_mustang"
-    },
-    {
-      "slotIndex": 1,
-      "racer_id": "modra_strela"
-    },
-    {
-      "slotIndex": 2,
-      "racer_id": "zlaty_blesk"
-    },
-    {
-      "slotIndex": 3,
-      "racer_id": "rychly_demon"
-    },
-    {
-      "slotIndex": 4,
-      "racer_id": "car_night_r5"
-    }
+    { "slotIndex": 0, "racer_id": "stary_mustang" },
+    { "slotIndex": 1, "racer_id": "modra_strela" },
+    { "slotIndex": 2, "racer_id": "zlaty_blesk" },
+    { "slotIndex": 3, "racer_id": "rychly_demon" },
+    { "slotIndex": 4, "racer_id": "car_night_r5" },
   ],
   /** @fallback inline data — seed source + runtime fallback pokud registry není dostupná */
   racers: [
@@ -132,7 +117,7 @@ export const carNightTheme: Theme = {
       "name": "Tvuj tata",
       "speed": 8,
       "price": 1500,
-      "emoji": "🐴",
+      "emoji": "🏎️",
       "maxStamina": 100,
       "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/car_night_r5.webp",
       "isBuiltIn": true,
@@ -144,7 +129,7 @@ export const carNightTheme: Theme = {
       "name": "Legendarion",
       "speed": 10,
       "price": 99999,
-      "emoji": "🐴",
+      "emoji": "🏎️",
       "maxStamina": 100,
       "isLegendary": true,
       "image": "/themes/_shared/racer-r8.webp",
@@ -156,225 +141,81 @@ export const carNightTheme: Theme = {
   mapMeta: {
     yearStart: 1926,
     place: "Chicago",
-    subtitle: "Motory řvou, účet se vyrovná později.",
+    subtitle: "Organizátor neexistuje. Pravidla si dělá vítěz.",
   },
   board: {
     "id": "small",
     "fieldCount": 21,
-    "racerSlotIndexes": [
-      3,
-      10,
-      17,
-      19
-    ],
+    "racerSlotIndexes": [3, 10, 13, 17, 19],
     "fields": [
-      {
-        "index": 0,
-        "type": "start",
-        "label": "START",
-        "emoji": "🏁",
-        "amount": 2000
-      },
-      {
-        "index": 1,
-        "type": "mafia",
-        "label": "Consigliere",
-        "emoji": "",
-        "amount": 50
-      },
-      {
-        "index": 2,
-        "type": "coins_lose",
-        "label": "Veterinář",
-        "emoji": "🩺",
-        "amount": -600
-      },
-      {
-        "index": 3,
-        "type": "racer",
-        "label": "Závodník",
-        "emoji": "🐎"
-      },
-      {
-        "index": 4,
-        "type": "coins_gain",
-        "label": "Vítěz dostihu",
-        "emoji": "🏆",
-        "amount": 1500
-      },
-      {
-        "index": 5,
-        "type": "coins_lose",
-        "label": "Daňový úřad",
-        "emoji": "🏛️",
-        "amount": -800
-      },
-      {
-        "index": 6,
-        "type": "coins_gain",
-        "label": "Zlaté podkůvky",
-        "emoji": "🥇",
-        "amount": 800
-      },
-      {
-        "index": 7,
-        "type": "coins_lose",
-        "label": "Korupce",
-        "emoji": "💸",
-        "amount": -1200
-      },
-      {
-        "index": 8,
-        "type": "chance",
-        "label": "Osud",
-        "emoji": "🎴"
-      },
-      {
-        "index": 9,
-        "type": "coins_gain",
-        "label": "Dobrá sezona",
-        "emoji": "🌟",
-        "amount": 900
-      },
-      {
-        "index": 10,
-        "type": "racer",
-        "label": "Závodník",
-        "emoji": "🐎"
-      },
-      {
-        "index": 11,
-        "type": "coins_lose",
-        "label": "Krize na trhu",
-        "emoji": "📉",
-        "amount": -500
-      },
-      {
-        "index": 12,
-        "type": "mafia",
-        "label": "Don",
-        "emoji": "🎭"
-      },
-      {
-        "index": 13,
-        "type": "racer",
-        "label": "Zlatá hříva",
-        "emoji": "😈",
-        "amount": -70
-      },
-      {
-        "index": 14,
-        "type": "finance",
-        "label": "Finance",
-        "emoji": "💼"
-      },
-      {
-        "index": 15,
-        "type": "coins_gain",
-        "label": "Věrnostní bonus",
-        "emoji": "🎁",
-        "amount": 500
-      },
-      {
-        "index": 16,
-        "type": "coins_lose",
-        "label": "Zloděj",
-        "emoji": "🦹",
-        "amount": -700
-      },
-      {
-        "index": 17,
-        "type": "racer",
-        "label": "Závodník",
-        "emoji": "🐎"
-      },
-      {
-        "index": 18,
-        "type": "coins_lose",
-        "label": "Veterinář",
-        "emoji": "💊",
-        "amount": -600
-      },
-      {
-        "index": 19,
-        "type": "racer",
-        "label": "Závodník",
-        "emoji": "🐎"
-      },
-      {
-        "index": 20,
-        "type": "chance",
-        "label": "Osud",
-        "emoji": "🎴"
-      }
+      { "index": 0,  "type": "start",      "label": "Start",              "emoji": "🏁",  "amount": 2000 },
+      { "index": 1,  "type": "mafia",      "label": "Konektáž",           "emoji": "🤫",  "amount": 50 },
+      { "index": 2,  "type": "coins_lose", "label": "Mechanik",           "emoji": "🔧",  "amount": -600 },
+      { "index": 3,  "type": "racer",      "label": "Auto",               "emoji": "🏎️" },
+      { "index": 4,  "type": "coins_gain", "label": "Cílová rovinka",     "emoji": "🏁",  "amount": 1500 },
+      { "index": 5,  "type": "coins_lose", "label": "Policie",            "emoji": "🚔",  "amount": -800 },
+      { "index": 6,  "type": "coins_gain", "label": "Nitro bonus",        "emoji": "⚡",  "amount": 800 },
+      { "index": 7,  "type": "coins_lose", "label": "Sabotáž",            "emoji": "💥",  "amount": -1200 },
+      { "index": 8,  "type": "chance",     "label": "Noční los",          "emoji": "🃏" },
+      { "index": 9,  "type": "coins_gain", "label": "Silná sezóna",       "emoji": "💪",  "amount": 900 },
+      { "index": 10, "type": "racer",      "label": "Auto",               "emoji": "🏎️" },
+      { "index": 11, "type": "coins_lose", "label": "Porucha motoru",     "emoji": "🔥",  "amount": -500 },
+      { "index": 12, "type": "mafia",      "label": "Šéf organizace",     "emoji": "🎩" },
+      { "index": 13, "type": "racer",      "label": "Auto",               "emoji": "🏎️" },
+      { "index": 14, "type": "finance",    "label": "Černý trh",          "emoji": "💰" },
+      { "index": 15, "type": "coins_gain", "label": "Věrný mechanik",     "emoji": "🔩",  "amount": 500 },
+      { "index": 16, "type": "coins_lose", "label": "Krádež dílu",        "emoji": "🔩",  "amount": -700 },
+      { "index": 17, "type": "racer",      "label": "Auto",               "emoji": "🏎️" },
+      { "index": 18, "type": "coins_lose", "label": "Přehřátý motor",     "emoji": "🌡️",  "amount": -600 },
+      { "index": 19, "type": "racer",      "label": "Auto",               "emoji": "🏎️" },
+      { "index": 20, "type": "chance",     "label": "Noční los",          "emoji": "🃏" }
     ]
   },
-
   content: {
     "cards": {
       "chance": [
         {
           "id": "ch3",
           "type": "chance",
-          "text": "Pořadatel tě přemisťuje na lepší startovní pozici.",
-          "effect": {
-            "kind": "move",
-            "value": 2
-          },
+          "text": "Organizátor tě přesouvá na lepší startovní pozici.",
+          "effect": { "kind": "move", "value": 2 },
           "effectLabel": "Posun +2 pole"
         },
         {
           "id": "ch4",
           "type": "chance",
-          "text": "Rozhodčí odhalil chybu — vracíš se zpět.",
-          "effect": {
-            "kind": "move",
-            "value": -3
-          },
+          "text": "Rozhodčí odhalil podvod — vracíš se zpět.",
+          "effect": { "kind": "move", "value": -3 },
           "effectLabel": "Posun -3 pole"
         },
         {
           "id": "ch6",
           "type": "chance",
-          "text": "Chaos před startem tě rozhodil a ty jsi přehlédl signál. Čekáš.",
-          "effect": {
-            "kind": "skip_turn"
-          },
+          "text": "Policie zavřela ulici. Čekáš na nový signál.",
+          "effect": { "kind": "skip_turn" },
           "effectLabel": "Vynecháš příští tah"
         },
         {
           "id": "ch8",
           "type": "chance",
-          "text": "Tvoje závodní číslo bylo omylem přiděleno dvakrát. Chaos.",
-          "effect": {
-            "kind": "move",
-            "value": -2
-          },
+          "text": "Tvoje startovní číslo bylo přiděleno dvakrát. Chaos v garáži.",
+          "effect": { "kind": "move", "value": -2 },
           "effectLabel": "Posun -2 pole"
         },
         {
           "id": "ch9",
           "type": "chance",
-          "text": "Zákeřný sok tvým závodníkům přimíchal do krmení sedativa. Příští 2 kola závodí na poloviční výkon.",
-          "effect": {
-            "kind": "stamina_debuff",
-            "factor": 0.5,
-            "duration": 2
-          },
-          "effectLabel": "Stamina ×0.5 (2 kola)"
+          "text": "Zákeřný sok tvým autům podlil palivo. Příští 2 kola jedou na poloviční výkon.",
+          "effect": { "kind": "stamina_debuff", "factor": 0.5, "duration": 2 },
+          "effectLabel": "Výkon ×0.5 (2 kola)"
         },
         {
           "id": "ch10",
           "type": "chance",
-          "text": "Uvědomil sis, že příští závod musíš vyhrát za každou cenu. Čas na legendu!",
-          "effect": {
-            "kind": "give_racer",
-            "racerId": "legendarion"
-          },
+          "text": "Záhadný mecenáš ti nechává v garáži klíče od speciálu. Legendarion je tvůj.",
+          "effect": { "kind": "give_racer", "racerId": "r8" },
           "effectLabel": "Získáš Legendariona",
-          "themeTags": [
-            "horse"
-          ]
+          "themeTags": ["car"]
         }
       ],
       "finance": []
