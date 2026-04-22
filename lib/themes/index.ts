@@ -179,6 +179,8 @@ export interface ThemeLabels {
  */
 export interface ThemeAssets {
   boardBgImage?: string;
+  /** Obrázek středového panelu boardu — renderuje se jako absolutní vrstva pod texty. */
+  centerBgImage?: string;
   /** Kanonický: racer.id → image URL */
   racerImages?: Partial<Record<string, string>>;
   /** @deprecated použij racerImages */

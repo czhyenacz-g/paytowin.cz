@@ -3001,19 +3001,27 @@ export default function GameBoard({ gameCode }: Props) {
                 })()}
 
                 <div
-                  className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center border-2 p-4 text-center shadow-inner ${theme.colors.centerBorder} ${theme.colors.centerBackground}`}
+                  className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center border-2 p-4 text-center shadow-inner overflow-hidden ${theme.colors.centerBorder} ${theme.colors.centerBackground}`}
                   style={board.shape === "stadium"
                     ? { width: "50%", height: "40%", borderRadius: "25%" }
                     : { width: "44%", height: "44%", borderRadius: "50%" }}
                 >
+                  {theme.assets?.centerBgImage && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={theme.assets.centerBgImage}
+                      alt=""
+                      className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+                    />
+                  )}
                   {hoveredField && !isFieldVisible(hoveredField) ? (
-                    <div className="max-w-[180px] text-center">
+                    <div className="relative z-10 max-w-[180px] text-center">
                       <div className="text-3xl">🌫️</div>
                       <div className={`mt-2 text-sm font-semibold ${theme.colors.centerTitle}`}>Zakryté mlhou</div>
                       <div className={`mt-1 text-xs ${theme.colors.centerSubtitle}`}>Sem ještě nikdo nedošel</div>
                     </div>
                   ) : hoveredField ? (
-                    <div className="max-w-[180px]">
+                    <div className="relative z-10 max-w-[180px]">
                       <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
                         {hoveredField.type === "racer" ? (hoveredField.racer ? "racer" : "slot") : hoveredField.type === "coins_gain" ? "reward" : hoveredField.type === "coins_lose" ? "risk" : hoveredField.type}
                       </div>
@@ -3100,7 +3108,7 @@ export default function GameBoard({ gameCode }: Props) {
                       )}
                     </div>
                   ) : coinsFeedback ? (
-                    <div style={{ transition: "opacity 0.25s ease" }}>
+                    <div className="relative z-10" style={{ transition: "opacity 0.25s ease" }}>
                       <div
                         className="text-5xl font-black tabular-nums leading-none"
                         style={{ color: coinsFeedback.kind === "gain" ? "#34d399" : "#f87171" }}
@@ -3115,7 +3123,7 @@ export default function GameBoard({ gameCode }: Props) {
                       </div>
                     </div>
                   ) : (
-                    <div>
+                    <div className="relative z-10">
                       <div className="text-4xl">{theme.labels.racingEmoji}</div>
                       <div className={`mt-1 text-sm font-semibold ${theme.colors.centerTitle}`}>{theme.labels.centerTitle}</div>
                       <div className={`mt-1 text-xs ${theme.colors.centerSubtitle}`}>{theme.labels.centerSubtitle}</div>
