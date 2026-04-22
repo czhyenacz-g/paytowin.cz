@@ -12,8 +12,8 @@ export const horseClassicTheme: Theme = {
     cardBackground:     "bg-amber-50",
     boardSurface:       "bg-green-700/80",
     boardSurfaceBorder: "border-green-900",
-    centerBackground:   "bg-green-800",
-    centerBorder:       "border-green-600",
+    centerBackground:   "bg-transparent",
+    centerBorder:       "border-green-600/0",
     centerTitle:        "text-stone-900",
     centerSubtitle:     "text-stone-700",
     fieldStyles: {
