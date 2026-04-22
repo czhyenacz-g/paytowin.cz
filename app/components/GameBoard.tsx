@@ -2525,21 +2525,21 @@ export default function GameBoard({ gameCode }: Props) {
                           <div className="absolute inset-0 bg-[#f4efe4]/82 z-0" />
                           <div className="relative z-10">
                             {/* Prázdný prostor pro background masthead */}
-                            <div className="pt-20" />
+                            <div className="pt-24" />
                             {/* Headline sekce */}
-                            <div className="px-8 pb-4 border-b border-[#6b7257]/50">
+                            <div className="pl-[25%] pr-8 pb-4 border-b border-[#6b7257]/50">
                               <div className="text-[9px] font-bold uppercase tracking-[0.22em] text-[#6b7257]">Aktuální pořadí</div>
                               <h2 className="mt-1 font-serif text-2xl font-black leading-tight text-[#6b7257]">Průběžné výsledky dostihů</h2>
                             </div>
                             {/* Tabulka */}
-                            <div className="px-8 py-5">
+                            <div className="pl-[25%] pr-8 py-5">
                               <ScoreTable
                                 players={players}
                                 bustOrder={gameState?.bust_order ?? []}
                               />
                             </div>
                             {/* Zavřít */}
-                            <div className="px-8 pb-6">
+                            <div className="pl-[25%] pr-8 pb-6">
                               <button
                                 onClick={() => setScorePopupOpen(false)}
                                 className="w-full border border-[#6b7257] bg-[#6b7257]/15 px-4 py-2.5 text-center text-sm font-semibold text-[#6b7257] hover:bg-[#6b7257]/25 transition"
