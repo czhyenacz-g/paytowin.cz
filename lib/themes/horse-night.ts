@@ -36,7 +36,7 @@ export const horseNightTheme: Theme = {
     playerCardActive:  "border-amber-400 bg-slate-700 shadow-sm",
     playerCardNormal:  "border-slate-600 bg-slate-700",
     playerCardHover:   "border-blue-400 bg-slate-600 shadow-sm",
-    arenaGradient:     "url('/savana-night.webp') center / cover no-repeat",
+    arenaGradient:     "url('/horse-night.webp') center / cover no-repeat",
   },
   labels: {
     themeName:      "Dostihy — Noc",
@@ -151,6 +151,9 @@ export const horseNightTheme: Theme = {
       "slotIndex": 7
     }
   ],
+  assets: {
+    boardBgImage: "/horse-night.webp",
+  },
   mapMeta: {
     yearStart: 1921,
     place: "New Orleans",
