@@ -130,6 +130,11 @@ export interface ThemeColors {
    * Vytváří "venue atmosphere" kolem boardu — tráva, beton, aréna.
    */
   arenaGradient?: string;
+  /**
+   * Druhá varianta arenaGradient pro ambientní crossfade animaci.
+   * Pokud je uvedena, GameBoard střídá obě vrstvy s pomalým fade přechodem (~40 s).
+   */
+  arenaGradientAlt?: string;
 }
 
 // ─── ThemeLabels ──────────────────────────────────────────────────────────────
