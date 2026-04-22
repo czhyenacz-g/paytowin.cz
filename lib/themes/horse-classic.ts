@@ -82,6 +82,9 @@ export const horseClassicTheme: Theme = {
       { index: 20, type: "chance",     label: "Rozmary osudu",       emoji: "🎴" },
     ],
   },
+  assets: {
+    boardBgImage: "/chuchle.png",
+  },
   racerRefs: [
     { slotIndex: 0, racer_id: "r6" },
     { slotIndex: 1, racer_id: "viento_dorado" },
