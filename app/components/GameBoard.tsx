@@ -2532,7 +2532,7 @@ export default function GameBoard({ gameCode }: Props) {
                               <h2 className="mt-1 font-serif text-2xl font-black leading-tight text-[#6b7257]">Průběžné výsledky dostihů</h2>
                             </div>
                             {/* Tabulka */}
-                            <div className="pl-[25%] pr-8 py-5">
+                            <div className="pl-[25%] pr-[25%] py-5">
                               <ScoreTable
                                 players={players}
                                 bustOrder={gameState?.bust_order ?? []}
