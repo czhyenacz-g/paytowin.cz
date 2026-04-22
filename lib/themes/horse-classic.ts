@@ -14,8 +14,8 @@ export const horseClassicTheme: Theme = {
     boardSurfaceBorder: "border-green-900",
     centerBackground:   "bg-green-800",
     centerBorder:       "border-green-600",
-    centerTitle:        "text-amber-200",
-    centerSubtitle:     "text-green-300",
+    centerTitle:        "text-stone-700",
+    centerSubtitle:     "text-stone-500",
     fieldStyles: {
       start:      "h-20 w-20 border-emerald-900 bg-emerald-800 text-amber-200",
       coins_gain: "h-[72px] w-[72px] border-green-600 bg-amber-100 text-green-900",
