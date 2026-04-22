@@ -5,3 +5,5 @@ node_modules/
 .tokens
 .vercel
 public/tmp_prepare/
+public/**/*.png
+public/*.png
