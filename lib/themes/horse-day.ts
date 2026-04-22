@@ -11,7 +11,7 @@ export const horseDayTheme: Theme = {
   colors: {
     pageBackground:     "bg-slate-100",
     cardBackground:     "bg-white",
-    boardSurface:       "bg-[#fefce8]/80",
+    boardSurface:       "bg-[#fefce8]/50",
     boardSurfaceBorder: "border-[#dddddd]",
     centerBackground:   "bg-[#eeeeee]",
     centerBorder:       "border-[#dddddd]",
@@ -167,9 +167,7 @@ export const horseDayTheme: Theme = {
     }
   ],
 
-  assets: {
-    boardBgImage: "/horse-day-board.webp",
-  },
+  assets: {},
 
   mapMeta: {
     yearStart: 1921,
