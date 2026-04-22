@@ -59,6 +59,7 @@ import IntroOverlay from "./IntroOverlay";
 import ScoreTable from "./ScoreTable";
 import BrandLogo from "./BrandLogo";
 import { useBgMusic } from "@/lib/audio/music";
+import { sfxPlay, type SoundId } from "@/lib/audio/sfx";
 
 // Styly polí jsou součástí theme systému (lib/themes/*)
 // Přistupuj přes: theme.colors.fieldStyles[field.type]
@@ -625,6 +626,23 @@ export default function GameBoard({ gameCode }: Props) {
     }
   }, []);
 
+  const playSfx = React.useCallback((id: SoundId) => {
+    if (!soundEnabledRef.current) return;
+    try {
+      if (!audioCtxRef.current) audioCtxRef.current = new AudioContext();
+      sfxPlay(id, audioCtxRef.current);
+    } catch { /* AudioContext nedostupný */ }
+  }, []);
+
+  // Race sound — přehraje při startu závodu (přechod null → RaceOffer)
+  const pendingRaceRef = React.useRef<boolean>(false);
+  React.useEffect(() => {
+    const isRaceNow = gameState?.offer_pending?.type === "race";
+    if (isRaceNow && !pendingRaceRef.current) playSfx("race");
+    pendingRaceRef.current = !!isRaceNow;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState?.offer_pending?.type]);
+
   // ── Načtení hry ze Supabase ──────────────────────────────────────────────────
   React.useEffect(() => {
     if (!gameCode) return;
@@ -756,6 +774,8 @@ export default function GameBoard({ gameCode }: Props) {
     if (coinsFeedbackTimerRef.current) clearTimeout(coinsFeedbackTimerRef.current);
     setCoinsFeedback({ amount, kind, playerName, fieldLabel });
     coinsFeedbackTimerRef.current = setTimeout(() => setCoinsFeedback(null), 3000);
+    playSfx(kind === "gain" ? "coin_gain" : "coin_loss");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /** Zobrazí telegramový proužek + přehraje morse cue prvního CAPS segmentu. */
@@ -825,6 +845,7 @@ export default function GameBoard({ gameCode }: Props) {
 
     console.log(`[turn-flow] roll start — player="${currentPlayer.name}" pos=${currentPlayer.position} roll=${roll}`);
 
+    playSfx("dice");
     setIsRolling(true);
     setDisplayRoll(null);
     const animDuration = 800 + Math.random() * 400;
@@ -991,6 +1012,7 @@ export default function GameBoard({ gameCode }: Props) {
           ];
           if (wentBankrupt) {
             logLines.push(`💀 ${finalRentedPlayer.name} zkrachoval!`);
+            playSfx("bankrupt");
             console.log(`[racer-rent] ${finalRentedPlayer.name} went bankrupt after paying rent`);
           } else if (wouldBankruptRent) {
             logLines.push(`${finalRentedPlayer.name} prodal koně a přežil! 💰`);
@@ -1072,7 +1094,7 @@ export default function GameBoard({ gameCode }: Props) {
       const wouldBankrupt = afterField.coins <= 0 && currentPlayer.coins > 0;
       const finalPlayer = wouldBankrupt ? await confirmBankruptOrSell(afterField) : afterField;
       const wentBankrupt = finalPlayer.coins <= 0;
-      if (wentBankrupt) logLines.push(`💀 ${finalPlayer.name} zkrachoval!`);
+      if (wentBankrupt) { logLines.push(`💀 ${finalPlayer.name} zkrachoval!`); playSfx("bankrupt"); }
       else if (wouldBankrupt) logLines.push(`${finalPlayer.name} prodal koně a přežil! 💰`);
 
       const updatedPlayers = players.map((p, i) =>
@@ -1169,7 +1191,7 @@ export default function GameBoard({ gameCode }: Props) {
     }
     const wentBankrupt = finalCoins <= 0;
     const logLines = [`${player.name} koupil ${racer.emoji} ${racer.name} za ${racer.price} 💰`];
-    if (wentBankrupt) logLines.push(`💀 ${player.name} zkrachoval!`);
+    if (wentBankrupt) { logLines.push(`💀 ${player.name} zkrachoval!`); playSfx("bankrupt"); }
     else if (wouldBankruptBuy) logLines.push(`${player.name} prodal koně a přežil! 💰`);
 
     // Zahrnuje finální koně — race trigger potřebuje vidět aktuální ownership
@@ -1444,7 +1466,7 @@ export default function GameBoard({ gameCode }: Props) {
     const wouldBankruptCard = updatedPlayer.coins <= 0 && player.coins > 0;
     const finalUpdatedPlayer = wouldBankruptCard ? await confirmBankruptOrSell(updatedPlayer) : updatedPlayer;
     const wentBankrupt = finalUpdatedPlayer.coins <= 0;
-    if (wentBankrupt) logLines.push(`💀 ${player.name} zkrachoval!`);
+    if (wentBankrupt) { logLines.push(`💀 ${player.name} zkrachoval!`); playSfx("bankrupt"); }
     else if (wouldBankruptCard) logLines.push(`${player.name} prodal koně a přežil! 💰`);
 
     // FIX: position do DB jen pokud ji karta skutečně změnila (kind==="move").
@@ -2499,7 +2521,7 @@ export default function GameBoard({ gameCode }: Props) {
                 {/* Score popup */}
                 <div className="relative shrink-0">
                   <button
-                    onClick={() => setScorePopupOpen(v => !v)}
+                    onClick={() => { const next = !scorePopupOpen; setScorePopupOpen(next); if (next) playSfx("newspaper"); }}
                     className="rounded-[3px] bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-500 hover:bg-slate-200 transition select-none"
                     title="Zobrazit score"
                   >
