@@ -3118,15 +3118,19 @@ export default function GameBoard({ gameCode }: Props) {
 
                 {bankruptWarning ? (
                   <div className="rounded-[4px] border-2 border-red-500 bg-red-950 p-4 space-y-3">
-                    <div className="text-sm font-bold text-red-300">💀 Hrozí ti bankrot!</div>
-                    <div className="text-xs text-red-400">
-                      Máš {bankruptWarning.horses.length} {bankruptWarning.horses.length === 1 ? "koně" : "koní"} v hodnotě{" "}
-                      <strong className="text-white">{bankruptWarning.totalSellValue} 💰</strong> (80 % ceny).
+                    <div>
+                      <div className="text-sm font-bold text-red-300">💀 Všechno, nebo nic</div>
+                      <div className="mt-1 text-xs text-red-400/80">
+                        Prodají se všichni tví koně bance za 80 % ceny.
+                        {!bankruptWarning.willSurvive && " Ani to nestačí — zkrachuješ tak či tak."}
+                      </div>
                     </div>
-                    {bankruptWarning.willSurvive ? (
+                    <div className="text-xs text-red-400">
+                      {bankruptWarning.horses.length} {bankruptWarning.horses.length === 1 ? "kůň" : "koní"} · výnos{" "}
+                      <strong className="text-white">{bankruptWarning.totalSellValue} 💰</strong>
+                    </div>
+                    {bankruptWarning.willSurvive && (
                       <div className="text-xs text-emerald-400">✓ Prodej tě zachrání.</div>
-                    ) : (
-                      <div className="text-xs text-red-400">⚠ Ani prodej nestačí — zkrachuješ tak či tak.</div>
                     )}
                     <div className="flex gap-2">
                       <button
