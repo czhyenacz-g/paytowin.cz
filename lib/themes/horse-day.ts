@@ -167,7 +167,9 @@ export const horseDayTheme: Theme = {
     }
   ],
 
-  assets: {},
+  assets: {
+    boardBgImage: "/horse-day-board.webp",
+  },
 
   mapMeta: {
     yearStart: 1921,
