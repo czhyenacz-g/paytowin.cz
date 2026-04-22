@@ -12,8 +12,8 @@ export const horseNightTheme: Theme = {
     cardBackground:     "bg-slate-800",
     boardSurface:       "bg-slate-700/80",
     boardSurfaceBorder: "border-slate-600",
-    centerBackground:   "bg-green-950",
-    centerBorder:       "border-green-800",
+    centerBackground:   "bg-transparent",
+    centerBorder:       "border-green-800/0",
     centerTitle:        "text-slate-200",
     centerSubtitle:     "text-slate-400",
     fieldStyles: {
@@ -153,6 +153,7 @@ export const horseNightTheme: Theme = {
   ],
   assets: {
     boardBgImage: "/horse-night.webp",
+    centerBgImage: "/plaketa-dark-rectangle.webp",
   },
   mapMeta: {
     yearStart: 1921,
