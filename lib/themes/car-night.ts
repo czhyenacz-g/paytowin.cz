@@ -13,8 +13,8 @@ export const carNightTheme: Theme = {
     cardBackground:     "bg-slate-800",
     boardSurface:       "bg-slate-700/25",
     boardSurfaceBorder: "border-slate-600",
-    centerBackground:   "bg-transparent",
-    centerBorder:       "border-stone-700/40",
+    centerBackground:   "bg-stone-950",
+    centerBorder:       "border-stone-700",
     centerTitle:        "text-slate-200",
     centerSubtitle:     "text-slate-400",
     fieldStyles: {
@@ -139,9 +139,6 @@ export const carNightTheme: Theme = {
       "slotIndex": 5
     }
   ],
-  assets: {
-    centerBgImage: "/car-night-center-dark.webp",
-  },
   mapMeta: {
     yearStart: 1926,
     place: "Chicago",
