@@ -2269,44 +2269,60 @@ export default function GameBoard({ gameCode }: Props) {
     });
     return (
       <div className={`min-h-screen ${theme.colors.pageBackground} flex items-center justify-center p-6`}>
-        <div className={`w-full max-w-md rounded-3xl ${theme.colors.cardBackground} p-8 shadow-lg space-y-5`}>
+        <div className="w-full max-w-md bg-[#f4efe4] border border-stone-400 shadow-2xl overflow-hidden">
+
+          {/* ── Novinový masthead ── */}
+          <div className="px-6 pt-5 pb-4 border-b-4 border-stone-800 text-center">
+            <div className="text-[9px] font-bold uppercase tracking-[0.28em] text-stone-400">Mimořádné vydání</div>
+            <div className="mt-0.5 font-serif text-2xl font-black uppercase tracking-widest text-stone-900">Pay to Win Gazette</div>
+            <div className="mt-0.5 text-[9px] text-stone-400 tracking-wide">Archiv výsledků · Sezóna uzavřena</div>
+          </div>
 
           {isSoloLoss ? (
-            /* ── Solo prohra ────────────────────────────────── */
-            <div className="text-center space-y-2">
+            /* ── Solo prohra ── */
+            <div className="px-6 py-8 text-center border-b border-stone-300">
               <div className="text-5xl">💀</div>
-              <h2 className={`text-2xl font-bold ${theme.colors.textPrimary}`}>Zkrachoval jsi!</h2>
-              <p className={`text-sm ${theme.colors.textMuted}`}>Tréninková hra skončila porážkou.</p>
+              <div className="mt-3 text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Tréninková zpráva</div>
+              <h2 className="mt-1 font-serif text-2xl font-black text-stone-900">Zkrachoval jsi</h2>
+              <p className="mt-1 text-xs italic text-stone-500">Tréninková hra skončila porážkou.</p>
             </div>
           ) : (
-            /* ── Multiplayer výhra ──────────────────────────── */
+            /* ── Multiplayer výhra ── */
             <>
-              <div className="text-center space-y-1">
-                <div className="text-4xl">🏆</div>
-                <h2 className={`text-2xl font-bold ${theme.colors.textPrimary}`}>
-                  Vítěz: {winner?.name ?? "—"}
+              <div className="px-6 py-5 border-b border-stone-300">
+                <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Vítěz sezóny</div>
+                <h2 className="mt-1 font-serif text-3xl font-black leading-tight text-stone-900">
+                  {winner?.name ?? "—"}
                 </h2>
-                <p className={`text-sm ${theme.colors.textMuted}`}>Sezóna skončila. Tohle je finální pořadí.</p>
+                <p className="mt-1.5 text-xs italic text-stone-500">
+                  Poslední závodník, který opustil závod bez dluhů.
+                </p>
               </div>
-              <div className={`rounded-2xl border px-4 py-3 ${theme.colors.boardSurface} ${theme.colors.boardSurfaceBorder}`}>
+              <div className="px-6 py-4 border-b border-stone-300">
+                <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Konečné pořadí</div>
                 <ScoreTable players={players} bustOrder={gameState?.bust_order ?? []} />
               </div>
               {sortedLosers.length > 0 && (
-                <div className="space-y-2">
-                  {sortedLosers.map(p => (
-                    <div key={p.id} className={`rounded-xl px-4 py-3 ${theme.colors.boardSurface} border ${theme.colors.boardSurfaceBorder}`}>
-                      <div className={`text-xs font-semibold ${theme.colors.textPrimary}`}>💀 {p.name}</div>
-                      <div className={`mt-0.5 text-xs ${theme.colors.textMuted}`}>{bustLine(p.id)}</div>
-                    </div>
-                  ))}
+                <div className="px-6 py-4 border-b border-stone-300">
+                  <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Padlí závodníci</div>
+                  <div className="space-y-2">
+                    {sortedLosers.map(p => (
+                      <div key={p.id}>
+                        <span className="text-xs font-bold text-stone-800">💀 {p.name} —</span>
+                        <span className="text-xs italic text-stone-500"> {bustLine(p.id)}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </>
           )}
 
-          <a href="/" className="block rounded-2xl bg-slate-900 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-slate-800 transition">
-            ← Nová hra
-          </a>
+          <div className="px-6 py-4">
+            <a href="/" className="block bg-stone-900 px-4 py-3 text-center text-sm font-semibold text-[#f4efe4] hover:bg-stone-700 transition">
+              ← Nová hra
+            </a>
+          </div>
         </div>
       </div>
     );
@@ -2492,15 +2508,18 @@ export default function GameBoard({ gameCode }: Props) {
                         onClick={() => setScorePopupOpen(false)}
                       />
                       <div
-                        className="absolute left-0 top-full z-50 mt-1.5 w-56 rounded-lg bg-white shadow-xl ring-1 ring-black/10 p-3"
+                        className="absolute left-0 top-full z-50 mt-1.5 w-64 bg-[#f4efe4] border border-stone-400 shadow-xl overflow-hidden"
                       >
-                        <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                          Průběžné skóre
+                        <div className="px-3 pt-3 pb-2 border-b-2 border-stone-800 text-center">
+                          <div className="text-[8px] font-bold uppercase tracking-[0.25em] text-stone-400">Pay to Win Gazette</div>
+                          <div className="font-serif text-sm font-black text-stone-900 leading-tight">Průběžné výsledky dostihů</div>
                         </div>
-                        <ScoreTable
-                          players={players}
-                          bustOrder={gameState?.bust_order ?? []}
-                        />
+                        <div className="px-3 py-2.5">
+                          <ScoreTable
+                            players={players}
+                            bustOrder={gameState?.bust_order ?? []}
+                          />
+                        </div>
                       </div>
                     </>
                   )}
