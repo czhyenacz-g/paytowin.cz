@@ -2718,11 +2718,14 @@ export default function GameBoard({ gameCode }: Props) {
             <div className={`relative mx-auto w-full overflow-visible ${board.shape === "stadium" ? "aspect-[20/18]" : "aspect-square max-w-[760px]"}`}>
               <div
                 className={`absolute inset-0 overflow-hidden rounded-[4px] border-2 ${theme.colors.boardSurfaceBorder} ${theme.colors.boardSurface}`}
-                style={{
-                  ...(boardBgUrl ? { backgroundImage: `url(${boardBgUrl})`, backgroundSize: "cover", backgroundPosition: "center" } : {}),
-                  boxShadow: "inset 0 2px 24px rgba(0,0,0,0.09), 0 4px 32px rgba(0,0,0,0.10)",
-                }}
+                style={{ boxShadow: "inset 0 2px 24px rgba(0,0,0,0.09), 0 4px 32px rgba(0,0,0,0.10)" }}
               >
+                {boardBgUrl && (
+                  <div
+                    className="pointer-events-none absolute inset-0"
+                    style={{ backgroundImage: `url(${boardBgUrl})`, backgroundSize: "cover", backgroundPosition: "center", opacity: 0.5 }}
+                  />
+                )}
 
                 {/* ── SVG traťový pás ── */}
                 <svg
