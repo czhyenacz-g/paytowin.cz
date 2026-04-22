@@ -15,8 +15,8 @@ export const carDayTheme: Theme = {
     boardSurfaceBorder: "border-stone-300",
     centerBackground:   "bg-transparent",
     centerBorder:       "border-stone-400/0",
-    centerTitle:        "text-slate-700",
-    centerSubtitle:     "text-slate-400",
+    centerTitle:        "text-stone-800",
+    centerSubtitle:     "text-stone-600",
     fieldStyles: {
       start:      "h-20 w-20 border-red-400 bg-red-500 text-white",
       coins_gain: "h-[72px] w-[72px] border-emerald-400 bg-emerald-100 text-emerald-800",
