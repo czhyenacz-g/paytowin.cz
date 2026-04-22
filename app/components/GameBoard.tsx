@@ -2542,7 +2542,7 @@ export default function GameBoard({ gameCode }: Props) {
                             <div className="pl-[25%] pr-8 pb-6">
                               <button
                                 onClick={() => setScorePopupOpen(false)}
-                                className="w-1/2 border border-[#6b7257] bg-[#6b7257]/15 px-4 py-2.5 text-center text-sm font-semibold text-[#6b7257] hover:bg-[#6b7257]/25 transition"
+                                className="w-3/4 border border-[#6b7257] bg-[#6b7257]/15 px-4 py-2.5 text-center text-sm font-semibold text-[#6b7257] hover:bg-[#6b7257]/25 transition"
                               >
                                 Zavřít
                               </button>

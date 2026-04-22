@@ -53,7 +53,7 @@ export default function ScoreTable({ players, bustOrder, className = "" }: Props
             <td className="w-6 py-1.5 pr-2 text-center text-xs font-bold text-slate-400 tabular-nums">
               {i + 1}.
             </td>
-            <td className="py-1.5 pr-3 font-medium text-slate-800 truncate max-w-[120px]">
+            <td className="py-1.5 pr-1 font-medium text-slate-800 truncate max-w-[120px]">
               {entry.name}
             </td>
             <td className="py-1.5 text-right tabular-nums">
