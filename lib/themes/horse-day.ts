@@ -13,8 +13,8 @@ export const horseDayTheme: Theme = {
     cardBackground:     "bg-white",
     boardSurface:       "bg-[#fefce8]/50",
     boardSurfaceBorder: "border-[#dddddd]",
-    centerBackground:   "bg-[#eeeeee]",
-    centerBorder:       "border-[#dddddd]",
+    centerBackground:   "bg-transparent",
+    centerBorder:       "border-[#dddddd]/0",
     centerTitle:        "text-slate-700",
     centerSubtitle:     "text-slate-400",
     fieldStyles: {

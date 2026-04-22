@@ -13,8 +13,8 @@ export const carDayTheme: Theme = {
     cardBackground:     "bg-white",
     boardSurface:       "bg-stone-200/80",
     boardSurfaceBorder: "border-stone-300",
-    centerBackground:   "bg-stone-300",
-    centerBorder:       "border-stone-400",
+    centerBackground:   "bg-transparent",
+    centerBorder:       "border-stone-400/0",
     centerTitle:        "text-slate-700",
     centerSubtitle:     "text-slate-400",
     fieldStyles: {
