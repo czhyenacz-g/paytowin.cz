@@ -2044,6 +2044,9 @@ export default function GameBoard({ gameCode }: Props) {
     : (!!myPlayerId && currentPlayer?.id === myPlayerId && !isBankrupt(currentPlayer) && !isRolling && !isMoving && !isSpectator && !hasPendingRollDecision);
   const currentRound = gameState ? Math.floor(gameState.turn_count / Math.max(1, players.length)) + 1 : 1;
   const myPlayer = players.find((player) => player.id === myPlayerId) ?? null;
+  // Online: bankrotovaný hráč se stává pasivním pozorovatelem — vidí hru, ale nemůže jednat.
+  // Local: všichni hráči sdílejí zařízení, pojem "můj hráč" neexistuje.
+  const iAmBankrupt = !isLocalGame && !!myPlayer && isBankrupt(myPlayer);
   const shouldShowRacerGuide =
     viewerRole === "player" &&
     !suppressGuideThisTurn &&
@@ -2218,27 +2221,15 @@ export default function GameBoard({ gameCode }: Props) {
             /* ── Multiplayer výhra ──────────────────────────── */
             <>
               <div className="text-center space-y-1">
-                <div className="text-5xl">🏆</div>
-                <h2 className={`text-2xl font-bold ${theme.colors.textPrimary}`}>Hra skončila!</h2>
+                <div className="text-4xl">🏆</div>
+                <h2 className={`text-2xl font-bold ${theme.colors.textPrimary}`}>
+                  Vítěz: {winner?.name ?? "—"}
+                </h2>
+                <p className={`text-sm ${theme.colors.textMuted}`}>Sezóna skončila. Tohle je finální pořadí.</p>
               </div>
-              {winner && (
-                <div className="rounded-2xl border-2 border-amber-400 bg-amber-50 p-5 text-center space-y-1">
-                  <div className="text-3xl">👑</div>
-                  <div className="text-xl font-bold text-amber-800">{winner.name}</div>
-                  <div className="text-amber-600 text-sm">{winner.coins} 💰 na účtu</div>
-                </div>
-              )}
-              {losers.length > 0 && (
-                <div className="space-y-2">
-                  <div className={`text-xs font-semibold uppercase tracking-wide ${theme.colors.textMuted}`}>Zkrachovali</div>
-                  {losers.map(p => (
-                    <div key={p.id} className={`flex items-center justify-between rounded-xl border px-4 py-3 ${theme.colors.playerCardNormal}`}>
-                      <span className={`font-medium line-through ${theme.colors.textMuted}`}>{p.name}</span>
-                      <span className="text-xs text-red-400">💀 Zkrachoval</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <div className={`rounded-2xl border px-4 py-3 ${theme.colors.boardSurface} ${theme.colors.boardSurfaceBorder}`}>
+                <ScoreTable players={players} bustOrder={gameState?.bust_order ?? []} />
+              </div>
             </>
           )}
 
@@ -3131,6 +3122,11 @@ export default function GameBoard({ gameCode }: Props) {
                         <a href={`/?join=${gameCode}`} className="underline hover:text-indigo-700">úvodní stránce</a>.
                       </div>
                     )}
+                  </div>
+                ) : iAmBankrupt ? (
+                  <div className="w-full rounded-[4px] bg-slate-800 px-4 py-4 text-center">
+                    <div className="text-sm font-semibold text-slate-300">💀 Jsi pozorovatel</div>
+                    <div className="mt-1 text-xs text-slate-500">Sleduj, kdo přežije do konce.</div>
                   </div>
                 ) : isRolling ? (
                   <div className="w-full rounded-[4px] bg-amber-100 px-4 py-4 text-center text-amber-700 font-semibold animate-pulse">
