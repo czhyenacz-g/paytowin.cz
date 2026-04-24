@@ -30,50 +30,41 @@ type Phase = "prestart" | "arena" | "result";
 
 const BOARD_DUEL_CONFIG: DuelConfig = { gridW: 20, gridH: 14, maxTicks: 200, tickMs: 120 };
 const DUEL_REWARD = 50;
-const PRESTART_TICKS = 5; // sekund na předstartovní obrazovce
+const PRESTART_TICKS = 5;
 
 // ─── sub-komponenty ────────────────────────────────────────────────────────────
 
 function KeyCap({ label }: { label: string }) {
   return (
     <span
-      className="inline-flex items-center justify-center rounded-[5px] border border-b-[3px] bg-slate-700 font-mono font-black text-white px-2 py-0.5 text-sm min-w-[2rem] leading-none shadow-sm"
-      style={{ borderColor: "rgba(255,255,255,0.25)", borderBottomColor: "rgba(255,255,255,0.12)" }}
+      className="inline-flex items-center justify-center rounded-[5px] border border-b-[3px] bg-slate-700 font-mono font-black text-white px-2.5 py-1 text-sm min-w-[2.2rem] leading-none shadow-sm"
+      style={{ borderColor: "rgba(255,255,255,0.28)", borderBottomColor: "rgba(255,255,255,0.10)" }}
     >
       {label}
     </span>
   );
 }
 
-function SideCard({
-  contestant,
-  keys,
-  label,
-  align,
-}: {
-  contestant: DuelContestant;
-  keys: React.ReactNode;
-  label: string;
-  align: "left" | "right";
-}) {
-  const al = align === "left" ? "items-start text-left" : "items-end text-right";
+function PlayerCard({ contestant, label }: { contestant: DuelContestant; label: string }) {
   return (
-    <div className={`flex flex-col gap-1.5 w-28 shrink-0 ${al}`}>
-      <div
-        className="rounded-xl border-2 p-2.5 bg-black/50 w-full flex flex-col gap-1"
-        style={{ borderColor: contestant.color }}
-      >
-        <div className="text-3xl leading-none text-center">{contestant.horse?.emoji ?? "🐎"}</div>
-        <div className="text-[10px] font-bold text-white/90 text-center leading-tight">
-          {contestant.horse?.name ?? "Bez koně"}
-        </div>
-        <div className="text-[9px] font-semibold text-center" style={{ color: contestant.color }}>
-          {contestant.name}
-        </div>
-        <div className="text-[9px] text-slate-400 text-center font-mono">1 : 2.5</div>
-        <div className="text-[7px] text-slate-600 text-center uppercase tracking-widest font-bold">{label}</div>
+    <div
+      className="rounded-xl border-2 p-3 bg-black/60 flex flex-col gap-1.5 items-center w-36"
+      style={{
+        borderColor: contestant.color,
+        boxShadow: `0 0 16px ${contestant.color}28`,
+      }}
+    >
+      <div className="text-5xl leading-none">{contestant.horse?.emoji ?? "🐎"}</div>
+      <div className="text-sm font-bold text-white/90 text-center leading-tight mt-0.5">
+        {contestant.horse?.name ?? "Bez koně"}
       </div>
-      <div className={`flex gap-1 ${align === "right" ? "justify-end" : "justify-start"}`}>{keys}</div>
+      <div className="text-xs font-bold text-center" style={{ color: contestant.color }}>
+        {contestant.name}
+      </div>
+      <div className="rounded-full bg-slate-800 border border-slate-700 px-2.5 py-0.5 text-[10px] text-slate-300 font-mono mt-0.5">
+        1 : 2.5
+      </div>
+      <div className="text-[7px] text-slate-600 uppercase tracking-widest font-bold mt-0.5">{label}</div>
     </div>
   );
 }
@@ -94,7 +85,7 @@ function PreStartPhase({
 
   return (
     <div
-      className="flex flex-1 flex-col items-center justify-center gap-3 px-4 cursor-pointer select-none"
+      className="flex flex-1 flex-col items-center justify-center gap-2 px-4 cursor-pointer select-none"
       onClick={onClick}
     >
       {/* Top label */}
@@ -125,45 +116,55 @@ function PreStartPhase({
         NEON ROPE DUEL
       </div>
 
-      {/* Preview image */}
+      {/* Artwork — plná viditelnost, hero prvek */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/minigames/neon_rope.webp"
         alt=""
         width={200}
         height={267}
-        className="rounded-lg opacity-80 object-cover"
+        className="rounded-lg object-cover"
         style={{ maxWidth: 200 }}
         onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
       />
 
-      {/* Players + keys */}
-      <div className="flex items-start gap-3 mt-1">
-        <SideCard
-          contestant={challenger}
-          label="Challenger"
-          align="left"
-          keys={<><KeyCap label="A" /><KeyCap label="D" /></>}
-        />
-        <div className="flex flex-col items-center justify-center gap-1 pt-4">
-          <span className="text-xl">⚔️</span>
-          <span className="text-[9px] text-slate-600 font-mono">vs</span>
+      {/* Cards + VS */}
+      <div className="flex items-center gap-2">
+        <PlayerCard contestant={challenger} label="Challenger" />
+
+        <div
+          className="text-5xl font-black tracking-tighter shrink-0 leading-none px-1"
+          style={{
+            color: "#dc2626",
+            textShadow: "0 0 22px rgba(220,38,38,0.9), 0 4px 0 rgba(127,29,29,0.75)",
+          }}
+        >
+          VS
         </div>
-        <SideCard
-          contestant={defender}
-          label="Defender"
-          align="right"
-          keys={<><KeyCap label="←" /><KeyCap label="→" /></>}
-        />
+
+        <PlayerCard contestant={defender} label="Defender" />
+      </div>
+
+      {/* Keys row */}
+      <div className="flex items-center" style={{ width: 344 }}>
+        <div className="flex gap-1.5 flex-1 justify-start">
+          <KeyCap label="A" />
+          <KeyCap label="D" />
+        </div>
+        <div className="text-[8px] text-slate-700 text-center px-2">zatočit</div>
+        <div className="flex gap-1.5 flex-1 justify-end">
+          <KeyCap label="←" />
+          <KeyCap label="→" />
+        </div>
       </div>
 
       {/* Instructions */}
-      <div className="flex flex-col items-center gap-0.5 mt-1 text-[10px] text-slate-400 text-center leading-snug">
+      <div className="flex flex-col items-center gap-0.5 text-[10px] text-slate-400 text-center leading-snug">
         <div>Zatáčej vlevo a vpravo. Bez klávesy jedeš rovně.</div>
         <div>Nenarážej do zdí ani do světelného provazu.</div>
       </div>
 
-      <div className="text-[9px] text-slate-700 mt-2">klikni pro přeskočení</div>
+      <div className="text-[9px] text-slate-700">klikni pro přeskočení</div>
     </div>
   );
 }
@@ -253,7 +254,7 @@ export default function StableDuelBoardLayer({
   backgroundUrl,
   onFinish,
 }: Props) {
-  const [phase, setPhase]   = React.useState<Phase>("prestart");
+  const [phase, setPhase]         = React.useState<Phase>("prestart");
   const [countdown, setCountdown] = React.useState(PRESTART_TICKS);
   const [duelKey, setDuelKey]     = React.useState(0);
   const [winner, setWinner]       = React.useState<"challenger" | "defender" | "draw" | null>(null);
@@ -263,20 +264,14 @@ export default function StableDuelBoardLayer({
     setDuelKey(k => k + 1);
   }, []);
 
-  // Countdown tick: PRESTART_TICKS → 1 (each 1 s), then transition
   React.useEffect(() => {
     if (phase !== "prestart") return;
-    if (countdown <= 0) {
-      startArena();
-      return;
-    }
+    if (countdown <= 0) { startArena(); return; }
     const id = setTimeout(() => setCountdown(c => c - 1), 1000);
     return () => clearTimeout(id);
   }, [phase, countdown, startArena]);
 
-  const handleSkip = () => {
-    if (phase === "prestart") startArena();
-  };
+  const handleSkip = () => { if (phase === "prestart") startArena(); };
 
   const handleDuelResult = (w: 1 | 2 | "draw") => {
     const mapped = w === 1 ? "challenger" : w === 2 ? "defender" : "draw" as const;
