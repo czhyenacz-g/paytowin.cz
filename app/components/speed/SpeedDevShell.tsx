@@ -8,9 +8,12 @@
 import React from "react";
 import SpeedArena from "./SpeedArena";
 import type { SpeedConfig } from "@/lib/speed/types";
+import type { MinigameSkin } from "@/lib/minigame-skin";
+import { STANDALONE_PRESETS } from "@/lib/minigame-skin";
 
 interface Props {
   onExit: () => void;
+  themeSkin?: MinigameSkin; // předáno z GameBoard; pokud chybí → standalone preset selector
 }
 
 const DEFAULT_CONFIG: SpeedConfig = {
@@ -41,10 +44,15 @@ type OptionRow<T extends readonly number[]> = {
   color: string;
 };
 
-export default function SpeedDevShell({ onExit }: Props) {
+export default function SpeedDevShell({ onExit, themeSkin }: Props) {
   const [config, setConfig]       = React.useState<SpeedConfig>(DEFAULT_CONFIG);
   const [showDebug, setDebug]     = React.useState(false);
   const [configKey, setConfigKey] = React.useState(0);
+  // Standalone skin state — použito jen když themeSkin prop chybí
+  const [localSkin, setLocalSkin] = React.useState<MinigameSkin>({});
+
+  const activeSkin: MinigameSkin = themeSkin ?? localSkin;
+  const isStandalone = !themeSkin;
 
   const applyConfig = (patch: Partial<SpeedConfig>) => {
     setConfig(c => ({ ...c, ...patch }));
@@ -69,6 +77,9 @@ export default function SpeedDevShell({ onExit }: Props) {
             DEV · SPEED
           </span>
           <span className="text-sm font-bold text-slate-200">Speed Arena</span>
+          {activeSkin.themeName && (
+            <span className="text-xs text-cyan-600/80 font-medium">· {activeSkin.themeName}</span>
+          )}
           <span className="hidden sm:inline text-xs text-slate-600">— localhost harness</span>
         </div>
         <button
@@ -84,7 +95,13 @@ export default function SpeedDevShell({ onExit }: Props) {
 
         {/* ── Arena ── */}
         <div className="flex flex-1 flex-col items-center justify-center overflow-auto">
-          <SpeedArena key={configKey} config={config} showDebug={showDebug} />
+          <SpeedArena
+            key={configKey}
+            config={config}
+            showDebug={showDebug}
+            backgroundUrl={activeSkin.backgroundUrl}
+            overlayOpacity={activeSkin.overlayOpacity}
+          />
 
           <div className="mt-4 flex items-center gap-5 text-[11px] text-slate-600">
             <span><span className="text-cyan-400 font-bold">← →</span> nebo <span className="text-cyan-400 font-bold">A D</span> — zatočit</span>
@@ -99,6 +116,47 @@ export default function SpeedDevShell({ onExit }: Props) {
         {/* ── Sidebar ── */}
         <div className="w-52 shrink-0 flex flex-col gap-3 overflow-y-auto">
 
+          {/* Theme / background */}
+          {isStandalone ? (
+            <div className="rounded-xl bg-slate-900 border border-slate-800 p-3 space-y-1.5">
+              <div className="text-[9px] font-bold uppercase tracking-widest text-slate-600">Pozadí (preset)</div>
+              <div className="flex flex-col gap-1">
+                {STANDALONE_PRESETS.map(p => (
+                  <button
+                    key={p.label}
+                    onClick={() => setLocalSkin({
+                      backgroundUrl: p.url,
+                      overlayOpacity: p.dark ? 0.48 : 0.65,
+                      themeName: p.url ? p.label : undefined,
+                    })}
+                    className={`rounded-lg px-2 py-1.5 text-[10px] font-semibold text-left transition flex items-center gap-1.5 ${
+                      localSkin.backgroundUrl === p.url
+                        ? "bg-slate-600 text-white"
+                        : "bg-slate-800 text-slate-400 hover:bg-slate-700"
+                    }`}
+                  >
+                    <span>{p.emoji}</span>
+                    <span>{p.label}</span>
+                    {p.dark && <span className="ml-auto text-[8px] text-slate-500">🌙</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-xl bg-slate-900 border border-slate-800 p-3 space-y-1">
+              <div className="text-[9px] font-bold uppercase tracking-widest text-slate-600">Theme z hry</div>
+              <div className="text-[10px] text-slate-400 font-medium">
+                {activeSkin.themeName ?? "—"}
+              </div>
+              {activeSkin.backgroundUrl ? (
+                <div className="text-[9px] text-emerald-500/80">✓ background aktivní</div>
+              ) : (
+                <div className="text-[9px] text-slate-600">žádný board background</div>
+              )}
+            </div>
+          )}
+
+          {/* Config rows */}
           {rows.map(row => (
             <div key={row.key} className="rounded-xl bg-slate-900 border border-slate-800 p-3 space-y-1.5">
               <div className="text-[9px] font-bold uppercase tracking-widest text-slate-600">{row.label}</div>

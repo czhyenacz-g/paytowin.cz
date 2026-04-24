@@ -119,9 +119,11 @@ function SpeedGauge({ velocity, maxVelocity }: { velocity: number; maxVelocity: 
 interface Props {
   config: SpeedConfig;
   showDebug?: boolean;
+  backgroundUrl?: string;
+  overlayOpacity?: number;
 }
 
-export default function SpeedArena({ config, showDebug = false }: Props) {
+export default function SpeedArena({ config, showDebug = false, backgroundUrl, overlayOpacity = 0.62 }: Props) {
   const [state,   setState]  = React.useState<SpeedState>(() => createInitialState(config));
   const [running, setRunning] = React.useState(false);
 
@@ -201,8 +203,26 @@ export default function SpeedArena({ config, showDebug = false }: Props) {
 
       {/* ── Arena SVG ── */}
       <div className="relative rounded-xl overflow-hidden" style={{ boxShadow: `0 0 40px rgba(34,211,238,0.06), 0 0 0 1px ${WALL_COLOR}` }}>
-        <svg width={arenaW} height={arenaH} style={{ display: "block", background: BG_COLOR }}>
+        <svg width={arenaW} height={arenaH} style={{ display: "block", background: backgroundUrl ? "transparent" : BG_COLOR }}>
           <Filters />
+
+          {/* Theme background */}
+          {backgroundUrl && (
+            <>
+              <filter id="sa-bg-blur" x="0" y="0" width="100%" height="100%">
+                <feGaussianBlur stdDeviation="1.2" />
+              </filter>
+              <image
+                href={backgroundUrl}
+                x={0} y={0} width={arenaW} height={arenaH}
+                preserveAspectRatio="xMidYMid slice"
+                filter="url(#sa-bg-blur)"
+              />
+              <rect x={0} y={0} width={arenaW} height={arenaH}
+                fill={`rgba(2,6,23,${overlayOpacity})`}
+              />
+            </>
+          )}
 
           {/* Wall border */}
           <rect x={1} y={1} width={arenaW - 2} height={arenaH - 2}

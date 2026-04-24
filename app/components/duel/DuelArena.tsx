@@ -117,9 +117,11 @@ interface Props {
   config: DuelConfig;
   mode: DuelMode;
   showDebug?: boolean;
+  backgroundUrl?: string;
+  overlayOpacity?: number;
 }
 
-export default function DuelArena({ config, mode, showDebug = false }: Props) {
+export default function DuelArena({ config, mode, showDebug = false, backgroundUrl, overlayOpacity = 0.68 }: Props) {
   const [state, setState] = React.useState<DuelState>(() => createInitialState(config));
   const [running, setRunning] = React.useState(false);
   const [lastInputs, setLastInputs] = React.useState<{ p1: Dir; p2: Dir }>({ p1: "straight", p2: "straight" });
@@ -222,9 +224,28 @@ export default function DuelArena({ config, mode, showDebug = false }: Props) {
         <svg
           width={w}
           height={h}
-          style={{ display: "block", background: BG_COLOR }}
+          style={{ display: "block", background: backgroundUrl ? "transparent" : BG_COLOR }}
         >
           <NeonFilters />
+
+          {/* Theme background */}
+          {backgroundUrl && (
+            <>
+              <filter id="da-bg-blur" x="0" y="0" width="100%" height="100%">
+                <feGaussianBlur stdDeviation="1.5" />
+              </filter>
+              <image
+                href={backgroundUrl}
+                x={0} y={0} width={w} height={h}
+                preserveAspectRatio="xMidYMid slice"
+                filter="url(#da-bg-blur)"
+              />
+              <rect x={0} y={0} width={w} height={h}
+                fill={`rgba(3,7,18,${overlayOpacity})`}
+              />
+            </>
+          )}
+
           <GridLines w={config.gridW} h={config.gridH} cs={CELL_PX} />
 
           {/* Trails */}

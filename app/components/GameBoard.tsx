@@ -3852,11 +3852,27 @@ export default function GameBoard({ gameCode }: Props) {
       )}
       {/* DEV: Neon Rope Duel — izolovaný lokální harness, žádný game state */}
       {process.env.NODE_ENV === "development" && devDuelOpen && (
-        <DevDuelShell onExit={() => setDevDuelOpen(false)} />
+        <DevDuelShell
+          onExit={() => setDevDuelOpen(false)}
+          themeSkin={{
+            backgroundUrl:  boardBgUrl || undefined,
+            overlayOpacity: themeId.endsWith("night") ? 0.52 : 0.68,
+            racingEmoji:    theme.labels.racingEmoji,
+            themeName:      theme.name,
+          }}
+        />
       )}
       {/* DEV: Speed Arena — izolovaný lokální harness, žádný game state */}
       {process.env.NODE_ENV === "development" && devSpeedOpen && (
-        <SpeedDevShell onExit={() => setDevSpeedOpen(false)} />
+        <SpeedDevShell
+          onExit={() => setDevSpeedOpen(false)}
+          themeSkin={{
+            backgroundUrl:  boardBgUrl || undefined,
+            overlayOpacity: themeId.endsWith("night") ? 0.48 : 0.65,
+            racingEmoji:    theme.labels.racingEmoji,
+            themeName:      theme.name,
+          }}
+        />
       )}
       <div className="py-2 flex items-center justify-center gap-4 text-xs text-slate-400">
         <a href="/pravidla" className="hover:text-slate-600 underline">Pravidla hry</a>
