@@ -470,6 +470,7 @@ export default function GameBoard({ gameCode }: Props) {
   const animPositionRef = React.useRef<number | null>(null);
 
   const [boardBgUrl, setBoardBgUrl] = React.useState<string>("");
+  const [minigameBgUrl, setMinigameBgUrl] = React.useState<string>("");
   /** Závodníci načtení z globální registry (racerRefs flow). Null = použij inline theme racers. */
   const [resolvedRacers, setResolvedRacers] = React.useState<RacerConfig[] | null>(null);
   const [flashEvent, setFlashEvent] = React.useState<FlashEvent | null>(null);
@@ -489,7 +490,9 @@ export default function GameBoard({ gameCode }: Props) {
 
       const bgUrl = manifest.assets?.boardBackgroundImage ?? "";
       setBoardBgUrl(bgUrl);
-      console.log(`[GameBoard] theme="${themeId}" boardBgUrl="${bgUrl || "none"}"`);
+      const mgUrl = manifest.assets?.minigameBgImage ?? bgUrl;
+      setMinigameBgUrl(mgUrl);
+      console.log(`[GameBoard] theme="${themeId}" boardBgUrl="${bgUrl || "none"}" minigameBgUrl="${mgUrl || "none"}"`);
 
       // Pokud theme používá racerRefs → načti závodníky z globální registry
       if (manifest.racerRefs?.length) {
@@ -3855,7 +3858,7 @@ export default function GameBoard({ gameCode }: Props) {
         <DevDuelShell
           onExit={() => setDevDuelOpen(false)}
           themeSkin={{
-            backgroundUrl:  boardBgUrl || undefined,
+            backgroundUrl:  minigameBgUrl || undefined,
             overlayOpacity: themeId.endsWith("night") ? 0.52 : 0.68,
             racingEmoji:    theme.labels.racingEmoji,
             themeName:      theme.name,
@@ -3867,7 +3870,7 @@ export default function GameBoard({ gameCode }: Props) {
         <SpeedDevShell
           onExit={() => setDevSpeedOpen(false)}
           themeSkin={{
-            backgroundUrl:  boardBgUrl || undefined,
+            backgroundUrl:  minigameBgUrl || undefined,
             overlayOpacity: themeId.endsWith("night") ? 0.48 : 0.65,
             racingEmoji:    theme.labels.racingEmoji,
             themeName:      theme.name,

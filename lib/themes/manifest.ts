@@ -90,6 +90,8 @@ export interface ThemeManifest {
     previewImage?: string;
     /** Pozadí herní desky */
     boardBackgroundImage?: string;
+    /** Pozadí minigame arén — nezobrazuje se na hlavním boardu */
+    minigameBgImage?: string;
     /** Logo theme */
     logoImage?: string;
     /** racer.id → URL obrázku závodníka */
@@ -194,6 +196,7 @@ export function themeToManifest(theme: Theme): ThemeManifest {
     assets: (theme.assets || racerImages)
       ? {
           boardBackgroundImage: theme.assets?.boardBgImage,
+          minigameBgImage: theme.assets?.minigameBgImage,
           racerImages,
           fieldTextures: theme.assets?.fieldTextures
             ? Object.fromEntries(

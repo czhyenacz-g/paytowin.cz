@@ -168,8 +168,8 @@ export const horseDayTheme: Theme = {
   ],
 
   assets: {
-    centerBgImage:       "/plaketa-light.webp",
-    boardBgImage:        "/horse-day-board.webp",
+    centerBgImage:   "/plaketa-light.webp",
+    minigameBgImage: "/horse-day-board.webp",
   },
 
   mapMeta: {

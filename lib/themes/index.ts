@@ -179,6 +179,8 @@ export interface ThemeLabels {
  */
 export interface ThemeAssets {
   boardBgImage?: string;
+  /** Pozadí minigame arén (Speed Arena, Duel Arena) — nezobrazuje se na hlavním boardu. */
+  minigameBgImage?: string;
   /** Obrázek středového panelu boardu — renderuje se jako absolutní vrstva pod texty. */
   centerBgImage?: string;
   /** Kanonický: racer.id → image URL */
