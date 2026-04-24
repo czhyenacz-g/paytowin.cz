@@ -121,7 +121,7 @@ interface Props {
   overlayOpacity?: number;
 }
 
-export default function DuelArena({ config, mode, showDebug = false, backgroundUrl, overlayOpacity = 0.50 }: Props) {
+export default function DuelArena({ config, mode, showDebug = false, backgroundUrl, overlayOpacity = 0.20 }: Props) {
   const [state, setState] = React.useState<DuelState>(() => createInitialState(config));
   const [running, setRunning] = React.useState(false);
   const [lastInputs, setLastInputs] = React.useState<{ p1: Dir; p2: Dir }>({ p1: "straight", p2: "straight" });

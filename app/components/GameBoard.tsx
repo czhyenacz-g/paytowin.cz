@@ -3859,7 +3859,7 @@ export default function GameBoard({ gameCode }: Props) {
           onExit={() => setDevDuelOpen(false)}
           themeSkin={{
             backgroundUrl:  minigameBgUrl || undefined,
-            overlayOpacity: themeId.endsWith("night") ? 0.32 : 0.50,
+            overlayOpacity: themeId.endsWith("night") ? 0.20 : 0.20,
             racingEmoji:    theme.labels.racingEmoji,
             themeName:      theme.name,
           }}
@@ -3871,7 +3871,7 @@ export default function GameBoard({ gameCode }: Props) {
           onExit={() => setDevSpeedOpen(false)}
           themeSkin={{
             backgroundUrl:  minigameBgUrl || undefined,
-            overlayOpacity: themeId.endsWith("night") ? 0.30 : 0.44,
+            overlayOpacity: themeId.endsWith("night") ? 0.20 : 0.20,
             racingEmoji:    theme.labels.racingEmoji,
             themeName:      theme.name,
           }}

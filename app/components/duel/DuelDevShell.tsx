@@ -111,7 +111,7 @@ export default function DuelDevShell({ onExit, themeSkin }: Props) {
                     key={p.label}
                     onClick={() => setLocalSkin({
                       backgroundUrl: p.url,
-                      overlayOpacity: p.dark ? 0.32 : 0.50,
+                      overlayOpacity: p.dark ? 0.20 : 0.20,
                       themeName: p.url ? p.label : undefined,
                     })}
                     className={`rounded-lg px-2 py-1.5 text-[10px] font-semibold text-left transition flex items-center gap-1.5 ${
@@ -162,7 +162,7 @@ export default function DuelDevShell({ onExit, themeSkin }: Props) {
             </div>
             <div className="text-[9px] text-slate-500">
               <span className="text-slate-600">overlay: </span>
-              <span className="text-amber-400/80">{activeSkin.overlayOpacity ?? 0.50}</span>
+              <span className="text-amber-400/80">{activeSkin.overlayOpacity ?? 0.20}</span>
             </div>
           </div>
 
