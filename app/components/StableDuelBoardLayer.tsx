@@ -123,6 +123,12 @@ function PreStartPhase({
       className="flex flex-1 flex-col items-center justify-center gap-2 px-4 cursor-pointer select-none"
       onClick={onClick}
     >
+      <style>{`
+        @keyframes vs-pulse {
+          0%, 100% { text-shadow: 0 0 22px rgba(220,38,38,0.9), 0 4px 0 rgba(127,29,29,0.75); }
+          50% { text-shadow: 0 0 48px rgba(220,38,38,1), 0 0 80px rgba(220,38,38,0.55), 0 4px 0 rgba(127,29,29,0.75); transform: scale(1.08); }
+        }
+      `}</style>
       {/* Top label */}
       <div className="text-[9px] font-mono tracking-widest text-slate-500 uppercase">Stájový souboj</div>
 
@@ -171,7 +177,7 @@ function PreStartPhase({
           className="text-5xl font-black tracking-tighter shrink-0 leading-none px-1"
           style={{
             color: "#dc2626",
-            textShadow: "0 0 22px rgba(220,38,38,0.9), 0 4px 0 rgba(127,29,29,0.75)",
+            animation: "vs-pulse 1.2s ease-in-out infinite",
           }}
         >
           VS
