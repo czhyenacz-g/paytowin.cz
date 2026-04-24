@@ -123,7 +123,7 @@ interface Props {
   overlayOpacity?: number;
 }
 
-export default function SpeedArena({ config, showDebug = false, backgroundUrl, overlayOpacity = 0.62 }: Props) {
+export default function SpeedArena({ config, showDebug = false, backgroundUrl, overlayOpacity = 0.44 }: Props) {
   const [state,   setState]  = React.useState<SpeedState>(() => createInitialState(config));
   const [running, setRunning] = React.useState(false);
 

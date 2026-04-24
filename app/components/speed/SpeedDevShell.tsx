@@ -126,7 +126,7 @@ export default function SpeedDevShell({ onExit, themeSkin }: Props) {
                     key={p.label}
                     onClick={() => setLocalSkin({
                       backgroundUrl: p.url,
-                      overlayOpacity: p.dark ? 0.48 : 0.65,
+                      overlayOpacity: p.dark ? 0.30 : 0.44,
                       themeName: p.url ? p.label : undefined,
                     })}
                     className={`rounded-lg px-2 py-1.5 text-[10px] font-semibold text-left transition flex items-center gap-1.5 ${
@@ -177,7 +177,7 @@ export default function SpeedDevShell({ onExit, themeSkin }: Props) {
             </div>
             <div className="text-[9px] text-slate-500">
               <span className="text-slate-600">overlay: </span>
-              <span className="text-amber-400/80">{activeSkin.overlayOpacity ?? 0.62}</span>
+              <span className="text-amber-400/80">{activeSkin.overlayOpacity ?? 0.44}</span>
             </div>
           </div>
 
