@@ -253,6 +253,16 @@ export default function SpeedArena({ config, showDebug = false, backgroundUrl, o
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/65 backdrop-blur-[2px]">
             {state.status === "idle" && (
               <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/minigames/neon_speedrace.webp"
+                  alt=""
+                  width={180}
+                  height={240}
+                  className="rounded-lg opacity-75 object-cover mb-1"
+                  style={{ maxWidth: 180 }}
+                  onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                />
                 <div className="text-2xl font-black text-white tracking-tight">SPEED ARENA</div>
                 <div className="text-[11px] text-slate-400">
                   <span className="text-cyan-400 font-bold">← → </span> nebo{" "}

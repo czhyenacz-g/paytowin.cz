@@ -125,6 +125,18 @@ function PreStartPhase({
         NEON ROPE DUEL
       </div>
 
+      {/* Preview image */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/minigames/neon_rope.webp"
+        alt=""
+        width={200}
+        height={267}
+        className="rounded-lg opacity-80 object-cover"
+        style={{ maxWidth: 200 }}
+        onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+      />
+
       {/* Players + keys */}
       <div className="flex items-start gap-3 mt-1">
         <SideCard
