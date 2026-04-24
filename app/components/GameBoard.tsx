@@ -13,12 +13,13 @@ import {
 } from "@/lib/themes/assets";
 import { loadThemeManifestAsync } from "@/lib/themes/loader";
 import { getBoardById } from "@/lib/board";
-import { awardXpAction } from "@/app/game/actions";
+import { awardXpAction, awardRaceStarAction } from "@/app/game/actions";
 import { STADIUM_ASPECT } from "@/lib/board/constants";
 import { logEvent } from "@/lib/analytics";
 import { UI_TEXT } from "@/lib/ui-text";
 import { applyBoardShuffle } from "@/lib/board/shuffle";
 import { textToMorse, extractCapsSegment } from "@/lib/morse";
+import { computeMatchTitles } from "@/lib/match-titles";
 import TelegramStrip from "./TelegramStrip";
 import type { TelegramMessage } from "./TelegramStrip";
 import type { Field } from "@/lib/engine";
@@ -64,6 +65,7 @@ import RaceEventOverlay from "./RaceEventOverlay";
 import type { MinigameResult } from "./race/RacingMinigame";
 import BuildInfoBar from "./BuildInfoBar";
 import ThemeAssetInspector from "./ThemeAssetInspector";
+import DevRaceModeShell from "./DevRaceModeShell";
 import IntroOverlay from "./IntroOverlay";
 import ScoreTable from "./ScoreTable";
 import BrandLogo from "./BrandLogo";
@@ -442,6 +444,8 @@ export default function GameBoard({ gameCode }: Props) {
   const [guideDismissedTurn, setGuideDismissedTurn] = React.useState<number | null>(null);
   const [introVisible, setIntroVisible] = React.useState(false);
   const introShownRef = React.useRef(false);
+  // dev-only: Race Mode shell overlay (mimo game state)
+  const [devRaceMode, setDevRaceMode] = React.useState(false);
   const audioCtxRef = React.useRef<AudioContext | null>(null);
   const soundEnabledRef = React.useRef(true);
   const rollDecisionTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -532,6 +536,12 @@ export default function GameBoard({ gameCode }: Props) {
   const seenRevealedRef = React.useRef<Set<number>>(new Set());
   // Guard: turn číslo posledního zobrazeného year event telegramu — brání dvojímu zobrazení
   const seenYearEventTurnRef = React.useRef<number>(0);
+  // Guard: GAME OVER telegram — true = already shown or game was already finished on load
+  const seenGameOverRef = React.useRef<boolean>(false);
+  // Join telegram: null = not yet initialized (skip first run), Set = known player IDs
+  const knownPlayerIdsRef = React.useRef<Set<string> | null>(null);
+  // Late-join spectator telegram: true = sessionStorage flag byl přečten, telegram čeká na render
+  const lateJoinRef = React.useRef<boolean>(false);
   // flippingFields: pole právě animující flip
   const [flippingFields, setFlippingFields] = React.useState<Set<number>>(new Set());
   // showingHiddenRef: pole v první půlce flipu — stále zobrazují hidden card
@@ -701,6 +711,47 @@ export default function GameBoard({ gameCode }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState?.year_event_telegram?.turn]);
 
+  // GAME OVER telegram — lokální detekce přechodu do finished.
+  // seenGameOverRef zabraňuje přehrání při reloadu hry, která je finished od začátku.
+  React.useEffect(() => {
+    if (gameStatus !== "finished") return;
+    if (seenGameOverRef.current) return;
+    seenGameOverRef.current = true;
+    showTelegram("KONEC HRY — Sezóna skončila.");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameStatus]);
+
+  // Late-join spectator telegram — jednorázový lokální telegram po redirectu z LandingPage.
+  // lateJoinRef je nastaven v loadGame po přečtení sessionStorage flagu; spustí se jen jednou.
+  React.useEffect(() => {
+    if (viewerRole !== "spectator") return;
+    if (!lateJoinRef.current) return;
+    lateJoinRef.current = false;
+    showTelegram("ZÁVOD BĚŽÍ — Připojil ses jako pozorovatel.");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewerRole]);
+
+  // Join telegram — lokální detekce nového hráče; jen pro aktivní hráče, ne spectatory.
+  // knownPlayerIdsRef = null znamená "ještě neinicializováno" — první běh nastaví ref bez telegramu.
+  React.useEffect(() => {
+    const currentIds = new Set(players.map(p => p.id));
+    if (knownPlayerIdsRef.current === null) {
+      // První run: jen ulož známá ID, nic nezobrazuj
+      knownPlayerIdsRef.current = currentIds;
+      return;
+    }
+    // Zobraz telegram jen aktivním hráčům; ne spectatorům, ne po konci hry
+    if (viewerRole !== "player") { knownPlayerIdsRef.current = currentIds; return; }
+    if (gameStatus === "finished" || gameStatus === "cancelled") { knownPlayerIdsRef.current = currentIds; return; }
+    // Najdi nové hráče (INSERT)
+    const newPlayers = players.filter(p => !knownPlayerIdsRef.current!.has(p.id));
+    knownPlayerIdsRef.current = currentIds;
+    if (newPlayers.length === 0) return;
+    // Zobraz telegram pro prvního nového (edge case: simultánní join)
+    showTelegram(`JOIN — ${newPlayers[0].name} vstoupil do závodu.`);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [players]);
+
   // ── Načtení hry ze Supabase ──────────────────────────────────────────────────
   React.useEffect(() => {
     if (!gameCode) return;
@@ -718,6 +769,8 @@ export default function GameBoard({ gameCode }: Props) {
       setBoardId(game.board_id ?? "small");
       setGameMode((game.game_mode ?? "online") as "online" | "local");
       setGameStatus(game.status);
+      // Seed: pokud hra už skončila před načtením, nezobrazuj GAME OVER telegram znovu
+      if (game.status === "finished" || game.status === "cancelled") seenGameOverRef.current = true;
       setFogOfWar(!!game.fog_of_war);
       if (game.economy && typeof game.economy === "object") {
         setEconomy({ ...DEFAULT_ECONOMY, ...(game.economy as Partial<EconomyConfig>) });
@@ -737,7 +790,13 @@ export default function GameBoard({ gameCode }: Props) {
       } else {
         const role = myDiscordId ? "spectator" : "login_required";
         setViewerRole(role);
-        if (role === "spectator") logEvent({ name: "spectator_view", game_code: gameCode });
+        if (role === "spectator") {
+          logEvent({ name: "spectator_view", game_code: gameCode });
+          if (sessionStorage.getItem("paytowin_late_join") === gameCode) {
+            sessionStorage.removeItem("paytowin_late_join");
+            lateJoinRef.current = true;
+          }
+        }
       }
 
       // Host detekce: Discord ID musí souhlasit s owner_discord_id hry
@@ -1940,6 +1999,11 @@ export default function GameBoard({ gameCode }: Props) {
         : []),
       ...staminaUpdates,
     ]);
+
+    // Hvězda pro vítěze — fire-and-forget, guardováno race_stars_awarded v game_state
+    if (winner?.discord_id && evt.turnCount !== undefined) {
+      awardRaceStarAction(gameId, winner.discord_id, evt.turnCount).catch(() => {});
+    }
   };
 
   // ── Výběr závodníků před závodem ─────────────────────────────────────────
@@ -2418,6 +2482,7 @@ export default function GameBoard({ gameCode }: Props) {
     const losers = players.filter(p => isBankrupt(p));
     const isSoloLoss = players.length === 1 && !winner;
     const bustOrder = gameState?.bust_order ?? [];
+    const matchTitles = players.length >= 2 ? computeMatchTitles(players, bustOrder) : undefined;
     const BUST_LINES = [
       "Mafii se dluhy musí splácet. Bohužel jsi neměl už z čeho.",
       "Sázky nevyšly. Zůstaly jen dluhy a prázdná stáj.",
@@ -2477,7 +2542,7 @@ export default function GameBoard({ gameCode }: Props) {
                 </div>
                 <div className="px-6 py-4 border-b border-stone-500">
                   <div className="mb-2 text-[9px] font-bold uppercase tracking-[0.22em] text-stone-500">Konečné pořadí</div>
-                  <ScoreTable players={players} bustOrder={gameState?.bust_order ?? []} />
+                  <ScoreTable players={players} bustOrder={gameState?.bust_order ?? []} titles={matchTitles} />
                 </div>
                 {sortedLosers.length > 0 && (
                   <div className="px-6 py-4 border-b border-stone-500">
@@ -2607,6 +2672,7 @@ export default function GameBoard({ gameCode }: Props) {
           racingPlayer={raceCurrentPlayer}
           isMyRacingTurn={isMyRacingTurn}
           raceResults={raceResults}
+          reward={racePendingEvt.reward ?? RACE_WINNER_REWARD}
           isHost={isHost}
           isLocalGame={isLocalGame}
           racingEmoji={theme.labels.racingEmoji}
@@ -2748,6 +2814,16 @@ export default function GameBoard({ gameCode }: Props) {
                     Zrušit
                   </button>
                 </div>
+              )}
+              {/* DEV-only: Race Mode shell */}
+              {process.env.NODE_ENV === "development" && (
+                <button
+                  onClick={() => setDevRaceMode(true)}
+                  className="rounded-[3px] border border-purple-300 bg-purple-50 px-2.5 py-1 text-[11px] font-semibold text-purple-700 hover:bg-purple-100 transition shrink-0"
+                  title="DEV: otevřít testovací Race Mode shell"
+                >
+                  🧪 Race Shell
+                </button>
               )}
             </div>
 
@@ -3677,6 +3753,16 @@ export default function GameBoard({ gameCode }: Props) {
       )}
       <BuildInfoBar theme={theme} boardId={boardId} />
       <ThemeAssetInspector themeId={themeId} theme={theme} />
+
+      {/* DEV: Race Mode shell overlay — mimo game state, žádné DB změny */}
+      {process.env.NODE_ENV === "development" && devRaceMode && (
+        <DevRaceModeShell
+          playerName={players.find(p => p.id === myPlayerId)?.name ?? players[0]?.name ?? "Hráč"}
+          playerColor={players.find(p => p.id === myPlayerId)?.color ?? "#64748b"}
+          racingEmoji={theme.labels.racingEmoji}
+          onExit={() => setDevRaceMode(false)}
+        />
+      )}
       <div className="py-2 flex items-center justify-center gap-4 text-xs text-slate-400">
         <a href="/pravidla" className="hover:text-slate-600 underline">Pravidla hry</a>
         <span>·</span>
