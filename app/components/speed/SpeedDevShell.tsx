@@ -156,6 +156,31 @@ export default function SpeedDevShell({ onExit, themeSkin }: Props) {
             </div>
           )}
 
+          {/* Debug: background info */}
+          <div className="rounded-xl bg-slate-900 border border-slate-800 p-3 space-y-1 font-mono">
+            <div className="text-[9px] font-bold uppercase tracking-widest text-slate-600">BG Debug</div>
+            <div className="text-[9px] text-slate-500">
+              <span className="text-slate-600">source: </span>
+              <span className={activeSkin.backgroundUrl ? "text-emerald-400" : "text-slate-600"}>
+                {isStandalone
+                  ? (activeSkin.backgroundUrl ? "standalone preset" : "none")
+                  : "game theme"}
+              </span>
+            </div>
+            <div className="text-[9px] text-slate-500 break-all">
+              <span className="text-slate-600">url: </span>
+              <span className={activeSkin.backgroundUrl ? "text-cyan-400" : "text-slate-700"}>
+                {activeSkin.backgroundUrl
+                  ? activeSkin.backgroundUrl.replace(/^.+\/([^/]+)$/, "$1")
+                  : "—"}
+              </span>
+            </div>
+            <div className="text-[9px] text-slate-500">
+              <span className="text-slate-600">overlay: </span>
+              <span className="text-amber-400/80">{activeSkin.overlayOpacity ?? 0.62}</span>
+            </div>
+          </div>
+
           {/* Config rows */}
           {rows.map(row => (
             <div key={row.key} className="rounded-xl bg-slate-900 border border-slate-800 p-3 space-y-1.5">

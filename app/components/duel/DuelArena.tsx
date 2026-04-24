@@ -231,9 +231,11 @@ export default function DuelArena({ config, mode, showDebug = false, backgroundU
           {/* Theme background */}
           {backgroundUrl && (
             <>
-              <filter id="da-bg-blur" x="0" y="0" width="100%" height="100%">
-                <feGaussianBlur stdDeviation="1.5" />
-              </filter>
+              <defs>
+                <filter id="da-bg-blur" x="-2%" y="-2%" width="104%" height="104%">
+                  <feGaussianBlur stdDeviation="1.5" />
+                </filter>
+              </defs>
               <image
                 href={backgroundUrl}
                 x={0} y={0} width={w} height={h}
