@@ -8,6 +8,7 @@
 import React from "react";
 import SpeedArena from "./SpeedArena";
 import type { SpeedConfig } from "@/lib/speed/types";
+import { SPEED_PRESETS } from "@/lib/speed/presets";
 import type { MinigameSkin } from "@/lib/minigame-skin";
 import { STANDALONE_PRESETS } from "@/lib/minigame-skin";
 
@@ -15,20 +16,6 @@ interface Props {
   onExit: () => void;
   themeSkin?: MinigameSkin; // předáno z GameBoard; pokud chybí → standalone preset selector
 }
-
-const DEFAULT_CONFIG: SpeedConfig = {
-  arenaW:                  440,
-  arenaH:                  300,
-  maxTicks:                150,
-  tickMs:                  80,
-  acceleration:            0.04,
-  maxVelocity:             8,
-  turnRate:                0.075,
-  crashVelocityThreshold:  4.5,
-  boostStrength:           1.5,
-  slowStrength:            1.2,
-  objectRespawnTicks:      45,
-};
 
 const TICK_MS_OPTIONS    = [50, 80, 100, 120, 150] as const;
 const MAX_TICKS_OPTIONS  = [100, 150, 200, 300]     as const;
@@ -45,7 +32,8 @@ type OptionRow<T extends readonly number[]> = {
 };
 
 export default function SpeedDevShell({ onExit, themeSkin }: Props) {
-  const [config, setConfig]       = React.useState<SpeedConfig>(DEFAULT_CONFIG);
+  const [config, setConfig]       = React.useState<SpeedConfig>(SPEED_PRESETS[0].config);
+  const [presetId, setPresetId]   = React.useState<string>(SPEED_PRESETS[0].id);
   const [showDebug, setDebug]     = React.useState(false);
   const [configKey, setConfigKey] = React.useState(0);
   // Standalone skin state — použito jen když themeSkin prop chybí
@@ -54,10 +42,21 @@ export default function SpeedDevShell({ onExit, themeSkin }: Props) {
   const activeSkin: MinigameSkin = themeSkin ?? localSkin;
   const isStandalone = !themeSkin;
 
-  const applyConfig = (patch: Partial<SpeedConfig>) => {
-    setConfig(c => ({ ...c, ...patch }));
+  const selectPreset = (id: string) => {
+    const p = SPEED_PRESETS.find(px => px.id === id);
+    if (!p) return;
+    setConfig(p.config);
+    setPresetId(id);
     setConfigKey(k => k + 1);
   };
+
+  const applyConfig = (patch: Partial<SpeedConfig>) => {
+    setConfig(c => ({ ...c, ...patch }));
+    setPresetId("custom");
+    setConfigKey(k => k + 1);
+  };
+
+  const activePreset = SPEED_PRESETS.find(p => p.id === presetId);
 
   const rows: OptionRow<readonly number[]>[] = [
     { label: "Tick (ms)", key: "tickMs",   options: TICK_MS_OPTIONS,   fmt: v => `${v}ms`, color: "bg-cyan-700 text-cyan-100" },
@@ -115,6 +114,27 @@ export default function SpeedDevShell({ onExit, themeSkin }: Props) {
 
         {/* ── Sidebar ── */}
         <div className="w-52 shrink-0 flex flex-col gap-3 overflow-y-auto">
+
+          {/* Preset selector */}
+          <div className="rounded-xl bg-slate-900 border border-slate-800 p-3 space-y-2">
+            <div className="text-[9px] font-bold uppercase tracking-widest text-slate-600">Preset</div>
+            <select
+              value={presetId}
+              onChange={e => selectPreset(e.target.value)}
+              className="w-full rounded bg-slate-800 border border-slate-700 px-2 py-1.5 text-[10px] font-mono font-semibold text-slate-200 cursor-pointer"
+            >
+              {SPEED_PRESETS.map(p => (
+                <option key={p.id} value={p.id}>{p.label}</option>
+              ))}
+              {presetId === "custom" && <option value="custom">— custom —</option>}
+            </select>
+            <div className="text-[9px] leading-relaxed">
+              {presetId === "custom"
+                ? <span className="text-amber-400/80">manuálně upraveno</span>
+                : <span className="text-slate-500">{activePreset?.description}</span>}
+            </div>
+            <div className="text-[9px] font-mono text-slate-700">{presetId}</div>
+          </div>
 
           {/* Theme / background */}
           {isStandalone ? (

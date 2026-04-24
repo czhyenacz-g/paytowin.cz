@@ -8,6 +8,7 @@
 import React from "react";
 import DuelArena, { type DuelMode } from "./DuelArena";
 import type { DuelConfig } from "@/lib/duel/types";
+import { DUEL_PRESETS } from "@/lib/duel/presets";
 import type { MinigameSkin } from "@/lib/minigame-skin";
 import { STANDALONE_PRESETS } from "@/lib/minigame-skin";
 
@@ -16,19 +17,13 @@ interface Props {
   themeSkin?: MinigameSkin; // předáno z GameBoard; pokud chybí → standalone preset selector
 }
 
-const DEFAULT_CONFIG: DuelConfig = {
-  gridW:    28,
-  gridH:    20,
-  maxTicks: 200,
-  tickMs:   120,
-};
-
 const TICK_OPTIONS  = [60, 80, 100, 120, 150, 200, 300];
 const GRID_OPTIONS  = [16, 20, 24, 28, 32, 40];
 const TICKS_OPTIONS = [100, 150, 200, 300, 500];
 
 export default function DuelDevShell({ onExit, themeSkin }: Props) {
-  const [config, setConfig]       = React.useState<DuelConfig>(DEFAULT_CONFIG);
+  const [config, setConfig]       = React.useState<DuelConfig>(DUEL_PRESETS[0].config);
+  const [presetId, setPresetId]   = React.useState<string>(DUEL_PRESETS[0].id);
   const [mode, setMode]           = React.useState<DuelMode>("pvp");
   const [showDebug, setDebug]     = React.useState(false);
   const [configKey, setConfigKey] = React.useState(0);
@@ -38,10 +33,21 @@ export default function DuelDevShell({ onExit, themeSkin }: Props) {
   const activeSkin: MinigameSkin = themeSkin ?? localSkin;
   const isStandalone = !themeSkin;
 
-  const applyConfig = (patch: Partial<DuelConfig>) => {
-    setConfig(c => ({ ...c, ...patch }));
+  const selectPreset = (id: string) => {
+    const p = DUEL_PRESETS.find(px => px.id === id);
+    if (!p) return;
+    setConfig(p.config);
+    setPresetId(id);
     setConfigKey(k => k + 1);
   };
+
+  const applyConfig = (patch: Partial<DuelConfig>) => {
+    setConfig(c => ({ ...c, ...patch }));
+    setPresetId("custom");
+    setConfigKey(k => k + 1);
+  };
+
+  const activePreset = DUEL_PRESETS.find(p => p.id === presetId);
 
   return (
     <div className="fixed inset-0 z-[200] flex flex-col bg-[#030712] text-white overflow-hidden">
@@ -100,6 +106,27 @@ export default function DuelDevShell({ onExit, themeSkin }: Props) {
 
         {/* ── Sidebar: config ── */}
         <div className="w-52 shrink-0 flex flex-col gap-3 overflow-y-auto">
+
+          {/* Preset selector */}
+          <div className="rounded-xl bg-slate-900 border border-slate-800 p-3 space-y-2">
+            <div className="text-[9px] font-bold uppercase tracking-widest text-slate-600">Preset</div>
+            <select
+              value={presetId}
+              onChange={e => selectPreset(e.target.value)}
+              className="w-full rounded bg-slate-800 border border-slate-700 px-2 py-1.5 text-[10px] font-mono font-semibold text-slate-200 cursor-pointer"
+            >
+              {DUEL_PRESETS.map(p => (
+                <option key={p.id} value={p.id}>{p.label}</option>
+              ))}
+              {presetId === "custom" && <option value="custom">— custom —</option>}
+            </select>
+            <div className="text-[9px] leading-relaxed">
+              {presetId === "custom"
+                ? <span className="text-amber-400/80">manuálně upraveno</span>
+                : <span className="text-slate-500">{activePreset?.description}</span>}
+            </div>
+            <div className="text-[9px] font-mono text-slate-700">{presetId}</div>
+          </div>
 
           {/* Theme / background */}
           {isStandalone ? (
