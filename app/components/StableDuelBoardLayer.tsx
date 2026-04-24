@@ -46,25 +46,60 @@ function KeyCap({ label }: { label: string }) {
 }
 
 function PlayerCard({ contestant, label }: { contestant: DuelContestant; label: string }) {
+  const [imgErr, setImgErr] = React.useState(false);
+  // Horse.image je přímé URL (kopíruje se z RacerConfig.image při nákupu)
+  const imgSrc = contestant.horse?.image ?? null;
+  const showImg = !!imgSrc && !imgErr;
+
   return (
     <div
-      className="rounded-xl border-2 p-3 bg-black/60 flex flex-col gap-1.5 items-center w-36"
+      className="rounded-2xl overflow-hidden flex flex-col w-40 shrink-0"
       style={{
-        borderColor: contestant.color,
-        boxShadow: `0 0 16px ${contestant.color}28`,
+        background: `linear-gradient(160deg, ${contestant.color}18 0%, rgba(0,0,0,0.88) 55%)`,
+        border: `2px solid ${contestant.color}`,
+        boxShadow: `0 0 28px ${contestant.color}55, 0 0 6px ${contestant.color}30`,
       }}
     >
-      <div className="text-5xl leading-none">{contestant.horse?.emoji ?? "🐎"}</div>
-      <div className="text-sm font-bold text-white/90 text-center leading-tight mt-0.5">
-        {contestant.horse?.name ?? "Bez koně"}
+      {/* Horní část — obrázek nebo emoji fallback */}
+      <div className="relative h-24 flex items-center justify-center overflow-hidden bg-black/40">
+        {showImg ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={imgSrc}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+            onError={() => setImgErr(true)}
+          />
+        ) : (
+          <div className="text-5xl leading-none">{contestant.horse?.emoji ?? "🐎"}</div>
+        )}
+        {/* Dolní gradient pro čitelnost textu */}
+        <div
+          className="absolute inset-x-0 bottom-0 h-8 pointer-events-none"
+          style={{ background: "linear-gradient(to top, rgba(0,0,0,0.80), transparent)" }}
+        />
       </div>
-      <div className="text-xs font-bold text-center" style={{ color: contestant.color }}>
-        {contestant.name}
+
+      {/* Dolní část — texty */}
+      <div className="flex flex-col items-center gap-1 px-2.5 py-2">
+        <div className="text-sm font-bold text-white text-center leading-tight">
+          {contestant.horse?.name ?? "Bez koně"}
+        </div>
+        <div className="text-xs font-semibold text-center" style={{ color: contestant.color }}>
+          {contestant.name}
+        </div>
+        <div
+          className="rounded-full px-2.5 py-0.5 text-[10px] font-mono font-semibold mt-0.5"
+          style={{
+            background: `${contestant.color}18`,
+            border: `1px solid ${contestant.color}55`,
+            color: contestant.color,
+          }}
+        >
+          1 : 2.5
+        </div>
+        <div className="text-[7px] text-slate-600 uppercase tracking-widest font-bold mt-0.5">{label}</div>
       </div>
-      <div className="rounded-full bg-slate-800 border border-slate-700 px-2.5 py-0.5 text-[10px] text-slate-300 font-mono mt-0.5">
-        1 : 2.5
-      </div>
-      <div className="text-[7px] text-slate-600 uppercase tracking-widest font-bold mt-0.5">{label}</div>
     </div>
   );
 }
