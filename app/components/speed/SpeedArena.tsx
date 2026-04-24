@@ -123,13 +123,37 @@ interface Props {
   overlayOpacity?: number;
 }
 
+const PRESTART_TICKS = 5;
+
 export default function SpeedArena({ config, showDebug = false, backgroundUrl, overlayOpacity = 0.20 }: Props) {
   const [state,   setState]  = React.useState<SpeedState>(() => createInitialState(config));
   const [running, setRunning] = React.useState(false);
+  const [preStartCount, setPreStartCount] = React.useState(PRESTART_TICKS);
+  const [preStartDone, setPreStartDone]   = React.useState(false);
 
   const stateRef   = React.useRef<SpeedState>(state);
   const keysRef    = React.useRef<Set<string>>(new Set());
   stateRef.current = state;
+
+  const doStart = React.useCallback(() => {
+    const started = { ...stateRef.current, status: "running" as const };
+    stateRef.current = started;
+    setState(started);
+    setRunning(true);
+  }, []);
+
+  const skipPreStart = React.useCallback(() => {
+    setPreStartDone(true);
+    doStart();
+  }, [doStart]);
+
+  // Prestart countdown
+  React.useEffect(() => {
+    if (preStartDone) return;
+    if (preStartCount <= 0) { skipPreStart(); return; }
+    const id = setTimeout(() => setPreStartCount(c => c - 1), 1000);
+    return () => clearTimeout(id);
+  }, [preStartDone, preStartCount, skipPreStart]);
 
   // Reset on config change
   React.useEffect(() => {
@@ -137,6 +161,8 @@ export default function SpeedArena({ config, showDebug = false, backgroundUrl, o
     setState(fresh);
     stateRef.current = fresh;
     setRunning(false);
+    setPreStartDone(false);
+    setPreStartCount(PRESTART_TICKS);
   }, [config]);
 
   // Keyboard listeners
@@ -189,6 +215,8 @@ export default function SpeedArena({ config, showDebug = false, backgroundUrl, o
     setState(fresh);
     stateRef.current = fresh;
     setRunning(false);
+    setPreStartDone(false);
+    setPreStartCount(PRESTART_TICKS);
   };
 
   const { arenaW, arenaH, maxVelocity, maxTicks } = config;
@@ -248,21 +276,49 @@ export default function SpeedArena({ config, showDebug = false, backgroundUrl, o
           )}
         </svg>
 
+        {/* ── Pre-start overlay ── */}
+        {!preStartDone && (
+          <div
+            className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-1.5 cursor-pointer select-none"
+            style={{ background: "rgba(2,6,23,0.93)", backdropFilter: "blur(2px)" }}
+            onClick={skipPreStart}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/minigames/neon_speedrace.webp"
+              alt=""
+              className="rounded-lg opacity-80 object-cover"
+              style={{ maxWidth: 110, maxHeight: 147 }}
+              onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+            />
+            <div className="text-[9px] font-mono tracking-widest text-slate-500 uppercase">Minihra</div>
+            <div className="text-lg font-black text-white tracking-tight">PŘIPRAVTE SE</div>
+            <div
+              key={preStartCount}
+              className="text-4xl font-black tabular-nums leading-none"
+              style={{
+                color: preStartCount <= 1 ? "#f87171" : preStartCount <= 2 ? "#fbbf24" : "white",
+                textShadow: `0 0 20px ${preStartCount <= 1 ? "#f87171" : preStartCount <= 2 ? "#fbbf24" : "rgba(255,255,255,0.3)"}`,
+              }}
+            >
+              {preStartCount > 0 ? preStartCount : "GO!"}
+            </div>
+            <div className="text-sm font-black" style={{ color: "#22d3ee", textShadow: "0 0 14px rgba(34,211,238,0.5)" }}>
+              SPEED ARENA
+            </div>
+            <div className="text-[10px] text-slate-400 text-center">
+              <span className="text-cyan-400 font-bold">← →</span> nebo <span className="text-cyan-400 font-bold">A D</span> — zatočit
+            </div>
+            <div className="text-[9px] text-slate-600 text-center">rychlost roste · narážení = crash</div>
+            <div className="text-[9px] text-slate-700 mt-0.5">klikni pro přeskočení</div>
+          </div>
+        )}
+
         {/* ── Status overlays ── */}
         {(state.status === "idle" || isPaused || isDone) && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/65 backdrop-blur-[2px]">
             {state.status === "idle" && (
               <>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/minigames/neon_speedrace.webp"
-                  alt=""
-                  width={180}
-                  height={240}
-                  className="rounded-lg opacity-75 object-cover mb-1"
-                  style={{ maxWidth: 180 }}
-                  onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-                />
                 <div className="text-2xl font-black text-white tracking-tight">SPEED ARENA</div>
                 <div className="text-[11px] text-slate-400">
                   <span className="text-cyan-400 font-bold">← → </span> nebo{" "}
