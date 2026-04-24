@@ -20,7 +20,7 @@ export const SPEED_PRESETS: SpeedPreset[] = [
     label: "Default",
     description: "Vyvážená hra. Střední rychlost, standardní arena.",
     config: {
-      arenaW: 440, arenaH: 300,
+      arenaW: 560, arenaH: 380,
       maxTicks: 150, tickMs: 80,
       acceleration: 0.04, maxVelocity: 8,
       turnRate: 0.075,
@@ -34,7 +34,7 @@ export const SPEED_PRESETS: SpeedPreset[] = [
     label: "Safe Learning",
     description: "Pomalá hra, vysoký crash práh. Vhodné pro testování mechanik.",
     config: {
-      arenaW: 440, arenaH: 300,
+      arenaW: 560, arenaH: 380,
       maxTicks: 200, tickMs: 120,
       acceleration: 0.02, maxVelocity: 5,
       turnRate: 0.07,
@@ -48,7 +48,7 @@ export const SPEED_PRESETS: SpeedPreset[] = [
     label: "High Risk",
     description: "Vysoká rychlost, nízký crash práh. Vyžaduje přesné řízení.",
     config: {
-      arenaW: 440, arenaH: 300,
+      arenaW: 560, arenaH: 380,
       maxTicks: 120, tickMs: 60,
       acceleration: 0.06, maxVelocity: 12,
       turnRate: 0.09,
@@ -62,7 +62,7 @@ export const SPEED_PRESETS: SpeedPreset[] = [
     label: "Boost Heavy",
     description: "Maximální boost efekt, rychlé respawny. Chaos.",
     config: {
-      arenaW: 440, arenaH: 300,
+      arenaW: 560, arenaH: 380,
       maxTicks: 150, tickMs: 80,
       acceleration: 0.04, maxVelocity: 10,
       turnRate: 0.075,

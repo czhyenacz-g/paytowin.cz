@@ -28,7 +28,7 @@ interface Props {
 
 type Phase = "prestart" | "arena" | "result";
 
-const BOARD_DUEL_CONFIG: DuelConfig = { gridW: 20, gridH: 14, maxTicks: 200, tickMs: 120 };
+const BOARD_DUEL_CONFIG: DuelConfig = { gridW: 28, gridH: 20, maxTicks: 200, tickMs: 120 };
 const DUEL_REWARD = 50;
 const PRESTART_TICKS = 5;
 

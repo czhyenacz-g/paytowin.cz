@@ -13,7 +13,7 @@ const P2_DIM    = "#4c1d95";
 const BG_COLOR  = "#030712";
 const GRID_COLOR = "rgba(255,255,255,0.04)";
 
-const CELL_PX = 16; // px per grid cell
+const CELL_PX = 20; // px per grid cell
 
 // ── SVG neon glow filter ──────────────────────────────────────────────────────
 
