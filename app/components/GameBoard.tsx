@@ -68,6 +68,7 @@ import ThemeAssetInspector from "./ThemeAssetInspector";
 import DevRaceModeShell from "./DevRaceModeShell";
 import DevRaceBoardLayer from "./DevRaceBoardLayer";
 import DevRaceFlipLayer from "./DevRaceFlipLayer";
+import DevDuelShell from "./duel/DuelDevShell";
 import IntroOverlay from "./IntroOverlay";
 import ScoreTable from "./ScoreTable";
 import BrandLogo from "./BrandLogo";
@@ -450,6 +451,8 @@ export default function GameBoard({ gameCode }: Props) {
   const [devRaceMode, setDevRaceMode] = React.useState(false);
   // dev-only: Race Board layer (vrstva uvnitř boardu)
   const [devRaceBoardLayer, setDevRaceBoardLayer] = React.useState(false);
+  // dev-only: Neon Rope Duel harness
+  const [devDuelOpen, setDevDuelOpen] = React.useState(false);
   // dev-only: Race Board Flip layer (flip animace boardu)
   const [devFlipOpen, setDevFlipOpen] = React.useState(false);
   const [flipBoardAnim, setFlipBoardAnim] = React.useState<"idle" | "out" | "back-in">("idle");
@@ -2864,6 +2867,13 @@ export default function GameBoard({ gameCode }: Props) {
                   >
                     🔄 Flip
                   </button>
+                  <button
+                    onClick={() => setDevDuelOpen(true)}
+                    className="rounded-[3px] border border-emerald-400 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-100 transition"
+                    title="DEV: Neon Rope Duel — lokální harness"
+                  >
+                    🪢 Duel
+                  </button>
                 </div>
               )}
             </div>
@@ -3829,6 +3839,10 @@ export default function GameBoard({ gameCode }: Props) {
           racingEmoji={theme.labels.racingEmoji}
           onExit={() => setDevRaceMode(false)}
         />
+      )}
+      {/* DEV: Neon Rope Duel — izolovaný lokální harness, žádný game state */}
+      {process.env.NODE_ENV === "development" && devDuelOpen && (
+        <DevDuelShell onExit={() => setDevDuelOpen(false)} />
       )}
       <div className="py-2 flex items-center justify-center gap-4 text-xs text-slate-400">
         <a href="/pravidla" className="hover:text-slate-600 underline">Pravidla hry</a>
