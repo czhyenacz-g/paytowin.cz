@@ -34,11 +34,19 @@ const PRESTART_TICKS = 5;
 
 // ─── sub-komponenty ────────────────────────────────────────────────────────────
 
-function KeyCap({ label }: { label: string }) {
+function NeonKeyCap({ label, color }: { label: string; color: string }) {
   return (
     <span
-      className="inline-flex items-center justify-center rounded-[5px] border border-b-[3px] bg-slate-700 font-mono font-black text-white px-2.5 py-1 text-sm min-w-[2.2rem] leading-none shadow-sm"
-      style={{ borderColor: "rgba(255,255,255,0.28)", borderBottomColor: "rgba(255,255,255,0.10)" }}
+      className="inline-flex items-center justify-center rounded-[6px] font-mono font-black px-3 py-2 text-base min-w-[3rem] leading-none"
+      style={{
+        background: "rgba(8,10,20,0.96)",
+        border: `2px solid ${color}`,
+        borderBottomWidth: "4px",
+        borderBottomColor: `${color}55`,
+        boxShadow: `0 0 10px ${color}50, inset 0 1px 0 rgba(255,255,255,0.07)`,
+        color: "white",
+        textShadow: `0 0 8px ${color}90`,
+      }}
     >
       {label}
     </span>
@@ -47,21 +55,20 @@ function KeyCap({ label }: { label: string }) {
 
 function PlayerCard({ contestant, label }: { contestant: DuelContestant; label: string }) {
   const [imgErr, setImgErr] = React.useState(false);
-  // Horse.image je přímé URL (kopíruje se z RacerConfig.image při nákupu)
   const imgSrc = contestant.horse?.image ?? null;
   const showImg = !!imgSrc && !imgErr;
 
   return (
     <div
-      className="rounded-2xl overflow-hidden flex flex-col w-40 shrink-0"
+      className="rounded-2xl overflow-hidden flex flex-col w-44 shrink-0"
       style={{
-        background: `linear-gradient(160deg, ${contestant.color}18 0%, rgba(0,0,0,0.88) 55%)`,
-        border: `2px solid ${contestant.color}`,
-        boxShadow: `0 0 28px ${contestant.color}55, 0 0 6px ${contestant.color}30`,
+        background: `linear-gradient(170deg, ${contestant.color}14 0%, rgba(4,6,16,0.97) 50%)`,
+        border: `2.5px solid ${contestant.color}`,
+        boxShadow: `0 0 36px ${contestant.color}50, 0 0 10px ${contestant.color}28, inset 0 0 20px ${contestant.color}08`,
       }}
     >
-      {/* Horní část — obrázek nebo emoji fallback */}
-      <div className="relative h-24 flex items-center justify-center overflow-hidden bg-black/40">
+      {/* Hero image */}
+      <div className="relative h-32 flex items-center justify-center overflow-hidden bg-black/50">
         {showImg ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -71,29 +78,32 @@ function PlayerCard({ contestant, label }: { contestant: DuelContestant; label: 
             onError={() => setImgErr(true)}
           />
         ) : (
-          <div className="text-5xl leading-none">{contestant.horse?.emoji ?? "🐎"}</div>
+          <div className="text-6xl leading-none">{contestant.horse?.emoji ?? "🐎"}</div>
         )}
-        {/* Dolní gradient pro čitelnost textu */}
         <div
-          className="absolute inset-x-0 bottom-0 h-8 pointer-events-none"
-          style={{ background: "linear-gradient(to top, rgba(0,0,0,0.80), transparent)" }}
+          className="absolute inset-x-0 bottom-0 h-10 pointer-events-none"
+          style={{ background: "linear-gradient(to top, rgba(4,6,16,0.95), transparent)" }}
         />
       </div>
 
-      {/* Dolní část — texty */}
-      <div className="flex flex-col items-center gap-1 px-2.5 py-2">
-        <div className="text-sm font-bold text-white text-center leading-tight">
+      {/* Text section */}
+      <div className="flex flex-col items-center gap-1 px-3 py-2.5">
+        <div
+          className="text-base font-black text-center leading-tight"
+          style={{ color: "#fef3c7", textShadow: "0 0 12px rgba(251,191,36,0.3)" }}
+        >
           {contestant.horse?.name ?? "Bez koně"}
         </div>
-        <div className="text-xs font-semibold text-center" style={{ color: contestant.color }}>
+        <div className="text-sm font-semibold text-center" style={{ color: contestant.color }}>
           {contestant.name}
         </div>
         <div
-          className="rounded-full px-2.5 py-0.5 text-[10px] font-mono font-semibold mt-0.5"
+          className="rounded-full px-3 py-1 text-xs font-mono font-bold mt-0.5"
           style={{
-            background: `${contestant.color}18`,
-            border: `1px solid ${contestant.color}55`,
+            background: `${contestant.color}15`,
+            border: `1.5px solid ${contestant.color}80`,
             color: contestant.color,
+            boxShadow: `0 0 8px ${contestant.color}30`,
           }}
         >
           1 : 2.5
@@ -120,7 +130,7 @@ function PreStartPhase({
 
   return (
     <div
-      className="flex flex-1 flex-col items-center justify-center gap-2 px-4 cursor-pointer select-none"
+      className="flex flex-1 flex-col items-center justify-center gap-1.5 px-4 cursor-pointer select-none"
       onClick={onClick}
     >
       <style>{`
@@ -162,19 +172,32 @@ function PreStartPhase({
       <img
         src="/minigames/neon_rope.webp"
         alt=""
-        width={200}
-        height={267}
+        width={96}
+        height={128}
         className="rounded-lg object-cover"
-        style={{ maxWidth: 200 }}
+        style={{ maxWidth: 96 }}
         onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
       />
 
-      {/* Cards + VS */}
-      <div className="flex items-center gap-2">
-        <PlayerCard contestant={challenger} label="Challenger" />
+      {/* Cards + VS + keycaps */}
+      <div className="flex items-start gap-2">
+        {/* Challenger card + keys */}
+        <div className="flex flex-col items-center gap-1.5">
+          <PlayerCard contestant={challenger} label="Challenger" />
+          <div className="flex flex-col items-center gap-1">
+            <div className="flex gap-1.5">
+              <NeonKeyCap label="A" color={challenger.color} />
+              <NeonKeyCap label="D" color={challenger.color} />
+            </div>
+            <div className="text-[8px] font-mono font-bold uppercase tracking-widest" style={{ color: `${challenger.color}80` }}>
+              ZATOČIT
+            </div>
+          </div>
+        </div>
 
+        {/* VS */}
         <div
-          className="text-5xl font-black tracking-tighter shrink-0 leading-none px-1"
+          className="text-5xl font-black tracking-tighter shrink-0 leading-none px-1 self-center mt-6"
           style={{
             color: "#dc2626",
             animation: "vs-pulse 1.2s ease-in-out infinite",
@@ -183,26 +206,24 @@ function PreStartPhase({
           VS
         </div>
 
-        <PlayerCard contestant={defender} label="Defender" />
-      </div>
-
-      {/* Keys row */}
-      <div className="flex items-center" style={{ width: 344 }}>
-        <div className="flex gap-1.5 flex-1 justify-start">
-          <KeyCap label="A" />
-          <KeyCap label="D" />
-        </div>
-        <div className="text-[8px] text-slate-700 text-center px-2">zatočit</div>
-        <div className="flex gap-1.5 flex-1 justify-end">
-          <KeyCap label="←" />
-          <KeyCap label="→" />
+        {/* Defender card + keys */}
+        <div className="flex flex-col items-center gap-1.5">
+          <PlayerCard contestant={defender} label="Defender" />
+          <div className="flex flex-col items-center gap-1">
+            <div className="flex gap-1.5">
+              <NeonKeyCap label="←" color={defender.color} />
+              <NeonKeyCap label="→" color={defender.color} />
+            </div>
+            <div className="text-[8px] font-mono font-bold uppercase tracking-widest" style={{ color: `${defender.color}80` }}>
+              ZATOČIT
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Instructions */}
-      <div className="flex flex-col items-center gap-0.5 text-[10px] text-slate-400 text-center leading-snug">
-        <div>Zatáčej vlevo a vpravo. Bez klávesy jedeš rovně.</div>
-        <div>Nenarážej do zdí ani do světelného provazu.</div>
+      <div className="text-[10px] text-slate-600 text-center leading-snug">
+        Zatáčej vlevo a vpravo · nenarážej do zdí ani do provazu
       </div>
 
       <div className="text-[9px] text-slate-700">klikni pro přeskočení</div>
