@@ -183,10 +183,10 @@ function PreStartPhase({
       <img
         src="/minigames/neon_rope.webp"
         alt=""
-        width={158}
-        height={211}
+        width={176}
+        height={235}
         className="rounded-lg object-cover"
-        style={{ maxWidth: 158 }}
+        style={{ maxWidth: 176 }}
         onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
       />
 
