@@ -258,7 +258,7 @@ export default function SpeedArena({ config, showDebug = false, backgroundUrl, o
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/65 backdrop-blur-[2px]">
             {state.status === "idle" && (
               <>
-                <div className="text-2xl font-black text-white tracking-tight">SPEED ARENA</div>
+                <div className="text-2xl font-black text-white tracking-tight">SPEED RACE</div>
                 <div className="text-[11px] text-slate-400">
                   <span className="text-cyan-400 font-bold">← → </span> nebo{" "}
                   <span className="text-cyan-400 font-bold"> A D </span> — zatočit

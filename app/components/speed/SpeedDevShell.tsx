@@ -120,7 +120,7 @@ export default function SpeedDevShell({ onExit, themeSkin }: Props) {
             className="text-base font-black tracking-tight"
             style={{ color: "#22d3ee", textShadow: "0 0 16px rgba(34,211,238,0.5)" }}
           >
-            SPEED ARENA
+            SPEED RACE
           </div>
 
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -152,7 +152,7 @@ export default function SpeedDevShell({ onExit, themeSkin }: Props) {
           <span className="text-[9px] font-mono font-bold text-cyan-300 bg-cyan-900/60 px-2 py-0.5 rounded tracking-widest uppercase">
             DEV · SPEED
           </span>
-          <span className="text-sm font-bold text-slate-200">Speed Arena</span>
+          <span className="text-sm font-bold text-slate-200">Speed Race</span>
           {activeSkin.themeName && (
             <span className="text-xs text-cyan-600/80 font-medium">· {activeSkin.themeName}</span>
           )}
