@@ -52,6 +52,16 @@ function racerSoundType(h: { id?: string }, themeRacers: import("@/lib/themes").
 function canTriggerRivalsRace(p1: Player, p2: Player): boolean {
   return p1.horses.length > 0 && p2.horses.length > 0;
 }
+
+/**
+ * Zajistí, že pokud hráč vlastní koně, právě jeden má isPreferred=true.
+ * Pokud žádný preferred není, nastaví prvního. Prázdné pole vrátí beze změny.
+ * Existující výběr ponechá — funkce ho nikdy nepřepíše.
+ */
+function normalizeFavoriteHorse(horses: Horse[]): Horse[] {
+  if (horses.length === 0 || horses.some(h => h.isPreferred)) return horses;
+  return horses.map((h, i) => i === 0 ? { ...h, isPreferred: true } : h);
+}
 import { drawCard } from "@/lib/cards";
 import type { GameCard } from "@/lib/cards";
 import type { Player, Horse, ActiveEffect, GameState, OfferPending, RerollOffer, RaceOffer, BankruptAnnouncement, RacePendingEvent, PostTurnEvent, RaceType, EconomyConfig } from "@/lib/types/game";
@@ -1366,6 +1376,7 @@ export default function GameBoard({ gameCode }: Props) {
       finalCoins = resolved.coins;
       finalHorses = resolved.horses;
     }
+    finalHorses = normalizeFavoriteHorse(finalHorses);
     const wentBankrupt = finalCoins <= 0;
     const logLines = [`${player.name} koupil ${racer.emoji} ${racer.name} za ${racer.price} 💰`];
     if (wentBankrupt) { logLines.push(`💀 ${player.name} zkrachoval!`); playSfx("bankrupt"); }
@@ -1419,7 +1430,9 @@ export default function GameBoard({ gameCode }: Props) {
     const sellPrice = Math.floor(racer.price * 0.8);
     const updatedCoins = player.coins + sellPrice;
     const racerKey = racerOwnershipKey(racer);
-    const updatedHorses = player.horses.filter(h => racerOwnershipKey(h) !== racerKey);
+    const updatedHorses = normalizeFavoriteHorse(
+      player.horses.filter(h => racerOwnershipKey(h) !== racerKey)
+    );
 
     const newLog = [
       `${player.name} prodal ${racer.emoji} ${racer.name} bance za ${sellPrice} 💰`,
@@ -1679,6 +1692,9 @@ export default function GameBoard({ gameCode }: Props) {
 
     const wouldBankruptCard = updatedPlayer.coins <= 0 && player.coins > 0;
     const finalUpdatedPlayer = wouldBankruptCard ? await confirmBankruptOrSell(updatedPlayer) : updatedPlayer;
+    const finalCardHorses = (card.effect.kind === "give_racer" || wouldBankruptCard)
+      ? normalizeFavoriteHorse(finalUpdatedPlayer.horses)
+      : finalUpdatedPlayer.horses;
     const wentBankrupt = finalUpdatedPlayer.coins <= 0;
     if (wentBankrupt) { logLines.push(`💀 ${player.name} zkrachoval!`); playSfx("bankrupt"); }
     else if (wouldBankruptCard) logLines.push(`${player.name} prodal koně a přežil! 💰`);
@@ -1690,7 +1706,7 @@ export default function GameBoard({ gameCode }: Props) {
     if (anyMove) playerUpdate.position = finalUpdatedPlayer.position;
     if (anyMove && finalUpdatedPlayer.laps !== player.laps) playerUpdate.laps = finalUpdatedPlayer.laps ?? 0;
     if (anySkip) playerUpdate.skip_next_turn = true;
-    if (card.effect.kind === "give_racer" || wouldBankruptCard) playerUpdate.horses = finalUpdatedPlayer.horses;
+    if (card.effect.kind === "give_racer" || wouldBankruptCard) playerUpdate.horses = finalCardHorses;
     if (card.effect.kind === "stamina_debuff") playerUpdate.active_effects = finalUpdatedPlayer.active_effects;
 
     console.log(`[turn-flow] applyCardEffect persisting — pos=${finalUpdatedPlayer.position} coins=${finalUpdatedPlayer.coins} wentBankrupt=${wentBankrupt}`);
@@ -1725,7 +1741,7 @@ export default function GameBoard({ gameCode }: Props) {
       // finishTurn dělá stamina regen write ze closure `players` — která je stale a
       // neobsahuje právě přidaného racera. Bez tohoto parametru by regen write
       // přepsal horses a nový racer by zmizel. Stejná třída bugu jako buyRacer.
-      ...(card.effect.kind === "give_racer" || wouldBankruptCard ? { updatedCurrentPlayerHorses: finalUpdatedPlayer.horses } : {}),
+      ...(card.effect.kind === "give_racer" || wouldBankruptCard ? { updatedCurrentPlayerHorses: finalCardHorses } : {}),
       ...(wentBankrupt && !cardGameEnds ? { postTurnEvent: { kind: "announcement" as const, playerId: finalUpdatedPlayer.id, playerName: finalUpdatedPlayer.name } } : {}),
       ...(wentBankrupt ? { bustPlayerId: finalUpdatedPlayer.id } : {}),
       ...(cardYearEventTelegram ? { yearEventTelegram: cardYearEventTelegram } : {}),
@@ -1997,7 +2013,7 @@ export default function GameBoard({ gameCode }: Props) {
       .map(e => {
         const eliminate = e.finalStamina === 0 || e.horse!.isLegendary;
         const updatedHorses = eliminate
-          ? e.player!.horses.filter(h => racerOwnershipKey(h) !== e.horseKey)
+          ? normalizeFavoriteHorse(e.player!.horses.filter(h => racerOwnershipKey(h) !== e.horseKey))
           : e.player!.horses.map(h =>
               racerOwnershipKey(h) === e.horseKey ? { ...h, stamina: e.finalStamina } : h
             );
