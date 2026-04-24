@@ -70,6 +70,7 @@ import DevRaceBoardLayer from "./DevRaceBoardLayer";
 import DevRaceFlipLayer from "./DevRaceFlipLayer";
 import DevDuelShell  from "./duel/DuelDevShell";
 import SpeedDevShell from "./speed/SpeedDevShell";
+import StableDuelBoardLayer, { type DuelContestant } from "./StableDuelBoardLayer";
 import IntroOverlay from "./IntroOverlay";
 import ScoreTable from "./ScoreTable";
 import BrandLogo from "./BrandLogo";
@@ -460,6 +461,9 @@ export default function GameBoard({ gameCode }: Props) {
   const [devFlipOpen, setDevFlipOpen] = React.useState(false);
   const [flipBoardAnim, setFlipBoardAnim] = React.useState<"idle" | "out" | "back-in">("idle");
   const flipTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Stájový souboj — board overlay (game flow)
+  const [stableDuelCtx, setStableDuelCtx] = React.useState<{ challenger: DuelContestant; defender: DuelContestant; isDev: boolean } | null>(null);
+  const stableDuelProceedRef = React.useRef<(() => Promise<void>) | null>(null);
   const audioCtxRef = React.useRef<AudioContext | null>(null);
   const soundEnabledRef = React.useRef(true);
   const rollDecisionTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1133,17 +1137,29 @@ export default function GameBoard({ gameCode }: Props) {
         await finishTurn({ nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog], lastRoll: roll, ...(yearEventTelegramPayload ? { yearEventTelegram: yearEventTelegramPayload } : {}) });
       } else if (ownerPlayer) {
         if (canTriggerRivalsRace(movedPlayer, ownerPlayer)) {
-          // ── Rivals race: oba hráči mají závodníky → duel místo rentu ──────────
-          const reward = Math.round(field.racer.price * 0.2);
-          const logLines = [`⚔️ ${currentPlayer.name} vstoupil na ${theme.labels.racerField.toLowerCase()} ${ownerPlayer.name} — čeká je souboj!`, ...extraLog];
+          // ── Stájový souboj: oba hráči mají koně → board overlay duel ──────────
+          await supabase.from("players").update({ position: newPosition, coins: movedPlayer.coins, laps: movedPlayer.laps ?? 0 }).eq("id", currentPlayer.id);
           const updatedPlayersForNext = players.map(p => p.id === currentPlayer.id ? movedPlayer : p);
           const nextIndex = getNextActiveIndex(gameState.current_player_index, updatedPlayersForNext);
-          await supabase.from("players").update({ position: newPosition, coins: movedPlayer.coins, laps: movedPlayer.laps ?? 0 }).eq("id", currentPlayer.id);
-          await finishTurn({
-            nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog], lastRoll: roll,
-            postTurnEvent: { kind: "race_pending", raceType: "rivals_race", playerIds: [currentPlayer.id, ownerPlayer.id], reward },
-            ...(yearEventTelegramPayload ? { yearEventTelegram: yearEventTelegramPayload } : {}),
-          });
+          const challenger: DuelContestant = {
+            name: currentPlayer.name,
+            horse: movedPlayer.horses[0] ?? null,
+            color: currentPlayer.color,
+          };
+          const defender: DuelContestant = {
+            name: ownerPlayer.name,
+            horse: ownerPlayer.horses[0] ?? null,
+            color: ownerPlayer.color,
+          };
+          stableDuelProceedRef.current = async () => {
+            await finishTurn({
+              nextIndex, turnCount: newTurnCount,
+              log: [`⚔️ ${currentPlayer.name} svedl souboj stájí s ${ownerPlayer.name}!`, ...extraLog, ...newLog],
+              lastRoll: roll,
+              ...(yearEventTelegramPayload ? { yearEventTelegram: yearEventTelegramPayload } : {}),
+            });
+          };
+          setStableDuelCtx({ challenger, defender, isDev: process.env.NODE_ENV === "development" });
         } else {
           // ── Rent fallback: jeden nebo oba hráči nemají závodníka ──────────────
           const rent = Math.round(field.racer.price * 0.2);
@@ -1156,8 +1172,12 @@ export default function GameBoard({ gameCode }: Props) {
           const wouldBankruptRent = rentedPlayer.coins <= 0 && currentPlayer.coins > 0;
           const finalRentedPlayer = wouldBankruptRent ? await confirmBankruptOrSell(rentedPlayer) : rentedPlayer;
           const wentBankrupt = finalRentedPlayer.coins <= 0 && currentPlayer.coins > 0;
+          const noHorseNote = movedPlayer.horses.length === 0
+            ? `${currentPlayer.name} ještě nemá koně na souboj — platí nájem.`
+            : null;
           const logLines = [
             `${currentPlayer.name} zaplatil ${rent} 💰 hráči ${ownerPlayer.name} za ${field.racer.emoji} ${field.racer.name}`,
+            ...(noHorseNote ? [noHorseNote] : []),
             ...extraLog,
           ];
           if (wentBankrupt) {
@@ -2207,6 +2227,13 @@ export default function GameBoard({ gameCode }: Props) {
     flipTimerRef.current = setTimeout(() => setFlipBoardAnim("idle"), 300);
   }, []);
 
+  const handleStableDuelFinish = React.useCallback(async (_winner: "challenger" | "defender" | "draw") => {
+    setStableDuelCtx(null);
+    const proceed = stableDuelProceedRef.current;
+    stableDuelProceedRef.current = null;
+    if (proceed) await proceed();
+  }, []);
+
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
   // Po načtení / refresh: obnov pendingRacer a pendingCard ze stavu DB
@@ -2886,6 +2913,21 @@ export default function GameBoard({ gameCode }: Props) {
                     title="DEV: Speed Arena — lokální harness"
                   >
                     🏎 Speed
+                  </button>
+                  <button
+                    onClick={() => {
+                      const p0 = players[0];
+                      const p1 = players[1] ?? players[0];
+                      setStableDuelCtx({
+                        challenger: { name: p0?.name ?? "Hráč 1", horse: p0?.horses[0] ?? null, color: p0?.color ?? "#00ff88" },
+                        defender:   { name: p1?.name ?? "Hráč 2", horse: p1?.horses[0] ?? null, color: p1?.color ?? "#c084fc" },
+                        isDev: true,
+                      });
+                    }}
+                    className="rounded-[3px] border border-amber-400 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700 hover:bg-amber-100 transition"
+                    title="DEV: Stájový souboj — board overlay preview"
+                  >
+                    🐴 Stable
                   </button>
                 </div>
               )}
@@ -3800,6 +3842,17 @@ export default function GameBoard({ gameCode }: Props) {
                     playerColor={players.find(p => p.id === myPlayerId)?.color ?? "#64748b"}
                     racingEmoji={theme.labels.racingEmoji}
                     onExit={() => setDevRaceBoardLayer(false)}
+                  />
+                )}
+
+                {/* Stájový souboj — board overlay (game flow + dev preview) */}
+                {stableDuelCtx && (
+                  <StableDuelBoardLayer
+                    challenger={stableDuelCtx.challenger}
+                    defender={stableDuelCtx.defender}
+                    isDev={stableDuelCtx.isDev}
+                    backgroundUrl={minigameBgUrl || undefined}
+                    onFinish={handleStableDuelFinish}
                   />
                 )}
 

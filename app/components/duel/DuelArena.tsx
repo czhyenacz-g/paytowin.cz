@@ -119,11 +119,18 @@ interface Props {
   showDebug?: boolean;
   backgroundUrl?: string;
   overlayOpacity?: number;
+  /** Přeskočí idle obrazovku a spustí souboj rovnou. */
+  autoStart?: boolean;
+  /** Zavolá se jednou po skončení hry. */
+  onResult?: (winner: 1 | 2 | "draw") => void;
 }
 
-export default function DuelArena({ config, mode, showDebug = false, backgroundUrl, overlayOpacity = 0.20 }: Props) {
-  const [state, setState] = React.useState<DuelState>(() => createInitialState(config));
-  const [running, setRunning] = React.useState(false);
+export default function DuelArena({ config, mode, showDebug = false, backgroundUrl, overlayOpacity = 0.20, autoStart = false, onResult }: Props) {
+  const [state, setState] = React.useState<DuelState>(() => {
+    const s = createInitialState(config);
+    return autoStart ? { ...s, status: "running" as const } : s;
+  });
+  const [running, setRunning] = React.useState(autoStart);
   const [lastInputs, setLastInputs] = React.useState<{ p1: Dir; p2: Dir }>({ p1: "straight", p2: "straight" });
 
   const stateRef  = React.useRef<DuelState>(state);
@@ -142,6 +149,17 @@ export default function DuelArena({ config, mode, showDebug = false, backgroundU
     runningRef.current = false;
     setLastInputs({ p1: "straight", p2: "straight" });
   }, [config, mode]);
+
+  // onResult — fired once when game ends
+  const onResultRef = React.useRef(onResult);
+  React.useEffect(() => { onResultRef.current = onResult; });
+  React.useEffect(() => {
+    if (state.status !== "idle" && state.status !== "running") {
+      const w = state.winner === 1 ? 1 : state.winner === 2 ? 2 : "draw" as const;
+      onResultRef.current?.(w);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.status]);
 
   // Keyboard listeners
   React.useEffect(() => {
