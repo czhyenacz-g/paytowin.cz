@@ -31,6 +31,8 @@ type OptionRow<T extends readonly number[]> = {
   color: string;
 };
 
+const PRESTART_TICKS = 5;
+
 export default function SpeedDevShell({ onExit, themeSkin }: Props) {
   const [config, setConfig]       = React.useState<SpeedConfig>(SPEED_PRESETS[0].config);
   const [presetId, setPresetId]   = React.useState<string>(SPEED_PRESETS[0].id);
@@ -38,9 +40,28 @@ export default function SpeedDevShell({ onExit, themeSkin }: Props) {
   const [configKey, setConfigKey] = React.useState(0);
   // Standalone skin state — použito jen když themeSkin prop chybí
   const [localSkin, setLocalSkin] = React.useState<MinigameSkin>({});
+  // Prestart countdown
+  const [preStartCount, setPreStartCount] = React.useState(PRESTART_TICKS);
+  const [preStartDone, setPreStartDone]   = React.useState(false);
 
   const activeSkin: MinigameSkin = themeSkin ?? localSkin;
   const isStandalone = !themeSkin;
+
+  // Reset prestart when arena config changes
+  React.useEffect(() => {
+    setPreStartDone(false);
+    setPreStartCount(PRESTART_TICKS);
+  }, [configKey]);
+
+  // Countdown tick
+  React.useEffect(() => {
+    if (preStartDone) return;
+    if (preStartCount <= 0) { setPreStartDone(true); return; }
+    const id = setTimeout(() => setPreStartCount(c => c - 1), 1000);
+    return () => clearTimeout(id);
+  }, [preStartDone, preStartCount]);
+
+  const skipPreStart = () => { setPreStartDone(true); };
 
   const selectPreset = (id: string) => {
     const p = SPEED_PRESETS.find(px => px.id === id);
@@ -57,6 +78,7 @@ export default function SpeedDevShell({ onExit, themeSkin }: Props) {
   };
 
   const activePreset = SPEED_PRESETS.find(p => p.id === presetId);
+  const countColor = preStartCount <= 1 ? "#f87171" : preStartCount <= 2 ? "#fbbf24" : preStartCount <= 3 ? "#facc15" : "white";
 
   const rows: OptionRow<readonly number[]>[] = [
     { label: "Tick (ms)", key: "tickMs",   options: TICK_MS_OPTIONS,   fmt: v => `${v}ms`, color: "bg-cyan-700 text-cyan-100" },
@@ -68,6 +90,61 @@ export default function SpeedDevShell({ onExit, themeSkin }: Props) {
 
   return (
     <div className="fixed inset-0 z-[200] flex flex-col bg-[#020617] text-white overflow-hidden">
+
+      {/* ── Pre-start overlay ── */}
+      {!preStartDone && (
+        <div
+          className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 cursor-pointer select-none"
+          style={{ background: "rgba(2,6,23,0.96)", backdropFilter: "blur(2px)" }}
+          onClick={skipPreStart}
+        >
+          <div className="text-[9px] font-mono tracking-widest text-slate-500 uppercase">Minihra</div>
+
+          <div className="flex flex-col items-center gap-0.5">
+            <div
+              className="text-3xl sm:text-4xl font-black text-white tracking-tight text-center leading-tight"
+              style={{ textShadow: "0 0 30px rgba(255,200,0,0.35)" }}
+            >
+              PŘIPRAVTE SE
+            </div>
+            <div
+              key={preStartCount}
+              className="text-5xl font-black tabular-nums leading-none mt-1"
+              style={{ color: countColor, textShadow: `0 0 24px ${countColor}` }}
+            >
+              {preStartCount > 0 ? preStartCount : "GO!"}
+            </div>
+          </div>
+
+          <div
+            className="text-base font-black tracking-tight"
+            style={{ color: "#22d3ee", textShadow: "0 0 16px rgba(34,211,238,0.5)" }}
+          >
+            SPEED ARENA
+          </div>
+
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/minigames/neon_speedrace.webp"
+            alt=""
+            width={200}
+            height={267}
+            className="rounded-lg opacity-80 object-cover"
+            style={{ maxWidth: 200 }}
+            onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+          />
+
+          <div className="flex flex-col items-center gap-0.5 mt-1 text-[10px] text-slate-400 text-center leading-snug">
+            <div>
+              <span className="text-cyan-400 font-bold">← →</span> nebo{" "}
+              <span className="text-cyan-400 font-bold">A D</span> — zatočit
+            </div>
+            <div>Rychlost roste automaticky. Narážení při vysoké rychlosti = crash.</div>
+          </div>
+
+          <div className="text-[9px] text-slate-700 mt-2">klikni pro přeskočení</div>
+        </div>
+      )}
 
       {/* ── Top bar ── */}
       <div className="flex items-center justify-between px-4 py-2 bg-slate-900/80 border-b border-white/5 shrink-0">
@@ -100,6 +177,7 @@ export default function SpeedDevShell({ onExit, themeSkin }: Props) {
             showDebug={showDebug}
             backgroundUrl={activeSkin.backgroundUrl}
             overlayOpacity={activeSkin.overlayOpacity}
+            autoStart={preStartDone}
           />
 
           <div className="mt-4 flex items-center gap-5 text-[11px] text-slate-600">
