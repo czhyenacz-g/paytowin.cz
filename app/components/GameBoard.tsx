@@ -68,7 +68,8 @@ import ThemeAssetInspector from "./ThemeAssetInspector";
 import DevRaceModeShell from "./DevRaceModeShell";
 import DevRaceBoardLayer from "./DevRaceBoardLayer";
 import DevRaceFlipLayer from "./DevRaceFlipLayer";
-import DevDuelShell from "./duel/DuelDevShell";
+import DevDuelShell  from "./duel/DuelDevShell";
+import SpeedDevShell from "./speed/SpeedDevShell";
 import IntroOverlay from "./IntroOverlay";
 import ScoreTable from "./ScoreTable";
 import BrandLogo from "./BrandLogo";
@@ -452,7 +453,9 @@ export default function GameBoard({ gameCode }: Props) {
   // dev-only: Race Board layer (vrstva uvnitř boardu)
   const [devRaceBoardLayer, setDevRaceBoardLayer] = React.useState(false);
   // dev-only: Neon Rope Duel harness
-  const [devDuelOpen, setDevDuelOpen] = React.useState(false);
+  const [devDuelOpen,  setDevDuelOpen]  = React.useState(false);
+  // dev-only: Speed Arena harness
+  const [devSpeedOpen, setDevSpeedOpen] = React.useState(false);
   // dev-only: Race Board Flip layer (flip animace boardu)
   const [devFlipOpen, setDevFlipOpen] = React.useState(false);
   const [flipBoardAnim, setFlipBoardAnim] = React.useState<"idle" | "out" | "back-in">("idle");
@@ -2874,6 +2877,13 @@ export default function GameBoard({ gameCode }: Props) {
                   >
                     🪢 Duel
                   </button>
+                  <button
+                    onClick={() => setDevSpeedOpen(true)}
+                    className="rounded-[3px] border border-cyan-400 bg-cyan-50 px-2.5 py-1 text-[11px] font-semibold text-cyan-700 hover:bg-cyan-100 transition"
+                    title="DEV: Speed Arena — lokální harness"
+                  >
+                    🏎 Speed
+                  </button>
                 </div>
               )}
             </div>
@@ -3843,6 +3853,10 @@ export default function GameBoard({ gameCode }: Props) {
       {/* DEV: Neon Rope Duel — izolovaný lokální harness, žádný game state */}
       {process.env.NODE_ENV === "development" && devDuelOpen && (
         <DevDuelShell onExit={() => setDevDuelOpen(false)} />
+      )}
+      {/* DEV: Speed Arena — izolovaný lokální harness, žádný game state */}
+      {process.env.NODE_ENV === "development" && devSpeedOpen && (
+        <SpeedDevShell onExit={() => setDevSpeedOpen(false)} />
       )}
       <div className="py-2 flex items-center justify-center gap-4 text-xs text-slate-400">
         <a href="/pravidla" className="hover:text-slate-600 underline">Pravidla hry</a>
