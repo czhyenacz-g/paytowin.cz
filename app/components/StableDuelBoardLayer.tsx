@@ -34,6 +34,13 @@ const PRESTART_TICKS = 5;
 
 // ─── sub-komponenty ────────────────────────────────────────────────────────────
 
+/** Tailwind class → CSS hex. Fallback pokud barva není platná CSS barva. */
+function toNeonColor(color: string | undefined, fallback: string): string {
+  if (!color) return fallback;
+  if (color.startsWith("#") || color.startsWith("rgb")) return color;
+  return fallback;
+}
+
 function NeonKeyCap({ label, color }: { label: string; color: string }) {
   return (
     <span
@@ -42,10 +49,10 @@ function NeonKeyCap({ label, color }: { label: string; color: string }) {
         background: "rgba(8,10,20,0.96)",
         border: `2px solid ${color}`,
         borderBottomWidth: "4px",
-        borderBottomColor: `${color}55`,
-        boxShadow: `0 0 10px ${color}50, inset 0 1px 0 rgba(255,255,255,0.07)`,
+        borderBottomColor: `${color}aa`,
+        boxShadow: `0 0 8px ${color}, 0 0 18px ${color}cc, 0 0 32px ${color}66, inset 0 0 6px ${color}28`,
         color: "white",
-        textShadow: `0 0 8px ${color}90`,
+        textShadow: `0 0 8px ${color}, 0 0 16px ${color}cc`,
       }}
     >
       {label}
@@ -62,9 +69,9 @@ function PlayerCard({ contestant, label }: { contestant: DuelContestant; label: 
     <div
       className="rounded-2xl overflow-hidden flex flex-col w-44 shrink-0"
       style={{
-        background: `linear-gradient(170deg, ${contestant.color}14 0%, rgba(4,6,16,0.97) 50%)`,
-        border: `2.5px solid ${contestant.color}`,
-        boxShadow: `0 0 36px ${contestant.color}50, 0 0 10px ${contestant.color}28, inset 0 0 20px ${contestant.color}08`,
+        background: `linear-gradient(170deg, ${contestant.color}22 0%, rgba(4,6,16,0.97) 55%)`,
+        border: `3px solid ${contestant.color}`,
+        boxShadow: `0 0 8px ${contestant.color}, 0 0 22px ${contestant.color}cc, 0 0 48px ${contestant.color}88, 0 0 80px ${contestant.color}44, inset 0 0 14px ${contestant.color}28`,
       }}
     >
       {/* Hero image */}
@@ -100,10 +107,10 @@ function PlayerCard({ contestant, label }: { contestant: DuelContestant; label: 
         <div
           className="rounded-full px-3 py-1 text-xs font-mono font-bold mt-0.5"
           style={{
-            background: `${contestant.color}15`,
-            border: `1.5px solid ${contestant.color}80`,
+            background: `${contestant.color}18`,
+            border: `1.5px solid ${contestant.color}`,
             color: contestant.color,
-            boxShadow: `0 0 8px ${contestant.color}30`,
+            boxShadow: `0 0 8px ${contestant.color}cc, 0 0 16px ${contestant.color}55`,
           }}
         >
           1 : 2.5
@@ -127,6 +134,10 @@ function PreStartPhase({
 }) {
   const countColor =
     countdown <= 1 ? "#f87171" : countdown <= 2 ? "#fbbf24" : countdown <= 3 ? "#facc15" : "white";
+  const challengerColor = toNeonColor(challenger.color, "#00ff88");
+  const defenderColor   = toNeonColor(defender.color,   "#c084fc");
+  const cWithColor = { ...challenger, color: challengerColor };
+  const dWithColor = { ...defender,   color: defenderColor };
 
   return (
     <div
@@ -183,13 +194,13 @@ function PreStartPhase({
       <div className="flex items-start gap-2">
         {/* Challenger card + keys */}
         <div className="flex flex-col items-center gap-1.5">
-          <PlayerCard contestant={challenger} label="Challenger" />
+          <PlayerCard contestant={cWithColor} label="Challenger" />
           <div className="flex flex-col items-center gap-1">
             <div className="flex gap-1.5">
-              <NeonKeyCap label="A" color={challenger.color} />
-              <NeonKeyCap label="D" color={challenger.color} />
+              <NeonKeyCap label="A" color={challengerColor} />
+              <NeonKeyCap label="D" color={challengerColor} />
             </div>
-            <div className="text-[8px] font-mono font-bold uppercase tracking-widest" style={{ color: `${challenger.color}80` }}>
+            <div className="text-[8px] font-mono font-bold uppercase tracking-widest" style={{ color: `${challengerColor}cc` }}>
               ZATOČIT
             </div>
           </div>
@@ -208,13 +219,13 @@ function PreStartPhase({
 
         {/* Defender card + keys */}
         <div className="flex flex-col items-center gap-1.5">
-          <PlayerCard contestant={defender} label="Defender" />
+          <PlayerCard contestant={dWithColor} label="Defender" />
           <div className="flex flex-col items-center gap-1">
             <div className="flex gap-1.5">
-              <NeonKeyCap label="←" color={defender.color} />
-              <NeonKeyCap label="→" color={defender.color} />
+              <NeonKeyCap label="←" color={defenderColor} />
+              <NeonKeyCap label="→" color={defenderColor} />
             </div>
-            <div className="text-[8px] font-mono font-bold uppercase tracking-widest" style={{ color: `${defender.color}80` }}>
+            <div className="text-[8px] font-mono font-bold uppercase tracking-widest" style={{ color: `${defenderColor}cc` }}>
               ZATOČIT
             </div>
           </div>
