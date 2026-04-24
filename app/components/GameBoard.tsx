@@ -66,6 +66,7 @@ import type { MinigameResult } from "./race/RacingMinigame";
 import BuildInfoBar from "./BuildInfoBar";
 import ThemeAssetInspector from "./ThemeAssetInspector";
 import DevRaceModeShell from "./DevRaceModeShell";
+import DevRaceBoardLayer from "./DevRaceBoardLayer";
 import IntroOverlay from "./IntroOverlay";
 import ScoreTable from "./ScoreTable";
 import BrandLogo from "./BrandLogo";
@@ -446,6 +447,8 @@ export default function GameBoard({ gameCode }: Props) {
   const introShownRef = React.useRef(false);
   // dev-only: Race Mode shell overlay (mimo game state)
   const [devRaceMode, setDevRaceMode] = React.useState(false);
+  // dev-only: Race Board layer (vrstva uvnitř boardu)
+  const [devRaceBoardLayer, setDevRaceBoardLayer] = React.useState(false);
   const audioCtxRef = React.useRef<AudioContext | null>(null);
   const soundEnabledRef = React.useRef(true);
   const rollDecisionTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -2815,15 +2818,24 @@ export default function GameBoard({ gameCode }: Props) {
                   </button>
                 </div>
               )}
-              {/* DEV-only: Race Mode shell */}
+              {/* DEV-only: Race Mode experiments */}
               {process.env.NODE_ENV === "development" && (
-                <button
-                  onClick={() => setDevRaceMode(true)}
-                  className="rounded-[3px] border border-purple-300 bg-purple-50 px-2.5 py-1 text-[11px] font-semibold text-purple-700 hover:bg-purple-100 transition shrink-0"
-                  title="DEV: otevřít testovací Race Mode shell"
-                >
-                  🧪 Race Shell
-                </button>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    onClick={() => setDevRaceMode(true)}
+                    className="rounded-[3px] border border-purple-300 bg-purple-50 px-2.5 py-1 text-[11px] font-semibold text-purple-700 hover:bg-purple-100 transition"
+                    title="DEV: Race Shell — fullscreen overlay"
+                  >
+                    🧪 Shell
+                  </button>
+                  <button
+                    onClick={() => setDevRaceBoardLayer(true)}
+                    className="rounded-[3px] border border-indigo-300 bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-700 hover:bg-indigo-100 transition"
+                    title="DEV: Race Layer — vrstva uvnitř boardu"
+                  >
+                    🏁 Layer
+                  </button>
+                </div>
               )}
             </div>
 
@@ -3722,6 +3734,16 @@ export default function GameBoard({ gameCode }: Props) {
                     })}
                   </div>
                 </div>
+
+                {/* DEV: Race Board Layer — absolute overlay uvnitř board surface */}
+                {process.env.NODE_ENV === "development" && devRaceBoardLayer && (
+                  <DevRaceBoardLayer
+                    playerName={players.find(p => p.id === myPlayerId)?.name ?? players[0]?.name ?? "Hráč"}
+                    playerColor={players.find(p => p.id === myPlayerId)?.color ?? "#64748b"}
+                    racingEmoji={theme.labels.racingEmoji}
+                    onExit={() => setDevRaceBoardLayer(false)}
+                  />
+                )}
 
               </div>
             </div>
