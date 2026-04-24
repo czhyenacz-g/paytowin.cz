@@ -67,6 +67,7 @@ import BuildInfoBar from "./BuildInfoBar";
 import ThemeAssetInspector from "./ThemeAssetInspector";
 import DevRaceModeShell from "./DevRaceModeShell";
 import DevRaceBoardLayer from "./DevRaceBoardLayer";
+import DevRaceFlipLayer from "./DevRaceFlipLayer";
 import IntroOverlay from "./IntroOverlay";
 import ScoreTable from "./ScoreTable";
 import BrandLogo from "./BrandLogo";
@@ -449,6 +450,10 @@ export default function GameBoard({ gameCode }: Props) {
   const [devRaceMode, setDevRaceMode] = React.useState(false);
   // dev-only: Race Board layer (vrstva uvnitř boardu)
   const [devRaceBoardLayer, setDevRaceBoardLayer] = React.useState(false);
+  // dev-only: Race Board Flip layer (flip animace boardu)
+  const [devFlipOpen, setDevFlipOpen] = React.useState(false);
+  const [flipBoardAnim, setFlipBoardAnim] = React.useState<"idle" | "out" | "back-in">("idle");
+  const flipTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const audioCtxRef = React.useRef<AudioContext | null>(null);
   const soundEnabledRef = React.useRef(true);
   const rollDecisionTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -2176,6 +2181,23 @@ export default function GameBoard({ gameCode }: Props) {
     }
   };
 
+  // ── Dev: flip layer helpers ───────────────────────────────────────────────────
+  React.useEffect(() => () => { if (flipTimerRef.current) clearTimeout(flipTimerRef.current); }, []);
+
+  const openDevFlip = React.useCallback(() => {
+    setFlipBoardAnim("out");
+    flipTimerRef.current = setTimeout(() => {
+      setDevFlipOpen(true);
+      setFlipBoardAnim("idle");
+    }, 300);
+  }, []);
+
+  const closeDevFlip = React.useCallback(() => {
+    setDevFlipOpen(false);
+    setFlipBoardAnim("back-in");
+    flipTimerRef.current = setTimeout(() => setFlipBoardAnim("idle"), 300);
+  }, []);
+
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
   // Po načtení / refresh: obnov pendingRacer a pendingCard ze stavu DB
@@ -2835,6 +2857,13 @@ export default function GameBoard({ gameCode }: Props) {
                   >
                     🏁 Layer
                   </button>
+                  <button
+                    onClick={openDevFlip}
+                    className="rounded-[3px] border border-teal-300 bg-teal-50 px-2.5 py-1 text-[11px] font-semibold text-teal-700 hover:bg-teal-100 transition"
+                    title="DEV: Race Flip — flip animace boardu"
+                  >
+                    🔄 Flip
+                  </button>
                 </div>
               )}
             </div>
@@ -2851,7 +2880,13 @@ export default function GameBoard({ gameCode }: Props) {
             <div className={`relative mx-auto w-full overflow-visible ${board.shape === "stadium" ? "aspect-[20/18]" : "aspect-square max-w-[760px]"}`}>
               <div
                 className={`absolute inset-0 overflow-hidden rounded-[4px] border-2 ${theme.colors.boardSurfaceBorder} ${theme.colors.boardSurface}`}
-                style={{ boxShadow: "inset 0 2px 24px rgba(0,0,0,0.09), 0 4px 32px rgba(0,0,0,0.10)" }}
+                style={{
+                  boxShadow: "inset 0 2px 24px rgba(0,0,0,0.09), 0 4px 32px rgba(0,0,0,0.10)",
+                  transition: flipBoardAnim !== "idle" ? "transform 0.3s ease-in-out" : "none",
+                  transform: (devFlipOpen && flipBoardAnim !== "back-in") || flipBoardAnim === "out"
+                    ? "perspective(900px) rotateY(-90deg)"
+                    : "perspective(900px) rotateY(0deg)",
+                }}
               >
                 {boardBgUrl && (
                   <div
@@ -3746,6 +3781,16 @@ export default function GameBoard({ gameCode }: Props) {
                 )}
 
               </div>
+
+              {/* DEV: Race Flip Layer — sourozenec boardu, ne dítě; flip efekt navazuje na rotaci boardu */}
+              {process.env.NODE_ENV === "development" && devFlipOpen && (
+                <DevRaceFlipLayer
+                  playerName={players.find(p => p.id === myPlayerId)?.name ?? players[0]?.name ?? "Hráč"}
+                  playerColor={players.find(p => p.id === myPlayerId)?.color ?? "#64748b"}
+                  racingEmoji={theme.labels.racingEmoji}
+                  onExit={closeDevFlip}
+                />
+              )}
             </div>
 
             {/* Log */}
