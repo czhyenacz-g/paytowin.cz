@@ -49,7 +49,16 @@ export default function LocalNewPage() {
   React.useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       const did = user?.user_metadata?.provider_id as string | undefined;
-      if (!did) { setAuthState("unauthenticated"); return; }
+      if (!did) {
+        // Na localu není Discord nutný — přeskočit auth gate
+        if (process.env.NODE_ENV === "development") {
+          setDiscordName("localhost-dev");
+          setAuthState("ready");
+        } else {
+          setAuthState("unauthenticated");
+        }
+        return;
+      }
       setDiscordId(did);
       setDiscordName((user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? "") as string);
       setDiscordAvatarUrl((user?.user_metadata?.avatar_url as string | null) ?? null);
@@ -88,7 +97,7 @@ export default function LocalNewPage() {
         theme_id: selectedThemeId,
         board_id: selectedBoardId,
         game_mode: "local",
-        owner_discord_id: discordId,
+        owner_discord_id: discordId || null,
         max_players: playerCount,
         economy: { stateSubsidy, baseTax, lapTaxCoefficient, maxTax },
       })
@@ -227,10 +236,16 @@ export default function LocalNewPage() {
 
           <div className="rounded-3xl bg-white p-6 shadow-lg space-y-5">
             {/* Hostitel */}
-            <div className="rounded-xl bg-indigo-50 border border-indigo-100 px-4 py-3 text-sm">
-              <span className="font-semibold text-indigo-800">Hostitel:</span>{" "}
-              <span className="text-indigo-700">{discordName}</span>
-            </div>
+            {discordId ? (
+              <div className="rounded-xl bg-indigo-50 border border-indigo-100 px-4 py-3 text-sm">
+                <span className="font-semibold text-indigo-800">Hostitel:</span>{" "}
+                <span className="text-indigo-700">{discordName}</span>
+              </div>
+            ) : (
+              <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+                ⚡ Dev bypass — bez přihlášení (localhost only)
+              </div>
+            )}
 
             <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
               <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
