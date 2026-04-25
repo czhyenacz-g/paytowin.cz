@@ -3877,6 +3877,7 @@ export default function GameBoard({ gameCode }: Props) {
                     challenger={stableDuelCtx.challenger}
                     defender={stableDuelCtx.defender}
                     isDev={stableDuelCtx.isDev}
+                    themeId={themeId}
                     backgroundUrl={minigameBgUrl || undefined}
                     onFinish={handleStableDuelFinish}
                   />

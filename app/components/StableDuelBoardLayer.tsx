@@ -12,6 +12,7 @@ import DuelArena from "./duel/DuelArena";
 import type { DuelConfig } from "@/lib/duel/types";
 import type { Horse } from "@/lib/types/game";
 import { getRopeDuelSpeedLabel } from "@/lib/duel/helpers";
+import { selectStableMinigame, type StableMinigameType } from "@/lib/minigames/selectStableMinigame";
 
 export interface DuelContestant {
   name: string;
@@ -23,6 +24,7 @@ interface Props {
   challenger: DuelContestant;
   defender: DuelContestant;
   isDev?: boolean;
+  themeId?: string;
   backgroundUrl?: string;
   onFinish: (winner: "challenger" | "defender" | "draw") => void;
 }
@@ -32,6 +34,12 @@ type Phase = "prestart" | "arena" | "result";
 const BOARD_DUEL_CONFIG: DuelConfig = { gridW: 28, gridH: 20, maxTicks: 200, tickMs: 120 };
 const DUEL_REWARD = 50;
 const PRESTART_TICKS = 5;
+
+const MINIGAME_META: Record<StableMinigameType, { title: string; image: string; color: string; glowRgb: string }> = {
+  neon_rope_duel: { title: "NEON ROPE DUEL",  image: "/minigames/neon_rope.webp",          color: "#00ff88", glowRgb: "0,255,136" },
+  neon_speedrace: { title: "NEON SPEEDRACE",  image: "/minigames/neon_speedrace.webp",      color: "#22d3ee", glowRgb: "34,211,238" },
+  legendary_race: { title: "LEGENDARY RACE",  image: "/minigames/neon_legendary_race.webp", color: "#fbbf24", glowRgb: "251,191,36" },
+};
 
 // ─── sub-komponenty ────────────────────────────────────────────────────────────
 
@@ -133,13 +141,18 @@ function PreStartPhase({
   challenger,
   defender,
   countdown,
+  minigameType,
+  isDev,
   onClick,
 }: {
   challenger: DuelContestant;
   defender: DuelContestant;
   countdown: number;
+  minigameType: StableMinigameType;
+  isDev: boolean;
   onClick: () => void;
 }) {
+  const meta = MINIGAME_META[minigameType];
   const countColor =
     countdown <= 1 ? "#f87171" : countdown <= 2 ? "#fbbf24" : countdown <= 3 ? "#facc15" : "white";
   const challengerColor = toNeonColor(challenger.color, "#00ff88");
@@ -158,8 +171,16 @@ function PreStartPhase({
           50% { text-shadow: 0 0 48px rgba(220,38,38,1), 0 0 80px rgba(220,38,38,0.55), 0 4px 0 rgba(127,29,29,0.75); transform: scale(1.08); }
         }
       `}</style>
+
       {/* Top label */}
-      <div className="text-[9px] font-mono tracking-widest text-slate-500 uppercase">Stájový souboj</div>
+      <div className="flex items-center gap-2">
+        <div className="text-[9px] font-mono tracking-widest text-slate-500 uppercase">Stájový souboj</div>
+        {isDev && (
+          <div className="rounded px-1.5 py-0.5 text-[8px] font-mono font-bold uppercase tracking-wider bg-slate-800 border border-slate-700 text-slate-500">
+            {minigameType}
+          </div>
+        )}
+      </div>
 
       {/* Main title + countdown */}
       <div className="flex flex-col items-center gap-0.5">
@@ -181,15 +202,15 @@ function PreStartPhase({
       {/* Game name */}
       <div
         className="text-base font-black tracking-tight"
-        style={{ color: "#00ff88", textShadow: "0 0 16px rgba(0,255,136,0.5)" }}
+        style={{ color: meta.color, textShadow: `0 0 16px rgba(${meta.glowRgb},0.5)` }}
       >
-        NEON ROPE DUEL
+        {meta.title}
       </div>
 
-      {/* Artwork — plná viditelnost, hero prvek */}
+      {/* Artwork */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/minigames/neon_rope.webp"
+        src={meta.image}
         alt=""
         width={176}
         height={235}
@@ -254,11 +275,15 @@ function ArenaPhase({
   backgroundUrl,
   p1Speed = 5,
   p2Speed = 5,
+  // TODO: route to SpeedArenaPvp (neon_speedrace) and LegendaryArena (legendary_race)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  minigameType: _minigameType,
   onResult,
 }: {
   backgroundUrl?: string;
   p1Speed?: number;
   p2Speed?: number;
+  minigameType: StableMinigameType;
   onResult: (w: 1 | 2 | "draw") => void;
 }) {
   return (
@@ -338,6 +363,7 @@ export default function StableDuelBoardLayer({
   challenger,
   defender,
   isDev = false,
+  themeId = "horse-day",
   backgroundUrl,
   onFinish,
 }: Props) {
@@ -348,6 +374,11 @@ export default function StableDuelBoardLayer({
 
   const p1Speed = challenger.horse?.speed ?? 5;
   const p2Speed = defender.horse?.speed ?? 5;
+  const minigameType = selectStableMinigame({
+    themeId,
+    challengerHorse: challenger.horse,
+    defenderHorse:   defender.horse,
+  });
 
   const startArena = React.useCallback(() => {
     setPhase("arena");
@@ -379,11 +410,13 @@ export default function StableDuelBoardLayer({
           challenger={challenger}
           defender={defender}
           countdown={countdown}
+          minigameType={minigameType}
+          isDev={isDev}
           onClick={handleSkip}
         />
       )}
       {phase === "arena" && (
-        <ArenaPhase key={duelKey} backgroundUrl={backgroundUrl} p1Speed={p1Speed} p2Speed={p2Speed} onResult={handleDuelResult} />
+        <ArenaPhase key={duelKey} backgroundUrl={backgroundUrl} p1Speed={p1Speed} p2Speed={p2Speed} minigameType={minigameType} onResult={handleDuelResult} />
       )}
       {phase === "result" && winner && (
         <ResultPhase
