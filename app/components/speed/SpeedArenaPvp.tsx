@@ -7,10 +7,9 @@ import { nitroStaminaPreview } from "@/lib/minigame-nitro";
 
 // ── Visual constants ──────────────────────────────────────────────────────────
 
-const BG_COLOR      = "#020617";
-const WALL_COLOR    = "#1e3a5f";
-const DIVIDER_COLOR = "rgba(255,255,255,0.07)";
-const BOOST_COLOR   = "#10b981";
+const BG_COLOR    = "#020617";
+const WALL_COLOR  = "#1e3a5f";
+const BOOST_COLOR = "#10b981";
 const BOOST_DIM     = "#064e3b";
 const SLOW_COLOR    = "#f97316";
 const SLOW_DIM      = "#431407";
@@ -122,8 +121,6 @@ interface Props {
 export default function SpeedArenaPvp({
   config, showDebug = false, backgroundUrl, overlayOpacity = 0.20, autoStart = false,
 }: Props) {
-  const laneH    = Math.floor(config.arenaH / 2) - 4;
-  const p2Offset = laneH + 8;
 
   const [pvpState, setPvpState] = React.useState<SpeedPvpState>(() => {
     const s = createPvpInitialState(config);
@@ -274,26 +271,13 @@ export default function SpeedArenaPvp({
             </>
           )}
 
-          {/* Lane borders */}
-          <rect x={1} y={1} width={arenaW - 2} height={laneH - 2}
-            fill="none" stroke={WALL_COLOR} strokeWidth={2} rx={3}
-          />
-          <rect x={1} y={p2Offset + 1} width={arenaW - 2} height={laneH - 2}
-            fill="none" stroke={WALL_COLOR} strokeWidth={2} rx={3}
+          {/* Arena border */}
+          <rect x={1} y={1} width={arenaW - 2} height={arenaH - 2}
+            fill="none" stroke={WALL_COLOR} strokeWidth={3} rx={4}
           />
 
-          {/* Divider */}
-          <line x1={0} y1={laneH + 4} x2={arenaW} y2={laneH + 4}
-            stroke={DIVIDER_COLOR} strokeWidth={1} strokeDasharray="6 4"
-          />
-
-          {/* Lane labels */}
-          <text x={8} y={16} fontSize={9} fontFamily="monospace" fill={P1_COLOR} opacity={0.55}>P1</text>
-          <text x={8} y={p2Offset + 16} fontSize={9} fontFamily="monospace" fill={P2_COLOR} opacity={0.55}>P2</text>
-
-          {/* Objects */}
+          {/* Objects — P1's authoritative set (same layout for both) */}
           <LaneObjects objects={p1.objects} yOffset={0} />
-          <LaneObjects objects={p2.objects} yOffset={p2Offset} />
 
           {/* Players */}
           {pvpState.overallStatus !== "idle" && (
@@ -304,7 +288,7 @@ export default function SpeedArenaPvp({
                 opacity={p1.status === "crashed" ? 0.3 : 0.95}
               />
               <PlayerToken
-                x={p2.player.pos.x} y={p2.player.pos.y + p2Offset}
+                x={p2.player.pos.x} y={p2.player.pos.y}
                 angle={p2.player.angle} color={P2_COLOR} filterId="sa-pvp-p2"
                 opacity={p2.status === "crashed" ? 0.3 : 0.95}
               />
@@ -314,8 +298,8 @@ export default function SpeedArenaPvp({
           {/* Ghost start markers when idle */}
           {pvpState.overallStatus === "idle" && (
             <>
-              <circle cx={arenaW * 0.18} cy={laneH * 0.5} r={9} fill={P1_COLOR} opacity={0.22} />
-              <circle cx={arenaW * 0.18} cy={laneH * 0.5 + p2Offset} r={9} fill={P2_COLOR} opacity={0.22} />
+              <circle cx={arenaW * 0.18} cy={arenaH * 0.5}  r={9} fill={P1_COLOR} opacity={0.22} />
+              <circle cx={arenaW * 0.18} cy={arenaH * 0.55} r={9} fill={P2_COLOR} opacity={0.22} />
             </>
           )}
 
@@ -324,7 +308,7 @@ export default function SpeedArenaPvp({
             <text x={p1.player.pos.x} y={p1.player.pos.y + 5} textAnchor="middle" fontSize={15} fill="#ef4444" opacity={0.9}>✕</text>
           )}
           {pvpState.overallStatus !== "idle" && p2.status === "crashed" && (
-            <text x={p2.player.pos.x} y={p2.player.pos.y + p2Offset + 5} textAnchor="middle" fontSize={15} fill="#ef4444" opacity={0.9}>✕</text>
+            <text x={p2.player.pos.x} y={p2.player.pos.y + 5} textAnchor="middle" fontSize={15} fill="#ef4444" opacity={0.9}>✕</text>
           )}
         </svg>
 

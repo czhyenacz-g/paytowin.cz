@@ -210,17 +210,21 @@ export function applyTick(state: SpeedState, input: SpeedInput, config: SpeedCon
 // ── PvP state factory ─────────────────────────────────────────────────────────
 
 export function createPvpInitialState(config: SpeedConfig): SpeedPvpState {
-  // Each lane is roughly half the arena height with a small divider gap
-  const laneH      = Math.floor(config.arenaH / 2) - 4;
-  const laneConfig = { ...config, arenaH: laneH };
+  const p1 = createInitialState(config);
+  // P2 starts slightly offset vertically so the cars don't overlap at the start
+  const p2Base = createInitialState(config);
+  const p2: typeof p2Base = {
+    ...p2Base,
+    player: { ...p2Base.player, pos: { x: config.arenaW * 0.18, y: config.arenaH * 0.55 } },
+  };
   return {
-    tick:           0,
-    p1:             createInitialState(laneConfig),
-    p2:             createInitialState(laneConfig),
-    p1NitroUsed:    false,
-    p2NitroUsed:    false,
-    overallStatus:  "idle",
-    winner:         null,
+    tick:          0,
+    p1,
+    p2,
+    p1NitroUsed:   false,
+    p2NitroUsed:   false,
+    overallStatus: "idle",
+    winner:        null,
   };
 }
 
@@ -235,9 +239,6 @@ export function applyPvpTick(
   p2ActivateNitro = false,
 ): SpeedPvpState {
   if (state.overallStatus !== "running") return state;
-
-  const laneH      = Math.floor(config.arenaH / 2) - 4;
-  const laneConfig = { ...config, arenaH: laneH };
 
   let p1          = state.p1;
   let p2          = state.p2;
@@ -254,8 +255,8 @@ export function applyPvpTick(
     p2NitroUsed = true;
   }
 
-  const newP1 = p1.status === "running" ? applyTick(p1, p1Input, laneConfig) : p1;
-  const newP2 = p2.status === "running" ? applyTick(p2, p2Input, laneConfig) : p2;
+  const newP1 = p1.status === "running" ? applyTick(p1, p1Input, config) : p1;
+  const newP2 = p2.status === "running" ? applyTick(p2, p2Input, config) : p2;
 
   const bothDone      = newP1.status !== "running" && newP2.status !== "running";
   const overallStatus: SpeedPvpState["overallStatus"] = bothDone ? "finished" : "running";
