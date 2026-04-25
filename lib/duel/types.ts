@@ -13,6 +13,8 @@ export interface PlayerDuelState {
   readonly trail: readonly Vec2[];
   readonly alive: boolean;
   readonly ticksAlive: number;
+  readonly nitroTicksRemaining: number; // ticks of extra step left (>0 = active)
+  readonly nitroUsed: boolean;          // true once activated; for stamina preview
 }
 
 export interface DuelState {
