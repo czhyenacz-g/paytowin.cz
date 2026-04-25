@@ -184,8 +184,10 @@ export default function LegendaryRaceDevShell({ onExit }: Props) {
             <div className="text-[9px] font-bold text-slate-600 uppercase tracking-widest mb-1">Config</div>
             <div>maxTicks <span className="text-slate-300">{activePreset.config.maxTicks}</span></div>
             <div>tickMs <span className="text-slate-300">{activePreset.config.tickMs}</span></div>
-            <div>obstInterval <span className="text-slate-300">{activePreset.config.obstacleInterval}</span></div>
             <div>jumpDuration <span className="text-slate-300">{activePreset.config.jumpDuration}</span></div>
+            <div>jumpMaxHeight <span className="text-slate-300">{activePreset.config.jumpMaxHeight}px</span></div>
+            <div>baseGap <span className="text-slate-300">{activePreset.config.baseGap}</span></div>
+            <div>doubleChance <span className="text-slate-300">{(activePreset.config.doubleChance * 100).toFixed(0)}%</span></div>
             <div>stumble <span className="text-slate-300">{activePreset.config.stumbleDuration}</span></div>
             <div>crashPenalty <span className="text-slate-300">{activePreset.config.crashPenalty}</span></div>
             <div>clearBonus <span className="text-slate-300">{activePreset.config.clearBonus}</span></div>

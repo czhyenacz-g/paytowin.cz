@@ -1,8 +1,7 @@
 /**
  * lib/legendary/presets.ts — pojmenované dev presety pro Legendary Horse Race.
  *
- * Tyto id jsou stabilní dev tuning API. Nepřejmenovávat bez důvodu,
- * protože se na ně budou odkazovat další zadání.
+ * Tyto id jsou stabilní dev tuning API. Nepřejmenovávat bez důvodu.
  */
 
 import type { LegendaryConfig } from "./types";
@@ -18,40 +17,49 @@ export const LEGENDARY_PRESETS: LegendaryPreset[] = [
   {
     id: "legendary.horse-default",
     label: "Default",
-    description: "Vyvážená hra. Překážky každých ~40 kroků, 14 s run.",
+    description: "Vyvážená hra. Různé výšky překážek, 15% double.",
     config: {
       arenaW: 560, arenaH: 200,
-      maxTicks: 180, tickMs: 80,
+      maxTicks: 200, tickMs: 80,
       obstacleInterval: 40, obstacleVariance: 20,
-      jumpDuration: 10, jumpCooldown: 12,
+      jumpDuration: 18, jumpCooldown: 12,
       stumbleDuration: 12, crashPenalty: 50, clearBonus: 30,
       distancePerTick: 3,
+      jumpMaxHeight: 80,
+      baseGap: 130,
+      doubleChance: 0.15,
     },
   },
   {
     id: "legendary.horse-fast",
     label: "Fast",
-    description: "Rychlý běh, hutnější překážky. Vyžaduje reflexy.",
+    description: "Rychlý běh, 20% double překážky. Reflexy.",
     config: {
       arenaW: 560, arenaH: 200,
-      maxTicks: 150, tickMs: 60,
-      obstacleInterval: 28, obstacleVariance: 10,
-      jumpDuration: 8, jumpCooldown: 10,
+      maxTicks: 180, tickMs: 55,
+      obstacleInterval: 28, obstacleVariance: 12,
+      jumpDuration: 15, jumpCooldown: 10,
       stumbleDuration: 8, crashPenalty: 60, clearBonus: 40,
       distancePerTick: 4,
+      jumpMaxHeight: 70,
+      baseGap: 110,
+      doubleChance: 0.20,
     },
   },
   {
     id: "legendary.horse-chaos",
     label: "Chaos",
-    description: "Náhodné intervaly, velké penalizace. Plný chaos.",
+    description: "35% double, velké penalizace. Plný chaos.",
     config: {
       arenaW: 560, arenaH: 200,
-      maxTicks: 200, tickMs: 80,
+      maxTicks: 220, tickMs: 80,
       obstacleInterval: 22, obstacleVariance: 45,
-      jumpDuration: 10, jumpCooldown: 8,
+      jumpDuration: 18, jumpCooldown: 8,
       stumbleDuration: 16, crashPenalty: 80, clearBonus: 50,
       distancePerTick: 3,
+      jumpMaxHeight: 90,
+      baseGap: 100,
+      doubleChance: 0.35,
     },
   },
 ];
