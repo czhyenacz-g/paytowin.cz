@@ -89,7 +89,8 @@ export function createInitialState(config: LegendaryConfig): LegendaryState {
 }
 
 // ─── jump height (exported for renderer) ──────────────────────────────────────
-// Returns 0-1 parabola. Scale by config.jumpMaxHeight in renderer.
+// Returns 0–1. Asymmetric: fast easeOut ascent, faster easeIn³ descent.
+// Scale by config.jumpMaxHeight in renderer.
 
 export function getJumpHeight(
   player: Pick<PlayerRunnerState, "jumpStartTick" | "jumpTick">,
@@ -99,7 +100,13 @@ export function getJumpHeight(
   if (player.jumpStartTick < 0) return 0;
   const progress = player.jumpTick / config.jumpDuration;
   if (progress <= 0 || progress >= 1) return 0;
-  return 4 * progress * (1 - progress); // 0 → 1 → 0
+  if (progress < 0.5) {
+    const t = progress / 0.5;          // 0→1 during ascent
+    return 1 - Math.pow(1 - t, 2);    // easeOut quad: fast rise
+  } else {
+    const t = (progress - 0.5) / 0.5; // 0→1 during descent
+    return Math.pow(1 - t, 3);         // easeIn cubic: fast fall from peak
+  }
 }
 
 // ─── per-player tick ───────────────────────────────────────────────────────────
@@ -137,7 +144,7 @@ function applyPlayerTick(
 
   // 3. In air this tick?
   const inAir = p.jumpStartTick >= 0;
-  const jumpHeightFrac = inAir ? 4 * (p.jumpTick / config.jumpDuration) * (1 - p.jumpTick / config.jumpDuration) : 0;
+  const jumpHeightFrac = inAir ? getJumpHeight(p, tick, config) : 0;
   const jumpHeightPx   = jumpHeightFrac * config.jumpMaxHeight;
 
   // 4. Distance movement
@@ -146,7 +153,7 @@ function applyPlayerTick(
   p = { ...p, distance: p.distance + distInc, score: p.score + distInc };
 
   // 5. Obstacle crossings: prevDistance < obstacle.distance <= p.distance
-  const clearanceMargin = 5;
+  const clearanceMargin = 12;
   const updatedObstacles = (obstacles as Obstacle[]).map((o): Obstacle => {
     if (o[playerKey]) return o;
     if (o.distance > prevDistance && o.distance <= p.distance) {
