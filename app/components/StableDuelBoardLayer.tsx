@@ -9,7 +9,9 @@
 
 import React from "react";
 import DuelArena from "./duel/DuelArena";
+import SpeedArenaPvp from "./speed/SpeedArenaPvp";
 import type { DuelConfig } from "@/lib/duel/types";
+import type { SpeedConfig } from "@/lib/speed/types";
 import type { Horse } from "@/lib/types/game";
 import { getRopeDuelSpeedLabel } from "@/lib/duel/helpers";
 import { selectStableMinigame, type StableMinigameType } from "@/lib/minigames/selectStableMinigame";
@@ -31,7 +33,16 @@ interface Props {
 
 type Phase = "prestart" | "arena" | "result";
 
-const BOARD_DUEL_CONFIG: DuelConfig = { gridW: 28, gridH: 20, maxTicks: 200, tickMs: 120 };
+const BOARD_DUEL_CONFIG: DuelConfig  = { gridW: 28, gridH: 20, maxTicks: 200, tickMs: 120 };
+const BOARD_SPEED_CONFIG: SpeedConfig = {
+  arenaW: 480, arenaH: 320,
+  maxTicks: 120, tickMs: 80,
+  acceleration: 0.04, maxVelocity: 8,
+  turnRate: 0.075,
+  crashVelocityThreshold: 4.5,
+  boostStrength: 1.5, slowStrength: 1.2,
+  objectRespawnTicks: 45,
+};
 const DUEL_REWARD = 50;
 const PRESTART_TICKS = 5;
 
@@ -275,9 +286,7 @@ function ArenaPhase({
   backgroundUrl,
   p1Speed = 5,
   p2Speed = 5,
-  // TODO: route to SpeedArenaPvp (neon_speedrace) and LegendaryArena (legendary_race)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  minigameType: _minigameType,
+  minigameType,
   onResult,
 }: {
   backgroundUrl?: string;
@@ -286,6 +295,22 @@ function ArenaPhase({
   minigameType: StableMinigameType;
   onResult: (w: 1 | 2 | "draw") => void;
 }) {
+  if (minigameType === "neon_speedrace") {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center overflow-auto">
+        <SpeedArenaPvp
+          config={BOARD_SPEED_CONFIG}
+          autoStart
+          backgroundUrl={backgroundUrl}
+          overlayOpacity={0.20}
+          onResult={onResult}
+        />
+      </div>
+    );
+  }
+
+  // neon_rope_duel + legendary_race fallback
+  // TODO: legendary_race gets its own LegendaryArena component
   return (
     <div className="flex flex-1 flex-col items-center justify-center overflow-hidden">
       <DuelArena

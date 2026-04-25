@@ -116,10 +116,11 @@ interface Props {
   backgroundUrl?: string;
   overlayOpacity?: number;
   autoStart?: boolean;
+  onResult?: (winner: 1 | 2 | "draw") => void;
 }
 
 export default function SpeedArenaPvp({
-  config, showDebug = false, backgroundUrl, overlayOpacity = 0.20, autoStart = false,
+  config, showDebug = false, backgroundUrl, overlayOpacity = 0.20, autoStart = false, onResult,
 }: Props) {
 
   const [pvpState, setPvpState] = React.useState<SpeedPvpState>(() => {
@@ -137,8 +138,9 @@ export default function SpeedArenaPvp({
   const [running, setRunning]       = React.useState(autoStart);
   const [lastInputs, setLastInputs] = React.useState<{ p1: SpeedInput; p2: SpeedInput }>({ p1: "none", p2: "none" });
 
-  const pvpStateRef = React.useRef(pvpState);
-  const keysRef     = React.useRef<Set<string>>(new Set());
+  const pvpStateRef      = React.useRef(pvpState);
+  const keysRef          = React.useRef<Set<string>>(new Set());
+  const onResultFiredRef = React.useRef(false);
   pvpStateRef.current = pvpState;
 
   const p1NitroActivateRef = React.useRef(false);
@@ -155,9 +157,18 @@ export default function SpeedArenaPvp({
     setRunning(autoStart);
     p1NitroActivateRef.current = false;
     p2NitroActivateRef.current = false;
+    onResultFiredRef.current = false;
     setLastInputs({ p1: "none", p2: "none" });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config]);
+
+  // Fire onResult once when game finishes
+  React.useEffect(() => {
+    if (pvpState.overallStatus === "finished" && pvpState.winner !== null && !onResultFiredRef.current) {
+      onResultFiredRef.current = true;
+      onResult?.(pvpState.winner);
+    }
+  }, [pvpState.overallStatus, pvpState.winner, onResult]);
 
   // Keyboard
   React.useEffect(() => {
@@ -226,6 +237,7 @@ export default function SpeedArenaPvp({
     setRunning(false);
     p1NitroActivateRef.current = false;
     p2NitroActivateRef.current = false;
+    onResultFiredRef.current = false;
     setLastInputs({ p1: "none", p2: "none" });
   };
 
