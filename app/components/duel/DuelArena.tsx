@@ -3,6 +3,7 @@
 import React from "react";
 import { applyTick, createInitialState, getBotInput } from "@/lib/duel/simulate";
 import type { Dir, DuelConfig, DuelState } from "@/lib/duel/types";
+import { getRopeDuelStartDelayTicks } from "@/lib/duel/helpers";
 import { nitroStaminaPreview } from "@/lib/minigame-nitro";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -124,11 +125,15 @@ interface Props {
   autoStart?: boolean;
   /** Zavolá se jednou po skončení hry. */
   onResult?: (winner: 1 | 2 | "draw") => void;
+  /** Rychlost koně/racera pro P1 (1–10, default 5). */
+  p1Speed?: number;
+  /** Rychlost koně/racera pro P2 (1–10, default 5). */
+  p2Speed?: number;
 }
 
-export default function DuelArena({ config, mode, showDebug = false, backgroundUrl, overlayOpacity = 0.20, autoStart = false, onResult }: Props) {
+export default function DuelArena({ config, mode, showDebug = false, backgroundUrl, overlayOpacity = 0.20, autoStart = false, onResult, p1Speed = 5, p2Speed = 5 }: Props) {
   const [state, setState] = React.useState<DuelState>(() => {
-    const s = createInitialState(config);
+    const s = createInitialState(config, p1Speed, p2Speed);
     return autoStart ? { ...s, status: "running" as const } : s;
   });
   const [running, setRunning] = React.useState(autoStart);
@@ -145,9 +150,9 @@ export default function DuelArena({ config, mode, showDebug = false, backgroundU
   stateRef.current = state;
   runningRef.current = running;
 
-  // Reset when config or mode changes
+  // Reset when config, mode, or speeds change
   React.useEffect(() => {
-    const fresh = createInitialState(config);
+    const fresh = createInitialState(config, p1Speed, p2Speed);
     setState(fresh);
     stateRef.current = fresh;
     setRunning(false);
@@ -155,7 +160,7 @@ export default function DuelArena({ config, mode, showDebug = false, backgroundU
     setLastInputs({ p1: "straight", p2: "straight" });
     p1BoostActivateRef.current = false;
     p2BoostActivateRef.current = false;
-  }, [config, mode]);
+  }, [config, mode, p1Speed, p2Speed]);
 
   // onResult — fired once when game ends
   const onResultRef = React.useRef(onResult);
@@ -240,7 +245,7 @@ export default function DuelArena({ config, mode, showDebug = false, backgroundU
   };
 
   const handleReset = () => {
-    const fresh = createInitialState(config);
+    const fresh = createInitialState(config, p1Speed, p2Speed);
     setState(fresh);
     stateRef.current = fresh;
     setRunning(false);
@@ -401,15 +406,31 @@ export default function DuelArena({ config, mode, showDebug = false, backgroundU
       {showDebug && (
         <div className="w-full rounded-lg bg-slate-900 border border-slate-700 p-3 font-mono text-[10px] text-slate-400 space-y-0.5">
           <div><span className="text-slate-600">status</span>   <span className="text-white">{state.status}</span>   <span className="text-slate-600 ml-3">tick</span> {state.tick}/{config.maxTicks}</div>
-          <div><span className="text-slate-600">p1</span>  <span style={{ color: P1_COLOR }}>{state.p1.pos.x},{state.p1.pos.y}</span> <span className="text-slate-600">dir</span> {state.p1.dir} <span className="text-slate-600">trail</span> {state.p1.trail.length} <span className="text-slate-600">input</span> {lastInputs.p1}</div>
-          <div><span className="text-slate-600">p2</span>  <span style={{ color: P2_COLOR }}>{state.p2.pos.x},{state.p2.pos.y}</span> <span className="text-slate-600">dir</span> {state.p2.dir} <span className="text-slate-600">trail</span> {state.p2.trail.length} <span className="text-slate-600">input</span> {lastInputs.p2}</div>
           <div>
-            <span className="text-slate-600">p1 nitro</span>{" "}
+            <span className="text-slate-600">p1</span>  <span style={{ color: P1_COLOR }}>{state.p1.pos.x},{state.p1.pos.y}</span> <span className="text-slate-600">dir</span> {state.p1.dir} <span className="text-slate-600">trail</span> {state.p1.trail.length} <span className="text-slate-600">input</span> {lastInputs.p1}
+            {state.p1.startDelayTicksRemaining > 0 && <span className="text-amber-400 ml-2">delay {state.p1.startDelayTicksRemaining}</span>}
+          </div>
+          <div>
+            <span className="text-slate-600">p2</span>  <span style={{ color: P2_COLOR }}>{state.p2.pos.x},{state.p2.pos.y}</span> <span className="text-slate-600">dir</span> {state.p2.dir} <span className="text-slate-600">trail</span> {state.p2.trail.length} <span className="text-slate-600">input</span> {lastInputs.p2}
+            {state.p2.startDelayTicksRemaining > 0 && <span className="text-amber-400 ml-2">delay {state.p2.startDelayTicksRemaining}</span>}
+          </div>
+          <div>
+            <span className="text-slate-600">p1</span>{" "}
+            <span className="text-slate-500">spd {p1Speed}</span>{" "}
+            <span className="text-slate-600">delay</span> {state.p1.startDelayTicksRemaining}/{getRopeDuelStartDelayTicks(p1Speed)}{" "}
+            <span className="text-slate-600">dashTiles</span> {state.p1.nitroDashTiles}{" "}
+            <span className="text-slate-600">nitro</span>{" "}
             <span style={{ color: nitroColor(state.p1.nitroUsed, state.p1.nitroTicksRemaining, P1_COLOR) }}>
               {state.p1.nitroUsed ? (state.p1.nitroTicksRemaining > 0 ? `active(${state.p1.nitroTicksRemaining})` : "used") : "ready"}
             </span>
+          </div>
+          <div>
+            <span className="text-slate-600">p2</span>{" "}
+            <span className="text-slate-500">spd {p2Speed}</span>{" "}
+            <span className="text-slate-600">delay</span> {state.p2.startDelayTicksRemaining}/{getRopeDuelStartDelayTicks(p2Speed)}{" "}
+            <span className="text-slate-600">dashTiles</span> {state.p2.nitroDashTiles}{" "}
             {mode === "pvp" && <>
-              <span className="text-slate-600 ml-3">p2 nitro</span>{" "}
+              <span className="text-slate-600">nitro</span>{" "}
               <span style={{ color: nitroColor(state.p2.nitroUsed, state.p2.nitroTicksRemaining, P2_COLOR) }}>
                 {state.p2.nitroUsed ? (state.p2.nitroTicksRemaining > 0 ? `active(${state.p2.nitroTicksRemaining})` : "used") : "ready"}
               </span>

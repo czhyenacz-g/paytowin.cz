@@ -1,4 +1,5 @@
 import type { AbsDir, Dir, DuelConfig, DuelState, PlayerDuelState, Vec2 } from "./types";
+import { getRopeDuelStartDelayTicks, getRopeDuelNitroDashTiles } from "./helpers";
 
 // ── Direction helpers ─────────────────────────────────────────────────────────
 
@@ -33,26 +34,29 @@ export function hits(pos: Vec2, trail: readonly Vec2[]): boolean {
   return trail.some(t => t.x === pos.x && t.y === pos.y);
 }
 
-// ── Nitro ─────────────────────────────────────────────────────────────────────
-
-const NITRO_TICKS = 8; // extra-step ticks per activation
-
 // ── State factory ─────────────────────────────────────────────────────────────
 
-export function createInitialState(config: DuelConfig): DuelState {
+export function createInitialState(config: DuelConfig, p1Speed = 5, p2Speed = 5): DuelState {
   const { gridW, gridH } = config;
   const midY = Math.floor(gridH / 2);
   const p1x  = Math.floor(gridW / 4);
   const p2x  = Math.floor((gridW * 3) / 4);
-  const base: Omit<PlayerDuelState, "pos" | "dir" | "trail"> = {
-    alive: true, ticksAlive: 0, nitroTicksRemaining: 0, nitroUsed: false,
-  };
   return {
     tick:   0,
     status: "idle",
     winner: null,
-    p1: { ...base, pos: { x: p1x, y: midY }, dir: "right", trail: [{ x: p1x, y: midY }] },
-    p2: { ...base, pos: { x: p2x, y: midY }, dir: "left",  trail: [{ x: p2x, y: midY }] },
+    p1: {
+      pos: { x: p1x, y: midY }, dir: "right", trail: [{ x: p1x, y: midY }],
+      alive: true, ticksAlive: 0, nitroTicksRemaining: 0, nitroUsed: false,
+      startDelayTicksRemaining: getRopeDuelStartDelayTicks(p1Speed),
+      nitroDashTiles:           getRopeDuelNitroDashTiles(p1Speed, gridW),
+    },
+    p2: {
+      pos: { x: p2x, y: midY }, dir: "left",  trail: [{ x: p2x, y: midY }],
+      alive: true, ticksAlive: 0, nitroTicksRemaining: 0, nitroUsed: false,
+      startDelayTicksRemaining: getRopeDuelStartDelayTicks(p2Speed),
+      nitroDashTiles:           getRopeDuelNitroDashTiles(p2Speed, gridW),
+    },
   };
 }
 
@@ -71,57 +75,71 @@ export function applyTick(
   const { gridW, gridH, maxTicks } = config;
   const newTick = state.tick + 1;
 
-  // Nitro activation (one-time, guard against double-use)
-  const p1Activating = p1ActivateNitro && !state.p1.nitroUsed;
-  const p2Activating = p2ActivateNitro && !state.p2.nitroUsed;
+  // ── Start delay — player is immobile for first N ticks ──────────────────────
+
+  const p1InDelay = state.p1.startDelayTicksRemaining > 0;
+  const p2InDelay = state.p2.startDelayTicksRemaining > 0;
+
+  // ── Nitro activation (one-time, guard against double-use) ───────────────────
+
+  const p1Activating = p1ActivateNitro && !state.p1.nitroUsed && !p1InDelay;
+  const p2Activating = p2ActivateNitro && !state.p2.nitroUsed && !p2InDelay;
 
   const p1NitroActive = p1Activating || state.p1.nitroTicksRemaining > 0;
   const p2NitroActive = p2Activating || state.p2.nitroTicksRemaining > 0;
 
   const p1NitroNext = p1Activating
-    ? NITRO_TICKS - 1
+    ? state.p1.nitroDashTiles - 1      // speed-based dash length
     : Math.max(0, state.p1.nitroTicksRemaining - 1);
   const p2NitroNext = p2Activating
-    ? NITRO_TICKS - 1
+    ? state.p2.nitroDashTiles - 1
     : Math.max(0, state.p2.nitroTicksRemaining - 1);
 
   // ── Step 1: standard simultaneous movement ──────────────────────────────────
+  // Delayed players do not turn or move; their trail does not grow.
 
-  const p1dir  = turn(state.p1.dir, p1Input);
-  const p2dir  = turn(state.p2.dir, p2Input);
-  const p1next = step(state.p1.pos, p1dir);
-  const p2next = step(state.p2.pos, p2dir);
+  const p1dir  = p1InDelay ? state.p1.dir : turn(state.p1.dir, p1Input);
+  const p2dir  = p2InDelay ? state.p2.dir : turn(state.p2.dir, p2Input);
+  const p1next = p1InDelay ? state.p1.pos : step(state.p1.pos, p1dir);
+  const p2next = p2InDelay ? state.p2.pos : step(state.p2.pos, p2dir);
 
-  const p1crash1 =
+  const p1crash1 = !p1InDelay && (
     outOfBounds(p1next, gridW, gridH) ||
     hits(p1next, state.p1.trail) ||
-    hits(p1next, state.p2.trail);
-  const p2crash1 =
+    hits(p1next, state.p2.trail)
+  );
+  const p2crash1 = !p2InDelay && (
     outOfBounds(p2next, gridW, gridH) ||
     hits(p2next, state.p2.trail) ||
-    hits(p2next, state.p1.trail);
-  const headOn = p1next.x === p2next.x && p1next.y === p2next.y;
+    hits(p2next, state.p1.trail)
+  );
+  // Head-on only when both are actually moving
+  const headOn = !p1InDelay && !p2InDelay && p1next.x === p2next.x && p1next.y === p2next.y;
 
   let p1alive = !p1crash1 && !headOn;
   let p2alive = !p2crash1 && !headOn;
 
   let newP1: PlayerDuelState = {
-    pos:        p1alive ? p1next : state.p1.pos,
-    dir:        p1dir,
-    trail:      p1alive ? [...state.p1.trail, p1next] : state.p1.trail,
-    alive:      p1alive,
+    pos:   p1alive ? p1next : state.p1.pos,
+    dir:   p1dir,
+    trail: p1alive && !p1InDelay ? [...state.p1.trail, p1next] : state.p1.trail,
+    alive: p1alive,
     ticksAlive: state.p1.ticksAlive + (p1alive ? 1 : 0),
     nitroTicksRemaining: p1NitroNext,
-    nitroUsed:  state.p1.nitroUsed || p1Activating,
+    nitroUsed: state.p1.nitroUsed || p1Activating,
+    startDelayTicksRemaining: p1InDelay ? state.p1.startDelayTicksRemaining - 1 : 0,
+    nitroDashTiles: state.p1.nitroDashTiles,
   };
   let newP2: PlayerDuelState = {
-    pos:        p2alive ? p2next : state.p2.pos,
-    dir:        p2dir,
-    trail:      p2alive ? [...state.p2.trail, p2next] : state.p2.trail,
-    alive:      p2alive,
+    pos:   p2alive ? p2next : state.p2.pos,
+    dir:   p2dir,
+    trail: p2alive && !p2InDelay ? [...state.p2.trail, p2next] : state.p2.trail,
+    alive: p2alive,
     ticksAlive: state.p2.ticksAlive + (p2alive ? 1 : 0),
     nitroTicksRemaining: p2NitroNext,
-    nitroUsed:  state.p2.nitroUsed || p2Activating,
+    nitroUsed: state.p2.nitroUsed || p2Activating,
+    startDelayTicksRemaining: p2InDelay ? state.p2.startDelayTicksRemaining - 1 : 0,
+    nitroDashTiles: state.p2.nitroDashTiles,
   };
 
   // ── Nitro extra step for P1 (if alive, continues same direction) ────────────

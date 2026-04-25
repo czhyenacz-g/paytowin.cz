@@ -209,4 +209,6 @@ export interface GameState {
    * `turn` je unikátní klíč — zabraňuje opakovanému zobrazení při každém refreshi.
    */
   year_event_telegram?: { text: string; turn: number } | null;
+  /** Guard: pole turnCount hodnot závodů, kde byly hvězdy uděleny. Optional pro zpětnou kompatibilitu. */
+  race_stars_awarded?: number[];
 }

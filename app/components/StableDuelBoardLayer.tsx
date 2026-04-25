@@ -11,6 +11,7 @@ import React from "react";
 import DuelArena from "./duel/DuelArena";
 import type { DuelConfig } from "@/lib/duel/types";
 import type { Horse } from "@/lib/types/game";
+import { getRopeDuelSpeedLabel } from "@/lib/duel/helpers";
 
 export interface DuelContestant {
   name: string;
@@ -64,6 +65,8 @@ function PlayerCard({ contestant, label }: { contestant: DuelContestant; label: 
   const [imgErr, setImgErr] = React.useState(false);
   const imgSrc = contestant.horse?.image ?? null;
   const showImg = !!imgSrc && !imgErr;
+  const speed = contestant.horse?.speed ?? 5;
+  const speedLabel = getRopeDuelSpeedLabel(speed);
 
   return (
     <div
@@ -114,6 +117,11 @@ function PlayerCard({ contestant, label }: { contestant: DuelContestant; label: 
           }}
         >
           1 : 2.5
+        </div>
+        <div className="text-[8px] font-mono text-center leading-snug mt-0.5" style={{ color: `${contestant.color}bb` }}>
+          start: <span className="text-white">{speedLabel.start}</span>
+          {" · "}
+          nitro: <span className="text-white">{speedLabel.nitro}</span>
         </div>
         <div className="text-[7px] text-slate-600 uppercase tracking-widest font-bold mt-0.5">{label}</div>
       </div>
@@ -244,9 +252,13 @@ function PreStartPhase({
 
 function ArenaPhase({
   backgroundUrl,
+  p1Speed = 5,
+  p2Speed = 5,
   onResult,
 }: {
   backgroundUrl?: string;
+  p1Speed?: number;
+  p2Speed?: number;
   onResult: (w: 1 | 2 | "draw") => void;
 }) {
   return (
@@ -257,6 +269,8 @@ function ArenaPhase({
         autoStart
         backgroundUrl={backgroundUrl}
         overlayOpacity={0.20}
+        p1Speed={p1Speed}
+        p2Speed={p2Speed}
         onResult={onResult}
       />
     </div>
@@ -332,6 +346,9 @@ export default function StableDuelBoardLayer({
   const [duelKey, setDuelKey]     = React.useState(0);
   const [winner, setWinner]       = React.useState<"challenger" | "defender" | "draw" | null>(null);
 
+  const p1Speed = challenger.horse?.speed ?? 5;
+  const p2Speed = defender.horse?.speed ?? 5;
+
   const startArena = React.useCallback(() => {
     setPhase("arena");
     setDuelKey(k => k + 1);
@@ -366,7 +383,7 @@ export default function StableDuelBoardLayer({
         />
       )}
       {phase === "arena" && (
-        <ArenaPhase key={duelKey} backgroundUrl={backgroundUrl} onResult={handleDuelResult} />
+        <ArenaPhase key={duelKey} backgroundUrl={backgroundUrl} p1Speed={p1Speed} p2Speed={p2Speed} onResult={handleDuelResult} />
       )}
       {phase === "result" && winner && (
         <ResultPhase

@@ -29,6 +29,8 @@ export default function DuelDevShell({ onExit, themeSkin }: Props) {
   const [mode, setMode]           = React.useState<DuelMode>("pvp");
   const [showDebug, setDebug]     = React.useState(false);
   const [configKey, setConfigKey] = React.useState(0);
+  const [p1Speed, setP1Speed]     = React.useState(5);
+  const [p2Speed, setP2Speed]     = React.useState(5);
   // Standalone skin state — použito jen když themeSkin prop chybí
   const [localSkin, setLocalSkin] = React.useState<MinigameSkin>({});
   // Prestart countdown
@@ -65,6 +67,12 @@ export default function DuelDevShell({ onExit, themeSkin }: Props) {
   const applyConfig = (patch: Partial<DuelConfig>) => {
     setConfig(c => ({ ...c, ...patch }));
     setPresetId("custom");
+    setConfigKey(k => k + 1);
+  };
+
+  const selectSpeed = (player: 1 | 2, speed: number) => {
+    if (player === 1) setP1Speed(speed);
+    else setP2Speed(speed);
     setConfigKey(k => k + 1);
   };
 
@@ -179,6 +187,8 @@ export default function DuelDevShell({ onExit, themeSkin }: Props) {
             backgroundUrl={activeSkin.backgroundUrl}
             overlayOpacity={activeSkin.overlayOpacity}
             autoStart={preStartDone}
+            p1Speed={p1Speed}
+            p2Speed={p2Speed}
           />
 
           {/* Controls legend */}
@@ -303,6 +313,35 @@ export default function DuelDevShell({ onExit, themeSkin }: Props) {
               >
                 {m === "pvp" ? "👥 Hráč vs Hráč" : "🤖 Hráč vs Bot"}
               </button>
+            ))}
+          </div>
+
+          {/* Player speeds */}
+          <div className="rounded-xl bg-slate-900 border border-slate-800 p-3 space-y-2">
+            <div className="text-[9px] font-bold uppercase tracking-widest text-slate-600">Rychlost hráčů</div>
+            {([1, 2] as const).map(player => (
+              <div key={player} className="space-y-1">
+                <div className={`text-[9px] font-mono font-bold ${player === 1 ? "text-emerald-500" : "text-purple-400"}`}>
+                  P{player} speed = {player === 1 ? p1Speed : p2Speed}
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(s => (
+                    <button
+                      key={s}
+                      onClick={() => selectSpeed(player, s)}
+                      className={`rounded px-1.5 py-1 text-[10px] font-mono font-bold transition ${
+                        (player === 1 ? p1Speed : p2Speed) === s
+                          ? player === 1
+                            ? "bg-emerald-700 text-emerald-100"
+                            : "bg-purple-700 text-purple-100"
+                          : "bg-slate-800 text-slate-500 hover:bg-slate-700"
+                      }`}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
 
