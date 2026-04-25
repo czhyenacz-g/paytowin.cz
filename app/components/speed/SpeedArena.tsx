@@ -3,6 +3,7 @@
 import React from "react";
 import { applyTick, createInitialState } from "@/lib/speed/simulate";
 import type { SpeedConfig, SpeedInput, SpeedState } from "@/lib/speed/types";
+import { nitroStaminaPreview } from "@/lib/minigame-nitro";
 
 // ── Visual constants ──────────────────────────────────────────────────────────
 
@@ -15,6 +16,8 @@ const SLOW_DIM     = "#431407";
 const PLAYER_COLOR_SLOW = "#22d3ee";
 const PLAYER_COLOR_MID  = "#fbbf24";
 const PLAYER_COLOR_FAST = "#f87171";
+
+const NITRO_SPEED_BOOST = 2.5; // velocity units injected on nitro activation
 
 function speedColor(velocity: number, maxVelocity: number): string {
   const t = velocity / maxVelocity;
@@ -135,12 +138,20 @@ export default function SpeedArena({ config, showDebug = false, backgroundUrl, o
   const keysRef    = React.useRef<Set<string>>(new Set());
   stateRef.current = state;
 
+  // Nitro (dev preview, not saved to DB)
+  const nitroActivateRef = React.useRef(false);
+  const nitroUsedRef     = React.useRef(false);
+  const [nitroUsed, setNitroUsed] = React.useState(false);
+
   // Reset on config change
   React.useEffect(() => {
     const fresh = createInitialState(config);
     setState(autoStart ? { ...fresh, status: "running" as const } : fresh);
     stateRef.current = autoStart ? { ...fresh, status: "running" as const } : fresh;
     setRunning(autoStart);
+    nitroActivateRef.current = false;
+    nitroUsedRef.current     = false;
+    setNitroUsed(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config]);
 
@@ -150,6 +161,8 @@ export default function SpeedArena({ config, showDebug = false, backgroundUrl, o
       keysRef.current.add(e.code);
       if (["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space"].includes(e.code))
         e.preventDefault();
+      if (e.code === "Space" && !nitroUsedRef.current)
+        nitroActivateRef.current = true;
     };
     const up = (e: KeyboardEvent) => keysRef.current.delete(e.code);
     window.addEventListener("keydown", down);
@@ -164,8 +177,24 @@ export default function SpeedArena({ config, showDebug = false, backgroundUrl, o
   React.useEffect(() => {
     if (!running) return;
     const id = setInterval(() => {
-      const cur = stateRef.current;
+      // Consume nitro activation (single-trigger per keypress)
+      const nitroActivate = nitroActivateRef.current;
+      nitroActivateRef.current = false;
+
+      let cur = stateRef.current;
       if (cur.status !== "running") { setRunning(false); return; }
+
+      // Inject nitro velocity boost once
+      if (nitroActivate && !nitroUsedRef.current) {
+        nitroUsedRef.current = true;
+        setNitroUsed(true);
+        cur = {
+          ...cur,
+          player: { ...cur.player, velocity: Math.min(config.maxVelocity, cur.player.velocity + NITRO_SPEED_BOOST) },
+        };
+        stateRef.current = cur;
+      }
+
       const keys = keysRef.current;
       const input: SpeedInput =
         keys.has("ArrowLeft") || keys.has("KeyA") ? "left" :
@@ -194,6 +223,9 @@ export default function SpeedArena({ config, showDebug = false, backgroundUrl, o
     setState(fresh);
     stateRef.current = fresh;
     setRunning(false);
+    nitroActivateRef.current = false;
+    nitroUsedRef.current     = false;
+    setNitroUsed(false);
   };
 
   const { arenaW, arenaH, maxVelocity, maxTicks } = config;
@@ -202,6 +234,9 @@ export default function SpeedArena({ config, showDebug = false, backgroundUrl, o
   const isDone  = state.status === "crashed" || state.status === "finished";
   const isPaused = !running && state.status === "running";
   const tickPct  = state.tick / maxTicks;
+
+  // Stamina preview (dev display only)
+  const staminaPreview = nitroStaminaPreview(nitroUsed, state.status === "crashed");
 
   return (
     <div className="flex flex-col items-center gap-3 select-none">
@@ -293,6 +328,11 @@ export default function SpeedArena({ config, showDebug = false, backgroundUrl, o
                 <div className="text-xs text-slate-500">
                   {p.ticksAlive} tiků · ⚡{p.boostsHit} · 🛢{p.slowsHit} · bounces {p.wallBounces}
                 </div>
+                <div className="text-[10px] font-mono text-slate-600">
+                  stamina −{staminaPreview.total}
+                  {staminaPreview.nitroCost > 0 && <span className="text-amber-500"> (nitro −{staminaPreview.nitroCost})</span>}
+                  {staminaPreview.crashPenalty > 0 && <span className="text-red-500"> (crash −{staminaPreview.crashPenalty})</span>}
+                </div>
                 <button onClick={handleReset} className="mt-1 rounded-lg bg-slate-700 px-5 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-600 transition">
                   ↺ Reset
                 </button>
@@ -308,6 +348,18 @@ export default function SpeedArena({ config, showDebug = false, backgroundUrl, o
           <span>tick {state.tick}/{maxTicks}</span>
           <span>⚡ ×{state.player.boostsHit}  🛢 ×{state.player.slowsHit}</span>
           <span className="font-bold text-slate-400">score {state.score}</span>
+        </div>
+
+        {/* Nitro indicator */}
+        <div className="flex items-center gap-2 text-[10px] font-mono">
+          <span className="text-slate-600 w-14 shrink-0">NITRO</span>
+          {state.status === "idle" ? (
+            <span className="text-slate-600">SPACE (1× za hru, −20 stamina)</span>
+          ) : nitroUsed ? (
+            <span className="text-slate-500">✓ použito</span>
+          ) : (
+            <span className="text-amber-300 font-bold">⚡ ready — SPACE</span>
+          )}
         </div>
 
         {/* Speed gauge */}
@@ -341,6 +393,14 @@ export default function SpeedArena({ config, showDebug = false, backgroundUrl, o
           <div><span className="text-slate-600">pos</span> {p.pos.x.toFixed(1)},{p.pos.y.toFixed(1)}  <span className="text-slate-600 ml-2">angle</span> {(p.angle * 180 / Math.PI).toFixed(1)}°</div>
           <div><span className="text-slate-600">vel</span> <span style={{ color: speedColor(p.velocity, maxVelocity) }}>{p.velocity.toFixed(2)}</span>/{maxVelocity}  <span className="text-slate-600 ml-2">dist</span> {p.distanceTraveled.toFixed(0)}px</div>
           <div><span className="text-slate-600">boosts</span> {p.boostsHit}  <span className="text-slate-600 ml-2">slows</span> {p.slowsHit}  <span className="text-slate-600 ml-2">bounces</span> {p.wallBounces}  <span className="text-slate-600 ml-2">score</span> <span className="text-white">{state.score}</span></div>
+          <div>
+            <span className="text-slate-600">nitro</span>{" "}
+            <span className={nitroUsed ? "text-slate-500" : "text-amber-300"}>{nitroUsed ? "used" : "ready"}</span>
+            <span className="text-slate-600 ml-3">stamina preview</span>{" "}
+            <span className="text-slate-300">−{staminaPreview.total}</span>
+            {staminaPreview.nitroCost > 0 && <span className="text-amber-500"> nitro −{staminaPreview.nitroCost}</span>}
+            {staminaPreview.crashPenalty > 0 && <span className="text-red-500"> crash −{staminaPreview.crashPenalty}</span>}
+          </div>
         </div>
       )}
     </div>

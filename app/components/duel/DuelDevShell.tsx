@@ -134,6 +134,12 @@ export default function DuelDevShell({ onExit, themeSkin }: Props) {
               </div>
             )}
             <div>Nenarážej do zdí ani do světelného provazu.</div>
+            <div>
+              <span className="text-yellow-400 font-bold">
+                {mode === "pvp" ? "SPACE = nitro P1 · S = nitro P2" : "SPACE = nitro"}
+              </span>
+              {" (−20 stamina, 1× za hru)"}
+            </div>
           </div>
 
           <div className="text-[9px] text-slate-700 mt-2">klikni pro přeskočení</div>

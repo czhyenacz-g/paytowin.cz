@@ -414,6 +414,7 @@ export default function LegendaryHorseRaceArena({
             {" "}stumble={state.p2.stumbleUntilTick > tick ? state.p2.stumbleUntilTick - tick : 0}
           </div>
           {state.winner && <div className="text-amber-400 font-bold">winner: P{state.winner}</div>}
+          <div><span className="text-slate-600">boostUsed</span> <span className="text-slate-500">false (nitro v přípravě)</span></div>
           <div className="text-slate-600">
             obstacles: {state.obstacles.slice(0, 5).map(o => `[d=${o.distance} h=${o.height}]`).join(" ")}
           </div>

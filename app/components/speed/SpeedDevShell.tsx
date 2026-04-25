@@ -140,6 +140,10 @@ export default function SpeedDevShell({ onExit, themeSkin }: Props) {
               <span className="text-cyan-400 font-bold">A D</span> — zatočit
             </div>
             <div>Rychlost roste automaticky. Narážení při vysoké rychlosti = crash.</div>
+            <div>
+              <span className="text-yellow-400 font-bold">SPACE = nitro</span>
+              {" (−20 stamina, 1× za hru)"}
+            </div>
           </div>
 
           <div className="text-[9px] text-slate-700 mt-2">klikni pro přeskočení</div>

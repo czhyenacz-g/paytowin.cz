@@ -194,6 +194,12 @@ export default function LegendaryRaceDevShell({ onExit }: Props) {
             <div>distPerTick <span className="text-slate-300">{activePreset.config.distancePerTick}</span></div>
           </div>
 
+          {/* Nitro — not active for Legendary yet */}
+          <div className="rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 font-mono text-[9px] text-slate-600">
+            <span className="text-slate-500">Nitro:</span> Space/S (v přípravě)
+            <div className="text-slate-700 mt-0.5">boostUsed: false</div>
+          </div>
+
           {/* Debug toggle */}
           <button
             onClick={() => setDebug(d => !d)}

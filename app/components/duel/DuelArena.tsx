@@ -3,6 +3,7 @@
 import React from "react";
 import { applyTick, createInitialState, getBotInput } from "@/lib/duel/simulate";
 import type { Dir, DuelConfig, DuelState } from "@/lib/duel/types";
+import { nitroStaminaPreview } from "@/lib/minigame-nitro";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -13,7 +14,8 @@ const P2_DIM    = "#4c1d95";
 const BG_COLOR  = "#030712";
 const GRID_COLOR = "rgba(255,255,255,0.04)";
 
-const CELL_PX = 20; // px per grid cell
+const CELL_PX         = 20;  // px per grid cell
+const NITRO_DUEL_TICKS = 12; // intervals of double-speed per boost activation
 
 // ── SVG neon glow filter ──────────────────────────────────────────────────────
 
@@ -137,6 +139,16 @@ export default function DuelArena({ config, mode, showDebug = false, backgroundU
   const keysRef   = React.useRef<Set<string>>(new Set());
   const runningRef = React.useRef(false);
 
+  // Nitro (dev preview, not saved to DB)
+  const p1NitroRef          = React.useRef({ used: false, ticksLeft: 0 });
+  const p2NitroRef          = React.useRef({ used: false, ticksLeft: 0 });
+  const p1BoostActivateRef  = React.useRef(false);
+  const p2BoostActivateRef  = React.useRef(false);
+  const [nitroDisplay, setNitroDisplay] = React.useState({
+    p1: { used: false, ticksLeft: 0 },
+    p2: { used: false, ticksLeft: 0 },
+  });
+
   stateRef.current = state;
   runningRef.current = running;
 
@@ -148,6 +160,11 @@ export default function DuelArena({ config, mode, showDebug = false, backgroundU
     setRunning(false);
     runningRef.current = false;
     setLastInputs({ p1: "straight", p2: "straight" });
+    p1NitroRef.current = { used: false, ticksLeft: 0 };
+    p2NitroRef.current = { used: false, ticksLeft: 0 };
+    p1BoostActivateRef.current = false;
+    p2BoostActivateRef.current = false;
+    setNitroDisplay({ p1: { used: false, ticksLeft: 0 }, p2: { used: false, ticksLeft: 0 } });
   }, [config, mode]);
 
   // onResult — fired once when game ends
@@ -165,10 +182,11 @@ export default function DuelArena({ config, mode, showDebug = false, backgroundU
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
       keysRef.current.add(e.code);
-      // Prevent arrow key page scroll when arena is open
       if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Space"].includes(e.code)) {
         e.preventDefault();
       }
+      if (e.code === "Space") p1BoostActivateRef.current = true;
+      if (e.code === "KeyS")  p2BoostActivateRef.current = true;
     };
     const up = (e: KeyboardEvent) => keysRef.current.delete(e.code);
     window.addEventListener("keydown", down);
@@ -193,13 +211,44 @@ export default function DuelArena({ config, mode, showDebug = false, backgroundU
       }
 
       const keys = keysRef.current;
+
+      // Consume nitro activation flags (single-trigger per keypress)
+      const p1Activate = p1BoostActivateRef.current;
+      const p2Activate = p2BoostActivateRef.current;
+      p1BoostActivateRef.current = false;
+      p2BoostActivateRef.current = false;
+      if (p1Activate && !p1NitroRef.current.used) {
+        p1NitroRef.current = { used: true, ticksLeft: NITRO_DUEL_TICKS };
+      }
+      if (mode === "pvp" && p2Activate && !p2NitroRef.current.used) {
+        p2NitroRef.current = { used: true, ticksLeft: NITRO_DUEL_TICKS };
+      }
+
       const p1: Dir = keys.has("KeyA") ? "left" : keys.has("KeyD") ? "right" : "straight";
       const p2: Dir = mode === "pvbot"
         ? getBotInput(cur, 2, config)
         : keys.has("ArrowLeft") ? "left" : keys.has("ArrowRight") ? "right" : "straight";
 
       setLastInputs({ p1, p2 });
-      const next = applyTick(cur, p1, p2, config);
+      let next = applyTick(cur, p1, p2, config);
+
+      // Double tick when any nitro is active (increases crash risk for both)
+      const anyNitroActive = p1NitroRef.current.ticksLeft > 0 || p2NitroRef.current.ticksLeft > 0;
+      if (anyNitroActive && next.status === "running") {
+        const p1b: Dir = keys.has("KeyA") ? "left" : keys.has("KeyD") ? "right" : "straight";
+        const p2b: Dir = mode === "pvbot"
+          ? getBotInput(next, 2, config)
+          : keys.has("ArrowLeft") ? "left" : keys.has("ArrowRight") ? "right" : "straight";
+        next = applyTick(next, p1b, p2b, config);
+      }
+
+      // Decrement nitro ticks
+      if (p1NitroRef.current.ticksLeft > 0)
+        p1NitroRef.current = { ...p1NitroRef.current, ticksLeft: p1NitroRef.current.ticksLeft - 1 };
+      if (p2NitroRef.current.ticksLeft > 0)
+        p2NitroRef.current = { ...p2NitroRef.current, ticksLeft: p2NitroRef.current.ticksLeft - 1 };
+
+      setNitroDisplay({ p1: { ...p1NitroRef.current }, p2: { ...p2NitroRef.current } });
       stateRef.current = next;
       setState(next);
     }, config.tickMs);
@@ -227,15 +276,45 @@ export default function DuelArena({ config, mode, showDebug = false, backgroundU
     setRunning(false);
     runningRef.current = false;
     setLastInputs({ p1: "straight", p2: "straight" });
+    p1NitroRef.current = { used: false, ticksLeft: 0 };
+    p2NitroRef.current = { used: false, ticksLeft: 0 };
+    p1BoostActivateRef.current = false;
+    p2BoostActivateRef.current = false;
+    setNitroDisplay({ p1: { used: false, ticksLeft: 0 }, p2: { used: false, ticksLeft: 0 } });
   };
 
   const w = config.gridW * CELL_PX;
   const h = config.gridH * CELL_PX;
-  const isDone = state.status !== "idle" && state.status !== "running";
+  const isDone   = state.status !== "idle" && state.status !== "running";
   const isPaused = !running && state.status === "running";
+
+  // Stamina preview (dev display only)
+  const p1Crashed  = state.status === "p2_win" || state.status === "draw";
+  const p2Crashed  = state.status === "p1_win" || state.status === "draw";
+  const p1Preview  = nitroStaminaPreview(nitroDisplay.p1.used, p1Crashed);
+  const p2Preview  = nitroStaminaPreview(nitroDisplay.p2.used, p2Crashed);
+
+  const nitroLabel = (nd: { used: boolean; ticksLeft: number }, key: string) =>
+    nd.used ? (nd.ticksLeft > 0 ? `⚡ NITRO (${nd.ticksLeft})` : "⚡ použito") : `⚡ ${key}`;
+  const nitroColor = (nd: { used: boolean; ticksLeft: number }, base: string) =>
+    nd.used ? (nd.ticksLeft > 0 ? "#fbbf24" : "#475569") : base;
 
   return (
     <div className="flex flex-col items-center gap-3 select-none">
+
+      {/* Nitro HUD */}
+      {state.status !== "idle" && (
+        <div className="flex justify-between font-mono text-[10px]" style={{ width: w }}>
+          <span style={{ color: nitroColor(nitroDisplay.p1, P1_COLOR) }}>
+            {nitroLabel(nitroDisplay.p1, "SPACE")} P1
+          </span>
+          {mode === "pvp" && (
+            <span style={{ color: nitroColor(nitroDisplay.p2, P2_COLOR) }}>
+              P2 {nitroLabel(nitroDisplay.p2, "S")}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Arena SVG */}
       <div className="relative rounded-lg overflow-hidden" style={{ boxShadow: "0 0 32px rgba(0,255,136,0.08), 0 0 0 1px rgba(255,255,255,0.06)" }}>
@@ -318,6 +397,9 @@ export default function DuelArena({ config, mode, showDebug = false, backgroundU
                    : "🏆 P2 VYHRÁL"}
                 </div>
                 <div className="text-xs text-slate-500">tick {state.tick} · P1: {state.p1.ticksAlive} · P2: {state.p2.ticksAlive}</div>
+                <div className="text-[10px] font-mono text-slate-600">
+                  stamina P1 −{p1Preview.total}{mode === "pvp" ? ` · P2 −${p2Preview.total}` : ""}
+                </div>
                 <button
                   onClick={handleReset}
                   className="rounded-lg bg-slate-700 px-5 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-600 transition"
@@ -354,7 +436,25 @@ export default function DuelArena({ config, mode, showDebug = false, backgroundU
           <div><span className="text-slate-600">status</span>   <span className="text-white">{state.status}</span>   <span className="text-slate-600 ml-3">tick</span> {state.tick}/{config.maxTicks}</div>
           <div><span className="text-slate-600">p1</span>  <span style={{ color: P1_COLOR }}>{state.p1.pos.x},{state.p1.pos.y}</span> <span className="text-slate-600">dir</span> {state.p1.dir} <span className="text-slate-600">trail</span> {state.p1.trail.length} <span className="text-slate-600">input</span> {lastInputs.p1}</div>
           <div><span className="text-slate-600">p2</span>  <span style={{ color: P2_COLOR }}>{state.p2.pos.x},{state.p2.pos.y}</span> <span className="text-slate-600">dir</span> {state.p2.dir} <span className="text-slate-600">trail</span> {state.p2.trail.length} <span className="text-slate-600">input</span> {lastInputs.p2}</div>
+          <div>
+            <span className="text-slate-600">p1 nitro</span>{" "}
+            <span style={{ color: nitroColor(nitroDisplay.p1, P1_COLOR) }}>
+              {nitroDisplay.p1.used ? (nitroDisplay.p1.ticksLeft > 0 ? `active(${nitroDisplay.p1.ticksLeft})` : "used") : "ready"}
+            </span>
+            {mode === "pvp" && <>
+              <span className="text-slate-600 ml-3">p2 nitro</span>{" "}
+              <span style={{ color: nitroColor(nitroDisplay.p2, P2_COLOR) }}>
+                {nitroDisplay.p2.used ? (nitroDisplay.p2.ticksLeft > 0 ? `active(${nitroDisplay.p2.ticksLeft})` : "used") : "ready"}
+              </span>
+            </>}
+          </div>
           {state.winner && <div className="text-amber-400 font-bold">winner: P{state.winner}</div>}
+          {isDone && (
+            <div className="text-slate-500">
+              stamina P1 −{p1Preview.total} (base −{p1Preview.baseCost}{p1Preview.nitroCost > 0 ? ` nitro −${p1Preview.nitroCost}` : ""}{p1Preview.crashPenalty > 0 ? ` crash −${p1Preview.crashPenalty}` : ""})
+              {mode === "pvp" && ` · P2 −${p2Preview.total} (base −${p2Preview.baseCost}${p2Preview.nitroCost > 0 ? ` nitro −${p2Preview.nitroCost}` : ""}${p2Preview.crashPenalty > 0 ? ` crash −${p2Preview.crashPenalty}` : ""})`}
+            </div>
+          )}
         </div>
       )}
     </div>
