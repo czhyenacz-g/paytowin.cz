@@ -4,6 +4,7 @@ import React from "react";
 import { applyPvpTick, createPvpInitialState } from "@/lib/speed/simulate";
 import type { SpeedConfig, SpeedInput, SpeedObject, SpeedPvpState } from "@/lib/speed/types";
 import { nitroStaminaPreview } from "@/lib/minigame-nitro";
+import type { MinigameResult } from "@/lib/minigames/types";
 
 // ── Visual constants ──────────────────────────────────────────────────────────
 
@@ -116,7 +117,7 @@ interface Props {
   backgroundUrl?: string;
   overlayOpacity?: number;
   autoStart?: boolean;
-  onResult?: (winner: 1 | 2 | "draw") => void;
+  onResult?: (result: MinigameResult) => void;
 }
 
 export default function SpeedArenaPvp({
@@ -166,7 +167,12 @@ export default function SpeedArenaPvp({
   React.useEffect(() => {
     if (pvpState.overallStatus === "finished" && pvpState.winner !== null && !onResultFiredRef.current) {
       onResultFiredRef.current = true;
-      onResult?.(pvpState.winner);
+      onResult?.({
+        winner: pvpState.winner,
+        p1: { usedNitro: pvpState.p1NitroUsed, crashed: pvpState.p1.status === "crashed", score: pvpState.p1.score },
+        p2: { usedNitro: pvpState.p2NitroUsed, crashed: pvpState.p2.status === "crashed", score: pvpState.p2.score },
+        meta: { minigameType: "neon_speedrace" },
+      });
     }
   }, [pvpState.overallStatus, pvpState.winner, onResult]);
 

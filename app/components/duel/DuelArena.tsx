@@ -5,6 +5,7 @@ import { applyTick, createInitialState, getBotInput } from "@/lib/duel/simulate"
 import type { Dir, DuelConfig, DuelState } from "@/lib/duel/types";
 import { getRopeDuelStartDelayTicks } from "@/lib/duel/helpers";
 import { nitroStaminaPreview } from "@/lib/minigame-nitro";
+import type { MinigameResult } from "@/lib/minigames/types";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -124,7 +125,7 @@ interface Props {
   /** Přeskočí idle obrazovku a spustí souboj rovnou. */
   autoStart?: boolean;
   /** Zavolá se jednou po skončení hry. */
-  onResult?: (winner: 1 | 2 | "draw") => void;
+  onResult?: (result: MinigameResult) => void;
   /** Rychlost koně/racera pro P1 (1–10, default 5). */
   p1Speed?: number;
   /** Rychlost koně/racera pro P2 (1–10, default 5). */
@@ -167,8 +168,13 @@ export default function DuelArena({ config, mode, showDebug = false, backgroundU
   React.useEffect(() => { onResultRef.current = onResult; });
   React.useEffect(() => {
     if (state.status !== "idle" && state.status !== "running") {
-      const w = state.winner === 1 ? 1 : state.winner === 2 ? 2 : "draw" as const;
-      onResultRef.current?.(w);
+      const w: 1 | 2 | "draw" = state.winner === 1 ? 1 : state.winner === 2 ? 2 : "draw";
+      onResultRef.current?.({
+        winner: w,
+        p1: { usedNitro: state.p1.nitroUsed, crashed: !state.p1.alive, score: state.p1.ticksAlive },
+        p2: { usedNitro: state.p2.nitroUsed, crashed: !state.p2.alive, score: state.p2.ticksAlive },
+        meta: { minigameType: "neon_rope_duel" },
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.status]);

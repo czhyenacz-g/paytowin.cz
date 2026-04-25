@@ -15,6 +15,7 @@ import type { SpeedConfig } from "@/lib/speed/types";
 import type { Horse } from "@/lib/types/game";
 import { getRopeDuelSpeedLabel } from "@/lib/duel/helpers";
 import { selectStableMinigame, type StableMinigameType } from "@/lib/minigames/selectStableMinigame";
+import type { MinigameResult } from "@/lib/minigames/types";
 
 export interface DuelContestant {
   name: string;
@@ -293,7 +294,7 @@ function ArenaPhase({
   p1Speed?: number;
   p2Speed?: number;
   minigameType: StableMinigameType;
-  onResult: (w: 1 | 2 | "draw") => void;
+  onResult: (result: MinigameResult) => void;
 }) {
   if (minigameType === "neon_speedrace") {
     return (
@@ -419,8 +420,8 @@ export default function StableDuelBoardLayer({
 
   const handleSkip = () => { if (phase === "prestart") startArena(); };
 
-  const handleDuelResult = (w: 1 | 2 | "draw") => {
-    const mapped = w === 1 ? "challenger" : w === 2 ? "defender" : "draw" as const;
+  const handleDuelResult = (result: MinigameResult) => {
+    const mapped = result.winner === 1 ? "challenger" : result.winner === 2 ? "defender" : "draw" as const;
     setWinner(mapped);
     setPhase("result");
   };
