@@ -1348,18 +1348,6 @@ export default function GameBoard({ gameCode }: Props) {
     setTimeout(() => setTrailFields([]), 3000);
   };
 
-  /**
-   * Vrátí true pokud všichni aktivní hráči vlastní ≥1 racera — trigger pro závod.
-   * Voláno jen v buyRacer, protože ownership se mění pouze nákupem.
-   */
-  const shouldTriggerRacePending = (updatedPlayers: Player[]): boolean => {
-    if (gameStatus !== "playing") return false;
-    if (gameState?.mass_race_done) return false; // mass race už proběhl, nepouštět znovu
-    const activePlayers = updatedPlayers.filter(p => !isBankrupt(p));
-    if (activePlayers.length < 2) return false;
-    return activePlayers.every(p => p.horses.length > 0);
-  };
-
   const buyRacer = async () => {
     if (!pendingRacer || !gameState) return;
     const { racer, playerIndex } = pendingRacer;
@@ -1397,13 +1385,9 @@ export default function GameBoard({ gameCode }: Props) {
     const buyGameEnds = (updatedPlayers.length >= 2 && activeAfterBuy.length === 1) ||
                         (updatedPlayers.length === 1 && activeAfterBuy.length === 0);
 
-    // Priorita: bankrot announcement > race trigger
     let postTurnEvent: PostTurnEvent | undefined;
     if (wentBankrupt && !buyGameEnds) {
       postTurnEvent = { kind: "announcement" as const, playerId: player.id, playerName: player.name };
-    } else if (shouldTriggerRacePending(updatedPlayers)) {
-      postTurnEvent = { kind: "race_pending" as const, playerIds: activeAfterBuy.map(p => p.id) };
-      logLines.push("🏁 Závod se připravuje!");
     }
 
     await supabase.from("players").update({ coins: finalCoins, horses: finalHorses }).eq("id", player.id);
