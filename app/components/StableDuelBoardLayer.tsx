@@ -27,7 +27,7 @@ export interface DuelContestant {
 interface Props {
   challenger: DuelContestant;
   defender: DuelContestant;
-  isDev?: boolean;
+  isDev?: boolean;  // true = preview mode (dev button), false = live trigger
   themeId?: string;
   backgroundUrl?: string;
   onFinish: (result: MinigameResult) => void;

@@ -477,7 +477,7 @@ export default function GameBoard({ gameCode }: Props) {
   const [flipBoardAnim, setFlipBoardAnim] = React.useState<"idle" | "out" | "back-in">("idle");
   const flipTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   // Stájový souboj — board overlay (game flow)
-  const [stableDuelCtx, setStableDuelCtx] = React.useState<{ challenger: DuelContestant; defender: DuelContestant; isDev: boolean; challengerId?: string; defenderId?: string } | null>(null);
+  const [stableDuelCtx, setStableDuelCtx] = React.useState<{ challenger: DuelContestant; defender: DuelContestant; isPreview: boolean; challengerId?: string; defenderId?: string } | null>(null);
   const stableDuelProceedRef = React.useRef<(() => Promise<void>) | null>(null);
   const audioCtxRef = React.useRef<AudioContext | null>(null);
   const soundEnabledRef = React.useRef(true);
@@ -1174,7 +1174,7 @@ export default function GameBoard({ gameCode }: Props) {
               ...(yearEventTelegramPayload ? { yearEventTelegram: yearEventTelegramPayload } : {}),
             });
           };
-          setStableDuelCtx({ challenger, defender, isDev: process.env.NODE_ENV === "development", challengerId: currentPlayer.id, defenderId: ownerPlayer.id });
+          setStableDuelCtx({ challenger, defender, isPreview: false, challengerId: currentPlayer.id, defenderId: ownerPlayer.id });
         } else {
           // ── Rent fallback: jeden nebo oba hráči nemají závodníka ──────────────
           const rent = Math.round(field.racer.price * 0.2);
@@ -2254,8 +2254,8 @@ export default function GameBoard({ gameCode }: Props) {
     const proceed = stableDuelProceedRef.current;
     stableDuelProceedRef.current = null;
 
-    // Live settlement — přeskočit v dev/preview nebo pokud chybí player IDs
-    if (!ctx?.isDev && ctx?.challengerId && ctx?.defenderId) {
+    // Live settlement — přeskočit v preview nebo pokud chybí player IDs
+    if (!ctx?.isPreview && ctx?.challengerId && ctx?.defenderId) {
       const challenger = players.find(p => p.id === ctx.challengerId);
       const defender   = players.find(p => p.id === ctx.defenderId);
 
@@ -2989,7 +2989,7 @@ export default function GameBoard({ gameCode }: Props) {
                       setStableDuelCtx({
                         challenger: { name: p0?.name ?? "Hráč 1", horse: p0?.horses[0] ?? null, color: p0?.color ?? "#00ff88" },
                         defender:   { name: p1?.name ?? "Hráč 2", horse: p1?.horses[0] ?? null, color: p1?.color ?? "#c084fc" },
-                        isDev: true,
+                        isPreview: true,
                       });
                     }}
                     className="rounded-[3px] border border-amber-400 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700 hover:bg-amber-100 transition"
@@ -3918,7 +3918,7 @@ export default function GameBoard({ gameCode }: Props) {
                   <StableDuelBoardLayer
                     challenger={stableDuelCtx.challenger}
                     defender={stableDuelCtx.defender}
-                    isDev={stableDuelCtx.isDev}
+                    isDev={stableDuelCtx.isPreview}
                     themeId={themeId}
                     backgroundUrl={minigameBgUrl || undefined}
                     onFinish={handleStableDuelFinish}
