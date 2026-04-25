@@ -1,10 +1,11 @@
 import type {
-  SpeedConfig, SpeedInput, SpeedObject, SpeedPlayerState, SpeedState,
+  SpeedConfig, SpeedInput, SpeedObject, SpeedPlayerState, SpeedPvpState, SpeedState,
 } from "./types";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const PLAYER_RADIUS = 9;
+export const NITRO_SPEED_BOOST = 2.5; // velocity units injected on nitro activation
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -203,5 +204,74 @@ export function applyTick(state: SpeedState, input: SpeedInput, config: SpeedCon
     lastInput: input,
     objects:   updatedObjects,
     player:    updatedPlayer,
+  };
+}
+
+// ── PvP state factory ─────────────────────────────────────────────────────────
+
+export function createPvpInitialState(config: SpeedConfig): SpeedPvpState {
+  // Each lane is roughly half the arena height with a small divider gap
+  const laneH      = Math.floor(config.arenaH / 2) - 4;
+  const laneConfig = { ...config, arenaH: laneH };
+  return {
+    tick:           0,
+    p1:             createInitialState(laneConfig),
+    p2:             createInitialState(laneConfig),
+    p1NitroUsed:    false,
+    p2NitroUsed:    false,
+    overallStatus:  "idle",
+    winner:         null,
+  };
+}
+
+// ── PvP tick ──────────────────────────────────────────────────────────────────
+
+export function applyPvpTick(
+  state:            SpeedPvpState,
+  p1Input:          SpeedInput,
+  p2Input:          SpeedInput,
+  config:           SpeedConfig,
+  p1ActivateNitro = false,
+  p2ActivateNitro = false,
+): SpeedPvpState {
+  if (state.overallStatus !== "running") return state;
+
+  const laneH      = Math.floor(config.arenaH / 2) - 4;
+  const laneConfig = { ...config, arenaH: laneH };
+
+  let p1          = state.p1;
+  let p2          = state.p2;
+  let p1NitroUsed = state.p1NitroUsed;
+  let p2NitroUsed = state.p2NitroUsed;
+
+  // Nitro velocity injection — one-time per player
+  if (p1ActivateNitro && !p1NitroUsed && p1.status === "running") {
+    p1 = { ...p1, player: { ...p1.player, velocity: Math.min(config.maxVelocity, p1.player.velocity + NITRO_SPEED_BOOST) } };
+    p1NitroUsed = true;
+  }
+  if (p2ActivateNitro && !p2NitroUsed && p2.status === "running") {
+    p2 = { ...p2, player: { ...p2.player, velocity: Math.min(config.maxVelocity, p2.player.velocity + NITRO_SPEED_BOOST) } };
+    p2NitroUsed = true;
+  }
+
+  const newP1 = p1.status === "running" ? applyTick(p1, p1Input, laneConfig) : p1;
+  const newP2 = p2.status === "running" ? applyTick(p2, p2Input, laneConfig) : p2;
+
+  const bothDone      = newP1.status !== "running" && newP2.status !== "running";
+  const overallStatus: SpeedPvpState["overallStatus"] = bothDone ? "finished" : "running";
+  const winner: SpeedPvpState["winner"] = bothDone
+    ? newP1.score > newP2.score ? 1
+      : newP1.score < newP2.score ? 2
+      : "draw"
+    : null;
+
+  return {
+    tick:    state.tick + 1,
+    p1:      newP1,
+    p2:      newP2,
+    p1NitroUsed,
+    p2NitroUsed,
+    overallStatus,
+    winner,
   };
 }

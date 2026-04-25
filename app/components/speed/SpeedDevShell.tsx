@@ -7,7 +7,8 @@
 
 import React from "react";
 import SpeedArena from "./SpeedArena";
-import type { SpeedConfig } from "@/lib/speed/types";
+import SpeedArenaPvp from "./SpeedArenaPvp";
+import type { SpeedConfig, SpeedMode } from "@/lib/speed/types";
 import { SPEED_PRESETS } from "@/lib/speed/presets";
 import type { MinigameSkin } from "@/lib/minigame-skin";
 import { STANDALONE_PRESETS } from "@/lib/minigame-skin";
@@ -38,6 +39,7 @@ export default function SpeedDevShell({ onExit, themeSkin }: Props) {
   const [presetId, setPresetId]   = React.useState<string>(SPEED_PRESETS[0].id);
   const [showDebug, setDebug]     = React.useState(false);
   const [configKey, setConfigKey] = React.useState(0);
+  const [mode, setMode]           = React.useState<SpeedMode>("solo");
   // Standalone skin state — použito jen když themeSkin prop chybí
   const [localSkin, setLocalSkin] = React.useState<MinigameSkin>({});
   // Prestart countdown
@@ -62,6 +64,11 @@ export default function SpeedDevShell({ onExit, themeSkin }: Props) {
   }, [preStartDone, preStartCount]);
 
   const skipPreStart = () => { setPreStartDone(true); };
+
+  const selectMode = (m: SpeedMode) => {
+    setMode(m);
+    setConfigKey(k => k + 1);
+  };
 
   const selectPreset = (id: string) => {
     const p = SPEED_PRESETS.find(px => px.id === id);
@@ -135,15 +142,28 @@ export default function SpeedDevShell({ onExit, themeSkin }: Props) {
           />
 
           <div className="flex flex-col items-center gap-0.5 mt-1 text-[10px] text-slate-400 text-center leading-snug">
-            <div>
-              <span className="text-cyan-400 font-bold">← →</span> nebo{" "}
-              <span className="text-cyan-400 font-bold">A D</span> — zatočit
-            </div>
-            <div>Rychlost roste automaticky. Narážení při vysoké rychlosti = crash.</div>
-            <div>
-              <span className="text-yellow-400 font-bold">SPACE = nitro</span>
-              {" (−20 stamina, 1× za hru)"}
-            </div>
+            {mode === "solo" ? (
+              <>
+                <div>
+                  <span className="text-cyan-400 font-bold">← →</span> nebo{" "}
+                  <span className="text-cyan-400 font-bold">A D</span> — zatočit
+                </div>
+                <div>Rychlost roste automaticky. Narážení při vysoké rychlosti = crash.</div>
+                <div><span className="text-yellow-400 font-bold">SPACE = nitro</span>{" (−20 stamina, 1× za hru)"}</div>
+              </>
+            ) : (
+              <>
+                <div>
+                  <span className="text-cyan-400 font-bold">P1: ← →</span> zatočit ·{" "}
+                  <span className="text-yellow-400 font-bold">SPACE</span> nitro
+                </div>
+                <div>
+                  <span className="text-purple-400 font-bold">P2: A D</span> zatočit ·{" "}
+                  <span className="text-yellow-400 font-bold">S</span> nitro
+                </div>
+                <div className="text-slate-600 mt-0.5">Vítěz podle score. Crash = méně bodů.</div>
+              </>
+            )}
           </div>
 
           <div className="text-[9px] text-slate-700 mt-2">klikni pro přeskočení</div>
@@ -175,17 +195,36 @@ export default function SpeedDevShell({ onExit, themeSkin }: Props) {
 
         {/* ── Arena ── */}
         <div className="flex flex-1 flex-col items-center justify-center overflow-auto">
-          <SpeedArena
-            key={configKey}
-            config={config}
-            showDebug={showDebug}
-            backgroundUrl={activeSkin.backgroundUrl}
-            overlayOpacity={activeSkin.overlayOpacity}
-            autoStart={preStartDone}
-          />
+          {mode === "solo" ? (
+            <SpeedArena
+              key={configKey}
+              config={config}
+              showDebug={showDebug}
+              backgroundUrl={activeSkin.backgroundUrl}
+              overlayOpacity={activeSkin.overlayOpacity}
+              autoStart={preStartDone}
+            />
+          ) : (
+            <SpeedArenaPvp
+              key={configKey}
+              config={config}
+              showDebug={showDebug}
+              backgroundUrl={activeSkin.backgroundUrl}
+              overlayOpacity={activeSkin.overlayOpacity}
+              autoStart={preStartDone}
+            />
+          )}
 
           <div className="mt-4 flex items-center gap-5 text-[11px] text-slate-600">
-            <span><span className="text-cyan-400 font-bold">← →</span> nebo <span className="text-cyan-400 font-bold">A D</span> — zatočit</span>
+            {mode === "solo" ? (
+              <span><span className="text-cyan-400 font-bold">← →</span> nebo <span className="text-cyan-400 font-bold">A D</span> — zatočit</span>
+            ) : (
+              <>
+                <span><span className="text-cyan-400 font-bold">P1 ← →</span> SPACE</span>
+                <span className="text-slate-700">·</span>
+                <span><span className="text-purple-400 font-bold">P2 A D</span> S</span>
+              </>
+            )}
             <span className="text-slate-700">·</span>
             <span className="text-emerald-500/70">⚡ boost</span>
             <span className="text-orange-500/70">🛢 slow</span>
@@ -196,6 +235,33 @@ export default function SpeedDevShell({ onExit, themeSkin }: Props) {
 
         {/* ── Sidebar ── */}
         <div className="w-52 shrink-0 flex flex-col gap-3 overflow-y-auto">
+
+          {/* Mode toggle */}
+          <div className="rounded-xl bg-slate-900 border border-slate-800 p-3 space-y-2">
+            <div className="text-[9px] font-bold uppercase tracking-widest text-slate-600">Režim</div>
+            <div className="flex gap-1.5">
+              <button
+                onClick={() => selectMode("solo")}
+                className={`flex-1 rounded-lg px-2 py-1.5 text-[10px] font-semibold transition ${
+                  mode === "solo"
+                    ? "bg-cyan-900/60 border border-cyan-600 text-cyan-300"
+                    : "bg-slate-800 border border-transparent text-slate-500 hover:bg-slate-700"
+                }`}
+              >
+                Solo
+              </button>
+              <button
+                onClick={() => selectMode("pvp")}
+                className={`flex-1 rounded-lg px-2 py-1.5 text-[10px] font-semibold transition ${
+                  mode === "pvp"
+                    ? "bg-purple-900/60 border border-purple-600 text-purple-300"
+                    : "bg-slate-800 border border-transparent text-slate-500 hover:bg-slate-700"
+                }`}
+              >
+                Local PvP
+              </button>
+            </div>
+          </div>
 
           {/* Preset selector */}
           <div className="rounded-xl bg-slate-900 border border-slate-800 p-3 space-y-2">

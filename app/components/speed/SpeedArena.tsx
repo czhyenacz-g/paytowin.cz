@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { applyTick, createInitialState } from "@/lib/speed/simulate";
+import { applyTick, createInitialState, NITRO_SPEED_BOOST } from "@/lib/speed/simulate";
 import type { SpeedConfig, SpeedInput, SpeedState } from "@/lib/speed/types";
 import { nitroStaminaPreview } from "@/lib/minigame-nitro";
 
@@ -16,8 +16,6 @@ const SLOW_DIM     = "#431407";
 const PLAYER_COLOR_SLOW = "#22d3ee";
 const PLAYER_COLOR_MID  = "#fbbf24";
 const PLAYER_COLOR_FAST = "#f87171";
-
-const NITRO_SPEED_BOOST = 2.5; // velocity units injected on nitro activation
 
 function speedColor(velocity: number, maxVelocity: number): string {
   const t = velocity / maxVelocity;

@@ -1,5 +1,6 @@
 export type SpeedInput  = "left" | "right" | "none";
 export type SpeedStatus = "idle" | "running" | "crashed" | "finished";
+export type SpeedMode   = "solo" | "pvp";
 
 export interface Vec2 {
   readonly x: number;
@@ -47,4 +48,14 @@ export interface SpeedConfig {
   readonly boostStrength: number;          // velocity added by boost pad
   readonly slowStrength: number;           // velocity removed by slow patch
   readonly objectRespawnTicks: number;     // ticks until inactive object reactivates
+}
+
+export interface SpeedPvpState {
+  readonly tick: number;
+  readonly p1: SpeedState;
+  readonly p2: SpeedState;
+  readonly p1NitroUsed: boolean;
+  readonly p2NitroUsed: boolean;
+  readonly overallStatus: "idle" | "running" | "finished";
+  readonly winner: 1 | 2 | "draw" | null;
 }
