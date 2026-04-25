@@ -95,3 +95,43 @@ export async function awardXpAction(
 
   return { ok: true };
 }
+
+/**
+ * awardRaceStarAction — přidělí +1 hvězdu vítězi závodu.
+ * Guardováno pomocí race_stars_awarded array v game_state (unikátní turnCount per hra).
+ * Volá se jen hostem po closeRaceResult — žádná race condition.
+ */
+export async function awardRaceStarAction(
+  gameId: string,
+  winnerDiscordId: string,
+  raceTurnCount: number,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!gameId || !winnerDiscordId) return { ok: false, error: "Chybí parametry" };
+
+  const { data: gs, error: gsErr } = await supabase
+    .from("game_state")
+    .select("race_stars_awarded")
+    .eq("game_id", gameId)
+    .single();
+
+  if (gsErr || !gs) return { ok: false, error: gsErr?.message ?? "game_state nenalezena" };
+
+  const awarded: number[] = Array.isArray(gs.race_stars_awarded) ? (gs.race_stars_awarded as number[]) : [];
+  if (awarded.includes(raceTurnCount)) return { ok: false, error: "Hvězda pro tento závod již udělena" };
+
+  const { error: rpcErr } = await supabase.rpc("increment_xp_and_wins", {
+    p_discord_id: winnerDiscordId,
+    p_xp: 0,
+    p_win: false,
+    p_stars: 1,
+  });
+  if (rpcErr) return { ok: false, error: rpcErr.message };
+
+  const { error: guardErr } = await supabase
+    .from("game_state")
+    .update({ race_stars_awarded: [...awarded, raceTurnCount] })
+    .eq("game_id", gameId);
+  if (guardErr) return { ok: false, error: guardErr.message };
+
+  return { ok: true };
+}

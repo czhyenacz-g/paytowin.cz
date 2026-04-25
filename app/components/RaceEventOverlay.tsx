@@ -25,6 +25,7 @@ interface RaceEventOverlayProps {
   racingPlayer: Player | null;
   isMyRacingTurn: boolean;
   raceResults: RaceResult[] | null;
+  reward?: number;
   isHost: boolean;
   isLocalGame: boolean;
   racingEmoji: string;
@@ -63,6 +64,7 @@ export default function RaceEventOverlay({
   racingPlayer,
   isMyRacingTurn,
   raceResults,
+  reward,
   isHost,
   isLocalGame,
   racingEmoji,
@@ -280,11 +282,24 @@ export default function RaceEventOverlay({
         {/* ── Výsledky závodu ── */}
         {phase === "results" && raceResults && (
           <div className="space-y-4">
-            <div className="text-center space-y-1">
-              <div className="text-4xl">🏆</div>
-              <h2 className="text-xl font-bold text-slate-800">{labels.resultsTitle}</h2>
-            </div>
-            <div className="space-y-2">
+            {/* Winner spotlight */}
+            {raceResults[0]?.player && (
+              <div className="rounded-2xl bg-gradient-to-b from-amber-50 to-amber-100 border-2 border-amber-300 px-4 py-4 text-center space-y-1">
+                <div className="text-3xl">🏆</div>
+                <div className="text-[11px] font-bold text-amber-600 uppercase tracking-widest">
+                  {labels.resultsTitle}
+                </div>
+                <div className="text-xl font-black text-slate-900">{raceResults[0].player.name}</div>
+                <div className="flex items-center justify-center gap-4 pt-1">
+                  {reward !== undefined && (
+                    <span className="text-2xl font-black text-emerald-600">+{reward} 💰</span>
+                  )}
+                  <span className="text-2xl font-black text-amber-500">+1 ⭐</span>
+                </div>
+              </div>
+            )}
+            {/* Pořadí všech závodníků */}
+            <div className="space-y-1.5">
               {raceResults.map(({ player, horse, score, effectiveScore, finalStamina }, idx) => player && horse ? (
                 <div
                   key={player.id}

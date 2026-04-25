@@ -2,6 +2,7 @@
 
 import type { Player } from "@/lib/types/game";
 import { isBankrupt } from "@/lib/engine";
+import type { MatchTitle } from "@/lib/match-titles";
 
 export interface ScoreEntry {
   id: string;
@@ -17,6 +18,8 @@ interface Props {
   /** Player IDs in order they went bankrupt. First = earliest bust (lowest rank). */
   bustOrder: string[];
   className?: string;
+  /** Per-match tituly — pokud přítomno, zobrazí se jako subtitle pod jménem. */
+  titles?: Map<string, MatchTitle>;
 }
 
 /**
@@ -26,7 +29,7 @@ interface Props {
  *
  * Navrženo pro znovupoužití: průběžný score popup i finální výsledková obrazovka.
  */
-export default function ScoreTable({ players, bustOrder, className = "" }: Props) {
+export default function ScoreTable({ players, bustOrder, className = "", titles }: Props) {
   const entries: ScoreEntry[] = players.map(p => ({
     id: p.id,
     name: p.name,
@@ -53,8 +56,13 @@ export default function ScoreTable({ players, bustOrder, className = "" }: Props
             <td className="w-6 py-1.5 pr-2 text-center text-xs font-bold text-slate-400 tabular-nums">
               {i + 1}.
             </td>
-            <td className="py-1.5 pr-1 font-medium text-slate-800 truncate max-w-[120px]">
-              {entry.name}
+            <td className="py-1.5 pr-1 max-w-[140px]">
+              <div className="font-medium text-slate-800 truncate">{entry.name}</div>
+              {titles?.get(entry.id) && (
+                <div className="text-[10px] text-stone-500 truncate">
+                  {titles.get(entry.id)!.emoji} {titles.get(entry.id)!.label}
+                </div>
+              )}
             </td>
             <td className="py-1.5 text-right tabular-nums">
               {entry.isBankrupt ? (
