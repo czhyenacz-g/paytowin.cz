@@ -1,5 +1,6 @@
 import WithAdminAuth from "@/app/components/WithAdminAuth";
 import RacerAdminTool from "@/app/components/RacerAdminTool";
+import { redirect } from "next/navigation";
 
 export async function generateMetadata({
   params,
@@ -15,6 +16,7 @@ export default async function RacerAdminPage({
 }: {
   params: Promise<{ themeId: string }>;
 }) {
+  if (process.env.NODE_ENV !== "development") redirect("/");
   const { themeId } = await params;
   // isBuiltIn byl odebrán — Racer Admin čte data z globální registry, ne z theme manifestu.
   return (
