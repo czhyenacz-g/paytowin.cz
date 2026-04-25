@@ -16,6 +16,7 @@ import type { Horse } from "@/lib/types/game";
 import { getRopeDuelSpeedLabel } from "@/lib/duel/helpers";
 import { selectStableMinigame, type StableMinigameType } from "@/lib/minigames/selectStableMinigame";
 import type { MinigameResult } from "@/lib/minigames/types";
+import { computeMinigameSettlement, type MinigameSettlement } from "@/lib/minigames/settlement";
 
 export interface DuelContestant {
   name: string;
@@ -29,7 +30,7 @@ interface Props {
   isDev?: boolean;
   themeId?: string;
   backgroundUrl?: string;
-  onFinish: (winner: "challenger" | "defender" | "draw") => void;
+  onFinish: (result: MinigameResult) => void;
 }
 
 type Phase = "prestart" | "arena" | "result";
@@ -44,7 +45,6 @@ const BOARD_SPEED_CONFIG: SpeedConfig = {
   boostStrength: 1.5, slowStrength: 1.2,
   objectRespawnTicks: 45,
 };
-const DUEL_REWARD = 50;
 const PRESTART_TICKS = 5;
 
 const MINIGAME_META: Record<StableMinigameType, { title: string; image: string; color: string; glowRgb: string }> = {
@@ -331,51 +331,93 @@ function ArenaPhase({
 function ResultPhase({
   challenger,
   defender,
-  winner,
+  result,
+  settlement,
   isDev,
   onContinue,
 }: {
-  challenger: DuelContestant;
-  defender: DuelContestant;
-  winner: "challenger" | "defender" | "draw";
-  isDev: boolean;
-  onContinue: () => void;
+  challenger:  DuelContestant;
+  defender:    DuelContestant;
+  result:      MinigameResult;
+  settlement:  MinigameSettlement;
+  isDev:       boolean;
+  onContinue:  () => void;
 }) {
+  const winner  = result.winner === 1 ? "challenger" : result.winner === 2 ? "defender" : "draw";
   const winnerC = winner === "challenger" ? challenger : winner === "defender" ? defender : null;
-  const loserC  = winner === "challenger" ? defender  : winner === "defender"  ? challenger : null;
+
+  const sides = [
+    { contestant: challenger, ps: settlement.p1, pr: result.p1, isWinner: winner === "challenger" },
+    { contestant: defender,   ps: settlement.p2, pr: result.p2, isWinner: winner === "defender"   },
+  ] as const;
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4 select-none">
+    <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 select-none">
       {isDev && (
         <div className="rounded bg-amber-900/60 px-3 py-1 text-[9px] font-mono text-amber-400 uppercase tracking-wider border border-amber-700">
-          DEV · PREVIEW · bez DB zápisu
+          DEV PREVIEW — nic se neukládá
         </div>
       )}
 
+      {/* Headline */}
       <div
-        className={`text-3xl font-black ${winner === "draw" ? "text-slate-300" : "text-emerald-400"}`}
+        className={`text-2xl font-black text-center ${winner === "draw" ? "text-slate-300" : "text-emerald-400"}`}
         style={winnerC ? { textShadow: `0 0 24px ${winnerC.color}` } : {}}
       >
-        {winner === "draw" ? "REMÍZA" : `🏆 ${winnerC?.name ?? "?"} vyhrál!`}
+        {winner === "draw" ? "REMÍZA" : `🏆 VÍTĚZÍ ${winnerC?.name ?? "?"}`}
       </div>
 
-      {winner !== "draw" && winnerC && loserC && (
-        <div className="flex items-center gap-4 text-sm font-semibold">
-          <span style={{ color: winnerC.color }}>{winnerC.name}</span>
-          <span className="text-emerald-400">+{DUEL_REWARD} 💰</span>
-          <span className="text-slate-600">·</span>
-          <span style={{ color: loserC.color }}>{loserC.name}</span>
-          <span className="text-red-400">−{DUEL_REWARD} 💰</span>
-        </div>
-      )}
+      {/* Settlement cards */}
+      <div className="flex gap-3 items-stretch">
+        {sides.map(({ contestant, ps, pr, isWinner }) => (
+          <div
+            key={contestant.name}
+            className="rounded-xl flex flex-col items-center gap-1.5 px-4 py-3 min-w-[140px]"
+            style={{
+              background: `${contestant.color}12`,
+              border: `2px solid ${contestant.color}${isWinner ? "" : "55"}`,
+              boxShadow: isWinner ? `0 0 18px ${contestant.color}66` : "none",
+            }}
+          >
+            <div className="text-sm font-black text-center" style={{ color: contestant.color }}>
+              {contestant.name}
+            </div>
+            <div className="text-[10px] text-slate-400 text-center leading-tight">
+              {contestant.horse?.emoji ?? "🐎"} {contestant.horse?.name ?? "Bez koně"}
+            </div>
 
-      {isDev && (
-        <div className="text-[9px] text-slate-600">(peníze se v dev módu nezapisují)</div>
-      )}
+            {/* Coins */}
+            <div
+              className="text-base font-black tabular-nums mt-0.5"
+              style={{
+                color: ps.coinsDelta > 0 ? "#4ade80" : ps.coinsDelta < 0 ? "#f87171" : "#64748b",
+              }}
+            >
+              {ps.coinsDelta > 0 ? "+" : ""}{ps.coinsDelta} 💰
+            </div>
+
+            {/* Stamina total */}
+            <div className="text-[11px] font-bold text-red-400">
+              −{ps.stamina.total} stamina
+            </div>
+
+            {/* Breakdown */}
+            <div className="text-[9px] font-mono text-slate-600 text-center space-y-0.5 leading-relaxed">
+              <div>závod −{ps.stamina.base}</div>
+              {pr.usedNitro && <div className="text-amber-600">nitro −{ps.stamina.nitro}</div>}
+              {pr.crashed   && <div className="text-red-600">crash −{ps.stamina.crash}</div>}
+            </div>
+
+            {isWinner && (
+              <div className="text-[9px] font-bold text-emerald-400 uppercase tracking-wide mt-0.5">VÍTĚZ ✓</div>
+            )}
+          </div>
+        ))}
+      </div>
 
       <button
         onClick={onContinue}
-        className="mt-2 rounded-xl bg-slate-700 border border-slate-600 px-6 py-2.5 text-sm font-bold text-slate-200 hover:bg-slate-600 active:scale-95 transition-all"
+        className="mt-1 rounded-xl bg-slate-700 border border-slate-600 px-6 py-2.5 text-sm font-bold text-slate-200 hover:bg-slate-600 active:scale-95 transition-all"
       >
         Pokračovat →
       </button>
@@ -396,7 +438,7 @@ export default function StableDuelBoardLayer({
   const [phase, setPhase]         = React.useState<Phase>("prestart");
   const [countdown, setCountdown] = React.useState(PRESTART_TICKS);
   const [duelKey, setDuelKey]     = React.useState(0);
-  const [winner, setWinner]       = React.useState<"challenger" | "defender" | "draw" | null>(null);
+  const [duelResult, setDuelResult] = React.useState<MinigameResult | null>(null);
 
   const p1Speed = challenger.horse?.speed ?? 5;
   const p2Speed = defender.horse?.speed ?? 5;
@@ -421,8 +463,7 @@ export default function StableDuelBoardLayer({
   const handleSkip = () => { if (phase === "prestart") startArena(); };
 
   const handleDuelResult = (result: MinigameResult) => {
-    const mapped = result.winner === 1 ? "challenger" : result.winner === 2 ? "defender" : "draw" as const;
-    setWinner(mapped);
+    setDuelResult(result);
     setPhase("result");
   };
 
@@ -444,13 +485,14 @@ export default function StableDuelBoardLayer({
       {phase === "arena" && (
         <ArenaPhase key={duelKey} backgroundUrl={backgroundUrl} p1Speed={p1Speed} p2Speed={p2Speed} minigameType={minigameType} onResult={handleDuelResult} />
       )}
-      {phase === "result" && winner && (
+      {phase === "result" && duelResult && (
         <ResultPhase
           challenger={challenger}
           defender={defender}
-          winner={winner}
+          result={duelResult}
+          settlement={computeMinigameSettlement(duelResult)}
           isDev={isDev}
-          onContinue={() => onFinish(winner)}
+          onContinue={() => onFinish(duelResult)}
         />
       )}
     </div>

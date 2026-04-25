@@ -73,6 +73,8 @@ import FlashToast from "./modals/FlashToast";
 import RaceModal from "./RaceModal";
 import RaceEventOverlay from "./RaceEventOverlay";
 import type { MinigameResult } from "./race/RacingMinigame";
+import type { MinigameResult as StableMinigameResult } from "@/lib/minigames/types";
+import { computeMinigameSettlement } from "@/lib/minigames/settlement";
 import BuildInfoBar from "./BuildInfoBar";
 import ThemeAssetInspector from "./ThemeAssetInspector";
 import DevRaceModeShell from "./DevRaceModeShell";
@@ -475,7 +477,7 @@ export default function GameBoard({ gameCode }: Props) {
   const [flipBoardAnim, setFlipBoardAnim] = React.useState<"idle" | "out" | "back-in">("idle");
   const flipTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   // Stájový souboj — board overlay (game flow)
-  const [stableDuelCtx, setStableDuelCtx] = React.useState<{ challenger: DuelContestant; defender: DuelContestant; isDev: boolean } | null>(null);
+  const [stableDuelCtx, setStableDuelCtx] = React.useState<{ challenger: DuelContestant; defender: DuelContestant; isDev: boolean; challengerId?: string; defenderId?: string } | null>(null);
   const stableDuelProceedRef = React.useRef<(() => Promise<void>) | null>(null);
   const audioCtxRef = React.useRef<AudioContext | null>(null);
   const soundEnabledRef = React.useRef(true);
@@ -1172,7 +1174,7 @@ export default function GameBoard({ gameCode }: Props) {
               ...(yearEventTelegramPayload ? { yearEventTelegram: yearEventTelegramPayload } : {}),
             });
           };
-          setStableDuelCtx({ challenger, defender, isDev: process.env.NODE_ENV === "development" });
+          setStableDuelCtx({ challenger, defender, isDev: process.env.NODE_ENV === "development", challengerId: currentPlayer.id, defenderId: ownerPlayer.id });
         } else {
           // ── Rent fallback: jeden nebo oba hráči nemají závodníka ──────────────
           const rent = Math.round(field.racer.price * 0.2);
@@ -2246,12 +2248,52 @@ export default function GameBoard({ gameCode }: Props) {
     flipTimerRef.current = setTimeout(() => setFlipBoardAnim("idle"), 300);
   }, []);
 
-  const handleStableDuelFinish = React.useCallback(async (_winner: "challenger" | "defender" | "draw") => {
+  const handleStableDuelFinish = React.useCallback(async (result: StableMinigameResult) => {
+    const ctx = stableDuelCtx;
     setStableDuelCtx(null);
     const proceed = stableDuelProceedRef.current;
     stableDuelProceedRef.current = null;
+
+    // Live settlement — přeskočit v dev/preview nebo pokud chybí player IDs
+    if (!ctx?.isDev && ctx?.challengerId && ctx?.defenderId) {
+      const challenger = players.find(p => p.id === ctx.challengerId);
+      const defender   = players.find(p => p.id === ctx.defenderId);
+
+      if (challenger && defender) {
+        const s = computeMinigameSettlement(result);
+
+        const cKey = ctx.challenger.horse ? racerOwnershipKey(ctx.challenger.horse) : null;
+        const dKey = ctx.defender.horse   ? racerOwnershipKey(ctx.defender.horse)   : null;
+
+        const newCCoins = Math.max(0, challenger.coins + s.p1.coinsDelta);
+        const newDCoins = Math.max(0, defender.coins   + s.p2.coinsDelta);
+
+        // Stamina update — kůň s 0 staminou zatím zůstane ve stáji (TODO: eliminovat jako v closeRaceResult)
+        const updatedCHorses = cKey
+          ? challenger.horses.map(h =>
+              racerOwnershipKey(h) === cKey
+                ? { ...h, stamina: Math.max(0, (h.stamina ?? h.maxStamina ?? 100) - s.p1.stamina.total) }
+                : h
+            )
+          : challenger.horses;
+
+        const updatedDHorses = dKey
+          ? defender.horses.map(h =>
+              racerOwnershipKey(h) === dKey
+                ? { ...h, stamina: Math.max(0, (h.stamina ?? h.maxStamina ?? 100) - s.p2.stamina.total) }
+                : h
+            )
+          : defender.horses;
+
+        await Promise.all([
+          supabase.from("players").update({ coins: newCCoins, horses: updatedCHorses }).eq("id", challenger.id),
+          supabase.from("players").update({ coins: newDCoins, horses: updatedDHorses }).eq("id", defender.id),
+        ]);
+      }
+    }
+
     if (proceed) await proceed();
-  }, []);
+  }, [stableDuelCtx, players]);
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
