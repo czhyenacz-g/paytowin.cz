@@ -3064,6 +3064,14 @@ export default function GameBoard({ gameCode }: Props) {
                   const isHovered = hoveredFieldIdx === field.index;
                   const tone = getFieldTone(field, themeId);
 
+                  // Outward shift při hoveru — odsouvá kartu od středu aby byl střed vidět
+                  const posLeft = parseFloat(pos.left as string);
+                  const posTop  = parseFloat(pos.top  as string);
+                  const odx = posLeft - 50;
+                  const ody = posTop  - 50;
+                  const olen = Math.sqrt(odx * odx + ody * ody) || 1;
+                  const hoverShift = isHovered ? `translate(${(odx / olen) * 12}px, ${(ody / olen) * 12}px) ` : "";
+
                   // Rotace segmentu: 0° = RIGHT, segment „spodek" míří ven od středu
                   const rotDeg = board.shape === "stadium"
                     ? (FIELD_ROTATIONS_STADIUM[field.index] ?? 0)
@@ -3096,7 +3104,7 @@ export default function GameBoard({ gameCode }: Props) {
                         left: pos.left,
                         width: "82px",
                         height: "112px",
-                        transform: `translate(-50%, -50%) rotate(${rotDeg}deg) scale(${isHovered ? 2.8 : 1.0})`,
+                        transform: `${hoverShift}translate(-50%, -50%) rotate(${rotDeg}deg) scale(${isHovered ? 2.8 : 1.0})`,
                         transition: "transform 0.18s ease-out, box-shadow 0.18s ease-out",
                         zIndex: isHovered ? 100 : 2,
                         filter: glows.length > 0 ? glows.join(" ") : undefined,
