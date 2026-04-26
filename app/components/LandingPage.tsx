@@ -359,13 +359,6 @@ export default function LandingPage() {
       return;
     }
 
-    if (game.status === "playing") {
-      logEvent({ name: "spectator_view", game_code: game.code });
-      sessionStorage.setItem("paytowin_late_join", game.code);
-      router.push(`/game/${game.code}`);
-      return;
-    }
-
     const [{ data: existingPlayers }, { data: stateData }] = await Promise.all([
       supabase.from("players").select().eq("game_id", game.id),
       supabase.from("game_state").select("turn_count").eq("game_id", game.id).single(),
@@ -382,9 +375,10 @@ export default function LandingPage() {
     const turnCount = stateData?.turn_count ?? 0;
     const currentPlayerCount = existingPlayers?.length ?? 0;
     if (currentPlayerCount > 0 && turnCount >= currentPlayerCount) {
-      logEvent({ name: "join_game_fail", reason: "too_late" });
-      setError("Do této hry se již nelze připojit — první kolo už skončilo.");
-      setLoading(false);
+      // Hra probíhá a první kolo již skončilo — připoj jako pozorovatel
+      logEvent({ name: "spectator_view", game_code: game.code });
+      sessionStorage.setItem("paytowin_late_join", game.code);
+      router.push(`/game/${game.code}`);
       return;
     }
 
