@@ -2258,9 +2258,10 @@ export default function GameBoard({ gameCode }: Props) {
     const proceed = stableDuelProceedRef.current;
     stableDuelProceedRef.current = null;
 
-    // Challenger-only guard — jiný klient nesmí psát do DB
-    if (!ctx?.isPreview && ctx?.challengerId && myPlayerId !== null && myPlayerId !== ctx.challengerId) {
-      if (proceed) await proceed();
+    // Challenger-only guard — defender/spectator nesmí volat settlement ani finishTurn
+    if (!ctx?.isPreview && ctx?.challengerId && myPlayerId !== ctx.challengerId) {
+      setStableDuelCtx(null);
+      stableDuelProceedRef.current = null;
       return;
     }
 
@@ -2315,8 +2316,24 @@ export default function GameBoard({ gameCode }: Props) {
       }
     }
 
+    // Cílený cleanup — maž offer_pending pouze pokud odpovídá tomuto duelu.
+    // Nezávisíme čistě na finishTurn's blanket null, aby se nepřepsal jiný pending typ.
+    // TODO: finishTurn nastavuje offer_pending: null unconditionally — pokud by concurrent
+    //       flow zapsal nový pending mezi start a finish duelu, finishTurn ho smaže.
+    //       Řešení: finishTurn param `clearOfferPending?: boolean` — odloženo na multiplayer fázi.
+    if (!ctx?.isPreview && ctx?.challengerId && ctx?.defenderId && gameId) {
+      const current = gameState?.offer_pending;
+      if (
+        current?.type === "stable_duel_pending" &&
+        (current as StableDuelPendingOffer).challengerId === ctx.challengerId &&
+        (current as StableDuelPendingOffer).defenderId === ctx.defenderId
+      ) {
+        await supabase.from("game_state").update({ offer_pending: null }).eq("game_id", gameId);
+      }
+    }
+
     if (proceed) await proceed();
-  }, [stableDuelCtx, players, myPlayerId]);
+  }, [stableDuelCtx, players, myPlayerId, gameState?.offer_pending, gameId]);
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -3045,8 +3062,8 @@ export default function GameBoard({ gameCode }: Props) {
                 <div className="mx-auto w-full max-w-[760px] rounded-lg border border-amber-700/40 bg-amber-900/20 px-3 py-2 text-[11px] text-amber-300 flex items-center gap-2 mt-1">
                   <span>⚔️</span>
                   {isDefender
-                    ? <span><strong>{sdPending.challengerName ?? "Hráč"}</strong> tě vyzval na stájový souboj · souboj běží lokálně (PvBot)</span>
-                    : <span>Probíhá stájový souboj: <strong>{sdPending.challengerName ?? "?"}</strong> vs <strong>{sdPending.defenderName ?? "?"}</strong></span>
+                    ? <span><strong>{sdPending.challengerName ?? "Hráč"}</strong> tě vyzval na stájový souboj · souboj zatím běží proti botovi (multiplayer připravujeme)</span>
+                    : <span>Probíhá stájový souboj: <strong>{sdPending.challengerName ?? "?"}</strong> vs <strong>{sdPending.defenderName ?? "?"}</strong> · zatím PvBot režim</span>
                   }
                 </div>
               );
