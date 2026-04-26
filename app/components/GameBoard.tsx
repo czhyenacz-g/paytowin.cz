@@ -3070,7 +3070,7 @@ export default function GameBoard({ gameCode }: Props) {
                   const odx = posLeft - 50;
                   const ody = posTop  - 50;
                   const olen = Math.sqrt(odx * odx + ody * ody) || 1;
-                  const hoverShift = isHovered ? `translate(${(odx / olen) * 40}px, ${(ody / olen) * 40}px) ` : "";
+                  const hoverShift = isHovered ? `translate(${(odx / olen) * 70}px, ${(ody / olen) * 70}px) ` : "";
 
                   // Rotace segmentu: 0° = RIGHT, segment „spodek" míří ven od středu
                   const rotDeg = board.shape === "stadium"
