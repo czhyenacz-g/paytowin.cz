@@ -3104,7 +3104,7 @@ export default function GameBoard({ gameCode }: Props) {
                         left: pos.left,
                         width: "82px",
                         height: "112px",
-                        transform: `${hoverShift}translate(-50%, -50%) rotate(${rotDeg}deg) scale(${isHovered ? 2.8 : 1.0})`,
+                        transform: `${hoverShift}translate(-50%, -50%) rotate(${rotDeg}deg) scale(${isHovered ? 2.52 : 1.0})`,
                         transition: "transform 0.18s ease-out, box-shadow 0.18s ease-out",
                         zIndex: isHovered ? 100 : 2,
                         filter: glows.length > 0 ? glows.join(" ") : undefined,
