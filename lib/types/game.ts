@@ -175,9 +175,21 @@ export interface RacePendingEvent {
  * Defender/spectators čtou přes Realtime a zobrazí awareness banner.
  * Fáze "pending" = PvBot beta; budoucí fáze: waiting_ready, countdown, running.
  */
+export interface StableDuelResultSummary {
+  challengerId: string;
+  defenderId: string;
+  winnerLabel?: string;
+  loserLabel?: string;
+  challengerScore?: number;
+  defenderScore?: number;
+  /** Absolutní výše odměny/penalizace v coinech (vždy kladné číslo). */
+  coinsDelta?: number;
+  staminaDelta?: number;
+}
+
 export interface StableDuelPendingOffer {
   type: "stable_duel_pending";
-  phase: "pending" | "both_ready" | "countdown" | "started";
+  phase: "pending" | "both_ready" | "countdown" | "started" | "finished";
   /** Výchozí hodnota: "pvbot_awareness". Optional pro zpětnou kompatibilitu. */
   mode?: "pvbot_awareness" | "online_1v1";
   /** ID challengera, který zapsal countdown — jen challenger smí startovat. */
@@ -195,6 +207,11 @@ export interface StableDuelPendingOffer {
   challengerReady?: boolean;
   defenderReady?: boolean;
   readyUpdatedAt?: number;
+  /** Stav po skončení duelu — zapíše challenger, čtou defender/spectators. */
+  finishedAt?: number;
+  winnerId?: string;
+  loserId?: string;
+  resultSummary?: StableDuelResultSummary;
 }
 
 export type OfferPending = RerollOffer | RaceOffer | BankruptAnnouncement | RacePendingEvent | StableDuelPendingOffer;

@@ -479,7 +479,7 @@ export default function GameBoard({ gameCode }: Props) {
   const flipTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   // Stájový souboj — board overlay (game flow)
   const [stableDuelCtx, setStableDuelCtx] = React.useState<{ challenger: DuelContestant; defender: DuelContestant; isPreview: boolean; challengerId?: string; defenderId?: string } | null>(null);
-  const stableDuelProceedRef = React.useRef<(() => Promise<void>) | null>(null);
+  const stableDuelProceedRef = React.useRef<((resultLog?: string[]) => Promise<void>) | null>(null);
   const boardSurfaceRef = React.useRef<HTMLDivElement>(null);
   // Idempotency refs pro countdown a overlay — klíčovány identitou duelu
   const countdownStartedRef = React.useRef<string | null>(null);
@@ -1195,10 +1195,13 @@ export default function GameBoard({ gameCode }: Props) {
             horse: ownerPlayer.horses[0] ?? null,
             color: ownerPlayer.color,
           };
-          stableDuelProceedRef.current = async () => {
+          stableDuelProceedRef.current = async (resultLog?: string[]) => {
             await finishTurn({
               nextIndex, turnCount: newTurnCount,
-              log: [`⚔️ ${currentPlayer.name} svedl souboj stájí s ${ownerPlayer.name}!`, ...extraLog, ...newLog],
+              log: [
+                ...(resultLog ?? [`⚔️ ${currentPlayer.name} svedl souboj stájí s ${ownerPlayer.name}!`]),
+                ...extraLog, ...newLog,
+              ],
               lastRoll: roll,
               clearOfferPending: { type: "stable_duel_pending", challengerId: currentPlayer.id, defenderId: ownerPlayer.id },
               ...(yearEventTelegramPayload ? { yearEventTelegram: yearEventTelegramPayload } : {}),
@@ -2361,11 +2364,65 @@ export default function GameBoard({ gameCode }: Props) {
           supabase.from("players").update({ coins: newCCoins, horses: updatedCHorses }).eq("id", challenger.id),
           supabase.from("players").update({ coins: newDCoins, horses: updatedDHorses }).eq("id", defender.id),
         ]);
+
+        const r = Math.abs(s.p1.coinsDelta);
+        let resultLog: string[];
+        if (result.winner === 1) {
+          resultLog = [`⚔️ ${ctx.challenger.name} porazil ${ctx.defender.name}! (+${r}💰 vs −${r}💰)`];
+        } else if (result.winner === 2) {
+          resultLog = [`⚔️ ${ctx.defender.name} porazil ${ctx.challenger.name}! (+${r}💰 vs −${r}💰)`];
+        } else {
+          resultLog = [`⚔️ ${ctx.challenger.name} vs ${ctx.defender.name} — remíza (0💰)`];
+        }
+
+        // Pro online_1v1: zapiš sdílený finished stav, nech defender/spectators číst výsledek.
+        // Cleanup offer_pending se odloží o krátkou dobu, aby Realtime stihlo doručit.
+        const currentPending = gameState?.offer_pending as StableDuelPendingOffer | null;
+        const isOnline1v1 = currentPending?.mode === "online_1v1" && !!gameId;
+        if (isOnline1v1 && currentPending) {
+          const finishedPending: StableDuelPendingOffer = {
+            ...currentPending,
+            phase: "finished",
+            finishedAt: Date.now(),
+            winnerId: result.winner === 1 ? ctx.challengerId : result.winner === 2 ? ctx.defenderId : undefined,
+            loserId:  result.winner === 1 ? ctx.defenderId  : result.winner === 2 ? ctx.challengerId : undefined,
+            resultSummary: {
+              challengerId: ctx.challengerId!,
+              defenderId:   ctx.defenderId!,
+              winnerLabel:  result.winner === 1 ? ctx.challenger.name : result.winner === 2 ? ctx.defender.name : undefined,
+              loserLabel:   result.winner === 1 ? ctx.defender.name   : result.winner === 2 ? ctx.challenger.name : undefined,
+              coinsDelta:   r,
+            },
+          };
+          await supabase.from("game_state").update({
+            offer_pending: finishedPending as unknown as Record<string, unknown>,
+          }).eq("game_id", gameId);
+
+          // Odložený cleanup — ověří, že pending odpovídá tomuto souboji, pak zavolá finishTurn.
+          const capturedGameId = gameId;
+          setTimeout(async () => {
+            const { data: row } = await supabase
+              .from("game_state").select("offer_pending").eq("game_id", capturedGameId).single();
+            const cur = row?.offer_pending as StableDuelPendingOffer | null;
+            if (
+              cur?.type === "stable_duel_pending" &&
+              cur.phase === "finished" &&
+              cur.challengerId === ctx.challengerId &&
+              cur.defenderId  === ctx.defenderId
+            ) {
+              if (proceed) await proceed(resultLog);
+            }
+          }, 2500);
+          return;
+        }
+
+        if (proceed) await proceed(resultLog);
+        return;
       }
     }
 
     if (proceed) await proceed();
-  }, [stableDuelCtx, players, myPlayerId]);
+  }, [stableDuelCtx, players, myPlayerId, gameId, gameState?.offer_pending]);
 
   /** Defender potvrdí připravenost pro online_1v1 — jen klient s myPlayerId === defenderId. */
   const handleDefenderReady = React.useCallback(async () => {
@@ -3245,8 +3302,50 @@ export default function GameBoard({ gameCode }: Props) {
 
               // ── online_1v1 ────────────────────────────────────────────────────────
               const sdPhase = sdPending.phase;
+              const isFinished    = sdPhase === "finished";
               const isCountingDown = sdPhase === "countdown";
               const hasStarted = sdPhase === "started" || (isCountingDown && !!sdPending.startsAt && sdPending.startsAt <= Date.now());
+
+              // Finished — výsledek pro defender/spectator; challenger má vlastní overlay result screen
+              if (isFinished) {
+                const summary     = sdPending.resultSummary;
+                const coinsDelta  = summary?.coinsDelta;
+                const winnerLabel = sdPending.winnerId
+                  ? (sdPending.winnerId === sdPending.challengerId
+                      ? sdPending.challengerName
+                      : sdPending.defenderName) ?? "?"
+                  : null;
+
+                if (isDefender) {
+                  return (
+                    <div className="mx-auto w-full max-w-[760px] rounded-lg border border-violet-600/50 bg-violet-950/70 px-4 py-4 flex flex-col gap-1.5 mt-1">
+                      <div className="text-[10px] uppercase tracking-widest text-violet-400 font-bold">Stájový souboj 1v1 — výsledek</div>
+                      <div className="text-[13px] text-violet-100">
+                        {winnerLabel
+                          ? <><strong>{winnerLabel}</strong> vyhrál{coinsDelta ? <span className="text-emerald-400"> +{coinsDelta}💰</span> : null}</>
+                          : <span>Remíza (0💰)</span>
+                        }
+                      </div>
+                      <div className="text-[11px] text-violet-400/70">Souboj byl vyhodnocen challenger klientem.</div>
+                    </div>
+                  );
+                }
+                if (isSpectatorView) {
+                  return (
+                    <div className="mx-auto w-full max-w-[760px] rounded-lg border border-slate-700/40 bg-slate-900/50 px-3 py-2 text-[11px] text-slate-400 flex items-center gap-2 mt-1">
+                      <span>⚔️</span>
+                      <span>
+                        1v1 souboj skončil:{" "}
+                        {winnerLabel
+                          ? <><strong className="text-slate-300">{winnerLabel}</strong> vyhrál{coinsDelta ? ` (+${coinsDelta}💰)` : ""}</>
+                          : "remíza"
+                        }
+                      </span>
+                    </div>
+                  );
+                }
+                return null; // challenger: overlay result screen
+              }
 
               // Countdown display — velký odpočet pro oba aktivní hráče
               if (isCountingDown && !hasStarted) {
