@@ -3303,10 +3303,30 @@ export default function GameBoard({ gameCode }: Props) {
                           <img
                             src={racer.image}
                             alt={racer.name}
-                            className="mx-auto mt-2 h-14 w-14 rounded-lg object-cover bg-slate-100"
+                            className="mx-auto mt-1 h-14 w-14 rounded-lg object-cover bg-slate-100"
                             onError={(e) => { e.currentTarget.style.display = "none"; }}
                           />
                         ) : null;
+
+                        const isNight = themeId.includes("night");
+                        const panelStyle: React.CSSProperties = isNight ? {
+                          background: "rgba(5,8,20,0.82)",
+                          border: "1px solid rgba(255,255,255,0.13)",
+                          borderRadius: 12,
+                          boxShadow: "0 0 16px rgba(0,0,0,0.45)",
+                          padding: "7px 10px",
+                          marginTop: 6,
+                        } : {
+                          background: "rgba(255,252,235,0.90)",
+                          border: "1px solid rgba(120,100,70,0.22)",
+                          borderRadius: 12,
+                          boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+                          padding: "7px 10px",
+                          marginTop: 6,
+                        };
+                        const lblCls = isNight ? "text-slate-400 shrink-0" : "text-stone-500 shrink-0";
+                        const valCls = isNight ? "tracking-tight text-slate-100" : "tracking-tight text-stone-800";
+                        const ownerCls = isNight ? "text-slate-300 text-xs font-medium" : "text-stone-700 text-xs font-medium";
 
                         if (owner) {
                           // Vlastněný racer — aktuální stamina z player.horses
@@ -3314,18 +3334,18 @@ export default function GameBoard({ gameCode }: Props) {
                           const currentStamina = ownedHorse?.stamina ?? ownedHorse?.maxStamina ?? 100;
                           const staminaDots = Math.round(currentStamina / 20);
                           return (
-                            <div className={`mt-2 space-y-1 text-[10px] ${theme.colors.centerSubtitle}`}>
+                            <div style={panelStyle} className="space-y-1 text-[10px]">
                               {racerImage}
-                              <div className={`text-xs font-medium ${theme.colors.centerSubtitle}`}>✓ {owner.name}</div>
+                              <div className={ownerCls}>✓ {owner.name}</div>
                               <div className="flex items-center justify-between gap-3">
-                                <span className="opacity-60 shrink-0">Rychlost</span>
-                                <span className="tracking-tight">
+                                <span className={lblCls}>Rychlost</span>
+                                <span className={valCls}>
                                   {"⭐".repeat(speedStars)}{"·".repeat(5 - speedStars)}
                                 </span>
                               </div>
                               <div className="flex items-center justify-between gap-3">
-                                <span className="opacity-60 shrink-0">Stamina</span>
-                                <span className="tracking-tight">
+                                <span className={lblCls}>Stamina</span>
+                                <span className={valCls}>
                                   {"🔵".repeat(staminaDots)}{"·".repeat(5 - staminaDots)}
                                 </span>
                               </div>
@@ -3337,23 +3357,23 @@ export default function GameBoard({ gameCode }: Props) {
                         const maxStamina = racer.maxStamina ?? racer.stamina ?? 100;
                         const staminaDots = Math.round(maxStamina / 20);
                         return (
-                          <div className={`mt-2 space-y-1 text-[10px] ${theme.colors.centerSubtitle}`}>
+                          <div style={panelStyle} className="space-y-1 text-[10px]">
                             {racerImage}
                             <div className="flex items-center justify-between gap-3">
-                              <span className="opacity-60 shrink-0">Rychlost</span>
-                              <span className="tracking-tight">
+                              <span className={lblCls}>Rychlost</span>
+                              <span className={valCls}>
                                 {"⭐".repeat(speedStars)}{"·".repeat(5 - speedStars)}
                               </span>
                             </div>
                             <div className="flex items-center justify-between gap-3">
-                              <span className="opacity-60 shrink-0">Max stamina</span>
-                              <span className="tracking-tight">
+                              <span className={lblCls}>Max stamina</span>
+                              <span className={valCls}>
                                 {"🔵".repeat(staminaDots)}{"·".repeat(5 - staminaDots)}
                               </span>
                             </div>
                             <div className="flex items-center justify-between gap-3">
-                              <span className="opacity-60 shrink-0">Cena</span>
-                              <span className="font-semibold">{racer.price} 💰</span>
+                              <span className={lblCls}>Cena</span>
+                              <span className={isNight ? "font-semibold text-slate-100" : "font-semibold text-stone-800"}>{racer.price} 💰</span>
                             </div>
                           </div>
                         );
