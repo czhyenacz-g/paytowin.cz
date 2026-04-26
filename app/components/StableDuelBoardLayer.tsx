@@ -138,10 +138,22 @@ function PlayerCard({ contestant, label }: { contestant: DuelContestant; label: 
         >
           1 : 2.5
         </div>
-        <div className="text-[8px] font-mono text-center leading-snug mt-0.5" style={{ color: `${contestant.color}bb` }}>
-          start: <span className="text-white">{speedLabel.start}</span>
-          {" · "}
-          nitro: <span className="text-white">{speedLabel.nitro}</span>
+        <div
+          className="rounded-md px-2 py-1 mt-1 text-[8px] font-mono text-center leading-snug w-full"
+          style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.15)" }}
+        >
+          <div style={{ color: `${contestant.color}bb` }}>
+            start: <span className="text-white">{speedLabel.start}</span>
+            {" · "}
+            nitro: <span className="text-white">{speedLabel.nitro}</span>
+          </div>
+          {contestant.horse && (
+            <div className="text-slate-400 mt-0.5">
+              stamina: <span className="text-white">{contestant.horse.stamina ?? contestant.horse.maxStamina ?? "?"}</span>
+              {" / "}
+              <span className="text-slate-300">{contestant.horse.maxStamina ?? "?"}</span>
+            </div>
+          )}
         </div>
         <div className="text-[7px] text-slate-600 uppercase tracking-widest font-bold mt-0.5">{label}</div>
       </div>
@@ -490,7 +502,7 @@ export default function StableDuelBoardLayer({
           challenger={challenger}
           defender={defender}
           result={duelResult}
-          settlement={computeMinigameSettlement(duelResult)}
+          settlement={computeMinigameSettlement(duelResult, challenger.horse?.price, defender.horse?.price)}
           isDev={isDev}
           onContinue={() => onFinish(duelResult)}
         />

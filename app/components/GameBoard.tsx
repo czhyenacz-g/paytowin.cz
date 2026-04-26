@@ -74,7 +74,7 @@ import RaceModal from "./RaceModal";
 import RaceEventOverlay from "./RaceEventOverlay";
 import type { MinigameResult } from "./race/RacingMinigame";
 import type { MinigameResult as StableMinigameResult } from "@/lib/minigames/types";
-import { computeMinigameSettlement } from "@/lib/minigames/settlement";
+import { computeMinigameSettlement, STABLE_DUEL_APPLY_BOT_STAMINA_LOSS } from "@/lib/minigames/settlement";
 import BuildInfoBar from "./BuildInfoBar";
 import ThemeAssetInspector from "./ThemeAssetInspector";
 import DevRaceModeShell from "./DevRaceModeShell";
@@ -479,6 +479,7 @@ export default function GameBoard({ gameCode }: Props) {
   // Stájový souboj — board overlay (game flow)
   const [stableDuelCtx, setStableDuelCtx] = React.useState<{ challenger: DuelContestant; defender: DuelContestant; isPreview: boolean; challengerId?: string; defenderId?: string } | null>(null);
   const stableDuelProceedRef = React.useRef<(() => Promise<void>) | null>(null);
+  const boardSurfaceRef = React.useRef<HTMLDivElement>(null);
   const audioCtxRef = React.useRef<AudioContext | null>(null);
   const soundEnabledRef = React.useRef(true);
   const rollDecisionTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1175,6 +1176,7 @@ export default function GameBoard({ gameCode }: Props) {
             });
           };
           setStableDuelCtx({ challenger, defender, isPreview: false, challengerId: currentPlayer.id, defenderId: ownerPlayer.id });
+          boardSurfaceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
         } else {
           // ── Rent fallback: jeden nebo oba hráči nemají závodníka ──────────────
           const rent = Math.round(field.racer.price * 0.2);
@@ -2244,15 +2246,18 @@ export default function GameBoard({ gameCode }: Props) {
       const defender   = players.find(p => p.id === ctx.defenderId);
 
       if (challenger && defender) {
-        const s = computeMinigameSettlement(result);
-
         const cKey = ctx.challenger.horse ? racerOwnershipKey(ctx.challenger.horse) : null;
         const dKey = ctx.defender.horse   ? racerOwnershipKey(ctx.defender.horse)   : null;
+
+        const s = computeMinigameSettlement(
+          result,
+          ctx.challenger.horse?.price,
+          ctx.defender.horse?.price,
+        );
 
         const newCCoins = Math.max(0, challenger.coins + s.p1.coinsDelta);
         const newDCoins = Math.max(0, defender.coins   + s.p2.coinsDelta);
 
-        // Stamina update — kůň s 0 staminou zatím zůstane ve stáji (TODO: eliminovat jako v closeRaceResult)
         const updatedCHorses = cKey
           ? challenger.horses.map(h =>
               racerOwnershipKey(h) === cKey
@@ -2261,13 +2266,23 @@ export default function GameBoard({ gameCode }: Props) {
             )
           : challenger.horses;
 
-        const updatedDHorses = dKey
+        // Bot/defender stamina skip dokud hraje jen jeden hráč na jednom zařízení
+        const updatedDHorses = STABLE_DUEL_APPLY_BOT_STAMINA_LOSS && dKey
           ? defender.horses.map(h =>
               racerOwnershipKey(h) === dKey
                 ? { ...h, stamina: Math.max(0, (h.stamina ?? h.maxStamina ?? 100) - s.p2.stamina.total) }
                 : h
             )
           : defender.horses;
+
+        if (process.env.NODE_ENV === "development") {
+          console.log("[stable-duel] result:", result);
+          console.log("[stable-duel] settlement:", s);
+          const cBefore = challenger.horses.find(h => racerOwnershipKey(h) === cKey)?.stamina ?? "?";
+          const cAfter  = updatedCHorses.find(h => racerOwnershipKey(h) === cKey)?.stamina ?? "?";
+          console.log(`[stable-duel] challenger stamina: ${cBefore} → ${cAfter}`);
+          console.log(`[stable-duel] defender stamina skipped (bot flag): ${!STABLE_DUEL_APPLY_BOT_STAMINA_LOSS}`);
+        }
 
         await Promise.all([
           supabase.from("players").update({ coins: newCCoins, horses: updatedCHorses }).eq("id", challenger.id),
@@ -2975,6 +2990,7 @@ export default function GameBoard({ gameCode }: Props) {
                         defender:   { name: p1?.name ?? "Hráč 2", horse: p1?.horses[0] ?? null, color: p1?.color ?? "#c084fc" },
                         isPreview: true,
                       });
+                      boardSurfaceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
                     }}
                     className="rounded-[3px] border border-amber-400 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700 hover:bg-amber-100 transition"
                     title="DEV: Stájový souboj — board overlay preview"
@@ -2994,7 +3010,7 @@ export default function GameBoard({ gameCode }: Props) {
             </div>{/* konec HUD+legenda panelu */}
 
             {/* aspect-[20/18] musí odpovídat STADIUM_ASPECT v lib/board/constants.ts */}
-            <div className={`relative mx-auto w-full overflow-visible ${board.shape === "stadium" ? "aspect-[20/18]" : "aspect-square max-w-[760px]"}`}>
+            <div ref={boardSurfaceRef} className={`relative mx-auto w-full overflow-visible ${board.shape === "stadium" ? "aspect-[20/18]" : "aspect-square max-w-[760px]"}`}>
               <div
                 className={`absolute inset-0 overflow-hidden rounded-[4px] border-2 ${theme.colors.boardSurfaceBorder} ${theme.colors.boardSurface}`}
                 style={{
