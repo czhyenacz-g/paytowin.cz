@@ -481,6 +481,11 @@ export default function GameBoard({ gameCode }: Props) {
   const [stableDuelCtx, setStableDuelCtx] = React.useState<{ challenger: DuelContestant; defender: DuelContestant; isPreview: boolean; challengerId?: string; defenderId?: string } | null>(null);
   const stableDuelProceedRef = React.useRef<(() => Promise<void>) | null>(null);
   const boardSurfaceRef = React.useRef<HTMLDivElement>(null);
+  // Idempotency refs pro countdown a overlay — klíčovány identitou duelu
+  const countdownStartedRef = React.useRef<string | null>(null);
+  const overlayOpenedRef    = React.useRef<string | null>(null);
+  // Lokální zobrazovací stav countdownu (3/2/1/START) — jen UI, žádný DB zápis
+  const [countdownDisplay, setCountdownDisplay] = React.useState<"3" | "2" | "1" | "START" | null>(null);
   // Dev: přepínač režimu Stable Duel — default pvbot_awareness, opt-in online_1v1
   const [stableDuelMode, setStableDuelMode] = React.useState<"pvbot_awareness" | "online_1v1">(() => {
     if (typeof window !== "undefined") {
@@ -977,6 +982,20 @@ export default function GameBoard({ gameCode }: Props) {
     }, ms);
   }, []);
 
+  /**
+   * Scroll-before-overlay helper — scrollne k boardu, pak v rAF otevře StableDuelBoardLayer.
+   * Idempotentní: stejný duelKey otevře overlay jen jednou (ref guard).
+   */
+  const openStableDuelOverlay = React.useCallback((
+    ctx: { challenger: DuelContestant; defender: DuelContestant; isPreview: boolean; challengerId?: string; defenderId?: string },
+    duelKey: string,
+  ) => {
+    if (overlayOpenedRef.current === duelKey) return;
+    overlayOpenedRef.current = duelKey;
+    boardSurfaceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    requestAnimationFrame(() => setStableDuelCtx(ctx));
+  }, []);
+
   // Zobrazí nouzové varování před bankrotem. Vrací hráče po prodeji (nebo beze změny).
   const confirmBankruptOrSell = React.useCallback((player: Player): Promise<Player> => {
     if (player.horses.length === 0) return Promise.resolve(player);
@@ -1186,9 +1205,12 @@ export default function GameBoard({ gameCode }: Props) {
             });
           };
           boardSurfaceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-          // pvbot_awareness: otevři StableDuelBoardLayer ihned; online_1v1: čekej na handshake
+          // pvbot_awareness: otevři StableDuelBoardLayer ihned (scroll+rAF); online_1v1: čekej na handshake
           if (stableDuelMode !== "online_1v1") {
-            setStableDuelCtx({ challenger, defender, isPreview: false, challengerId: currentPlayer.id, defenderId: ownerPlayer.id });
+            openStableDuelOverlay(
+              { challenger, defender, isPreview: false, challengerId: currentPlayer.id, defenderId: ownerPlayer.id },
+              `pvbot_${currentPlayer.id}_${ownerPlayer.id}`,
+            );
           }
           // Sdílený pending stav — informuje všechny klienty přes Realtime
           if (gameId) {
@@ -2367,23 +2389,109 @@ export default function GameBoard({ gameCode }: Props) {
     }).eq("game_id", gameId);
   }, [gameId, gameState?.offer_pending, myPlayerId]);
 
-  /** Challenger přepne na PvBot fallback když defender nereaguje. */
-  const handleFallbackToPvBot = React.useCallback(() => {
+  /** Challenger přepne na PvBot fallback když defender nereaguje.
+   *  Přepíše DB pending na pvbot_awareness, aby defender/spectators viděli standardní banner. */
+  const handleFallbackToPvBot = React.useCallback(async () => {
     const sdPending = gameState?.offer_pending?.type === "stable_duel_pending"
       ? gameState.offer_pending as StableDuelPendingOffer
       : null;
     if (!sdPending || myPlayerId !== sdPending.challengerId) return;
+    // Přepiš pending na pvbot_awareness — defender přestane vidět online_1v1 waiting panel
+    if (gameId && sdPending.mode === "online_1v1") {
+      const updated: StableDuelPendingOffer = { ...sdPending, mode: "pvbot_awareness", phase: "pending" };
+      await supabase.from("game_state").update({
+        offer_pending: updated as unknown as Record<string, unknown>,
+      }).eq("game_id", gameId);
+    }
     const cPlayer = players.find(p => p.id === sdPending.challengerId);
     const dPlayer = players.find(p => p.id === sdPending.defenderId);
-    setStableDuelCtx({
-      challenger: { name: sdPending.challengerName ?? cPlayer?.name ?? "Challenger", horse: cPlayer?.horses[0] ?? null, color: cPlayer?.color ?? "#00ff88" },
-      defender:   { name: sdPending.defenderName ?? dPlayer?.name ?? "Defender",   horse: dPlayer?.horses[0] ?? null, color: dPlayer?.color ?? "#c084fc" },
-      isPreview: false,
-      challengerId: sdPending.challengerId,
-      defenderId: sdPending.defenderId,
-    });
-    boardSurfaceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [gameState?.offer_pending, myPlayerId, players]);
+    openStableDuelOverlay(
+      {
+        challenger: { name: sdPending.challengerName ?? cPlayer?.name ?? "Challenger", horse: cPlayer?.horses[0] ?? null, color: cPlayer?.color ?? "#00ff88" },
+        defender:   { name: sdPending.defenderName ?? dPlayer?.name ?? "Defender",   horse: dPlayer?.horses[0] ?? null, color: dPlayer?.color ?? "#c084fc" },
+        isPreview: false,
+        challengerId: sdPending.challengerId,
+        defenderId: sdPending.defenderId,
+      },
+      `fallback_${sdPending.challengerId}_${sdPending.createdAt}`,
+    );
+  }, [gameId, gameState?.offer_pending, myPlayerId, players, openStableDuelOverlay]);
+
+  // ── Stable Duel online_1v1 countdown ─────────────────────────────────────────
+
+  // Challenger jednorázově zapíše "countdown" + startsAt po both_ready.
+  // Idempotentní přes countdownStartedRef + guard sdPending.startsAt.
+  React.useEffect(() => {
+    const sdPending = gameState?.offer_pending?.type === "stable_duel_pending"
+      ? gameState.offer_pending as StableDuelPendingOffer
+      : null;
+    if (!sdPending || sdPending.mode !== "online_1v1" || sdPending.phase !== "both_ready") return;
+    if (!sdPending.challengerReady || !sdPending.defenderReady) return;
+    if (sdPending.startsAt) return; // guard: startsAt již nastaveno (refresh)
+    if (!gameId || myPlayerId !== sdPending.challengerId) return;
+
+    const duelKey = `cdown_${sdPending.challengerId}_${sdPending.createdAt}`;
+    if (countdownStartedRef.current === duelKey) return;
+    countdownStartedRef.current = duelKey;
+
+    const updated: StableDuelPendingOffer = {
+      ...sdPending,
+      phase: "countdown",
+      countdownOwnerId: sdPending.challengerId,
+      countdownStartedAt: Date.now(),
+      startsAt: Date.now() + 3000,
+    };
+    supabase.from("game_state").update({
+      offer_pending: updated as unknown as Record<string, unknown>,
+    }).eq("game_id", gameId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState?.offer_pending, gameId, myPlayerId]);
+
+  // Lokální interval počítá countdown z DB startsAt → aktualizuje countdownDisplay.
+  // Nespouští žádný DB zápis. Po dosažení 0 otevře overlay (challenger only).
+  React.useEffect(() => {
+    const sdPending = gameState?.offer_pending?.type === "stable_duel_pending"
+      ? gameState.offer_pending as StableDuelPendingOffer
+      : null;
+    const startsAt = sdPending?.startsAt;
+    if (!startsAt || sdPending?.mode !== "online_1v1" || sdPending.phase !== "countdown") {
+      setCountdownDisplay(null);
+      return;
+    }
+    const isChallenger = myPlayerId === sdPending.challengerId;
+    const cId = sdPending.challengerId;
+    const dId = sdPending.defenderId;
+    const cName = sdPending.challengerName;
+    const dName = sdPending.defenderName;
+    const createdAt = sdPending.createdAt;
+    const duelKey = `overlay_${cId}_${dId}_${createdAt}_${startsAt}`;
+
+    const tick = () => {
+      const remaining = startsAt - Date.now();
+      if (remaining > 2000) setCountdownDisplay("3");
+      else if (remaining > 1000) setCountdownDisplay("2");
+      else if (remaining > 0) setCountdownDisplay("1");
+      else {
+        setCountdownDisplay("START");
+        if (isChallenger) {
+          const cPlayer = players.find(p => p.id === cId);
+          const dPlayer = players.find(p => p.id === dId);
+          openStableDuelOverlay({
+            challenger: { name: cName ?? cPlayer?.name ?? "Challenger", horse: cPlayer?.horses[0] ?? null, color: cPlayer?.color ?? "#00ff88" },
+            defender:   { name: dName ?? dPlayer?.name ?? "Defender",   horse: dPlayer?.horses[0] ?? null, color: dPlayer?.color ?? "#c084fc" },
+            isPreview: false,
+            challengerId: cId,
+            defenderId: dId,
+          }, duelKey);
+        }
+      }
+    };
+
+    tick();
+    const interval = setInterval(tick, 250);
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState?.offer_pending, myPlayerId, players, openStableDuelOverlay]);
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -3136,19 +3244,66 @@ export default function GameBoard({ gameCode }: Props) {
               }
 
               // ── online_1v1 ────────────────────────────────────────────────────────
-              const bothReady = sdPending.phase === "both_ready";
+              const sdPhase = sdPending.phase;
+              const isCountingDown = sdPhase === "countdown";
+              const hasStarted = sdPhase === "started" || (isCountingDown && !!sdPending.startsAt && sdPending.startsAt <= Date.now());
+
+              // Countdown display — velký odpočet pro oba aktivní hráče
+              if (isCountingDown && !hasStarted) {
+                if (isSpectatorView) {
+                  return (
+                    <div className="mx-auto w-full max-w-[760px] rounded-lg border border-slate-700/40 bg-slate-900/50 px-3 py-2 text-[11px] text-slate-400 flex items-center gap-2 mt-1">
+                      <span>⚔️</span>
+                      <span>1v1 souboj začíná: <strong>{sdPending.challengerName ?? "?"}</strong> vs <strong>{sdPending.defenderName ?? "?"}</strong></span>
+                    </div>
+                  );
+                }
+                return (
+                  <div className="mx-auto w-full max-w-[760px] rounded-lg border border-indigo-600/50 bg-indigo-950/80 px-4 py-5 flex flex-col items-center gap-1 mt-1">
+                    <div className="text-[9px] uppercase tracking-widest text-indigo-400 font-bold">Stájový souboj 1v1</div>
+                    <div className="text-6xl font-black text-white" style={{ textShadow: "0 0 32px rgba(99,102,241,0.9)" }}>
+                      {countdownDisplay ?? "…"}
+                    </div>
+                    <div className="text-[11px] text-indigo-300">{sdPending.challengerName ?? "?"} vs {sdPending.defenderName ?? "?"}</div>
+                  </div>
+                );
+              }
+
+              // Po startu — challenger má otevřený overlay (tento blok je skrytý přes !stableDuelCtx)
+              if (hasStarted) {
+                if (isDefender) {
+                  return (
+                    <div className="mx-auto w-full max-w-[760px] rounded-lg border border-violet-700/50 bg-violet-950/60 px-4 py-3 text-[12px] text-violet-200 flex items-center gap-2 mt-1">
+                      <span>⚔️</span>
+                      <span>Souboj začal — aktivní hraní soupeře bude přidáno v dalším kroku.</span>
+                    </div>
+                  );
+                }
+                if (isSpectatorView) {
+                  return (
+                    <div className="mx-auto w-full max-w-[760px] rounded-lg border border-slate-700/40 bg-slate-900/50 px-3 py-2 text-[11px] text-slate-400 flex items-center gap-2 mt-1">
+                      <span>⚔️</span>
+                      <span>1v1 souboj probíhá: <strong>{sdPending.challengerName ?? "?"}</strong></span>
+                    </div>
+                  );
+                }
+                return null; // challenger: overlay open, panel hidden by !stableDuelCtx
+              }
+
+              // pending / both_ready
+              const isPending = sdPhase === "pending";
 
               if (isChallenger) {
                 return (
                   <div className="mx-auto w-full max-w-[760px] rounded-lg border border-indigo-700/50 bg-indigo-950/60 px-4 py-3 text-[12px] text-indigo-200 flex items-center justify-between gap-3 mt-1">
                     <div className="flex items-center gap-2">
                       <span>⚔️</span>
-                      {bothReady
-                        ? <span className="text-emerald-300 font-semibold">Oba připraveni — čeká se na spuštění countdownu</span>
-                        : <span>⏳ Čekáš na soupeře <strong>{sdPending.defenderName ?? "?"}</strong>…</span>
+                      {isPending
+                        ? <span>⏳ Čekáš na soupeře <strong>{sdPending.defenderName ?? "?"}</strong>…</span>
+                        : <span className="text-emerald-300 font-semibold">Oba připraveni — spouštím odpočet…</span>
                       }
                     </div>
-                    {!bothReady && (
+                    {isPending && (
                       <button
                         onClick={handleFallbackToPvBot}
                         className="shrink-0 rounded border border-amber-600/60 bg-amber-900/40 px-2 py-1 text-[11px] text-amber-300 hover:bg-amber-800/60 transition"
@@ -3166,12 +3321,12 @@ export default function GameBoard({ gameCode }: Props) {
                   <div className="mx-auto w-full max-w-[760px] rounded-lg border border-violet-700/50 bg-violet-950/60 px-4 py-3 text-[12px] text-violet-200 flex items-center justify-between gap-3 mt-1">
                     <div className="flex items-center gap-2">
                       <span>⚔️</span>
-                      {defReady || bothReady
-                        ? <span className="text-emerald-300 font-semibold">Jsi připraven — čeká se na spuštění</span>
+                      {defReady || !isPending
+                        ? <span className="text-emerald-300 font-semibold">Jsi připraven — spouštění odpočtu…</span>
                         : <span><strong>{sdPending.challengerName ?? "Hráč"}</strong> tě vyzval na stájový souboj 1v1</span>
                       }
                     </div>
-                    {!defReady && !bothReady && (
+                    {!defReady && isPending && (
                       <button
                         onClick={handleDefenderReady}
                         className="shrink-0 rounded border border-emerald-600/60 bg-emerald-900/40 px-3 py-1 text-[11px] font-semibold text-emerald-300 hover:bg-emerald-800/60 transition"

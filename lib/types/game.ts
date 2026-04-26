@@ -177,9 +177,14 @@ export interface RacePendingEvent {
  */
 export interface StableDuelPendingOffer {
   type: "stable_duel_pending";
-  phase: "pending" | "both_ready";
+  phase: "pending" | "both_ready" | "countdown" | "started";
   /** Výchozí hodnota: "pvbot_awareness". Optional pro zpětnou kompatibilitu. */
   mode?: "pvbot_awareness" | "online_1v1";
+  /** ID challengera, který zapsal countdown — jen challenger smí startovat. */
+  countdownOwnerId?: string;
+  countdownStartedAt?: number;
+  /** Unix timestamp kdy duel začíná — countdown se počítá z Date.now() vs startsAt. */
+  startsAt?: number;
   challengerId: string;
   defenderId: string;
   challengerName?: string;
