@@ -5,6 +5,7 @@
  */
 
 import type { GameCard } from "@/lib/cards";
+import type { StableMinigameType } from "@/lib/minigames/selectStableMinigame";
 
 // ─── Ekonomika hry ────────────────────────────────────────────────────────────
 
@@ -168,7 +169,25 @@ export interface RacePendingEvent {
   reward?: number;    // výhra pro vítěze; rivals_race = % z ceny pole, mass_race použije RACE_WINNER_REWARD
 }
 
-export type OfferPending = RerollOffer | RaceOffer | BankruptAnnouncement | RacePendingEvent;
+/**
+ * StableDuelPendingOffer — sdílený pending stav stájového souboje.
+ * Zapíše challenger klient do game_state.offer_pending.
+ * Defender/spectators čtou přes Realtime a zobrazí awareness banner.
+ * Fáze "pending" = PvBot beta; budoucí fáze: waiting_ready, countdown, running.
+ */
+export interface StableDuelPendingOffer {
+  type: "stable_duel_pending";
+  phase: "pending";
+  challengerId: string;
+  defenderId: string;
+  challengerName?: string;
+  defenderName?: string;
+  fieldIndex?: number;
+  minigameType?: StableMinigameType;
+  createdAt: number;
+}
+
+export type OfferPending = RerollOffer | RaceOffer | BankruptAnnouncement | RacePendingEvent | StableDuelPendingOffer;
 
 /**
  * PostTurnEvent — caller-facing payload pro post-turn hook ve finishTurn.
