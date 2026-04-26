@@ -3268,8 +3268,8 @@ export default function GameBoard({ gameCode }: Props) {
                   style={theme.assets?.centerBgImage
                     ? { width: "62%", height: "42%" }
                     : board.shape === "stadium"
-                      ? { width: "50%", height: "40%", borderRadius: "25%" }
-                      : { width: "44%", height: "44%", borderRadius: "50%" }}
+                      ? { width: "50%", height: themeId.includes("night") ? "48%" : "40%", borderRadius: "25%" }
+                      : { width: "44%", height: themeId.includes("night") ? "53%" : "44%", borderRadius: "50%" }}
                 >
                   {theme.assets?.centerBgImage && (
                     // eslint-disable-next-line @next/next/no-img-element
