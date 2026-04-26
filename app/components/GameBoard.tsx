@@ -64,7 +64,7 @@ function normalizeFavoriteHorse(horses: Horse[]): Horse[] {
 }
 import { drawCard } from "@/lib/cards";
 import type { GameCard } from "@/lib/cards";
-import type { Player, Horse, ActiveEffect, GameState, OfferPending, RerollOffer, RaceOffer, BankruptAnnouncement, RacePendingEvent, PostTurnEvent, RaceType, EconomyConfig } from "@/lib/types/game";
+import type { Player, Horse, ActiveEffect, GameState, OfferPending, RerollOffer, RaceOffer, BankruptAnnouncement, RacePendingEvent, StableDuelPendingOffer, PostTurnEvent, RaceType, EconomyConfig } from "@/lib/types/game";
 import { DEFAULT_ECONOMY } from "@/lib/types/game";
 import { resolveYearEvent } from "@/lib/year-events";
 import type { CenterEvent, FlashEvent } from "@/lib/types/events";
@@ -75,6 +75,7 @@ import RaceEventOverlay from "./RaceEventOverlay";
 import type { MinigameResult } from "./race/RacingMinigame";
 import type { MinigameResult as StableMinigameResult } from "@/lib/minigames/types";
 import { computeMinigameSettlement, STABLE_DUEL_APPLY_BOT_STAMINA_LOSS } from "@/lib/minigames/settlement";
+import { selectStableMinigame } from "@/lib/minigames/selectStableMinigame";
 import BuildInfoBar from "./BuildInfoBar";
 import ThemeAssetInspector from "./ThemeAssetInspector";
 import DevRaceModeShell from "./DevRaceModeShell";
@@ -1177,6 +1178,23 @@ export default function GameBoard({ gameCode }: Props) {
           };
           setStableDuelCtx({ challenger, defender, isPreview: false, challengerId: currentPlayer.id, defenderId: ownerPlayer.id });
           boardSurfaceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+          // Sdílený pending stav — defender/spectators budou informováni přes Realtime
+          if (gameId) {
+            const duelPending: StableDuelPendingOffer = {
+              type: "stable_duel_pending",
+              phase: "pending",
+              challengerId: currentPlayer.id,
+              defenderId: ownerPlayer.id,
+              challengerName: currentPlayer.name,
+              defenderName: ownerPlayer.name,
+              fieldIndex: field.index,
+              minigameType: selectStableMinigame({ themeId, challengerHorse: challenger.horse, defenderHorse: defender.horse }),
+              createdAt: Date.now(),
+            };
+            await supabase.from("game_state").update({
+              offer_pending: duelPending as unknown as Record<string, unknown>,
+            }).eq("game_id", gameId);
+          }
         } else {
           // ── Rent fallback: jeden nebo oba hráči nemají závodníka ──────────────
           const rent = Math.round(field.racer.price * 0.2);
@@ -2240,6 +2258,12 @@ export default function GameBoard({ gameCode }: Props) {
     const proceed = stableDuelProceedRef.current;
     stableDuelProceedRef.current = null;
 
+    // Challenger-only guard — jiný klient nesmí psát do DB
+    if (!ctx?.isPreview && ctx?.challengerId && myPlayerId !== null && myPlayerId !== ctx.challengerId) {
+      if (proceed) await proceed();
+      return;
+    }
+
     // Live settlement — přeskočit v preview nebo pokud chybí player IDs
     if (!ctx?.isPreview && ctx?.challengerId && ctx?.defenderId) {
       const challenger = players.find(p => p.id === ctx.challengerId);
@@ -2292,7 +2316,7 @@ export default function GameBoard({ gameCode }: Props) {
     }
 
     if (proceed) await proceed();
-  }, [stableDuelCtx, players]);
+  }, [stableDuelCtx, players, myPlayerId]);
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -3008,6 +3032,25 @@ export default function GameBoard({ gameCode }: Props) {
               <span className="rounded-[3px] bg-amber-100 px-2 py-1 text-amber-800">🟠 {theme.labels.legend.racer}</span>
             </div>
             </div>{/* konec HUD+legenda panelu */}
+
+            {!stableDuelCtx && (() => {
+              const sdPending = gameState?.offer_pending?.type === "stable_duel_pending"
+                ? gameState.offer_pending as StableDuelPendingOffer
+                : null;
+              if (!sdPending) return null;
+              const isDefender = myPlayerId === sdPending.defenderId;
+              const isSpectatorView = viewerRole === "spectator";
+              if (!isDefender && !isSpectatorView) return null;
+              return (
+                <div className="mx-auto w-full max-w-[760px] rounded-lg border border-amber-700/40 bg-amber-900/20 px-3 py-2 text-[11px] text-amber-300 flex items-center gap-2 mt-1">
+                  <span>⚔️</span>
+                  {isDefender
+                    ? <span><strong>{sdPending.challengerName ?? "Hráč"}</strong> tě vyzval na stájový souboj · souboj běží lokálně (PvBot)</span>
+                    : <span>Probíhá stájový souboj: <strong>{sdPending.challengerName ?? "?"}</strong> vs <strong>{sdPending.defenderName ?? "?"}</strong></span>
+                  }
+                </div>
+              );
+            })()}
 
             {/* aspect-[20/18] musí odpovídat STADIUM_ASPECT v lib/board/constants.ts */}
             <div ref={boardSurfaceRef} className={`relative mx-auto w-full overflow-visible ${board.shape === "stadium" ? "aspect-[20/18]" : "aspect-square max-w-[760px]"}`}>
