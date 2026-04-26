@@ -3287,32 +3287,7 @@ export default function GameBoard({ gameCode }: Props) {
                     </div>
                   ) : hoveredField ? (
                     <div className="relative z-10 max-w-[180px]">
-                      {/* Non-racer: type badge + název nad panelem */}
-                      {hoveredField.type !== "racer" && (
-                        <>
-                          <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
-                            {hoveredField.type === "coins_gain" ? "reward" : hoveredField.type === "coins_lose" ? "risk" : hoveredField.type}
-                          </div>
-                          <div className={`mt-2 text-sm font-semibold ${theme.colors.centerTitle}`}>
-                            {hoveredField.type === "start" ? "START" : hoveredField.label}
-                          </div>
-                        </>
-                      )}
-
-                      {/* Prázdný racer slot */}
-                      {hoveredField.type === "racer" && !hoveredField.racer && (
-                        <>
-                          <div className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">slot</div>
-                          <div className={`mt-2 text-sm font-semibold ${theme.colors.centerTitle}`}>{hoveredField.label}</div>
-                        </>
-                      )}
-
-                      {/* Racer profil — celý panel: typ + jméno + obrázek + staty */}
-                      {hoveredField.type === "racer" && hoveredField.racer && (() => {
-                        const racer = hoveredField.racer;
-                        const owner = racerOwnership[racerOwnershipKey(racer)] ?? null;
-                        const speedStars = Math.min(racer.speed, 5);
-
+                      {(() => {
                         const isNight = themeId.includes("night");
                         const panelStyle: React.CSSProperties = isNight ? {
                           background: "rgba(5,8,20,0.82)",
@@ -3328,17 +3303,46 @@ export default function GameBoard({ gameCode }: Props) {
                           padding: "8px 10px",
                         };
                         const typeBadgeCls = isNight ? "text-slate-500" : "text-stone-400";
-                        const nameCls = isNight ? "text-slate-100 font-semibold" : "text-stone-900 font-semibold";
-                        const lblCls = isNight ? "text-slate-400 shrink-0" : "text-stone-500 shrink-0";
-                        const valCls = isNight ? "tracking-tight text-slate-100" : "tracking-tight text-stone-800";
-                        const ownerCls = isNight ? "text-slate-300 font-medium" : "text-stone-600 font-medium";
+                        const nameCls     = isNight ? "text-slate-100 font-semibold" : "text-stone-900 font-semibold";
+                        const subtitleCls = isNight ? "text-slate-400" : "text-stone-500";
+                        const lblCls      = isNight ? "text-slate-400 shrink-0" : "text-stone-500 shrink-0";
+                        const valCls      = isNight ? "tracking-tight text-slate-100" : "tracking-tight text-stone-800";
+                        const ownerCls    = isNight ? "text-slate-300 font-medium" : "text-stone-600 font-medium";
 
-                        const racerTypeLabel = racer.isLegendary ? "legendární" : "závodník";
+                        // ── Racer profil ──────────────────────────────────────
+                        if (hoveredField.type === "racer" && hoveredField.racer) {
+                          const racer = hoveredField.racer;
+                          const owner = racerOwnership[racerOwnershipKey(racer)] ?? null;
+                          const speedStars = Math.min(racer.speed, 5);
+                          const racerTypeLabel = racer.isLegendary ? "legendární" : "závodník";
 
-                        if (owner) {
-                          const ownedHorse = owner.horses.find(h => racerOwnershipKey(h) === racerOwnershipKey(racer));
-                          const currentStamina = ownedHorse?.stamina ?? ownedHorse?.maxStamina ?? 100;
-                          const staminaDots = Math.round(currentStamina / 20);
+                          if (owner) {
+                            const ownedHorse = owner.horses.find(h => racerOwnershipKey(h) === racerOwnershipKey(racer));
+                            const currentStamina = ownedHorse?.stamina ?? ownedHorse?.maxStamina ?? 100;
+                            const staminaDots = Math.round(currentStamina / 20);
+                            return (
+                              <div style={panelStyle} className="space-y-1 text-[10px]">
+                                <div className={`font-black uppercase tracking-[0.18em] text-[9px] ${typeBadgeCls}`}>{racerTypeLabel}</div>
+                                <div className={`text-sm ${nameCls}`}>{racer.name}</div>
+                                {racer.image && (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={racer.image} alt={racer.name} className="mx-auto mt-1 h-14 w-14 rounded-lg object-cover bg-slate-100" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                                )}
+                                <div className={ownerCls}>✓ {owner.name}</div>
+                                <div className="flex items-center justify-between gap-3">
+                                  <span className={lblCls}>Rychlost</span>
+                                  <span className={valCls}>{"⭐".repeat(speedStars)}{"·".repeat(5 - speedStars)}</span>
+                                </div>
+                                <div className="flex items-center justify-between gap-3">
+                                  <span className={lblCls}>Stamina</span>
+                                  <span className={valCls}>{"🔵".repeat(staminaDots)}{"·".repeat(5 - staminaDots)}</span>
+                                </div>
+                              </div>
+                            );
+                          }
+
+                          const maxStamina = racer.maxStamina ?? racer.stamina ?? 100;
+                          const staminaDots = Math.round(maxStamina / 20);
                           return (
                             <div style={panelStyle} className="space-y-1 text-[10px]">
                               <div className={`font-black uppercase tracking-[0.18em] text-[9px] ${typeBadgeCls}`}>{racerTypeLabel}</div>
@@ -3347,57 +3351,44 @@ export default function GameBoard({ gameCode }: Props) {
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img src={racer.image} alt={racer.name} className="mx-auto mt-1 h-14 w-14 rounded-lg object-cover bg-slate-100" onError={(e) => { e.currentTarget.style.display = "none"; }} />
                               )}
-                              <div className={ownerCls}>✓ {owner.name}</div>
                               <div className="flex items-center justify-between gap-3">
                                 <span className={lblCls}>Rychlost</span>
                                 <span className={valCls}>{"⭐".repeat(speedStars)}{"·".repeat(5 - speedStars)}</span>
                               </div>
                               <div className="flex items-center justify-between gap-3">
-                                <span className={lblCls}>Stamina</span>
+                                <span className={lblCls}>Max stamina</span>
                                 <span className={valCls}>{"🔵".repeat(staminaDots)}{"·".repeat(5 - staminaDots)}</span>
+                              </div>
+                              <div className="flex items-center justify-between gap-3">
+                                <span className={lblCls}>Cena</span>
+                                <span className={`font-semibold ${valCls}`}>{racer.price} 💰</span>
                               </div>
                             </div>
                           );
                         }
 
-                        const maxStamina = racer.maxStamina ?? racer.stamina ?? 100;
-                        const staminaDots = Math.round(maxStamina / 20);
+                        // ── Ostatní pole (coins, chance, start, slot, …) ─────
+                        const fieldTypeBadge =
+                          hoveredField.type === "racer"      ? "slot"   :
+                          hoveredField.type === "coins_gain" ? "reward" :
+                          hoveredField.type === "coins_lose" ? "risk"   :
+                          hoveredField.type;
+                        const fieldName = hoveredField.type === "start" ? "START" : hoveredField.label;
+                        const detail = getFieldDetail(hoveredField, null);
+
                         return (
                           <div style={panelStyle} className="space-y-1 text-[10px]">
-                            <div className={`font-black uppercase tracking-[0.18em] text-[9px] ${typeBadgeCls}`}>{racerTypeLabel}</div>
-                            <div className={`text-sm ${nameCls}`}>{racer.name}</div>
-                            {racer.image && (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={racer.image} alt={racer.name} className="mx-auto mt-1 h-14 w-14 rounded-lg object-cover bg-slate-100" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                            <div className={`font-black uppercase tracking-[0.18em] text-[9px] ${typeBadgeCls}`}>{fieldTypeBadge}</div>
+                            <div className={`text-sm ${nameCls}`}>{fieldName}</div>
+                            {detail && <div className={subtitleCls}>{detail}</div>}
+                            {hoveredField.flavorText && (
+                              <div className={`text-[9px] italic leading-relaxed opacity-70 ${subtitleCls}`}>
+                                {hoveredField.flavorText}
+                              </div>
                             )}
-                            <div className="flex items-center justify-between gap-3">
-                              <span className={lblCls}>Rychlost</span>
-                              <span className={valCls}>{"⭐".repeat(speedStars)}{"·".repeat(5 - speedStars)}</span>
-                            </div>
-                            <div className="flex items-center justify-between gap-3">
-                              <span className={lblCls}>Max stamina</span>
-                              <span className={valCls}>{"🔵".repeat(staminaDots)}{"·".repeat(5 - staminaDots)}</span>
-                            </div>
-                            <div className="flex items-center justify-between gap-3">
-                              <span className={lblCls}>Cena</span>
-                              <span className={isNight ? "font-semibold text-slate-100" : "font-semibold text-stone-800"}>{racer.price} 💰</span>
-                            </div>
                           </div>
                         );
                       })()}
-
-                      {/* Non-racer detail */}
-                      {hoveredField.type !== "racer" && getFieldDetail(hoveredField, null) && (
-                        <div className={`mt-2 text-xs leading-relaxed ${theme.colors.centerSubtitle}`}>
-                          {getFieldDetail(hoveredField, null)}
-                        </div>
-                      )}
-
-                      {hoveredField.flavorText && (
-                        <div className={`mt-2 text-[10px] italic leading-relaxed opacity-70 ${theme.colors.centerSubtitle}`}>
-                          {hoveredField.flavorText}
-                        </div>
-                      )}
                     </div>
                   ) : coinsFeedback ? (
                     <div className="relative z-10" style={{ transition: "opacity 0.25s ease" }}>
