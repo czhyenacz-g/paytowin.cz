@@ -1173,6 +1173,7 @@ export default function GameBoard({ gameCode }: Props) {
               nextIndex, turnCount: newTurnCount,
               log: [`⚔️ ${currentPlayer.name} svedl souboj stájí s ${ownerPlayer.name}!`, ...extraLog, ...newLog],
               lastRoll: roll,
+              clearOfferPending: { type: "stable_duel_pending", challengerId: currentPlayer.id, defenderId: ownerPlayer.id },
               ...(yearEventTelegramPayload ? { yearEventTelegram: yearEventTelegramPayload } : {}),
             });
           };
@@ -1517,6 +1518,7 @@ export default function GameBoard({ gameCode }: Props) {
       nextIndex,
       turnCount: gameState.turn_count + 1,
       log: [`${pendingOffer.playerName} odmítl nabídku`, ...newLog],
+      clearOfferPending: { type: "reroll" },
     });
 
     setPendingOffer(null);
@@ -1832,6 +1834,13 @@ export default function GameBoard({ gameCode }: Props) {
     bustPlayerId?: string;
     /** Year event telegram payload — uloží se do game_state, přečtou všichni klienti přes Realtime. */
     yearEventTelegram?: { text: string; turn: number };
+    /**
+     * Cíleně smaž offer_pending — pouze když caller ví, že pending odpovídá tomuto tahu.
+     * Bez tohoto parametru se offer_pending v DB NEZMĚNÍ.
+     * type + IDs slouží jako dokumentace; DB check se nedělá (finishTurn v proceed má stale closure).
+     * TODO: až finishTurn bude useCallback s live gameState dep, přidat ověření proti DB hodnotě.
+     */
+    clearOfferPending?: { type: string; challengerId?: string; defenderId?: string };
   }) => {
     if (!gameId) return;
 
@@ -1891,9 +1900,10 @@ export default function GameBoard({ gameCode }: Props) {
       turn_count: params.turnCount,
       horse_pending: false,
       card_pending: null,
-      offer_pending: null,
       log: params.log.slice(0, 20),
     };
+    // offer_pending se čistí jen na explicitní požádání — zabrání přepsání nesouvisejícího pending.
+    if (params.clearOfferPending !== undefined) update.offer_pending = null;
     if (params.lastRoll !== undefined) update.last_roll = params.lastRoll;
     if (params.revealedFields !== undefined) update.revealed_fields = params.revealedFields;
     if (params.bustPlayerId) update.bust_order = [...(gameState?.bust_order ?? []), params.bustPlayerId];
@@ -2316,24 +2326,8 @@ export default function GameBoard({ gameCode }: Props) {
       }
     }
 
-    // Cílený cleanup — maž offer_pending pouze pokud odpovídá tomuto duelu.
-    // Nezávisíme čistě na finishTurn's blanket null, aby se nepřepsal jiný pending typ.
-    // TODO: finishTurn nastavuje offer_pending: null unconditionally — pokud by concurrent
-    //       flow zapsal nový pending mezi start a finish duelu, finishTurn ho smaže.
-    //       Řešení: finishTurn param `clearOfferPending?: boolean` — odloženo na multiplayer fázi.
-    if (!ctx?.isPreview && ctx?.challengerId && ctx?.defenderId && gameId) {
-      const current = gameState?.offer_pending;
-      if (
-        current?.type === "stable_duel_pending" &&
-        (current as StableDuelPendingOffer).challengerId === ctx.challengerId &&
-        (current as StableDuelPendingOffer).defenderId === ctx.defenderId
-      ) {
-        await supabase.from("game_state").update({ offer_pending: null }).eq("game_id", gameId);
-      }
-    }
-
     if (proceed) await proceed();
-  }, [stableDuelCtx, players, myPlayerId, gameState?.offer_pending, gameId]);
+  }, [stableDuelCtx, players, myPlayerId]);
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
