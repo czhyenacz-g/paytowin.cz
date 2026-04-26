@@ -992,7 +992,7 @@ export default function GameBoard({ gameCode }: Props) {
   ) => {
     if (overlayOpenedRef.current === duelKey) return;
     overlayOpenedRef.current = duelKey;
-    boardSurfaceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.scrollTo({ top: 0, behavior: "smooth" });
     requestAnimationFrame(() => setStableDuelCtx(ctx));
   }, []);
 
