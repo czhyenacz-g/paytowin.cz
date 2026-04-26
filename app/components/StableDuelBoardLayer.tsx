@@ -364,72 +364,98 @@ function ResultPhase({
   ] as const;
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 select-none">
+    <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 select-none overflow-y-auto">
       {isDev && (
-        <div className="rounded bg-amber-900/60 px-3 py-1 text-[9px] font-mono text-amber-400 uppercase tracking-wider border border-amber-700">
+        <div className="rounded bg-amber-900/60 px-3 py-1 text-[9px] font-mono text-amber-400 uppercase tracking-wider border border-amber-700 shrink-0">
           DEV PREVIEW — nic se neukládá
         </div>
       )}
 
       {/* Headline */}
-      <div
-        className={`text-2xl font-black text-center ${winner === "draw" ? "text-slate-300" : "text-emerald-400"}`}
-        style={winnerC ? { textShadow: `0 0 24px ${winnerC.color}` } : {}}
-      >
-        {winner === "draw" ? "REMÍZA" : `🏆 VÍTĚZÍ ${winnerC?.name ?? "?"}`}
-      </div>
-
-      {/* Settlement cards */}
-      <div className="flex gap-3 items-stretch">
-        {sides.map(({ contestant, ps, pr, isWinner }) => (
+      {winner === "draw" ? (
+        <div className="text-2xl font-black text-slate-300 text-center tracking-wide">REMÍZA</div>
+      ) : (
+        <div className="text-center shrink-0">
+          <div className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">VÍTĚZ</div>
           <div
-            key={contestant.name}
-            className="rounded-xl flex flex-col items-center gap-1.5 px-4 py-3 min-w-[140px]"
+            className="text-3xl font-black leading-tight"
             style={{
-              background: `${contestant.color}12`,
-              border: `2px solid ${contestant.color}${isWinner ? "" : "55"}`,
-              boxShadow: isWinner ? `0 0 18px ${contestant.color}66` : "none",
+              color: winnerC?.color ?? "#4ade80",
+              textShadow: `0 0 28px ${winnerC?.color ?? "#4ade80"}99, 0 2px 0 rgba(0,0,0,0.5)`,
             }}
           >
-            <div className="text-sm font-black text-center" style={{ color: contestant.color }}>
-              {contestant.name}
-            </div>
-            <div className="text-[10px] text-slate-400 text-center leading-tight">
-              {contestant.horse?.emoji ?? "🐎"} {contestant.horse?.name ?? "Bez koně"}
-            </div>
+            🏆 {winnerC?.name ?? "?"}
+          </div>
+        </div>
+      )}
 
-            {/* Coins */}
+      {/* Settlement cards */}
+      <div className="flex gap-2 items-stretch shrink-0">
+        {sides.map(({ contestant, ps, pr, isWinner }) => {
+          const isDraw = winner === "draw";
+          const coinColor = ps.coinsDelta > 0 ? "#4ade80" : ps.coinsDelta < 0 ? "#f87171" : "#64748b";
+          return (
             <div
-              className="text-base font-black tabular-nums mt-0.5"
+              key={contestant.name}
+              className="rounded-xl flex flex-col items-center gap-1 px-3 py-2.5 min-w-[130px]"
               style={{
-                color: ps.coinsDelta > 0 ? "#4ade80" : ps.coinsDelta < 0 ? "#f87171" : "#64748b",
+                background: isWinner ? `${contestant.color}1a` : "rgba(10,14,28,0.65)",
+                border: `2px solid ${contestant.color}${isDraw ? "88" : isWinner ? "" : "28"}`,
+                boxShadow: isWinner ? `0 0 24px ${contestant.color}55, 0 0 8px ${contestant.color}33` : "none",
+                opacity: isDraw ? 1 : isWinner ? 1 : 0.45,
+                filter: !isDraw && !isWinner ? "grayscale(0.25)" : "none",
+                transition: "opacity 0.2s",
               }}
             >
-              {ps.coinsDelta > 0 ? "+" : ""}{ps.coinsDelta} 💰
-            </div>
+              {/* Badge */}
+              {!isDraw && (
+                <div className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
+                  isWinner
+                    ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
+                    : "bg-red-900/30 text-red-500 border border-red-800/40"
+                }`}>
+                  {isWinner ? "VÍTĚZ ✓" : "PROHRA"}
+                </div>
+              )}
 
-            {/* Stamina total */}
-            <div className="text-[11px] font-bold text-red-400">
-              −{ps.stamina.total} stamina
-            </div>
+              {/* Jméno */}
+              <div className="text-sm font-black text-center leading-tight" style={{ color: contestant.color }}>
+                {contestant.name}
+              </div>
+              <div className="text-[9px] text-slate-500 text-center leading-tight">
+                {contestant.horse?.emoji ?? "🐎"} {contestant.horse?.name ?? "Bez koně"}
+              </div>
 
-            {/* Breakdown */}
-            <div className="text-[9px] font-mono text-slate-600 text-center space-y-0.5 leading-relaxed">
-              <div>závod −{ps.stamina.base}</div>
-              {pr.usedNitro && <div className="text-amber-600">nitro −{ps.stamina.nitro}</div>}
-              {pr.crashed   && <div className="text-red-600">crash −{ps.stamina.crash}</div>}
-            </div>
+              {/* Coins — hlavní číslo */}
+              <div
+                className="text-2xl font-black tabular-nums leading-none mt-1"
+                style={{
+                  color: coinColor,
+                  textShadow: ps.coinsDelta !== 0 ? `0 0 18px ${coinColor}88` : "none",
+                }}
+              >
+                {ps.coinsDelta > 0 ? "+" : ""}{ps.coinsDelta} 💰
+              </div>
 
-            {isWinner && (
-              <div className="text-[9px] font-bold text-emerald-400 uppercase tracking-wide mt-0.5">VÍTĚZ ✓</div>
-            )}
-          </div>
-        ))}
+              {/* Stamina souhrn */}
+              <div className="text-[11px] font-bold text-red-400 mt-1 leading-none">
+                −{ps.stamina.total} stamina
+              </div>
+
+              {/* Stamina breakdown */}
+              <div className="text-[8px] font-mono text-center leading-snug mt-0.5">
+                <div className="text-slate-700">závod −{ps.stamina.base}</div>
+                {pr.usedNitro && <div className="text-amber-500">nitro −{ps.stamina.nitro}</div>}
+                {pr.crashed   && <div className="text-red-600">crash −{ps.stamina.crash}</div>}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       <button
         onClick={onContinue}
-        className="mt-1 rounded-xl bg-slate-700 border border-slate-600 px-6 py-2.5 text-sm font-bold text-slate-200 hover:bg-slate-600 active:scale-95 transition-all"
+        className="mt-1 shrink-0 rounded-xl bg-slate-700 border border-slate-600 px-6 py-2.5 text-sm font-bold text-slate-200 hover:bg-slate-600 hover:border-slate-500 hover:shadow-[0_0_14px_rgba(148,163,184,0.25)] active:scale-95 transition-all"
       >
         Pokračovat →
       </button>
