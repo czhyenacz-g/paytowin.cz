@@ -391,12 +391,12 @@ function ResultPhase({
 
       {/* Settlement cards */}
       <div className="flex gap-2 items-stretch shrink-0">
-        {sides.map(({ contestant, ps, pr, isWinner }) => {
+        {sides.map(({ contestant, ps, pr, isWinner }, idx) => {
           const isDraw = winner === "draw";
           const coinColor = ps.coinsDelta > 0 ? "#4ade80" : ps.coinsDelta < 0 ? "#f87171" : "#64748b";
           return (
             <div
-              key={contestant.name}
+              key={idx === 0 ? "challenger" : "defender"}
               className="rounded-xl flex flex-col items-center gap-1 px-3 py-2.5 min-w-[130px]"
               style={{
                 background: isWinner ? `${contestant.color}1a` : "rgba(10,14,28,0.65)",
