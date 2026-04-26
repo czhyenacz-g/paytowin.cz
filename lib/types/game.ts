@@ -177,7 +177,9 @@ export interface RacePendingEvent {
  */
 export interface StableDuelPendingOffer {
   type: "stable_duel_pending";
-  phase: "pending";
+  phase: "pending" | "both_ready";
+  /** Výchozí hodnota: "pvbot_awareness". Optional pro zpětnou kompatibilitu. */
+  mode?: "pvbot_awareness" | "online_1v1";
   challengerId: string;
   defenderId: string;
   challengerName?: string;
@@ -185,6 +187,9 @@ export interface StableDuelPendingOffer {
   fieldIndex?: number;
   minigameType?: StableMinigameType;
   createdAt: number;
+  challengerReady?: boolean;
+  defenderReady?: boolean;
+  readyUpdatedAt?: number;
 }
 
 export type OfferPending = RerollOffer | RaceOffer | BankruptAnnouncement | RacePendingEvent | StableDuelPendingOffer;

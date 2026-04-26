@@ -481,6 +481,14 @@ export default function GameBoard({ gameCode }: Props) {
   const [stableDuelCtx, setStableDuelCtx] = React.useState<{ challenger: DuelContestant; defender: DuelContestant; isPreview: boolean; challengerId?: string; defenderId?: string } | null>(null);
   const stableDuelProceedRef = React.useRef<(() => Promise<void>) | null>(null);
   const boardSurfaceRef = React.useRef<HTMLDivElement>(null);
+  // Dev: přepínač režimu Stable Duel — default pvbot_awareness, opt-in online_1v1
+  const [stableDuelMode, setStableDuelMode] = React.useState<"pvbot_awareness" | "online_1v1">(() => {
+    if (typeof window !== "undefined") {
+      const v = localStorage.getItem("stableDuelMode");
+      if (v === "online_1v1") return "online_1v1";
+    }
+    return "pvbot_awareness";
+  });
   const audioCtxRef = React.useRef<AudioContext | null>(null);
   const soundEnabledRef = React.useRef(true);
   const rollDecisionTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1177,13 +1185,17 @@ export default function GameBoard({ gameCode }: Props) {
               ...(yearEventTelegramPayload ? { yearEventTelegram: yearEventTelegramPayload } : {}),
             });
           };
-          setStableDuelCtx({ challenger, defender, isPreview: false, challengerId: currentPlayer.id, defenderId: ownerPlayer.id });
           boardSurfaceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-          // Sdílený pending stav — defender/spectators budou informováni přes Realtime
+          // pvbot_awareness: otevři StableDuelBoardLayer ihned; online_1v1: čekej na handshake
+          if (stableDuelMode !== "online_1v1") {
+            setStableDuelCtx({ challenger, defender, isPreview: false, challengerId: currentPlayer.id, defenderId: ownerPlayer.id });
+          }
+          // Sdílený pending stav — informuje všechny klienty přes Realtime
           if (gameId) {
             const duelPending: StableDuelPendingOffer = {
               type: "stable_duel_pending",
               phase: "pending",
+              mode: stableDuelMode,
               challengerId: currentPlayer.id,
               defenderId: ownerPlayer.id,
               challengerName: currentPlayer.name,
@@ -1191,6 +1203,7 @@ export default function GameBoard({ gameCode }: Props) {
               fieldIndex: field.index,
               minigameType: selectStableMinigame({ themeId, challengerHorse: challenger.horse, defenderHorse: defender.horse }),
               createdAt: Date.now(),
+              ...(stableDuelMode === "online_1v1" ? { challengerReady: true, defenderReady: false } : {}),
             };
             await supabase.from("game_state").update({
               offer_pending: duelPending as unknown as Record<string, unknown>,
@@ -2332,6 +2345,46 @@ export default function GameBoard({ gameCode }: Props) {
     if (proceed) await proceed();
   }, [stableDuelCtx, players, myPlayerId]);
 
+  /** Defender potvrdí připravenost pro online_1v1 — jen klient s myPlayerId === defenderId. */
+  const handleDefenderReady = React.useCallback(async () => {
+    if (!gameId || !myPlayerId) return;
+    const current = gameState?.offer_pending;
+    if (
+      current?.type !== "stable_duel_pending" ||
+      (current as StableDuelPendingOffer).mode !== "online_1v1" ||
+      (current as StableDuelPendingOffer).defenderId !== myPlayerId ||
+      (current as StableDuelPendingOffer).phase !== "pending"
+    ) return;
+    const pending = current as StableDuelPendingOffer;
+    const updated: StableDuelPendingOffer = {
+      ...pending,
+      defenderReady: true,
+      readyUpdatedAt: Date.now(),
+      phase: pending.challengerReady !== false ? "both_ready" : "pending",
+    };
+    await supabase.from("game_state").update({
+      offer_pending: updated as unknown as Record<string, unknown>,
+    }).eq("game_id", gameId);
+  }, [gameId, gameState?.offer_pending, myPlayerId]);
+
+  /** Challenger přepne na PvBot fallback když defender nereaguje. */
+  const handleFallbackToPvBot = React.useCallback(() => {
+    const sdPending = gameState?.offer_pending?.type === "stable_duel_pending"
+      ? gameState.offer_pending as StableDuelPendingOffer
+      : null;
+    if (!sdPending || myPlayerId !== sdPending.challengerId) return;
+    const cPlayer = players.find(p => p.id === sdPending.challengerId);
+    const dPlayer = players.find(p => p.id === sdPending.defenderId);
+    setStableDuelCtx({
+      challenger: { name: sdPending.challengerName ?? cPlayer?.name ?? "Challenger", horse: cPlayer?.horses[0] ?? null, color: cPlayer?.color ?? "#00ff88" },
+      defender:   { name: sdPending.defenderName ?? dPlayer?.name ?? "Defender",   horse: dPlayer?.horses[0] ?? null, color: dPlayer?.color ?? "#c084fc" },
+      isPreview: false,
+      challengerId: sdPending.challengerId,
+      defenderId: sdPending.defenderId,
+    });
+    boardSurfaceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [gameState?.offer_pending, myPlayerId, players]);
+
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
   // Po načtení / refresh: obnov pendingRacer a pendingCard ze stavu DB
@@ -3035,6 +3088,17 @@ export default function GameBoard({ gameCode }: Props) {
                   >
                     🐴 Stable
                   </button>
+                  <button
+                    onClick={() => {
+                      const next: "pvbot_awareness" | "online_1v1" = stableDuelMode === "online_1v1" ? "pvbot_awareness" : "online_1v1";
+                      setStableDuelMode(next);
+                      localStorage.setItem("stableDuelMode", next);
+                    }}
+                    className={`rounded-[3px] border px-2.5 py-1 text-[11px] font-semibold transition ${stableDuelMode === "online_1v1" ? "border-indigo-400 bg-indigo-50 text-indigo-700 hover:bg-indigo-100" : "border-slate-400 bg-slate-50 text-slate-600 hover:bg-slate-100"}`}
+                    title={`Stable Duel mode: ${stableDuelMode}`}
+                  >
+                    {stableDuelMode === "online_1v1" ? "🎮 1v1" : "🤖 PvBot"}
+                  </button>
                 </div>
               )}
             </div>
@@ -3052,16 +3116,78 @@ export default function GameBoard({ gameCode }: Props) {
                 ? gameState.offer_pending as StableDuelPendingOffer
                 : null;
               if (!sdPending) return null;
-              const isDefender = myPlayerId === sdPending.defenderId;
+              const mode = sdPending.mode ?? "pvbot_awareness";
+              const isChallenger = myPlayerId === sdPending.challengerId;
+              const isDefender   = myPlayerId === sdPending.defenderId;
               const isSpectatorView = viewerRole === "spectator";
-              if (!isDefender && !isSpectatorView) return null;
+              if (!isChallenger && !isDefender && !isSpectatorView) return null;
+
+              if (mode === "pvbot_awareness") {
+                if (!isDefender && !isSpectatorView) return null;
+                return (
+                  <div className="mx-auto w-full max-w-[760px] rounded-lg border border-amber-700/40 bg-amber-900/20 px-3 py-2 text-[11px] text-amber-300 flex items-center gap-2 mt-1">
+                    <span>⚔️</span>
+                    {isDefender
+                      ? <span><strong>{sdPending.challengerName ?? "Hráč"}</strong> tě vyzval na stájový souboj · souboj zatím běží proti botovi (multiplayer připravujeme)</span>
+                      : <span>Probíhá stájový souboj: <strong>{sdPending.challengerName ?? "?"}</strong> vs <strong>{sdPending.defenderName ?? "?"}</strong> · zatím PvBot režim</span>
+                    }
+                  </div>
+                );
+              }
+
+              // ── online_1v1 ────────────────────────────────────────────────────────
+              const bothReady = sdPending.phase === "both_ready";
+
+              if (isChallenger) {
+                return (
+                  <div className="mx-auto w-full max-w-[760px] rounded-lg border border-indigo-700/50 bg-indigo-950/60 px-4 py-3 text-[12px] text-indigo-200 flex items-center justify-between gap-3 mt-1">
+                    <div className="flex items-center gap-2">
+                      <span>⚔️</span>
+                      {bothReady
+                        ? <span className="text-emerald-300 font-semibold">Oba připraveni — čeká se na spuštění countdownu</span>
+                        : <span>⏳ Čekáš na soupeře <strong>{sdPending.defenderName ?? "?"}</strong>…</span>
+                      }
+                    </div>
+                    {!bothReady && (
+                      <button
+                        onClick={handleFallbackToPvBot}
+                        className="shrink-0 rounded border border-amber-600/60 bg-amber-900/40 px-2 py-1 text-[11px] text-amber-300 hover:bg-amber-800/60 transition"
+                      >
+                        Hrát proti botovi
+                      </button>
+                    )}
+                  </div>
+                );
+              }
+
+              if (isDefender) {
+                const defReady = sdPending.defenderReady ?? false;
+                return (
+                  <div className="mx-auto w-full max-w-[760px] rounded-lg border border-violet-700/50 bg-violet-950/60 px-4 py-3 text-[12px] text-violet-200 flex items-center justify-between gap-3 mt-1">
+                    <div className="flex items-center gap-2">
+                      <span>⚔️</span>
+                      {defReady || bothReady
+                        ? <span className="text-emerald-300 font-semibold">Jsi připraven — čeká se na spuštění</span>
+                        : <span><strong>{sdPending.challengerName ?? "Hráč"}</strong> tě vyzval na stájový souboj 1v1</span>
+                      }
+                    </div>
+                    {!defReady && !bothReady && (
+                      <button
+                        onClick={handleDefenderReady}
+                        className="shrink-0 rounded border border-emerald-600/60 bg-emerald-900/40 px-3 py-1 text-[11px] font-semibold text-emerald-300 hover:bg-emerald-800/60 transition"
+                      >
+                        Jsem připraven
+                      </button>
+                    )}
+                  </div>
+                );
+              }
+
+              // spectator
               return (
-                <div className="mx-auto w-full max-w-[760px] rounded-lg border border-amber-700/40 bg-amber-900/20 px-3 py-2 text-[11px] text-amber-300 flex items-center gap-2 mt-1">
+                <div className="mx-auto w-full max-w-[760px] rounded-lg border border-slate-700/40 bg-slate-900/50 px-3 py-2 text-[11px] text-slate-400 flex items-center gap-2 mt-1">
                   <span>⚔️</span>
-                  {isDefender
-                    ? <span><strong>{sdPending.challengerName ?? "Hráč"}</strong> tě vyzval na stájový souboj · souboj zatím běží proti botovi (multiplayer připravujeme)</span>
-                    : <span>Probíhá stájový souboj: <strong>{sdPending.challengerName ?? "?"}</strong> vs <strong>{sdPending.defenderName ?? "?"}</strong> · zatím PvBot režim</span>
-                  }
+                  <span>Probíhá příprava stájového 1v1: <strong>{sdPending.challengerName ?? "?"}</strong> vs <strong>{sdPending.defenderName ?? "?"}</strong></span>
                 </div>
               );
             })()}
