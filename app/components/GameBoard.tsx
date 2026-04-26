@@ -1903,6 +1903,9 @@ export default function GameBoard({ gameCode }: Props) {
       log: params.log.slice(0, 20),
     };
     // offer_pending se čistí jen na explicitní požádání — zabrání přepsání nesouvisejícího pending.
+    // TODO: clearOfferPending currently gates which caller may clear offer_pending, but does not
+    //       compare against the latest DB row. Before real ready/countdown multiplayer, move this
+    //       to an atomic conditional cleanup / RPC or refetch-and-compare.
     if (params.clearOfferPending !== undefined) update.offer_pending = null;
     if (params.lastRoll !== undefined) update.last_roll = params.lastRoll;
     if (params.revealedFields !== undefined) update.revealed_fields = params.revealedFields;
