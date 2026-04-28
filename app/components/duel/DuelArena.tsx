@@ -302,10 +302,11 @@ export default function DuelArena({
       // P2 legendary: remote or local keyboard
       let p2LegFire = false;
       if (p2IsLegendary) {
-        // Remote legendary (challenger_authority mode)
-        const remoteP2LegActivate = remoteP2Ref
-          ? (remoteP2?.legendaryActivate ?? false)
-          : p2LegActivateRef.current;
+        // Remote legendary (challenger_authority mode) or local P2 (PvP mode)
+        const remoteP2LegActivate = mode === "pvp"
+          ? (remoteP2Ref ? (remoteP2?.legendaryActivate ?? false) : p2LegActivateRef.current)
+          : false;
+
         if (remoteP2Ref?.current?.legendaryActivate) {
           remoteP2Ref.current = { ...remoteP2Ref.current, legendaryActivate: false };
         }
