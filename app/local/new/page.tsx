@@ -217,12 +217,6 @@ export default function LocalNewPage() {
         backgroundPosition: "center",
       }}
     >
-      <div className="bg-amber-100 border-b border-amber-300 px-4 py-2 text-center text-sm text-amber-800">
-        Experimentální projekt ·{" "}
-        <a href="mailto:info@paytowin.cz" className="underline hover:text-amber-900">
-          info@paytowin.cz
-        </a>
-      </div>
 
       <div className="flex min-h-[calc(100vh-40px)] items-center justify-center p-6">
         <div className="w-full max-w-md space-y-6">

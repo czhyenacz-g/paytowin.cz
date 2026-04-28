@@ -3060,15 +3060,11 @@ export default function GameBoard({ gameCode }: Props) {
         />
       )}
 
-      <div className="bg-amber-100 border-b border-amber-300 px-4 py-2 text-center text-sm text-amber-800">
-        Experimentální projekt · kontakt:{" "}
-        <a href="mailto:info@paytowin.cz" className="underline hover:text-amber-900">info@paytowin.cz</a>
-        {gameCode && (
-          <span className="ml-4 font-mono font-bold tracking-widest">
-            🎮 hra: {gameCode}
-          </span>
-        )}
-      </div>
+      {gameCode && (
+        <div className="bg-amber-100 border-b border-amber-300 px-4 py-2 text-center text-sm text-amber-800 font-mono font-bold tracking-widest">
+          🎮 hra: {gameCode}
+        </div>
+      )}
       {isSpectator && (
         <div className="border-b border-indigo-200 bg-indigo-50 px-4 py-2.5 text-center text-sm text-indigo-700">
           👀 Sleduješ tuto hru jako <strong>pozorovatel</strong> — hráčské akce nejsou dostupné.
@@ -4472,6 +4468,8 @@ export default function GameBoard({ gameCode }: Props) {
         <a href="/o-nas" className="hover:text-slate-600 underline">O nás</a>
         <span>·</span>
         <a href="mailto:info@paytowin.cz" className="hover:text-slate-600 underline">info@paytowin.cz</a>
+        <span>·</span>
+        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 tracking-wide">Beta v0.6.0</span>
       </div>
     </div>
   );

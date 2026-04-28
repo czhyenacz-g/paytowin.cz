@@ -448,13 +448,6 @@ export default function LandingPage() {
 
   return (
     <div className="flex flex-col bg-slate-900 overflow-hidden" style={{ height: "100dvh" }}>
-      {/* Amber banner — shrink-0, bere svou přirozenou výšku */}
-      <div className="shrink-0 bg-amber-100 border-b border-amber-300 px-4 py-2 text-center text-sm text-amber-800">
-        Experimentální projekt · kontakt:{" "}
-        <a href="mailto:info@paytowin.cz" className="underline hover:text-amber-900">
-          info@paytowin.cz
-        </a>
-      </div>
 
       {/* Sliding container — flex-1 vyplní zbytek viewportu po banneru */}
       <div
@@ -555,6 +548,8 @@ export default function LandingPage() {
                   <a href="/o-nas" className="hover:text-slate-200 underline">O nás</a>
                   <span>·</span>
                   <a href="mailto:info@paytowin.cz" className="hover:text-slate-200 underline">info@paytowin.cz</a>
+                  <span>·</span>
+                  <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-400 tracking-wide">Beta v0.6.0</span>
                 </div>
               </div>
             </div>
