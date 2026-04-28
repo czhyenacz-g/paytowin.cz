@@ -2,7 +2,7 @@
 
 import React from "react";
 import { applyTick, createInitialState, getBotInput } from "@/lib/duel/simulate";
-import type { Dir, DuelConfig, DuelState } from "@/lib/duel/types";
+import type { AbsDir, Dir, DuelConfig, DuelState } from "@/lib/duel/types";
 import { getRopeDuelStartDelayTicks } from "@/lib/duel/helpers";
 import { nitroStaminaPreview } from "@/lib/minigame-nitro";
 import type { MinigameResult } from "@/lib/minigames/types";
@@ -124,6 +124,12 @@ interface Props {
   overlayOpacity?: number;
   autoStart?: boolean;
   onResult?: (result: MinigameResult) => void;
+  onStateSnapshot?: (snapshot: {
+    tick: number;
+    p1: { x: number; y: number; dir: AbsDir };
+    p2: { x: number; y: number; dir: AbsDir };
+    status: string;
+  }) => void;
   p1Speed?: number;
   p2Speed?: number;
   /** challenger_authority: P2 dir/nitro/legendary from Broadcast ref instead of keyboard. */
@@ -136,7 +142,7 @@ interface Props {
 
 export default function DuelArena({
   config, mode, showDebug = false, backgroundUrl, overlayOpacity = 0.20,
-  autoStart = false, onResult, p1Speed = 5, p2Speed = 5,
+  autoStart = false, onResult, onStateSnapshot, p1Speed = 5, p2Speed = 5,
   remoteP2Ref, p1IsLegendary = false, p2IsLegendary = false,
 }: Props) {
   const [state, setState] = React.useState<DuelState>(() => {
@@ -341,6 +347,13 @@ export default function DuelArena({
       );
       stateRef.current = next;
       setState(next);
+
+      onStateSnapshot?.({
+        tick: next.tick,
+        p1: { x: next.p1.pos.x, y: next.p1.pos.y, dir: next.p1.dir },
+        p2: { x: next.p2.pos.x, y: next.p2.pos.y, dir: next.p2.dir },
+        status: next.status,
+      });
     }, config.tickMs);
 
     return () => clearInterval(id);

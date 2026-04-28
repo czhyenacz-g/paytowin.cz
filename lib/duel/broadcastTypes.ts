@@ -10,3 +10,13 @@ export interface StableDuelInputEvent {
     direction?: "left" | "right";
   };
 }
+
+export interface StableDuelSnapshotEvent {
+  type: "stable_duel_snapshot";
+  duelId: string;
+  tick: number;
+  at: number;
+  p1: { x: number; y: number; dir: "up" | "down" | "left" | "right" };
+  p2: { x: number; y: number; dir: "up" | "down" | "left" | "right" };
+  status: string;
+}

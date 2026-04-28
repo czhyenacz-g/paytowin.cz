@@ -24,7 +24,7 @@ import { selectStableMinigame, type StableMinigameType } from "@/lib/minigames/s
 import type { MinigameResult } from "@/lib/minigames/types";
 import { computeMinigameSettlement, type MinigameSettlement } from "@/lib/minigames/settlement";
 import { supabase } from "@/lib/supabase";
-import type { StableDuelInputEvent } from "@/lib/duel/broadcastTypes";
+import type { StableDuelInputEvent, StableDuelSnapshotEvent } from "@/lib/duel/broadcastTypes";
 
 export interface DuelContestant {
   name: string;
@@ -334,6 +334,7 @@ function ArenaPhase({
   p2Speed = 5,
   minigameType,
   onResult,
+  onStateSnapshot,
   remoteP2Ref,
   p1IsLegendary = false,
   p2IsLegendary = false,
@@ -344,6 +345,7 @@ function ArenaPhase({
   p2Speed?: number;
   minigameType: StableMinigameType;
   onResult: (result: MinigameResult) => void;
+  onStateSnapshot?: (snapshot: any) => void;
   remoteP2Ref?: React.MutableRefObject<{ dir: Dir; nitroActivate: boolean; legendaryActivate: boolean } | null>;
   p1IsLegendary?: boolean;
   p2IsLegendary?: boolean;
@@ -376,6 +378,7 @@ function ArenaPhase({
         p1Speed={p1Speed}
         p2Speed={p2Speed}
         onResult={onResult}
+        onStateSnapshot={onStateSnapshot}
         remoteP2Ref={remoteP2Ref}
         p1IsLegendary={p1IsLegendary}
         p2IsLegendary={p2IsLegendary}
@@ -528,6 +531,10 @@ export default function StableDuelBoardLayer({
   const [duelResult, setDuelResult] = React.useState<MinigameResult | null>(null);
   const [broadcastError, setBroadcastError] = React.useState(false);
 
+  // Snapshot sync debug layer
+  const [lastSnapshot, setLastSnapshot] = React.useState<StableDuelSnapshotEvent | null>(null);
+  const lastLocalStateRef = React.useRef<any>(null);
+
   // challenger_authority: ref pro remote P2 (defender) inputy
   const remoteP2Ref = React.useRef<{ dir: Dir; nitroActivate: boolean; legendaryActivate: boolean } | null>(null);
   // Broadcast channel lifecycle
@@ -569,7 +576,7 @@ export default function StableDuelBoardLayer({
     setPhase("result");
   };
 
-  // ── Broadcast: challenger_authority — přijímá defender inputy ──────────────
+  // ── Broadcast: challenger_authority — přijímá defender inputy + posílá snapshoty ──────────────
   React.useEffect(() => {
     if (duelRole !== "challenger_authority" || !duelId || !gameId || !defenderId) return;
     const ch = supabase.channel(`stable-duel:${gameId}:${duelId}`);
@@ -596,13 +603,33 @@ export default function StableDuelBoardLayer({
       })
       .subscribe();
 
+    // Snapshot broadcaster (5 Hz)
+    const interval = setInterval(() => {
+      const state = lastLocalStateRef.current;
+      if (!state || !channelRef.current) return;
+      channelRef.current.send({
+        type: "broadcast",
+        event: "stable_duel_snapshot",
+        payload: {
+          type: "stable_duel_snapshot",
+          duelId,
+          tick: state.tick,
+          at: Date.now(),
+          p1: state.p1,
+          p2: state.p2,
+          status: state.status,
+        } satisfies StableDuelSnapshotEvent,
+      });
+    }, 200);
+
     return () => {
+      clearInterval(interval);
       ch.unsubscribe();
       channelRef.current = null;
     };
   }, [duelRole, duelId, gameId, defenderId]);
 
-  // ── Broadcast: defender_remote — sbírá a posílá inputy ────────────────────
+  // ── Broadcast: defender_remote — sbírá a posílá inputy + přijímá snapshoty ────────────────────
   React.useEffect(() => {
     if (duelRole !== "defender_remote" || !duelId || !gameId || !defenderId) return;
     const dId = duelId;
@@ -611,11 +638,16 @@ export default function StableDuelBoardLayer({
     const ch = supabase.channel(`stable-duel:${gameId}:${dId}`);
     channelRef.current = ch;
 
-    ch.subscribe((status) => {
-      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-        setBroadcastError(true);
-      }
-    });
+    ch
+      .on("broadcast", { event: "stable_duel_snapshot" }, ({ payload }: { payload: StableDuelSnapshotEvent }) => {
+        if (payload.duelId !== dId) return;
+        setLastSnapshot(payload);
+      })
+      .subscribe((status) => {
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          setBroadcastError(true);
+        }
+      });
 
     let currentDir: "left" | "right" | "straight" = "straight";
 
@@ -680,6 +712,27 @@ export default function StableDuelBoardLayer({
         </div>
       )}
 
+      {/* Sync debug info (defender only) */}
+      {duelRole === "defender_remote" && lastSnapshot && phase === "arena" && (
+        <div className="absolute left-2 top-2 z-[60] flex flex-col gap-0.5 rounded bg-black/60 px-2 py-1 font-mono text-[9px] text-slate-400 backdrop-blur-sm border border-white/5">
+          <div className="flex items-center gap-1.5">
+            <span className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-emerald-400 font-bold">SYNC OK</span>
+            <span>tick {lastSnapshot.tick}</span>
+          </div>
+          {lastLocalStateRef.current && (
+            <div className="text-slate-500">
+              Δ {Math.sqrt(
+                Math.pow(lastSnapshot.p2.x - lastLocalStateRef.current.p2.x, 2) +
+                Math.pow(lastSnapshot.p2.y - lastLocalStateRef.current.p2.y, 2)
+              ).toFixed(2)}px
+              {" · "}
+              {Date.now() - lastSnapshot.at}ms ago
+            </div>
+          )}
+        </div>
+      )}
+
       {phase === "prestart" && (
         <PreStartPhase
           challenger={challenger}
@@ -700,6 +753,7 @@ export default function StableDuelBoardLayer({
           p2Speed={p2Speed}
           minigameType={minigameType}
           onResult={handleDuelResult}
+          onStateSnapshot={(s) => { lastLocalStateRef.current = s; }}
           remoteP2Ref={duelRole === "challenger_authority" ? remoteP2Ref : undefined}
           p1IsLegendary={p1IsLegendary}
           p2IsLegendary={p2IsLegendary}
