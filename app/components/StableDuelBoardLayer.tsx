@@ -3,20 +3,28 @@
 /**
  * StableDuelBoardLayer — Stájový souboj jako overlay uvnitř board surface.
  * Renderuje se jako absolute inset-0 z-[55].
- * Fáze: prestart → arena → result
+ * Fáze: prestart → arena → result (nebo waiting_result pro defender_remote)
  * Žádné DB zápisy. V isDev=true výsledek označen jako PREVIEW.
+ *
+ * duelRole:
+ *   "challenger_authority" — spouští simulaci, přijímá defender inputy přes Broadcast
+ *   "defender_remote"      — renderuje lokální arena, sbírá inputy, posílá přes Broadcast
+ *   undefined              — pvbot / preview (původní chování)
  */
 
 import React from "react";
 import DuelArena from "./duel/DuelArena";
 import SpeedArenaPvp from "./speed/SpeedArenaPvp";
 import type { DuelConfig } from "@/lib/duel/types";
+import type { Dir } from "@/lib/duel/types";
 import type { SpeedConfig } from "@/lib/speed/types";
 import type { Horse } from "@/lib/types/game";
 import { getRopeDuelSpeedLabel } from "@/lib/duel/helpers";
 import { selectStableMinigame, type StableMinigameType } from "@/lib/minigames/selectStableMinigame";
 import type { MinigameResult } from "@/lib/minigames/types";
 import { computeMinigameSettlement, type MinigameSettlement } from "@/lib/minigames/settlement";
+import { supabase } from "@/lib/supabase";
+import type { StableDuelInputEvent } from "@/lib/duel/broadcastTypes";
 
 export interface DuelContestant {
   name: string;
@@ -31,9 +39,15 @@ interface Props {
   themeId?: string;
   backgroundUrl?: string;
   onFinish: (result: MinigameResult) => void;
+  // PvP v1
+  duelRole?: "challenger_authority" | "defender_remote";
+  duelId?: string;
+  gameId?: string;
+  challengerId?: string;
+  defenderId?: string;
 }
 
-type Phase = "prestart" | "arena" | "result";
+type Phase = "prestart" | "arena" | "result" | "waiting_result";
 
 const BOARD_DUEL_CONFIG: DuelConfig  = { gridW: 28, gridH: 20, maxTicks: 200, tickMs: 120 };
 const BOARD_SPEED_CONFIG: SpeedConfig = {
@@ -167,6 +181,7 @@ function PreStartPhase({
   countdown,
   minigameType,
   isDev,
+  duelRole,
   onClick,
 }: {
   challenger: DuelContestant;
@@ -174,6 +189,7 @@ function PreStartPhase({
   countdown: number;
   minigameType: StableMinigameType;
   isDev: boolean;
+  duelRole?: "challenger_authority" | "defender_remote";
   onClick: () => void;
 }) {
   const meta = MINIGAME_META[minigameType];
@@ -183,6 +199,12 @@ function PreStartPhase({
   const defenderColor   = toNeonColor(defender.color,   "#c084fc");
   const cWithColor = { ...challenger, color: challengerColor };
   const dWithColor = { ...defender,   color: defenderColor };
+
+  // Defender: klávesy ArrowLeft/Right; Challenger: A/D
+  const cKeys = duelRole === "defender_remote"
+    ? null  // challenger klávesy nepotřebujeme zobrazovat
+    : <><NeonKeyCap label="A" color={challengerColor} /><NeonKeyCap label="D" color={challengerColor} /></>;
+  const dKeys = <><NeonKeyCap label="←" color={defenderColor} /><NeonKeyCap label="→" color={defenderColor} /></>;
 
   return (
     <div
@@ -202,6 +224,16 @@ function PreStartPhase({
         {isDev && (
           <div className="rounded px-1.5 py-0.5 text-[8px] font-mono font-bold uppercase tracking-wider bg-slate-800 border border-slate-700 text-slate-500">
             {minigameType}
+          </div>
+        )}
+        {duelRole === "defender_remote" && (
+          <div className="rounded px-1.5 py-0.5 text-[8px] font-mono font-bold uppercase tracking-wider bg-violet-900/60 border border-violet-700/50 text-violet-400">
+            DEFENDER
+          </div>
+        )}
+        {duelRole === "challenger_authority" && (
+          <div className="rounded px-1.5 py-0.5 text-[8px] font-mono font-bold uppercase tracking-wider bg-emerald-900/60 border border-emerald-700/50 text-emerald-400">
+            CHALLENGER
           </div>
         )}
       </div>
@@ -248,15 +280,14 @@ function PreStartPhase({
         {/* Challenger card + keys */}
         <div className="flex flex-col items-center gap-1.5">
           <PlayerCard contestant={cWithColor} label="Challenger" />
-          <div className="flex flex-col items-center gap-1">
-            <div className="flex gap-1.5">
-              <NeonKeyCap label="A" color={challengerColor} />
-              <NeonKeyCap label="D" color={challengerColor} />
+          {cKeys && (
+            <div className="flex flex-col items-center gap-1">
+              <div className="flex gap-1.5">{cKeys}</div>
+              <div className="text-[8px] font-mono font-bold uppercase tracking-widest" style={{ color: `${challengerColor}cc` }}>
+                ZATOČIT
+              </div>
             </div>
-            <div className="text-[8px] font-mono font-bold uppercase tracking-widest" style={{ color: `${challengerColor}cc` }}>
-              ZATOČIT
-            </div>
-          </div>
+          )}
         </div>
 
         {/* VS */}
@@ -274,10 +305,7 @@ function PreStartPhase({
         <div className="flex flex-col items-center gap-1.5">
           <PlayerCard contestant={dWithColor} label="Defender" />
           <div className="flex flex-col items-center gap-1">
-            <div className="flex gap-1.5">
-              <NeonKeyCap label="←" color={defenderColor} />
-              <NeonKeyCap label="→" color={defenderColor} />
-            </div>
+            <div className="flex gap-1.5">{dKeys}</div>
             <div className="text-[8px] font-mono font-bold uppercase tracking-widest" style={{ color: `${defenderColor}cc` }}>
               ZATOČIT
             </div>
@@ -287,7 +315,10 @@ function PreStartPhase({
 
       {/* Instructions */}
       <div className="text-[10px] text-slate-600 text-center leading-snug">
-        Zatáčej vlevo a vpravo · nenarážej do zdí ani do provazu
+        {duelRole === "defender_remote"
+          ? "Hraješ jako defender: ← → pro zatáčení · S pro nitro · inputy se posílají challengerovi"
+          : "Zatáčej vlevo a vpravo · nenarážej do zdí ani do provazu"
+        }
       </div>
 
       <div className="text-[9px] text-slate-700">klikni pro přeskočení</div>
@@ -301,12 +332,14 @@ function ArenaPhase({
   p2Speed = 5,
   minigameType,
   onResult,
+  remoteP2Ref,
 }: {
   backgroundUrl?: string;
   p1Speed?: number;
   p2Speed?: number;
   minigameType: StableMinigameType;
   onResult: (result: MinigameResult) => void;
+  remoteP2Ref?: React.MutableRefObject<{ dir: Dir; nitroActivate: boolean } | null>;
 }) {
   if (minigameType === "neon_speedrace") {
     return (
@@ -328,13 +361,14 @@ function ArenaPhase({
     <div className="flex flex-1 flex-col items-center justify-center overflow-hidden">
       <DuelArena
         config={BOARD_DUEL_CONFIG}
-        mode="pvbot"
+        mode={remoteP2Ref ? "pvp" : "pvbot"}
         autoStart
         backgroundUrl={backgroundUrl}
         overlayOpacity={0.20}
         p1Speed={p1Speed}
         p2Speed={p2Speed}
         onResult={onResult}
+        remoteP2Ref={remoteP2Ref}
       />
     </div>
   );
@@ -472,11 +506,24 @@ export default function StableDuelBoardLayer({
   themeId = "horse-day",
   backgroundUrl,
   onFinish,
+  duelRole,
+  duelId,
+  gameId,
+  challengerId,
+  defenderId,
 }: Props) {
   const [phase, setPhase]         = React.useState<Phase>("prestart");
   const [countdown, setCountdown] = React.useState(PRESTART_TICKS);
   const [duelKey, setDuelKey]     = React.useState(0);
   const [duelResult, setDuelResult] = React.useState<MinigameResult | null>(null);
+  const [broadcastError, setBroadcastError] = React.useState(false);
+
+  // challenger_authority: ref pro remote P2 (defender) inputy
+  const remoteP2Ref = React.useRef<{ dir: Dir; nitroActivate: boolean } | null>(null);
+  // Broadcast channel lifecycle
+  const channelRef = React.useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const receivedSeqsRef = React.useRef<Set<number>>(new Set());
+  const inputSeqRef = React.useRef(0);
 
   const p1Speed = challenger.horse?.speed ?? 5;
   const p2Speed = defender.horse?.speed ?? 5;
@@ -501,15 +548,124 @@ export default function StableDuelBoardLayer({
   const handleSkip = () => { if (phase === "prestart") startArena(); };
 
   const handleDuelResult = (result: MinigameResult) => {
+    // defender_remote: lokální výsledek není autoritativní — čekej na challenger
+    if (duelRole === "defender_remote") {
+      setPhase("waiting_result");
+      return;
+    }
     setDuelResult(result);
     setPhase("result");
   };
+
+  // ── Broadcast: challenger_authority — přijímá defender inputy ──────────────
+  React.useEffect(() => {
+    if (duelRole !== "challenger_authority" || !duelId || !gameId || !defenderId) return;
+    const ch = supabase.channel(`stable-duel:${gameId}:${duelId}`);
+    channelRef.current = ch;
+
+    ch
+      .on("broadcast", { event: "stable_duel_input" }, ({ payload }: { payload: StableDuelInputEvent }) => {
+        if (payload.duelId !== duelId) return;
+        if (payload.playerId !== defenderId) return;
+        if (receivedSeqsRef.current.has(payload.seq)) return;
+        receivedSeqsRef.current.add(payload.seq);
+
+        const prev = remoteP2Ref.current;
+        if (payload.input.action === "turn") {
+          const dir: Dir = payload.input.direction === "left" ? "left"
+            : payload.input.direction === "right" ? "right"
+            : "straight";
+          remoteP2Ref.current = { dir, nitroActivate: prev?.nitroActivate ?? false };
+        } else if (payload.input.action === "nitro" && payload.input.pressed) {
+          remoteP2Ref.current = { dir: prev?.dir ?? "straight", nitroActivate: true };
+        }
+      })
+      .subscribe();
+
+    return () => {
+      ch.unsubscribe();
+      channelRef.current = null;
+    };
+  }, [duelRole, duelId, gameId, defenderId]);
+
+  // ── Broadcast: defender_remote — sbírá a posílá inputy ────────────────────
+  React.useEffect(() => {
+    if (duelRole !== "defender_remote" || !duelId || !gameId || !defenderId) return;
+    const dId = duelId;
+    const pId = defenderId;
+
+    const ch = supabase.channel(`stable-duel:${gameId}:${dId}`);
+    channelRef.current = ch;
+
+    ch.subscribe((status) => {
+      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+        setBroadcastError(true);
+      }
+    });
+
+    let currentDir: "left" | "right" | "straight" = "straight";
+
+    const sendInput = (input: StableDuelInputEvent["input"]) => {
+      channelRef.current?.send({
+        type: "broadcast",
+        event: "stable_duel_input",
+        payload: {
+          type: "stable_duel_input",
+          duelId: dId,
+          playerId: pId,
+          seq: ++inputSeqRef.current,
+          at: Date.now(),
+          input,
+        } satisfies StableDuelInputEvent,
+      });
+    };
+
+    const down = (e: KeyboardEvent) => {
+      if (e.code === "ArrowLeft" && currentDir !== "left") {
+        currentDir = "left";
+        sendInput({ action: "turn", pressed: true, direction: "left" });
+      } else if (e.code === "ArrowRight" && currentDir !== "right") {
+        currentDir = "right";
+        sendInput({ action: "turn", pressed: true, direction: "right" });
+      } else if (e.code === "KeyS") {
+        sendInput({ action: "nitro", pressed: true });
+      }
+      if (["ArrowLeft", "ArrowRight"].includes(e.code)) e.preventDefault();
+    };
+
+    const up = (e: KeyboardEvent) => {
+      if (
+        (e.code === "ArrowLeft" && currentDir === "left") ||
+        (e.code === "ArrowRight" && currentDir === "right")
+      ) {
+        currentDir = "straight";
+        sendInput({ action: "turn", pressed: false });
+      }
+    };
+
+    window.addEventListener("keydown", down);
+    window.addEventListener("keyup", up);
+
+    return () => {
+      ch.unsubscribe();
+      channelRef.current = null;
+      window.removeEventListener("keydown", down);
+      window.removeEventListener("keyup", up);
+    };
+  }, [duelRole, duelId, gameId, defenderId]);
 
   return (
     <div
       className="absolute inset-0 z-[55] flex flex-col overflow-hidden"
       style={{ background: "rgba(5,8,20,0.92)", backdropFilter: "blur(2px)" }}
     >
+      {/* Broadcast error banner */}
+      {broadcastError && (
+        <div className="shrink-0 bg-amber-900/60 border-b border-amber-700/50 px-4 py-1.5 text-center text-[11px] text-amber-300">
+          ⚠ Spojení se soupeřem může být nestabilní
+        </div>
+      )}
+
       {phase === "prestart" && (
         <PreStartPhase
           challenger={challenger}
@@ -517,11 +673,20 @@ export default function StableDuelBoardLayer({
           countdown={countdown}
           minigameType={minigameType}
           isDev={isDev}
+          duelRole={duelRole}
           onClick={handleSkip}
         />
       )}
       {phase === "arena" && (
-        <ArenaPhase key={duelKey} backgroundUrl={backgroundUrl} p1Speed={p1Speed} p2Speed={p2Speed} minigameType={minigameType} onResult={handleDuelResult} />
+        <ArenaPhase
+          key={duelKey}
+          backgroundUrl={backgroundUrl}
+          p1Speed={p1Speed}
+          p2Speed={p2Speed}
+          minigameType={minigameType}
+          onResult={handleDuelResult}
+          remoteP2Ref={duelRole === "challenger_authority" ? remoteP2Ref : undefined}
+        />
       )}
       {phase === "result" && duelResult && (
         <ResultPhase
@@ -532,6 +697,18 @@ export default function StableDuelBoardLayer({
           isDev={isDev}
           onContinue={() => onFinish(duelResult)}
         />
+      )}
+      {phase === "waiting_result" && (
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 select-none">
+          <div className="text-4xl">⚔️</div>
+          <div className="text-base font-semibold text-slate-300">Souboj odeslán</div>
+          <div className="text-sm text-slate-400 text-center max-w-xs">
+            Čekám na potvrzení výsledku od challengera…
+          </div>
+          <div className="mt-2 h-1 w-32 overflow-hidden rounded-full bg-slate-800">
+            <div className="h-full w-full animate-pulse rounded-full bg-violet-500/60" />
+          </div>
+        </div>
       )}
     </div>
   );

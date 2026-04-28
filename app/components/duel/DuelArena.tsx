@@ -130,9 +130,11 @@ interface Props {
   p1Speed?: number;
   /** Rychlost koně/racera pro P2 (1–10, default 5). */
   p2Speed?: number;
+  /** challenger_authority: P2 (defender) dir/nitro přichází z tohoto refu místo klávesnice. */
+  remoteP2Ref?: React.MutableRefObject<{ dir: Dir; nitroActivate: boolean } | null>;
 }
 
-export default function DuelArena({ config, mode, showDebug = false, backgroundUrl, overlayOpacity = 0.20, autoStart = false, onResult, p1Speed = 5, p2Speed = 5 }: Props) {
+export default function DuelArena({ config, mode, showDebug = false, backgroundUrl, overlayOpacity = 0.20, autoStart = false, onResult, p1Speed = 5, p2Speed = 5, remoteP2Ref }: Props) {
   const [state, setState] = React.useState<DuelState>(() => {
     const s = createInitialState(config, p1Speed, p2Speed);
     return autoStart ? { ...s, status: "running" as const } : s;
@@ -220,15 +222,28 @@ export default function DuelArena({ config, mode, showDebug = false, backgroundU
       p2BoostActivateRef.current = false;
 
       const p1: Dir = keys.has("KeyA") ? "left" : keys.has("KeyD") ? "right" : "straight";
+
+      // P2: remote input (challenger_authority) → ref, jinak bot nebo klávesnice
+      const remoteP2 = remoteP2Ref?.current ?? null;
       const p2: Dir = mode === "pvbot"
         ? getBotInput(cur, 2, config)
-        : keys.has("ArrowLeft") ? "left" : keys.has("ArrowRight") ? "right" : "straight";
+        : remoteP2 !== null
+          ? remoteP2.dir
+          : keys.has("ArrowLeft") ? "left" : keys.has("ArrowRight") ? "right" : "straight";
+
+      const effectiveP2Activate = mode === "pvp"
+        ? (remoteP2Ref ? (remoteP2?.nitroActivate ?? false) : p2Activate)
+        : false;
+      // Spotřebuj remote nitro (single-shot)
+      if (remoteP2Ref?.current?.nitroActivate) {
+        remoteP2Ref.current = { ...remoteP2Ref.current, nitroActivate: false };
+      }
 
       setLastInputs({ p1, p2 });
       const next = applyTick(
         cur, p1, p2, config,
         p1Activate,
-        mode === "pvp" ? p2Activate : false,
+        effectiveP2Activate,
       );
       stateRef.current = next;
       setState(next);

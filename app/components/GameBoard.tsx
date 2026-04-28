@@ -478,7 +478,7 @@ export default function GameBoard({ gameCode }: Props) {
   const [flipBoardAnim, setFlipBoardAnim] = React.useState<"idle" | "out" | "back-in">("idle");
   const flipTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   // Stájový souboj — board overlay (game flow)
-  const [stableDuelCtx, setStableDuelCtx] = React.useState<{ challenger: DuelContestant; defender: DuelContestant; isPreview: boolean; challengerId?: string; defenderId?: string } | null>(null);
+  const [stableDuelCtx, setStableDuelCtx] = React.useState<{ challenger: DuelContestant; defender: DuelContestant; isPreview: boolean; challengerId?: string; defenderId?: string; duelRole?: "challenger_authority" | "defender_remote"; duelId?: string } | null>(null);
   const stableDuelProceedRef = React.useRef<((resultLog?: string[]) => Promise<void>) | null>(null);
   const boardSurfaceRef = React.useRef<HTMLDivElement>(null);
   // Idempotency refs pro countdown a overlay — klíčovány identitou duelu
@@ -987,7 +987,7 @@ export default function GameBoard({ gameCode }: Props) {
    * Idempotentní: stejný duelKey otevře overlay jen jednou (ref guard).
    */
   const openStableDuelOverlay = React.useCallback((
-    ctx: { challenger: DuelContestant; defender: DuelContestant; isPreview: boolean; challengerId?: string; defenderId?: string },
+    ctx: { challenger: DuelContestant; defender: DuelContestant; isPreview: boolean; challengerId?: string; defenderId?: string; duelRole?: "challenger_authority" | "defender_remote"; duelId?: string },
     duelKey: string,
   ) => {
     if (overlayOpenedRef.current === duelKey) return;
@@ -2530,16 +2530,21 @@ export default function GameBoard({ gameCode }: Props) {
       else if (remaining > 0) setCountdownDisplay("1");
       else {
         setCountdownDisplay("START");
+        const cPlayer = players.find(p => p.id === cId);
+        const dPlayer = players.find(p => p.id === dId);
+        const duelId = `stable_duel:${cId}:${dId}:${createdAt}`;
+        const ctxBase = {
+          challenger: { name: cName ?? cPlayer?.name ?? "Challenger", horse: cPlayer?.horses[0] ?? null, color: cPlayer?.color ?? "#00ff88" },
+          defender:   { name: dName ?? dPlayer?.name ?? "Defender",   horse: dPlayer?.horses[0] ?? null, color: dPlayer?.color ?? "#c084fc" },
+          isPreview: false,
+          challengerId: cId,
+          defenderId: dId,
+          duelId,
+        };
         if (isChallenger) {
-          const cPlayer = players.find(p => p.id === cId);
-          const dPlayer = players.find(p => p.id === dId);
-          openStableDuelOverlay({
-            challenger: { name: cName ?? cPlayer?.name ?? "Challenger", horse: cPlayer?.horses[0] ?? null, color: cPlayer?.color ?? "#00ff88" },
-            defender:   { name: dName ?? dPlayer?.name ?? "Defender",   horse: dPlayer?.horses[0] ?? null, color: dPlayer?.color ?? "#c084fc" },
-            isPreview: false,
-            challengerId: cId,
-            defenderId: dId,
-          }, duelKey);
+          openStableDuelOverlay({ ...ctxBase, duelRole: "challenger_authority" }, duelKey);
+        } else if (myPlayerId === dId) {
+          openStableDuelOverlay({ ...ctxBase, duelRole: "defender_remote" }, `def_${duelKey}`);
         }
       }
     };
@@ -2549,6 +2554,22 @@ export default function GameBoard({ gameCode }: Props) {
     return () => clearInterval(interval);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState?.offer_pending, myPlayerId, players, openStableDuelOverlay]);
+
+  // Zavře defender overlay jakmile challenger zapíše phase "finished" do DB.
+  React.useEffect(() => {
+    if (!stableDuelCtx || stableDuelCtx.duelRole !== "defender_remote") return;
+    const sdPending = gameState?.offer_pending?.type === "stable_duel_pending"
+      ? gameState.offer_pending as StableDuelPendingOffer
+      : null;
+    if (
+      sdPending?.phase === "finished" &&
+      sdPending.challengerId === stableDuelCtx.challengerId &&
+      sdPending.defenderId === stableDuelCtx.defenderId
+    ) {
+      setStableDuelCtx(null);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState?.offer_pending, stableDuelCtx]);
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -4381,6 +4402,11 @@ export default function GameBoard({ gameCode }: Props) {
                     themeId={themeId}
                     backgroundUrl={minigameBgUrl || undefined}
                     onFinish={handleStableDuelFinish}
+                    duelRole={stableDuelCtx.duelRole}
+                    duelId={stableDuelCtx.duelId}
+                    gameId={gameId ?? undefined}
+                    challengerId={stableDuelCtx.challengerId}
+                    defenderId={stableDuelCtx.defenderId}
                   />
                 )}
 
