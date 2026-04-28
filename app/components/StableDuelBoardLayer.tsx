@@ -337,6 +337,7 @@ function ArenaPhase({
   remoteP2Ref,
   p1IsLegendary = false,
   p2IsLegendary = false,
+  duelRole,
 }: {
   backgroundUrl?: string;
   p1Speed?: number;
@@ -346,6 +347,7 @@ function ArenaPhase({
   remoteP2Ref?: React.MutableRefObject<{ dir: Dir; nitroActivate: boolean; legendaryActivate: boolean } | null>;
   p1IsLegendary?: boolean;
   p2IsLegendary?: boolean;
+  duelRole?: "challenger_authority" | "defender_remote";
 }) {
   if (minigameType === "neon_speedrace") {
     return (
@@ -367,7 +369,7 @@ function ArenaPhase({
     <div className="flex flex-1 flex-col items-center justify-center overflow-hidden">
       <DuelArena
         config={BOARD_DUEL_CONFIG}
-        mode={remoteP2Ref ? "pvp" : "pvbot"}
+        mode={duelRole ? "pvp" : "pvbot"}
         autoStart
         backgroundUrl={backgroundUrl}
         overlayOpacity={0.20}
@@ -701,6 +703,7 @@ export default function StableDuelBoardLayer({
           remoteP2Ref={duelRole === "challenger_authority" ? remoteP2Ref : undefined}
           p1IsLegendary={p1IsLegendary}
           p2IsLegendary={p2IsLegendary}
+          duelRole={duelRole}
         />
       )}
       {phase === "result" && duelResult && (
