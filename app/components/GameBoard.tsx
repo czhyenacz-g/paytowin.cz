@@ -3621,22 +3621,29 @@ export default function GameBoard({ gameCode }: Props) {
                         />
                       </div>
                       )}
-
-                      {/* Ghost marker pro původní cíl hodu — viditelný jen během rozhodování o pohybu */}
-                      {isDefaultMoveTarget && (
-                        <div
-                          className="pointer-events-none absolute inset-0 z-[60] flex items-center justify-center"
-                          style={{ transform: `rotate(${-rotDeg}deg)` }}
-                        >
-                          <div
-                            className="h-1.5 w-1.5 rounded-full bg-yellow-400 shadow-[0_0_8px_#fbbf24] opacity-90 animate-pulse"
-                            title="Původní cíl hodu"
-                          />
-                        </div>
-                      )}
                     </div>
                   );
                 })}
+
+                {/* Ghost marker pro původní cíl hodu — zobrazen na pozici figurky (blíže středu) */}
+                {ghostMoveTarget !== null && (() => {
+                  const pos = board.shape === "stadium"
+                    ? FIGURINE_POSITIONS_STADIUM[ghostMoveTarget]
+                    : FIGURINE_POSITIONS[ghostMoveTarget];
+                  if (!pos) return null;
+                  return (
+                    <div
+                      key="ghost-move-target"
+                      className="absolute z-10 pointer-events-none flex items-center justify-center"
+                      style={{ ...pos, width: "32px", height: "32px" }}
+                    >
+                      <div
+                        className="h-5 w-5 rounded-full bg-yellow-400/80 border-2 border-white/60 shadow-[0_0_15px_#fbbf24,0_0_30px_#fbbf24] animate-pulse"
+                        title="Původní cíl hodu"
+                      />
+                    </div>
+                  );
+                })()}
 
                 {/* Figurky hráčů — mimo čtverce polí, posunuté ke středu */}
                 {FIELDS.map((field) => {
