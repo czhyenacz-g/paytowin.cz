@@ -50,12 +50,14 @@ export function createInitialState(config: DuelConfig, p1Speed = 5, p2Speed = 5)
       alive: true, ticksAlive: 0, nitroTicksRemaining: 0, nitroUsed: false,
       startDelayTicksRemaining: getRopeDuelStartDelayTicks(p1Speed),
       nitroDashTiles:           getRopeDuelNitroDashTiles(p1Speed, gridW),
+      legendaryDashRemaining: 0,
     },
     p2: {
       pos: { x: p2x, y: midY }, dir: "left",  trail: [{ x: p2x, y: midY }],
       alive: true, ticksAlive: 0, nitroTicksRemaining: 0, nitroUsed: false,
       startDelayTicksRemaining: getRopeDuelStartDelayTicks(p2Speed),
       nitroDashTiles:           getRopeDuelNitroDashTiles(p2Speed, gridW),
+      legendaryDashRemaining: 0,
     },
   };
 }
@@ -69,6 +71,8 @@ export function applyTick(
   config: DuelConfig,
   p1ActivateNitro = false,
   p2ActivateNitro = false,
+  p1ActivateLegendary = false,
+  p2ActivateLegendary = false,
 ): DuelState {
   if (state.status !== "running") return state;
 
@@ -94,6 +98,25 @@ export function applyTick(
   const p2NitroNext = p2Activating
     ? state.p2.nitroDashTiles - 1
     : Math.max(0, state.p2.nitroTicksRemaining - 1);
+
+  // ── Legendary ability (repeatable, guarded by cooldown outside simulation) ──
+  // legendaryDashRemaining === 0 ensures we don't stack mid-dash.
+  const p1LegActivating = p1ActivateLegendary && !p1InDelay && state.p1.legendaryDashRemaining === 0;
+  const p2LegActivating = p2ActivateLegendary && !p2InDelay && state.p2.legendaryDashRemaining === 0;
+
+  const p1LegActive = p1LegActivating || state.p1.legendaryDashRemaining > 0;
+  const p2LegActive = p2LegActivating || state.p2.legendaryDashRemaining > 0;
+
+  const p1LegNext = p1LegActivating
+    ? state.p1.nitroDashTiles - 1
+    : Math.max(0, state.p1.legendaryDashRemaining - 1);
+  const p2LegNext = p2LegActivating
+    ? state.p2.nitroDashTiles - 1
+    : Math.max(0, state.p2.legendaryDashRemaining - 1);
+
+  // Combined extra step: legendary OR nitro (one extra step per tick, not stacked)
+  const p1ExtraActive = p1NitroActive || p1LegActive;
+  const p2ExtraActive = p2NitroActive || p2LegActive;
 
   // ── Step 1: standard simultaneous movement ──────────────────────────────────
   // Delayed players do not turn or move; their trail does not grow.
@@ -129,6 +152,7 @@ export function applyTick(
     nitroUsed: state.p1.nitroUsed || p1Activating,
     startDelayTicksRemaining: p1InDelay ? state.p1.startDelayTicksRemaining - 1 : 0,
     nitroDashTiles: state.p1.nitroDashTiles,
+    legendaryDashRemaining: p1LegNext,
   };
   let newP2: PlayerDuelState = {
     pos:   p2alive ? p2next : state.p2.pos,
@@ -140,16 +164,17 @@ export function applyTick(
     nitroUsed: state.p2.nitroUsed || p2Activating,
     startDelayTicksRemaining: p2InDelay ? state.p2.startDelayTicksRemaining - 1 : 0,
     nitroDashTiles: state.p2.nitroDashTiles,
+    legendaryDashRemaining: p2LegNext,
   };
 
-  // ── Nitro extra step for P1 (if alive, continues same direction) ────────────
+  // ── Extra step for P1: nitro OR legendary (one extra step per tick) ──────────
 
-  if (p1alive && p1NitroActive) {
+  if (p1alive && p1ExtraActive) {
     const extra = step(newP1.pos, newP1.dir);
     if (
       outOfBounds(extra, gridW, gridH) ||
       hits(extra, newP1.trail) ||
-      hits(extra, newP2.trail)       // checks P2's position after step 1
+      hits(extra, newP2.trail)
     ) {
       p1alive = false;
       newP1 = { ...newP1, alive: false };
@@ -158,14 +183,14 @@ export function applyTick(
     }
   }
 
-  // ── Nitro extra step for P2 (checks P1's trail including P1's extra step) ──
+  // ── Extra step for P2 (checks P1's trail after P1's extra step) ────────────
 
-  if (p2alive && p2NitroActive) {
+  if (p2alive && p2ExtraActive) {
     const extra = step(newP2.pos, newP2.dir);
     if (
       outOfBounds(extra, gridW, gridH) ||
       hits(extra, newP2.trail) ||
-      hits(extra, newP1.trail)       // checks P1's trail after P1's extra step
+      hits(extra, newP1.trail)
     ) {
       p2alive = false;
       newP2 = { ...newP2, alive: false };

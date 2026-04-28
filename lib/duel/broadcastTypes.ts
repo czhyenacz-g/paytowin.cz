@@ -5,7 +5,7 @@ export interface StableDuelInputEvent {
   seq: number;
   at: number;
   input: {
-    action: "turn" | "nitro";
+    action: "turn" | "nitro" | "legendary";
     pressed?: boolean;
     direction?: "left" | "right";
   };

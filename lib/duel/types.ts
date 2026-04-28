@@ -17,6 +17,7 @@ export interface PlayerDuelState {
   readonly nitroUsed: boolean;          // true once activated; for stamina preview
   readonly startDelayTicksRemaining: number; // ticks of immobility at game start
   readonly nitroDashTiles: number;           // extra tiles per nitro activation (speed-based)
+  readonly legendaryDashRemaining: number;   // ticks of extra step from legendary ability (reusable)
 }
 
 export interface DuelState {

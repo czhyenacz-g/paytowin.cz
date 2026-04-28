@@ -182,6 +182,7 @@ function PreStartPhase({
   minigameType,
   isDev,
   duelRole,
+  p2IsLegendary,
   onClick,
 }: {
   challenger: DuelContestant;
@@ -190,6 +191,7 @@ function PreStartPhase({
   minigameType: StableMinigameType;
   isDev: boolean;
   duelRole?: "challenger_authority" | "defender_remote";
+  p2IsLegendary?: boolean;
   onClick: () => void;
 }) {
   const meta = MINIGAME_META[minigameType];
@@ -316,7 +318,7 @@ function PreStartPhase({
       {/* Instructions */}
       <div className="text-[10px] text-slate-600 text-center leading-snug">
         {duelRole === "defender_remote"
-          ? "Hraješ jako defender: ← → pro zatáčení · S pro nitro · inputy se posílají challengerovi"
+          ? `Hraješ jako defender: ← → pro zatáčení · S pro ${p2IsLegendary ? "legendary (cooldown 2s) ⭐" : "nitro"} · inputy se posílají challengerovi`
           : "Zatáčej vlevo a vpravo · nenarážej do zdí ani do provazu"
         }
       </div>
@@ -333,13 +335,17 @@ function ArenaPhase({
   minigameType,
   onResult,
   remoteP2Ref,
+  p1IsLegendary = false,
+  p2IsLegendary = false,
 }: {
   backgroundUrl?: string;
   p1Speed?: number;
   p2Speed?: number;
   minigameType: StableMinigameType;
   onResult: (result: MinigameResult) => void;
-  remoteP2Ref?: React.MutableRefObject<{ dir: Dir; nitroActivate: boolean } | null>;
+  remoteP2Ref?: React.MutableRefObject<{ dir: Dir; nitroActivate: boolean; legendaryActivate: boolean } | null>;
+  p1IsLegendary?: boolean;
+  p2IsLegendary?: boolean;
 }) {
   if (minigameType === "neon_speedrace") {
     return (
@@ -369,6 +375,8 @@ function ArenaPhase({
         p2Speed={p2Speed}
         onResult={onResult}
         remoteP2Ref={remoteP2Ref}
+        p1IsLegendary={p1IsLegendary}
+        p2IsLegendary={p2IsLegendary}
       />
     </div>
   );
@@ -519,7 +527,7 @@ export default function StableDuelBoardLayer({
   const [broadcastError, setBroadcastError] = React.useState(false);
 
   // challenger_authority: ref pro remote P2 (defender) inputy
-  const remoteP2Ref = React.useRef<{ dir: Dir; nitroActivate: boolean } | null>(null);
+  const remoteP2Ref = React.useRef<{ dir: Dir; nitroActivate: boolean; legendaryActivate: boolean } | null>(null);
   // Broadcast channel lifecycle
   const channelRef = React.useRef<ReturnType<typeof supabase.channel> | null>(null);
   const receivedSeqsRef = React.useRef<Set<number>>(new Set());
@@ -527,6 +535,8 @@ export default function StableDuelBoardLayer({
 
   const p1Speed = challenger.horse?.speed ?? 5;
   const p2Speed = defender.horse?.speed ?? 5;
+  const p1IsLegendary = !!(challenger.horse?.isLegendary);
+  const p2IsLegendary = !!(defender.horse?.isLegendary);
   const minigameType = selectStableMinigame({
     themeId,
     challengerHorse: challenger.horse,
@@ -575,9 +585,11 @@ export default function StableDuelBoardLayer({
           const dir: Dir = payload.input.direction === "left" ? "left"
             : payload.input.direction === "right" ? "right"
             : "straight";
-          remoteP2Ref.current = { dir, nitroActivate: prev?.nitroActivate ?? false };
+          remoteP2Ref.current = { dir, nitroActivate: prev?.nitroActivate ?? false, legendaryActivate: prev?.legendaryActivate ?? false };
         } else if (payload.input.action === "nitro" && payload.input.pressed) {
-          remoteP2Ref.current = { dir: prev?.dir ?? "straight", nitroActivate: true };
+          remoteP2Ref.current = { dir: prev?.dir ?? "straight", nitroActivate: true, legendaryActivate: prev?.legendaryActivate ?? false };
+        } else if (payload.input.action === "legendary" && payload.input.pressed) {
+          remoteP2Ref.current = { dir: prev?.dir ?? "straight", nitroActivate: prev?.nitroActivate ?? false, legendaryActivate: true };
         }
       })
       .subscribe();
@@ -628,7 +640,7 @@ export default function StableDuelBoardLayer({
         currentDir = "right";
         sendInput({ action: "turn", pressed: true, direction: "right" });
       } else if (e.code === "KeyS") {
-        sendInput({ action: "nitro", pressed: true });
+        sendInput(p2IsLegendary ? { action: "legendary", pressed: true } : { action: "nitro", pressed: true });
       }
       if (["ArrowLeft", "ArrowRight"].includes(e.code)) e.preventDefault();
     };
@@ -674,6 +686,7 @@ export default function StableDuelBoardLayer({
           minigameType={minigameType}
           isDev={isDev}
           duelRole={duelRole}
+          p2IsLegendary={p2IsLegendary}
           onClick={handleSkip}
         />
       )}
@@ -686,6 +699,8 @@ export default function StableDuelBoardLayer({
           minigameType={minigameType}
           onResult={handleDuelResult}
           remoteP2Ref={duelRole === "challenger_authority" ? remoteP2Ref : undefined}
+          p1IsLegendary={p1IsLegendary}
+          p2IsLegendary={p2IsLegendary}
         />
       )}
       {phase === "result" && duelResult && (

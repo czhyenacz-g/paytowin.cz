@@ -9,14 +9,16 @@ import type { MinigameResult } from "@/lib/minigames/types";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const P1_COLOR  = "#00ff88"; // neon green
-const P2_COLOR  = "#c084fc"; // neon purple
-const P1_DIM    = "#005530";
-const P2_DIM    = "#4c1d95";
-const BG_COLOR  = "#030712";
-const GRID_COLOR = "rgba(255,255,255,0.04)";
+const P1_COLOR       = "#00ff88";
+const P2_COLOR       = "#c084fc";
+const P1_DIM         = "#005530";
+const P2_DIM         = "#4c1d95";
+const BG_COLOR       = "#030712";
+const GRID_COLOR     = "rgba(255,255,255,0.04)";
+const LEGENDARY_COLOR = "#fbbf24";
 
-const CELL_PX = 20; // px per grid cell
+const CELL_PX = 20;
+const LEGENDARY_COOLDOWN_MS = 2000;
 
 // ── SVG neon glow filter ──────────────────────────────────────────────────────
 
@@ -26,28 +28,16 @@ function NeonFilters() {
       <filter id="glow-p1" x="-60%" y="-60%" width="220%" height="220%">
         <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="b1" />
         <feGaussianBlur in="SourceGraphic" stdDeviation="1"   result="b2" />
-        <feMerge>
-          <feMergeNode in="b1" />
-          <feMergeNode in="b2" />
-          <feMergeNode in="SourceGraphic" />
-        </feMerge>
+        <feMerge><feMergeNode in="b1" /><feMergeNode in="b2" /><feMergeNode in="SourceGraphic" /></feMerge>
       </filter>
       <filter id="glow-p2" x="-60%" y="-60%" width="220%" height="220%">
         <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="b1" />
         <feGaussianBlur in="SourceGraphic" stdDeviation="1"   result="b2" />
-        <feMerge>
-          <feMergeNode in="b1" />
-          <feMergeNode in="b2" />
-          <feMergeNode in="SourceGraphic" />
-        </feMerge>
+        <feMerge><feMergeNode in="b1" /><feMergeNode in="b2" /><feMergeNode in="SourceGraphic" /></feMerge>
       </filter>
       <filter id="glow-head" x="-100%" y="-100%" width="300%" height="300%">
         <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="b" />
-        <feMerge>
-          <feMergeNode in="b" />
-          <feMergeNode in="b" />
-          <feMergeNode in="SourceGraphic" />
-        </feMerge>
+        <feMerge><feMergeNode in="b" /><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
       </filter>
     </defs>
   );
@@ -66,15 +56,9 @@ function GridLines({ w, h, cs }: { w: number; h: number; cs: number }) {
 
 // ── Trail polyline ────────────────────────────────────────────────────────────
 
-function Trail({
-  trail, color, dimColor, alive, filterId, cs,
-}: {
+function Trail({ trail, color, dimColor, alive, filterId, cs }: {
   trail: readonly { x: number; y: number }[];
-  color: string;
-  dimColor: string;
-  alive: boolean;
-  filterId: string;
-  cs: number;
+  color: string; dimColor: string; alive: boolean; filterId: string; cs: number;
 }) {
   if (trail.length < 2) return null;
   const pts = trail.map(v => `${v.x * cs + cs / 2},${v.y * cs + cs / 2}`).join(" ");
@@ -94,14 +78,7 @@ function Trail({
 
 // ── Player head ───────────────────────────────────────────────────────────────
 
-function Head({
-  pos, color, alive, cs,
-}: {
-  pos: { x: number; y: number };
-  color: string;
-  alive: boolean;
-  cs: number;
-}) {
+function Head({ pos, color, alive, cs }: { pos: { x: number; y: number }; color: string; alive: boolean; cs: number }) {
   const cx = pos.x * cs + cs / 2;
   const cy = pos.y * cs + cs / 2;
   return (
@@ -109,6 +86,29 @@ function Head({
       <circle cx={cx} cy={cy} r={cs * 0.42} fill={color} />
       <circle cx={cx} cy={cy} r={cs * 0.2} fill="white" opacity={0.7} />
     </g>
+  );
+}
+
+// ── Legendary ability badge ───────────────────────────────────────────────────
+
+type LegDisplay = "ready" | number; // number = cooldown seconds remaining
+
+function LegendaryBadge({ display, flash, side }: { display: LegDisplay; side: "left" | "right"; flash: boolean }) {
+  const ready = display === "ready";
+  return (
+    <span
+      style={{
+        color: ready ? LEGENDARY_COLOR : "#475569",
+        textShadow: flash ? `0 0 12px ${LEGENDARY_COLOR}, 0 0 24px ${LEGENDARY_COLOR}` : "none",
+        transition: "text-shadow 0.4s ease-out, color 0.3s",
+        fontWeight: 700,
+      }}
+    >
+      {side === "left"
+        ? `⭐ ${ready ? "LEGENDARY · SPACE" : `${display}s`} · P1`
+        : `P2 · ${ready ? "LEGENDARY · S" : `${display}s`} ⭐`
+      }
+    </span>
   );
 }
 
@@ -122,19 +122,23 @@ interface Props {
   showDebug?: boolean;
   backgroundUrl?: string;
   overlayOpacity?: number;
-  /** Přeskočí idle obrazovku a spustí souboj rovnou. */
   autoStart?: boolean;
-  /** Zavolá se jednou po skončení hry. */
   onResult?: (result: MinigameResult) => void;
-  /** Rychlost koně/racera pro P1 (1–10, default 5). */
   p1Speed?: number;
-  /** Rychlost koně/racera pro P2 (1–10, default 5). */
   p2Speed?: number;
-  /** challenger_authority: P2 (defender) dir/nitro přichází z tohoto refu místo klávesnice. */
-  remoteP2Ref?: React.MutableRefObject<{ dir: Dir; nitroActivate: boolean } | null>;
+  /** challenger_authority: P2 dir/nitro/legendary from Broadcast ref instead of keyboard. */
+  remoteP2Ref?: React.MutableRefObject<{ dir: Dir; nitroActivate: boolean; legendaryActivate: boolean } | null>;
+  /** If true, P1 uses legendary ability (cooldown) instead of one-shot nitro. */
+  p1IsLegendary?: boolean;
+  /** If true, P2 uses legendary ability (cooldown) instead of one-shot nitro. */
+  p2IsLegendary?: boolean;
 }
 
-export default function DuelArena({ config, mode, showDebug = false, backgroundUrl, overlayOpacity = 0.20, autoStart = false, onResult, p1Speed = 5, p2Speed = 5, remoteP2Ref }: Props) {
+export default function DuelArena({
+  config, mode, showDebug = false, backgroundUrl, overlayOpacity = 0.20,
+  autoStart = false, onResult, p1Speed = 5, p2Speed = 5,
+  remoteP2Ref, p1IsLegendary = false, p2IsLegendary = false,
+}: Props) {
   const [state, setState] = React.useState<DuelState>(() => {
     const s = createInitialState(config, p1Speed, p2Speed);
     return autoStart ? { ...s, status: "running" as const } : s;
@@ -142,18 +146,32 @@ export default function DuelArena({ config, mode, showDebug = false, backgroundU
   const [running, setRunning] = React.useState(autoStart);
   const [lastInputs, setLastInputs] = React.useState<{ p1: Dir; p2: Dir }>({ p1: "straight", p2: "straight" });
 
-  const stateRef  = React.useRef<DuelState>(state);
-  const keysRef   = React.useRef<Set<string>>(new Set());
+  const stateRef   = React.useRef<DuelState>(state);
+  const keysRef    = React.useRef<Set<string>>(new Set());
   const runningRef = React.useRef(false);
 
-  // Nitro activation flags (single-trigger per keypress; state lives in simulation)
+  // One-shot nitro flags (regular racers)
   const p1BoostActivateRef = React.useRef(false);
   const p2BoostActivateRef = React.useRef(false);
 
-  stateRef.current = state;
+  // One-shot legendary flags (local keyboard)
+  const p1LegActivateRef = React.useRef(false);
+  const p2LegActivateRef = React.useRef(false);
+
+  // Legendary cooldown tracking (real-time ms)
+  const p1LegCooldownUntilRef = React.useRef<number | null>(null);
+  const p2LegCooldownUntilRef = React.useRef<number | null>(null);
+
+  // Legendary UI state
+  const [p1LegDisplay, setP1LegDisplay] = React.useState<LegDisplay>("ready");
+  const [p2LegDisplay, setP2LegDisplay] = React.useState<LegDisplay>("ready");
+  const [p1LegFlash, setP1LegFlash]     = React.useState(false);
+  const [p2LegFlash, setP2LegFlash]     = React.useState(false);
+
+  stateRef.current  = state;
   runningRef.current = running;
 
-  // Reset when config, mode, or speeds change
+  // Reset when config / mode / speeds change
   React.useEffect(() => {
     const fresh = createInitialState(config, p1Speed, p2Speed);
     setState(fresh);
@@ -163,6 +181,14 @@ export default function DuelArena({ config, mode, showDebug = false, backgroundU
     setLastInputs({ p1: "straight", p2: "straight" });
     p1BoostActivateRef.current = false;
     p2BoostActivateRef.current = false;
+    p1LegActivateRef.current = false;
+    p2LegActivateRef.current = false;
+    p1LegCooldownUntilRef.current = null;
+    p2LegCooldownUntilRef.current = null;
+    setP1LegDisplay("ready");
+    setP2LegDisplay("ready");
+    setP1LegFlash(false);
+    setP2LegFlash(false);
   }, [config, mode, p1Speed, p2Speed]);
 
   // onResult — fired once when game ends
@@ -188,8 +214,16 @@ export default function DuelArena({ config, mode, showDebug = false, backgroundU
       if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Space"].includes(e.code)) {
         e.preventDefault();
       }
-      if (e.code === "Space") p1BoostActivateRef.current = true;
-      if (e.code === "KeyS")  p2BoostActivateRef.current = true;
+      // P1: legendary OR nitro depending on racer type
+      if (e.code === "Space") {
+        if (p1IsLegendary) p1LegActivateRef.current = true;
+        else               p1BoostActivateRef.current = true;
+      }
+      // P2: legendary OR nitro depending on racer type
+      if (e.code === "KeyS") {
+        if (p2IsLegendary) p2LegActivateRef.current = true;
+        else               p2BoostActivateRef.current = true;
+      }
     };
     const up = (e: KeyboardEvent) => keysRef.current.delete(e.code);
     window.addEventListener("keydown", down);
@@ -198,7 +232,7 @@ export default function DuelArena({ config, mode, showDebug = false, backgroundU
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
     };
-  }, []);
+  }, [p1IsLegendary, p2IsLegendary]);
 
   // Tick loop
   React.useEffect(() => {
@@ -214,17 +248,17 @@ export default function DuelArena({ config, mode, showDebug = false, backgroundU
       }
 
       const keys = keysRef.current;
+      const now  = Date.now();
 
-      // Consume nitro activation flags (single-trigger per keypress)
+      // ── Nitro (regular racers) ───────────────────────────────────────────────
       const p1Activate = p1BoostActivateRef.current;
       const p2Activate = p2BoostActivateRef.current;
       p1BoostActivateRef.current = false;
       p2BoostActivateRef.current = false;
 
-      const p1: Dir = keys.has("KeyA") ? "left" : keys.has("KeyD") ? "right" : "straight";
-
-      // P2: remote input (challenger_authority) → ref, jinak bot nebo klávesnice
+      // ── P2 direction (remote or keyboard or bot) ─────────────────────────────
       const remoteP2 = remoteP2Ref?.current ?? null;
+      const p1: Dir = keys.has("KeyA") ? "left" : keys.has("KeyD") ? "right" : "straight";
       const p2: Dir = mode === "pvbot"
         ? getBotInput(cur, 2, config)
         : remoteP2 !== null
@@ -234,9 +268,66 @@ export default function DuelArena({ config, mode, showDebug = false, backgroundU
       const effectiveP2Activate = mode === "pvp"
         ? (remoteP2Ref ? (remoteP2?.nitroActivate ?? false) : p2Activate)
         : false;
-      // Spotřebuj remote nitro (single-shot)
       if (remoteP2Ref?.current?.nitroActivate) {
         remoteP2Ref.current = { ...remoteP2Ref.current, nitroActivate: false };
+      }
+
+      // ── Legendary ability ────────────────────────────────────────────────────
+      // P1 legendary: check cooldown, read local flag
+      let p1LegFire = false;
+      if (p1IsLegendary) {
+        // Check if cooldown expired → restore charge
+        const cdu1 = p1LegCooldownUntilRef.current;
+        if (cdu1 !== null && now >= cdu1) {
+          p1LegCooldownUntilRef.current = null;
+          setP1LegDisplay("ready");
+          setP1LegFlash(true);
+          setTimeout(() => setP1LegFlash(false), 500);
+        }
+        // Update cooldown display
+        const remaining1 = p1LegCooldownUntilRef.current ? p1LegCooldownUntilRef.current - now : 0;
+        const sec1 = remaining1 > 0 ? Math.ceil(remaining1 / 1000) : 0;
+        if (remaining1 > 0) {
+          setP1LegDisplay(prev => prev !== sec1 ? sec1 : prev);
+        }
+        // Attempt activation
+        if (p1LegActivateRef.current && p1LegCooldownUntilRef.current === null) {
+          p1LegFire = true;
+          p1LegCooldownUntilRef.current = now + LEGENDARY_COOLDOWN_MS;
+          setP1LegDisplay(2);
+        }
+        p1LegActivateRef.current = false;
+      }
+
+      // P2 legendary: remote or local keyboard
+      let p2LegFire = false;
+      if (p2IsLegendary) {
+        // Remote legendary (challenger_authority mode)
+        const remoteP2LegActivate = remoteP2Ref
+          ? (remoteP2?.legendaryActivate ?? false)
+          : p2LegActivateRef.current;
+        if (remoteP2Ref?.current?.legendaryActivate) {
+          remoteP2Ref.current = { ...remoteP2Ref.current, legendaryActivate: false };
+        }
+        p2LegActivateRef.current = false;
+
+        const cdu2 = p2LegCooldownUntilRef.current;
+        if (cdu2 !== null && now >= cdu2) {
+          p2LegCooldownUntilRef.current = null;
+          setP2LegDisplay("ready");
+          setP2LegFlash(true);
+          setTimeout(() => setP2LegFlash(false), 500);
+        }
+        const remaining2 = p2LegCooldownUntilRef.current ? p2LegCooldownUntilRef.current - now : 0;
+        const sec2 = remaining2 > 0 ? Math.ceil(remaining2 / 1000) : 0;
+        if (remaining2 > 0) {
+          setP2LegDisplay(prev => prev !== sec2 ? sec2 : prev);
+        }
+        if (remoteP2LegActivate && p2LegCooldownUntilRef.current === null) {
+          p2LegFire = true;
+          p2LegCooldownUntilRef.current = now + LEGENDARY_COOLDOWN_MS;
+          setP2LegDisplay(2);
+        }
       }
 
       setLastInputs({ p1, p2 });
@@ -244,6 +335,8 @@ export default function DuelArena({ config, mode, showDebug = false, backgroundU
         cur, p1, p2, config,
         p1Activate,
         effectiveP2Activate,
+        p1LegFire,
+        p2LegFire,
       );
       stateRef.current = next;
       setState(next);
@@ -274,6 +367,14 @@ export default function DuelArena({ config, mode, showDebug = false, backgroundU
     setLastInputs({ p1: "straight", p2: "straight" });
     p1BoostActivateRef.current = false;
     p2BoostActivateRef.current = false;
+    p1LegActivateRef.current = false;
+    p2LegActivateRef.current = false;
+    p1LegCooldownUntilRef.current = null;
+    p2LegCooldownUntilRef.current = null;
+    setP1LegDisplay("ready");
+    setP2LegDisplay("ready");
+    setP1LegFlash(false);
+    setP2LegFlash(false);
   };
 
   const w = config.gridW * CELL_PX;
@@ -281,7 +382,6 @@ export default function DuelArena({ config, mode, showDebug = false, backgroundU
   const isDone   = state.status !== "idle" && state.status !== "running";
   const isPaused = !running && state.status === "running";
 
-  // Stamina preview (dev display only)
   const p1Crashed  = state.status === "p2_win" || state.status === "draw";
   const p2Crashed  = state.status === "p1_win" || state.status === "draw";
   const p1Preview  = nitroStaminaPreview(state.p1.nitroUsed, p1Crashed);
@@ -295,16 +395,20 @@ export default function DuelArena({ config, mode, showDebug = false, backgroundU
   return (
     <div className="flex flex-col items-center gap-3 select-none">
 
-      {/* Nitro HUD */}
+      {/* Ability HUD */}
       {state.status !== "idle" && (
-        <div className="flex justify-between font-mono text-[10px]" style={{ width: w }}>
-          <span style={{ color: nitroColor(state.p1.nitroUsed, state.p1.nitroTicksRemaining, P1_COLOR) }}>
-            {nitroLabel(state.p1.nitroUsed, state.p1.nitroTicksRemaining, "SPACE")} P1
-          </span>
-          {mode === "pvp" && (
-            <span style={{ color: nitroColor(state.p2.nitroUsed, state.p2.nitroTicksRemaining, P2_COLOR) }}>
-              P2 {nitroLabel(state.p2.nitroUsed, state.p2.nitroTicksRemaining, "S")}
-            </span>
+        <div className="flex justify-between font-mono text-[10px] items-center" style={{ width: w }}>
+          {p1IsLegendary
+            ? <LegendaryBadge display={p1LegDisplay} flash={p1LegFlash} side="left" />
+            : <span style={{ color: nitroColor(state.p1.nitroUsed, state.p1.nitroTicksRemaining, P1_COLOR) }}>
+                {nitroLabel(state.p1.nitroUsed, state.p1.nitroTicksRemaining, "SPACE")} P1
+              </span>
+          }
+          {mode === "pvp" && (p2IsLegendary
+            ? <LegendaryBadge display={p2LegDisplay} flash={p2LegFlash} side="right" />
+            : <span style={{ color: nitroColor(state.p2.nitroUsed, state.p2.nitroTicksRemaining, P2_COLOR) }}>
+                P2 {nitroLabel(state.p2.nitroUsed, state.p2.nitroTicksRemaining, "S")}
+              </span>
           )}
         </div>
       )}
@@ -317,8 +421,6 @@ export default function DuelArena({ config, mode, showDebug = false, backgroundU
           style={{ display: "block", background: backgroundUrl ? "transparent" : BG_COLOR }}
         >
           <NeonFilters />
-
-          {/* Theme background */}
           {backgroundUrl && (
             <>
               <defs>
@@ -326,30 +428,17 @@ export default function DuelArena({ config, mode, showDebug = false, backgroundU
                   <feGaussianBlur stdDeviation="1.5" />
                 </filter>
               </defs>
-              <image
-                href={backgroundUrl}
-                x={0} y={0} width={w} height={h}
-                preserveAspectRatio="xMidYMid slice"
-                filter="url(#da-bg-blur)"
-              />
-              <rect x={0} y={0} width={w} height={h}
-                fill={`rgba(3,7,18,${overlayOpacity})`}
-              />
+              <image href={backgroundUrl} x={0} y={0} width={w} height={h} preserveAspectRatio="xMidYMid slice" filter="url(#da-bg-blur)" />
+              <rect x={0} y={0} width={w} height={h} fill={`rgba(3,7,18,${overlayOpacity})`} />
             </>
           )}
-
           <GridLines w={config.gridW} h={config.gridH} cs={CELL_PX} />
-
-          {/* Trails */}
           <Trail trail={state.p1.trail} color={P1_COLOR} dimColor={P1_DIM} alive={state.p1.alive} filterId="glow-p1" cs={CELL_PX} />
           <Trail trail={state.p2.trail} color={P2_COLOR} dimColor={P2_DIM} alive={state.p2.alive} filterId="glow-p2" cs={CELL_PX} />
-
-          {/* Heads */}
           <Head pos={state.p1.pos} color={P1_COLOR} alive={state.p1.alive} cs={CELL_PX} />
           <Head pos={state.p2.pos} color={P2_COLOR} alive={state.p2.alive} cs={CELL_PX} />
         </svg>
 
-        {/* Overlay: idle / paused / done */}
         {(state.status === "idle" || isPaused || isDone) && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60 backdrop-blur-[2px]">
             {state.status === "idle" && (
@@ -361,6 +450,12 @@ export default function DuelArena({ config, mode, showDebug = false, backgroundU
                     : <>P1: <span style={{ color: P1_COLOR }}>A / D</span> &nbsp;·&nbsp; <span style={{ color: P2_COLOR }}>Bot</span></>
                   }
                 </div>
+                {(p1IsLegendary || p2IsLegendary) && (
+                  <div className="text-[10px] font-mono text-center leading-snug" style={{ color: LEGENDARY_COLOR }}>
+                    {p1IsLegendary && <div>⭐ P1 legendary ability → SPACE (cooldown {LEGENDARY_COOLDOWN_MS / 1000}s)</div>}
+                    {p2IsLegendary && mode === "pvp" && <div>⭐ P2 legendary ability → S (cooldown {LEGENDARY_COOLDOWN_MS / 1000}s)</div>}
+                  </div>
+                )}
                 <button
                   onClick={handleStart}
                   className="mt-1 rounded-lg bg-emerald-500 px-5 py-2 text-sm font-black text-white hover:bg-emerald-400 active:scale-95 transition-all"
@@ -372,10 +467,7 @@ export default function DuelArena({ config, mode, showDebug = false, backgroundU
             {isPaused && (
               <>
                 <div className="text-xl font-black text-amber-400">PAUZA</div>
-                <button
-                  onClick={handleStart}
-                  className="rounded-lg bg-amber-500 px-5 py-2 text-sm font-black text-white hover:bg-amber-400 transition"
-                >
+                <button onClick={handleStart} className="rounded-lg bg-amber-500 px-5 py-2 text-sm font-black text-white hover:bg-amber-400 transition">
                   ▶ Pokračovat
                 </button>
               </>
@@ -385,18 +477,13 @@ export default function DuelArena({ config, mode, showDebug = false, backgroundU
                 <div className={`text-3xl font-black ${state.status === "draw" ? "text-slate-300" : state.winner === 1 ? "text-emerald-400" : "text-purple-400"}`} style={{
                   textShadow: state.winner === 1 ? `0 0 16px ${P1_COLOR}` : state.winner === 2 ? `0 0 16px ${P2_COLOR}` : "none",
                 }}>
-                  {state.status === "draw"    ? "REMÍZA"
-                   : state.winner === 1 ? "🏆 P1 VYHRÁL"
-                   : "🏆 P2 VYHRÁL"}
+                  {state.status === "draw" ? "REMÍZA" : state.winner === 1 ? "🏆 P1 VYHRÁL" : "🏆 P2 VYHRÁL"}
                 </div>
                 <div className="text-xs text-slate-500">tick {state.tick} · P1: {state.p1.ticksAlive} · P2: {state.p2.ticksAlive}</div>
                 <div className="text-[10px] font-mono text-slate-600">
                   stamina P1 −{p1Preview.total}{mode === "pvp" ? ` · P2 −${p2Preview.total}` : ""}
                 </div>
-                <button
-                  onClick={handleReset}
-                  className="rounded-lg bg-slate-700 px-5 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-600 transition"
-                >
+                <button onClick={handleReset} className="rounded-lg bg-slate-700 px-5 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-600 transition">
                   ↺ Reset
                 </button>
               </div>
@@ -408,17 +495,11 @@ export default function DuelArena({ config, mode, showDebug = false, backgroundU
       {/* Controls bar */}
       <div className="flex items-center gap-2">
         {state.status === "running" && (
-          <button
-            onClick={handleStart}
-            className="rounded-lg bg-amber-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-amber-500 transition"
-          >
+          <button onClick={handleStart} className="rounded-lg bg-amber-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-amber-500 transition">
             ⏸ Pauza
           </button>
         )}
-        <button
-          onClick={handleReset}
-          className="rounded-lg bg-slate-700 border border-slate-600 px-4 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-600 transition"
-        >
+        <button onClick={handleReset} className="rounded-lg bg-slate-700 border border-slate-600 px-4 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-600 transition">
           ↺ Reset
         </button>
       </div>
@@ -426,42 +507,42 @@ export default function DuelArena({ config, mode, showDebug = false, backgroundU
       {/* Debug panel */}
       {showDebug && (
         <div className="w-full rounded-lg bg-slate-900 border border-slate-700 p-3 font-mono text-[10px] text-slate-400 space-y-0.5">
-          <div><span className="text-slate-600">status</span>   <span className="text-white">{state.status}</span>   <span className="text-slate-600 ml-3">tick</span> {state.tick}/{config.maxTicks}</div>
+          <div><span className="text-slate-600">status</span> <span className="text-white">{state.status}</span> <span className="text-slate-600 ml-3">tick</span> {state.tick}/{config.maxTicks}</div>
           <div>
-            <span className="text-slate-600">p1</span>  <span style={{ color: P1_COLOR }}>{state.p1.pos.x},{state.p1.pos.y}</span> <span className="text-slate-600">dir</span> {state.p1.dir} <span className="text-slate-600">trail</span> {state.p1.trail.length} <span className="text-slate-600">input</span> {lastInputs.p1}
+            <span className="text-slate-600">p1</span> <span style={{ color: P1_COLOR }}>{state.p1.pos.x},{state.p1.pos.y}</span> dir {state.p1.dir} trail {state.p1.trail.length} input {lastInputs.p1}
             {state.p1.startDelayTicksRemaining > 0 && <span className="text-amber-400 ml-2">delay {state.p1.startDelayTicksRemaining}</span>}
           </div>
           <div>
-            <span className="text-slate-600">p2</span>  <span style={{ color: P2_COLOR }}>{state.p2.pos.x},{state.p2.pos.y}</span> <span className="text-slate-600">dir</span> {state.p2.dir} <span className="text-slate-600">trail</span> {state.p2.trail.length} <span className="text-slate-600">input</span> {lastInputs.p2}
+            <span className="text-slate-600">p2</span> <span style={{ color: P2_COLOR }}>{state.p2.pos.x},{state.p2.pos.y}</span> dir {state.p2.dir} trail {state.p2.trail.length} input {lastInputs.p2}
             {state.p2.startDelayTicksRemaining > 0 && <span className="text-amber-400 ml-2">delay {state.p2.startDelayTicksRemaining}</span>}
           </div>
           <div>
-            <span className="text-slate-600">p1</span>{" "}
-            <span className="text-slate-500">spd {p1Speed}</span>{" "}
-            <span className="text-slate-600">delay</span> {state.p1.startDelayTicksRemaining}/{getRopeDuelStartDelayTicks(p1Speed)}{" "}
-            <span className="text-slate-600">dashTiles</span> {state.p1.nitroDashTiles}{" "}
-            <span className="text-slate-600">nitro</span>{" "}
-            <span style={{ color: nitroColor(state.p1.nitroUsed, state.p1.nitroTicksRemaining, P1_COLOR) }}>
-              {state.p1.nitroUsed ? (state.p1.nitroTicksRemaining > 0 ? `active(${state.p1.nitroTicksRemaining})` : "used") : "ready"}
-            </span>
+            <span className="text-slate-600">p1</span> spd {p1Speed}{" "}
+            delay {state.p1.startDelayTicksRemaining}/{getRopeDuelStartDelayTicks(p1Speed)}{" "}
+            dashTiles {state.p1.nitroDashTiles}{" "}
+            {p1IsLegendary
+              ? <span style={{ color: LEGENDARY_COLOR }}>leg {state.p1.legendaryDashRemaining} cd:{p1LegCooldownUntilRef.current ? Math.ceil((p1LegCooldownUntilRef.current - Date.now()) / 1000) + "s" : "ready"}</span>
+              : <span style={{ color: nitroColor(state.p1.nitroUsed, state.p1.nitroTicksRemaining, P1_COLOR) }}>
+                  nitro {state.p1.nitroUsed ? (state.p1.nitroTicksRemaining > 0 ? `active(${state.p1.nitroTicksRemaining})` : "used") : "ready"}
+                </span>
+            }
           </div>
           <div>
-            <span className="text-slate-600">p2</span>{" "}
-            <span className="text-slate-500">spd {p2Speed}</span>{" "}
-            <span className="text-slate-600">delay</span> {state.p2.startDelayTicksRemaining}/{getRopeDuelStartDelayTicks(p2Speed)}{" "}
-            <span className="text-slate-600">dashTiles</span> {state.p2.nitroDashTiles}{" "}
-            {mode === "pvp" && <>
-              <span className="text-slate-600">nitro</span>{" "}
-              <span style={{ color: nitroColor(state.p2.nitroUsed, state.p2.nitroTicksRemaining, P2_COLOR) }}>
-                {state.p2.nitroUsed ? (state.p2.nitroTicksRemaining > 0 ? `active(${state.p2.nitroTicksRemaining})` : "used") : "ready"}
-              </span>
-            </>}
+            <span className="text-slate-600">p2</span> spd {p2Speed}{" "}
+            delay {state.p2.startDelayTicksRemaining}/{getRopeDuelStartDelayTicks(p2Speed)}{" "}
+            dashTiles {state.p2.nitroDashTiles}{" "}
+            {mode === "pvp" && (p2IsLegendary
+              ? <span style={{ color: LEGENDARY_COLOR }}>leg {state.p2.legendaryDashRemaining} cd:{p2LegCooldownUntilRef.current ? Math.ceil((p2LegCooldownUntilRef.current - Date.now()) / 1000) + "s" : "ready"}</span>
+              : <span style={{ color: nitroColor(state.p2.nitroUsed, state.p2.nitroTicksRemaining, P2_COLOR) }}>
+                  nitro {state.p2.nitroUsed ? (state.p2.nitroTicksRemaining > 0 ? `active(${state.p2.nitroTicksRemaining})` : "used") : "ready"}
+                </span>
+            )}
           </div>
           {state.winner && <div className="text-amber-400 font-bold">winner: P{state.winner}</div>}
           {isDone && (
             <div className="text-slate-500">
               stamina P1 −{p1Preview.total} (base −{p1Preview.baseCost}{p1Preview.nitroCost > 0 ? ` nitro −${p1Preview.nitroCost}` : ""}{p1Preview.crashPenalty > 0 ? ` crash −${p1Preview.crashPenalty}` : ""})
-              {mode === "pvp" && ` · P2 −${p2Preview.total} (base −${p2Preview.baseCost}${p2Preview.nitroCost > 0 ? ` nitro −${p2Preview.nitroCost}` : ""}${p2Preview.crashPenalty > 0 ? ` crash −${p2Preview.crashPenalty}` : ""})`}
+              {mode === "pvp" && ` · P2 −${p2Preview.total}`}
             </div>
           )}
         </div>
