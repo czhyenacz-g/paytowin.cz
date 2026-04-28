@@ -589,16 +589,27 @@ export default function StableDuelBoardLayer({
         if (receivedSeqsRef.current.has(payload.seq)) return;
         receivedSeqsRef.current.add(payload.seq);
 
-        const prev = remoteP2Ref.current;
         if (payload.input.action === "turn") {
           const dir: Dir = payload.input.direction === "left" ? "left"
             : payload.input.direction === "right" ? "right"
             : "straight";
-          remoteP2Ref.current = { dir, nitroActivate: prev?.nitroActivate ?? false, legendaryActivate: prev?.legendaryActivate ?? false };
+          remoteP2Ref.current = {
+            dir,
+            nitroActivate: remoteP2Ref.current?.nitroActivate ?? false,
+            legendaryActivate: remoteP2Ref.current?.legendaryActivate ?? false
+          };
         } else if (payload.input.action === "nitro" && payload.input.pressed) {
-          remoteP2Ref.current = { dir: prev?.dir ?? "straight", nitroActivate: true, legendaryActivate: prev?.legendaryActivate ?? false };
+          remoteP2Ref.current = {
+            dir: remoteP2Ref.current?.dir ?? "straight",
+            nitroActivate: true,
+            legendaryActivate: remoteP2Ref.current?.legendaryActivate ?? false
+          };
         } else if (payload.input.action === "legendary" && payload.input.pressed) {
-          remoteP2Ref.current = { dir: prev?.dir ?? "straight", nitroActivate: prev?.nitroActivate ?? false, legendaryActivate: true };
+          remoteP2Ref.current = {
+            dir: remoteP2Ref.current?.dir ?? "straight",
+            nitroActivate: remoteP2Ref.current?.nitroActivate ?? false,
+            legendaryActivate: true
+          };
         }
       })
       .subscribe();

@@ -274,7 +274,7 @@ export default function DuelArena({
       const effectiveP2Activate = mode === "pvp"
         ? (remoteP2Ref ? (remoteP2?.nitroActivate ?? false) : p2Activate)
         : false;
-      if (remoteP2Ref?.current?.nitroActivate) {
+      if (remoteP2Ref?.current && remoteP2?.nitroActivate) {
         remoteP2Ref.current = { ...remoteP2Ref.current, nitroActivate: false };
       }
 
@@ -313,7 +313,7 @@ export default function DuelArena({
           ? (remoteP2Ref ? (remoteP2?.legendaryActivate ?? false) : p2LegActivateRef.current)
           : false;
 
-        if (remoteP2Ref?.current?.legendaryActivate) {
+        if (remoteP2Ref?.current && remoteP2?.legendaryActivate) {
           remoteP2Ref.current = { ...remoteP2Ref.current, legendaryActivate: false };
         }
         p2LegActivateRef.current = false;
