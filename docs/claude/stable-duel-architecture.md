@@ -191,6 +191,20 @@ online_1v1:
 
 ---
 
+## Legendary ability (commit 6a4e9e2 + 8fd660d)
+
+Speciální mechanika pro legendární koně, která nahrazuje jednorázové nitro.
+
+- **Dostupnost:** Pouze pokud má racer příznak `isLegendary`.
+- **Cooldown:** 2000 ms (opakovaně použitelné během jednoho závodu).
+- **Stamina:** Použití nestojí žádnou stamina (legendary racer nemá `usedNitro` penalizaci).
+- **Podmínka:** Funguje i při 0 stamina.
+- **Kompatibilita:** Běžné nitro pro ne-legendární racery zůstává beze změny.
+- **PvBot Guard:** V pvbot módu (lokální hra proti AI) nelze ovládat P2 legendary schopnost klávesou `S`.
+- **PvP Authority:** V online duelu o úspěšném provedení legendary dash rozhoduje výhradně challenger (authority).
+
+---
+
 ## Známá rizika / TODO
 
 - **clearOfferPending není atomický compare** — `finishTurn` re-fetchuje pending a porovnává, ale není to DB transakce. Nízké riziko v praxi.
