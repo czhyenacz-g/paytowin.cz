@@ -444,6 +444,7 @@ export default function GameBoard({ gameCode }: Props) {
   const [viewerRole, setViewerRole] = React.useState<"loading" | "player" | "spectator" | "login_required">("loading");
   const [isRolling, setIsRolling] = React.useState(false);
   const [isMoving, setIsMoving] = React.useState(false);
+  const [ghostMoveTarget, setGhostMoveTarget] = React.useState<number | null>(null);
   const [displayRoll, setDisplayRoll] = React.useState<number | null>(null);
   const [pendingRollDecision, setPendingRollDecision] = React.useState<PendingRollDecision | null>(null);
   const [bankruptWarning, setBankruptWarning] = React.useState<{
@@ -1044,6 +1045,9 @@ export default function GameBoard({ gameCode }: Props) {
     await sleep(300);
     setIsRolling(false);
 
+    // Set ghost target for default move
+    const fieldCount = FIELDS.length;
+    setGhostMoveTarget((currentPlayer.position + roll) % fieldCount);
 
     const selectedAdjustment = await new Promise<RollAdjustment>((resolve) => {
       const decision: PendingRollDecision = {
@@ -1070,7 +1074,6 @@ export default function GameBoard({ gameCode }: Props) {
 
     // ── 2. Animace pohybu pole po poli ────────────────────────────────────────
     const oldPosition = currentPlayer.position;
-    const fieldCount = FIELDS.length;
     const newPosition = (oldPosition + finalRoll) % fieldCount;
 
     setIsMoving(true);
@@ -1404,6 +1407,7 @@ export default function GameBoard({ gameCode }: Props) {
     setAnimatingPlayerIdx(null);
     animatingPlayerIdRef.current = null;
     animPositionRef.current = null;
+    setGhostMoveTarget(null);
     setTimeout(() => setTrailFields([]), 3000);
   };
 
@@ -3517,6 +3521,7 @@ export default function GameBoard({ gameCode }: Props) {
                   const metaLabel = getFieldMetaLabel(field, owner?.name ?? null);
                   const isHovered = hoveredFieldIdx === field.index;
                   const tone = getFieldTone(field, themeId);
+                  const isDefaultMoveTarget = ghostMoveTarget === field.index;
 
                   // Outward shift při hoveru — odsouvá kartu od středu aby byl střed vidět
                   const posLeft = parseFloat(pos.left as string);
@@ -3617,6 +3622,18 @@ export default function GameBoard({ gameCode }: Props) {
                       </div>
                       )}
 
+                      {/* Ghost marker pro původní cíl hodu — viditelný jen během rozhodování o pohybu */}
+                      {isDefaultMoveTarget && (
+                        <div
+                          className="pointer-events-none absolute inset-0 z-[60] flex items-center justify-center"
+                          style={{ transform: `rotate(${-rotDeg}deg)` }}
+                        >
+                          <div
+                            className="h-1.5 w-1.5 rounded-full bg-yellow-400 shadow-[0_0_8px_#fbbf24] opacity-90 animate-pulse"
+                            title="Původní cíl hodu"
+                          />
+                        </div>
+                      )}
                     </div>
                   );
                 })}
