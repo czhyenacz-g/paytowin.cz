@@ -922,7 +922,8 @@ export default function GameBoard({ gameCode }: Props) {
     const activePendingRace = gameState?.offer_pending?.type === "race" ? gameState.offer_pending as RaceOffer : null;
     const activePendingBankrupt = gameState?.offer_pending?.type === "bankrupt_announcement";
     const activePendingRacePlaceholder = gameState?.offer_pending?.type === "race_pending";
-    const activePendingStableDuel = gameState?.offer_pending?.type === "stable_duel_pending";
+    const activePendingStableDuel = gameState?.offer_pending?.type === "stable_duel_pending" &&
+      (gameState.offer_pending as StableDuelPendingOffer).phase !== "finished";
     if (!gameState || pendingRacer || pendingCard || pendingOffer || pendingRollDecision || activePendingRace || activePendingBankrupt || activePendingRacePlaceholder || activePendingStableDuel || isRolling || isMoving || bankruptWarning) return;
 
     const roll = Math.floor(Math.random() * 6) + 1;
@@ -2322,17 +2323,31 @@ export default function GameBoard({ gameCode }: Props) {
 
           // Odložený cleanup — ověří, že pending odpovídá tomuto souboji, pak zavolá finishTurn.
           const capturedGameId = gameId;
+          const capturedCtx = { challengerId: ctx.challengerId, defenderId: ctx.defenderId };
           setTimeout(async () => {
-            const { data: row } = await supabase
-              .from("game_state").select("offer_pending").eq("game_id", capturedGameId).single();
-            const cur = row?.offer_pending as StableDuelPendingOffer | null;
-            if (
-              cur?.type === "stable_duel_pending" &&
-              cur.phase === "finished" &&
-              cur.challengerId === ctx.challengerId &&
-              cur.defenderId  === ctx.defenderId
-            ) {
-              if (proceed) await proceed(resultLog);
+            try {
+              const { data: row, error } = await supabase
+                .from("game_state").select("offer_pending").eq("game_id", capturedGameId).single();
+              if (error) { console.error("[stable-duel-cleanup] fetch error", error); return; }
+              const cur = row?.offer_pending as StableDuelPendingOffer | null;
+              if (
+                cur?.type === "stable_duel_pending" &&
+                cur.phase === "finished" &&
+                cur.challengerId === capturedCtx.challengerId &&
+                cur.defenderId  === capturedCtx.defenderId
+              ) {
+                if (proceed) {
+                  console.log("[stable-duel-cleanup] calling proceed");
+                  await proceed(resultLog);
+                  console.log("[stable-duel-cleanup] success");
+                } else {
+                  console.warn("[stable-duel-cleanup] skipped — proceed is null");
+                }
+              } else {
+                console.log("[stable-duel-cleanup] skipped — pending changed or not matching", cur?.phase);
+              }
+            } catch (e) {
+              console.error("[stable-duel-cleanup] error", e);
             }
           }, 2500);
           return;
@@ -3238,7 +3253,7 @@ export default function GameBoard({ gameCode }: Props) {
                           onClick={handleFallbackToPvBot}
                           className="mt-1 rounded-lg border border-amber-600/60 bg-amber-900/40 px-4 py-2 text-sm text-amber-300 hover:bg-amber-800/60 transition"
                         >
-                          Hrát proti botovi
+                          Hrát proti botovi<br/>(pokuď druhý hráč nereaguje)
                         </button>
                       )}
                     </div>
