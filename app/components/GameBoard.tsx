@@ -92,6 +92,7 @@ import DevDuelShell  from "./duel/DuelDevShell";
 import SpeedDevShell from "./speed/SpeedDevShell";
 import LegendaryRaceDevShell from "./legendary/LegendaryRaceDevShell";
 import StableDuelBoardLayer, { type DuelContestant } from "./StableDuelBoardLayer";
+import DevToolbar from "./board/DevToolbar";
 import IntroOverlay from "./IntroOverlay";
 import ScoreTable from "./ScoreTable";
 import BrandLogo from "./BrandLogo";
@@ -3113,77 +3114,30 @@ export default function GameBoard({ gameCode }: Props) {
               )}
               {/* DEV-only: Race Mode experiments */}
               {process.env.NODE_ENV === "development" && (
-                <div className="flex items-center gap-1 shrink-0">
-                  <button
-                    onClick={() => setDevRaceMode(true)}
-                    className="rounded-[3px] border border-purple-300 bg-purple-50 px-2.5 py-1 text-[11px] font-semibold text-purple-700 hover:bg-purple-100 transition"
-                    title="DEV: Race Shell — fullscreen overlay"
-                  >
-                    🧪 Shell
-                  </button>
-                  <button
-                    onClick={() => setDevRaceBoardLayer(true)}
-                    className="rounded-[3px] border border-indigo-300 bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-700 hover:bg-indigo-100 transition"
-                    title="DEV: Race Layer — vrstva uvnitř boardu"
-                  >
-                    🏁 Layer
-                  </button>
-                  <button
-                    onClick={openDevFlip}
-                    className="rounded-[3px] border border-teal-300 bg-teal-50 px-2.5 py-1 text-[11px] font-semibold text-teal-700 hover:bg-teal-100 transition"
-                    title="DEV: Race Flip — flip animace boardu"
-                  >
-                    🔄 Flip
-                  </button>
-                  <button
-                    onClick={() => setDevDuelOpen(true)}
-                    className="rounded-[3px] border border-emerald-400 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-100 transition"
-                    title="DEV: Neon Rope Duel — lokální harness"
-                  >
-                    🪢 Duel
-                  </button>
-                  <button
-                    onClick={() => setDevSpeedOpen(true)}
-                    className="rounded-[3px] border border-cyan-400 bg-cyan-50 px-2.5 py-1 text-[11px] font-semibold text-cyan-700 hover:bg-cyan-100 transition"
-                    title="DEV: Speed Arena — lokální harness"
-                  >
-                    🏎 Speed
-                  </button>
-                  <button
-                    onClick={() => setDevLegendaryOpen(true)}
-                    className="rounded-[3px] border border-yellow-400 bg-yellow-50 px-2.5 py-1 text-[11px] font-semibold text-yellow-700 hover:bg-yellow-100 transition"
-                    title="DEV: Legendary Horse Race — lokální harness"
-                  >
-                    🌟 Legendary
-                  </button>
-                  <button
-                    onClick={() => {
-                      const p0 = players[0];
-                      const p1 = players[1] ?? players[0];
-                      setStableDuelCtx({
-                        challenger: { name: p0?.name ?? "Hráč 1", horse: p0?.horses[0] ?? null, color: p0?.color ?? "#00ff88" },
-                        defender:   { name: p1?.name ?? "Hráč 2", horse: p1?.horses[0] ?? null, color: p1?.color ?? "#c084fc" },
-                        isPreview: true,
-                      });
-                      boardSurfaceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-                    }}
-                    className="rounded-[3px] border border-amber-400 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700 hover:bg-amber-100 transition"
-                    title="DEV: Stájový souboj — board overlay preview"
-                  >
-                    🐴 Stable
-                  </button>
-                  <button
-                    onClick={() => {
-                      const next: "pvbot_awareness" | "online_1v1" = stableDuelMode === "online_1v1" ? "pvbot_awareness" : "online_1v1";
-                      setStableDuelMode(next);
-                      localStorage.setItem("stableDuelMode", next);
-                    }}
-                    className={`rounded-[3px] border px-2.5 py-1 text-[11px] font-semibold transition ${stableDuelMode === "online_1v1" ? "border-indigo-400 bg-indigo-50 text-indigo-700 hover:bg-indigo-100" : "border-slate-400 bg-slate-50 text-slate-600 hover:bg-slate-100"}`}
-                    title={`Stable Duel mode: ${stableDuelMode}`}
-                  >
-                    {stableDuelMode === "online_1v1" ? "🎮 1v1" : "🤖 PvBot"}
-                  </button>
-                </div>
+                <DevToolbar
+                  onOpenRaceMode={() => setDevRaceMode(true)}
+                  onOpenRaceBoardLayer={() => setDevRaceBoardLayer(true)}
+                  onOpenFlip={openDevFlip}
+                  onOpenDuel={() => setDevDuelOpen(true)}
+                  onOpenSpeed={() => setDevSpeedOpen(true)}
+                  onOpenLegendary={() => setDevLegendaryOpen(true)}
+                  onOpenStableDuel={() => {
+                    const p0 = players[0];
+                    const p1 = players[1] ?? players[0];
+                    setStableDuelCtx({
+                      challenger: { name: p0?.name ?? "Hráč 1", horse: p0?.horses[0] ?? null, color: p0?.color ?? "#00ff88" },
+                      defender:   { name: p1?.name ?? "Hráč 2", horse: p1?.horses[0] ?? null, color: p1?.color ?? "#c084fc" },
+                      isPreview: true,
+                    });
+                    boardSurfaceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}
+                  stableDuelMode={stableDuelMode}
+                  onToggleStableDuelMode={() => {
+                    const next: "pvbot_awareness" | "online_1v1" = stableDuelMode === "online_1v1" ? "pvbot_awareness" : "online_1v1";
+                    setStableDuelMode(next);
+                    localStorage.setItem("stableDuelMode", next);
+                  }}
+                />
               )}
             </div>
 
