@@ -161,7 +161,7 @@ function OfferEventContent({
         </div>
         <div className="mt-1 text-3xl">🎲</div>
         <div className="mt-2 text-xs font-semibold text-white/80">
-          {event.playerName}
+          Pro hráče: {event.playerName}
         </div>
       </div>
       <div className="bg-white px-6 py-5 space-y-4">
@@ -169,7 +169,7 @@ function OfferEventContent({
           Zaplať <span className="font-bold text-amber-700">{event.cost} 💰</span> a hoď kostkou znovu.
         </p>
         <div className="text-xs text-slate-500">
-          {event.playerName} má nyní{" "}
+         Hráč {event.playerName} má nyní{" "}
           <span className="font-semibold">{event.playerCoins} 💰</span>
         </div>
         {event.isActivePlayer ? (
@@ -190,7 +190,7 @@ function OfferEventContent({
           </div>
         ) : (
           <div className="rounded-xl bg-slate-100 px-3 py-3 text-center text-sm text-slate-500">
-            Rozhoduje {event.playerName}…
+            Čeká se na rozhodnutí ...
           </div>
         )}
       </div>
