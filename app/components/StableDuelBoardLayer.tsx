@@ -208,11 +208,7 @@ function PreStartPhase({
   const cWithColor = { ...challenger, color: challengerColor };
   const dWithColor = { ...defender,   color: defenderColor };
 
-  // Defender: klávesy ArrowLeft/Right; Challenger: A/D
-  const cKeys = duelRole === "defender_remote"
-    ? null  // challenger klávesy nepotřebujeme zobrazovat
-    : <><NeonKeyCap label="A" color={challengerColor} /><NeonKeyCap label="D" color={challengerColor} /></>;
-  const dKeys = <><NeonKeyCap label="←" color={defenderColor} /><NeonKeyCap label="→" color={defenderColor} /></>;
+  const p1IsLegendary = !!(challenger.horse?.isLegendary);
 
   return (
     <div
@@ -283,19 +279,11 @@ function PreStartPhase({
         onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
       />
 
-      {/* Cards + VS + keycaps */}
+      {/* Cards + VS */}
       <div className="flex items-start gap-2">
-        {/* Challenger card + keys */}
+        {/* Challenger card */}
         <div className="flex flex-col items-center gap-1.5">
           <PlayerCard contestant={cWithColor} label="Challenger" />
-          {cKeys && (
-            <div className="flex flex-col items-center gap-1">
-              <div className="flex gap-1.5">{cKeys}</div>
-              <div className="text-[8px] font-mono font-bold uppercase tracking-widest" style={{ color: `${challengerColor}cc` }}>
-                ZATOČIT
-              </div>
-            </div>
-          )}
         </div>
 
         {/* VS */}
@@ -309,24 +297,53 @@ function PreStartPhase({
           VS
         </div>
 
-        {/* Defender card + keys */}
+        {/* Defender card */}
         <div className="flex flex-col items-center gap-1.5">
           <PlayerCard contestant={dWithColor} label="Defender" />
-          <div className="flex flex-col items-center gap-1">
-            <div className="flex gap-1.5">{dKeys}</div>
-            <div className="text-[8px] font-mono font-bold uppercase tracking-widest" style={{ color: `${defenderColor}cc` }}>
-              ZATOČIT
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* Instructions */}
-      <div className="text-[10px] text-slate-600 text-center leading-snug">
-        {duelRole === "defender_remote"
-          ? `Hraješ jako defender: ← → pro zatáčení · S pro ${p2IsLegendary ? "legendary (cooldown 2s) ⭐" : "nitro"} · inputy se posílají challengerovi`
-          : "Zatáčej vlevo a vpravo · nenarážej do zdí ani do provazu"
-        }
+      {/* OVLÁDÁNÍ */}
+      <div className="flex flex-col items-center gap-2 mt-1 w-full">
+        <div
+          className="text-[11px] font-black uppercase tracking-[0.3em] text-white"
+          style={{ textShadow: "0 0 14px rgba(255,255,255,0.5), 0 0 28px rgba(255,255,255,0.2)" }}
+        >
+          OVLÁDÁNÍ
+        </div>
+        <div className="flex gap-6 items-start">
+          {duelRole !== "defender_remote" && (
+            <div className="flex flex-col items-center gap-1.5">
+              <div className="text-[8px] uppercase tracking-widest" style={{ color: `${challengerColor}bb` }}>Challenger</div>
+              <div className="flex items-center gap-1">
+                <NeonKeyCap label="A" color={challengerColor} />
+                <span className="text-slate-600 text-[10px] mx-0.5">/</span>
+                <NeonKeyCap label="D" color={challengerColor} />
+                <span className="text-[8px] text-slate-600 ml-1.5">zatáčet</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <NeonKeyCap label="SPACE" color={challengerColor} />
+                <span className="text-[8px] text-slate-600 ml-1.5">{p1IsLegendary ? "legendary boost" : "nitro"}</span>
+              </div>
+            </div>
+          )}
+          <div className="flex flex-col items-center gap-1.5">
+            <div className="text-[8px] uppercase tracking-widest" style={{ color: `${defenderColor}bb` }}>Defender</div>
+            <div className="flex items-center gap-1">
+              <NeonKeyCap label="←" color={defenderColor} />
+              <span className="text-slate-600 text-[10px] mx-0.5">/</span>
+              <NeonKeyCap label="→" color={defenderColor} />
+              <span className="text-[8px] text-slate-600 ml-1.5">zatáčet</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <NeonKeyCap label="S" color={defenderColor} />
+              <span className="text-[8px] text-slate-600 ml-1.5">{p2IsLegendary ? "legendary boost" : "nitro"}</span>
+            </div>
+          </div>
+        </div>
+        {duelRole === "defender_remote" && (
+          <div className="text-[9px] text-slate-700">inputy se posílají challengerovi</div>
+        )}
       </div>
 
       {!disableManualStart && <div className="text-[9px] text-slate-700">klikni pro přeskočení</div>}

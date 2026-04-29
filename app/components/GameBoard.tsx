@@ -3105,14 +3105,15 @@ export default function GameBoard({ gameCode }: Props) {
               const isSpectatorView = viewerRole === "spectator";
               if (!isChallenger && !isDefender && !isSpectatorView) return null;
 
+              // pvbot_awareness: malý fixed info bar pro defender/spectator — neposouvá board
               if (mode === "pvbot_awareness") {
                 if (!isDefender && !isSpectatorView) return null;
                 return (
-                  <div className="mx-auto w-full max-w-[760px] rounded-lg border border-amber-700/40 bg-amber-900/20 px-3 py-2 text-[11px] text-amber-300 flex items-center gap-2 mt-1">
+                  <div className="fixed bottom-4 left-1/2 z-[44] -translate-x-1/2 rounded-lg border border-amber-700/40 bg-amber-900/20 px-4 py-2 text-[11px] text-amber-300 flex items-center gap-2 backdrop-blur-sm">
                     <span>⚔️</span>
                     {isDefender
-                      ? <span><strong>{sdPending.challengerName ?? "Hráč"}</strong> tě vyzval na stájový souboj · souboj zatím běží proti botovi (multiplayer připravujeme)</span>
-                      : <span>Probíhá stájový souboj: <strong>{sdPending.challengerName ?? "?"}</strong> vs <strong>{sdPending.defenderName ?? "?"}</strong> · zatím PvBot režim</span>
+                      ? <span><strong>{sdPending.challengerName ?? "Hráč"}</strong> tě vyzval na stájový souboj · souboj zatím běží proti botovi</span>
+                      : <span>Stájový souboj: <strong>{sdPending.challengerName ?? "?"}</strong> vs <strong>{sdPending.defenderName ?? "?"}</strong> · PvBot režim</span>
                     }
                   </div>
                 );
@@ -3120,40 +3121,38 @@ export default function GameBoard({ gameCode }: Props) {
 
               // ── online_1v1 ────────────────────────────────────────────────────────
               const sdPhase = sdPending.phase;
-              const isFinished    = sdPhase === "finished";
+              const isFinished     = sdPhase === "finished";
               const isCountingDown = sdPhase === "countdown";
               const hasStarted = sdPhase === "started" || (isCountingDown && !!sdPending.startsAt && sdPending.startsAt <= Date.now());
 
-              // Finished — výsledek pro defender/spectator; challenger má vlastní overlay result screen
+              // Finished — výsledek pro defender/spectator
               if (isFinished) {
                 const summary     = sdPending.resultSummary;
                 const coinsDelta  = summary?.coinsDelta;
                 const winnerLabel = sdPending.winnerId
-                  ? (sdPending.winnerId === sdPending.challengerId
-                      ? sdPending.challengerName
-                      : sdPending.defenderName) ?? "?"
+                  ? (sdPending.winnerId === sdPending.challengerId ? sdPending.challengerName : sdPending.defenderName) ?? "?"
                   : null;
 
                 if (isDefender) {
                   return (
-                    <div className="mx-auto w-full max-w-[760px] rounded-lg border border-violet-600/50 bg-violet-950/70 px-4 py-4 flex flex-col gap-1.5 mt-1">
-                      <div className="text-[10px] uppercase tracking-widest text-violet-400 font-bold">Stájový souboj 1v1 — výsledek</div>
-                      <div className="text-[13px] text-violet-100">
+                    <div className="fixed bottom-4 left-1/2 z-[44] -translate-x-1/2 w-full max-w-sm rounded-xl border border-violet-600/50 bg-slate-950/90 px-4 py-3 flex flex-col gap-1 text-center backdrop-blur-sm"
+                      style={{ boxShadow: "0 0 20px rgba(139,92,246,0.2)" }}
+                    >
+                      <div className="text-[9px] uppercase tracking-widest text-violet-400 font-bold">Stájový souboj 1v1 — výsledek</div>
+                      <div className="text-sm text-violet-100">
                         {winnerLabel
                           ? <><strong>{winnerLabel}</strong> vyhrál{coinsDelta ? <span className="text-emerald-400"> +{coinsDelta}💰</span> : null}</>
                           : <span>Remíza (0💰)</span>
                         }
                       </div>
-                      <div className="text-[11px] text-violet-400/70">Souboj byl vyhodnocen challenger klientem.</div>
                     </div>
                   );
                 }
                 if (isSpectatorView) {
                   return (
-                    <div className="mx-auto w-full max-w-[760px] rounded-lg border border-slate-700/40 bg-slate-900/50 px-3 py-2 text-[11px] text-slate-400 flex items-center gap-2 mt-1">
+                    <div className="fixed bottom-4 left-1/2 z-[44] -translate-x-1/2 rounded-lg border border-slate-700/40 bg-slate-900/80 px-3 py-2 text-[11px] text-slate-400 flex items-center gap-2 backdrop-blur-sm">
                       <span>⚔️</span>
-                      <span>
-                        1v1 souboj skončil:{" "}
+                      <span>1v1 souboj skončil:{" "}
                         {winnerLabel
                           ? <><strong className="text-slate-300">{winnerLabel}</strong> vyhrál{coinsDelta ? ` (+${coinsDelta}💰)` : ""}</>
                           : "remíza"
@@ -3162,41 +3161,45 @@ export default function GameBoard({ gameCode }: Props) {
                     </div>
                   );
                 }
-                return null; // challenger: overlay result screen
+                return null;
               }
 
-              // Countdown display — velký odpočet pro oba aktivní hráče
+              // Countdown — fixed centered overlay
               if (isCountingDown && !hasStarted) {
                 if (isSpectatorView) {
                   return (
-                    <div className="mx-auto w-full max-w-[760px] rounded-lg border border-slate-700/40 bg-slate-900/50 px-3 py-2 text-[11px] text-slate-400 flex items-center gap-2 mt-1">
+                    <div className="fixed bottom-4 left-1/2 z-[44] -translate-x-1/2 rounded-lg border border-slate-700/40 bg-slate-900/80 px-3 py-2 text-[11px] text-slate-400 flex items-center gap-2 backdrop-blur-sm">
                       <span>⚔️</span>
                       <span>1v1 souboj začíná: <strong>{sdPending.challengerName ?? "?"}</strong> vs <strong>{sdPending.defenderName ?? "?"}</strong></span>
                     </div>
                   );
                 }
                 return (
-                  <div className="mx-auto w-full max-w-[760px] rounded-lg border border-indigo-600/50 bg-indigo-950/80 px-4 py-5 flex flex-col items-center gap-2 mt-1">
-                    <div className="text-[9px] uppercase tracking-widest text-indigo-400 font-bold">Stájový souboj 1v1</div>
-                    <div className="text-6xl font-black text-white" style={{ textShadow: "0 0 32px rgba(99,102,241,0.9)" }}>
-                      {countdownDisplay ?? "…"}
-                    </div>
-                    <div className="text-[11px] font-semibold text-indigo-200">{sdPending.challengerName ?? "?"} vs {sdPending.defenderName ?? "?"}</div>
-                    <div className="text-[10px] text-indigo-400">Po odpočtu se hra spustí automaticky</div>
-                    <div className="flex gap-3 text-[10px] text-slate-400 mt-1">
-                      <span>Challenger: <span className="font-mono text-indigo-300">A/D</span> zatáčet · <span className="font-mono text-indigo-300">Space</span> nitro</span>
-                      <span className="text-slate-600">|</span>
-                      <span>Defender: <span className="font-mono text-violet-300">←/→</span> zatáčet · <span className="font-mono text-violet-300">S</span> nitro</span>
+                  <div className="fixed inset-0 z-[44] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+                    <div className="rounded-2xl border border-indigo-600/50 bg-indigo-950/90 px-8 py-8 flex flex-col items-center gap-3"
+                      style={{ boxShadow: "0 0 40px rgba(99,102,241,0.3)" }}
+                    >
+                      <div className="text-[9px] uppercase tracking-widest text-indigo-400 font-bold">Stájový souboj 1v1</div>
+                      <div className="text-6xl font-black text-white" style={{ textShadow: "0 0 32px rgba(99,102,241,0.9)" }}>
+                        {countdownDisplay ?? "…"}
+                      </div>
+                      <div className="text-[11px] font-semibold text-indigo-200">{sdPending.challengerName ?? "?"} vs {sdPending.defenderName ?? "?"}</div>
+                      <div className="text-[10px] text-indigo-400">Po odpočtu se hra spustí automaticky</div>
+                      <div className="flex gap-3 text-[10px] text-slate-400 mt-1">
+                        <span>Challenger: <span className="font-mono text-indigo-300">A/D</span> zatáčet · <span className="font-mono text-indigo-300">Space</span> nitro</span>
+                        <span className="text-slate-600">|</span>
+                        <span>Defender: <span className="font-mono text-violet-300">←/→</span> zatáčet · <span className="font-mono text-violet-300">S</span> nitro</span>
+                      </div>
                     </div>
                   </div>
                 );
               }
 
-              // Po startu — challenger má otevřený overlay (tento blok je skrytý přes !stableDuelCtx)
+              // Po startu — challenger má otevřený overlay
               if (hasStarted) {
                 if (isDefender) {
                   return (
-                    <div className="mx-auto w-full max-w-[760px] rounded-lg border border-violet-700/50 bg-violet-950/60 px-4 py-3 text-[12px] text-violet-200 flex items-center gap-2 mt-1">
+                    <div className="fixed bottom-4 left-1/2 z-[44] -translate-x-1/2 rounded-lg border border-violet-700/50 bg-slate-950/80 px-4 py-2 text-[12px] text-violet-200 flex items-center gap-2 backdrop-blur-sm">
                       <span>⚔️</span>
                       <span>Souboj začal — aktivní hraní soupeře bude přidáno v dalším kroku.</span>
                     </div>
@@ -3204,36 +3207,41 @@ export default function GameBoard({ gameCode }: Props) {
                 }
                 if (isSpectatorView) {
                   return (
-                    <div className="mx-auto w-full max-w-[760px] rounded-lg border border-slate-700/40 bg-slate-900/50 px-3 py-2 text-[11px] text-slate-400 flex items-center gap-2 mt-1">
+                    <div className="fixed bottom-4 left-1/2 z-[44] -translate-x-1/2 rounded-lg border border-slate-700/40 bg-slate-900/80 px-3 py-2 text-[11px] text-slate-400 flex items-center gap-2 backdrop-blur-sm">
                       <span>⚔️</span>
                       <span>1v1 souboj probíhá: <strong>{sdPending.challengerName ?? "?"}</strong></span>
                     </div>
                   );
                 }
-                return null; // challenger: overlay open, panel hidden by !stableDuelCtx
+                return null;
               }
 
-              // pending / both_ready
+              // pending / both_ready — fixed center overlays
               const isPending = sdPhase === "pending";
 
               if (isChallenger) {
                 return (
-                  <div className="mx-auto w-full max-w-[760px] rounded-lg border border-indigo-700/50 bg-indigo-950/60 px-4 py-3 text-[12px] text-indigo-200 flex items-center justify-between gap-3 mt-1">
-                    <div className="flex items-center gap-2">
-                      <span>⚔️</span>
+                  <div className="fixed inset-0 z-[44] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+                    <div className="w-full max-w-sm rounded-2xl border border-indigo-500/40 bg-slate-950/95 flex flex-col items-center gap-4 px-6 py-8 text-center"
+                      style={{ boxShadow: "0 0 40px rgba(99,102,241,0.25), 0 0 80px rgba(99,102,241,0.12)" }}
+                    >
+                      <div className="text-[9px] font-bold uppercase tracking-[0.3em] text-indigo-400">Stájový souboj 1v1</div>
+                      <div className="text-2xl font-black text-white" style={{ textShadow: "0 0 24px rgba(99,102,241,0.6)" }}>
+                        {isPending ? "⏳ Čekáš na soupeře" : "✓ Oba připraveni"}
+                      </div>
                       {isPending
-                        ? <span>⏳ Čekáš na soupeře <strong>{sdPending.defenderName ?? "?"}</strong>…</span>
-                        : <span className="text-emerald-300 font-semibold">Oba připraveni — spouštím odpočet…</span>
+                        ? <div className="text-sm text-indigo-300">Čekáš na <strong>{sdPending.defenderName ?? "?"}</strong>…</div>
+                        : <div className="text-sm text-emerald-300 font-semibold">Spouštím odpočet…</div>
                       }
+                      {isPending && (
+                        <button
+                          onClick={handleFallbackToPvBot}
+                          className="mt-1 rounded-lg border border-amber-600/60 bg-amber-900/40 px-4 py-2 text-sm text-amber-300 hover:bg-amber-800/60 transition"
+                        >
+                          Hrát proti botovi
+                        </button>
+                      )}
                     </div>
-                    {isPending && (
-                      <button
-                        onClick={handleFallbackToPvBot}
-                        className="shrink-0 rounded border border-amber-600/60 bg-amber-900/40 px-2 py-1 text-[11px] text-amber-300 hover:bg-amber-800/60 transition"
-                      >
-                        Hrát proti botovi
-                      </button>
-                    )}
                   </div>
                 );
               }
@@ -3241,31 +3249,40 @@ export default function GameBoard({ gameCode }: Props) {
               if (isDefender) {
                 const defReady = sdPending.defenderReady ?? false;
                 return (
-                  <div className="mx-auto w-full max-w-[760px] rounded-lg border border-violet-700/50 bg-violet-950/60 px-4 py-3 text-[12px] text-violet-200 flex items-center justify-between gap-3 mt-1">
-                    <div className="flex items-center gap-2">
-                      <span>⚔️</span>
-                      {defReady || !isPending
-                        ? <span className="text-emerald-300 font-semibold">Jsi připraven — spouštění odpočtu…</span>
-                        : <span><strong>{sdPending.challengerName ?? "Hráč"}</strong> tě vyzval na stájový souboj 1v1</span>
-                      }
+                  <div className="fixed inset-0 z-[44] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+                    <div className="w-full max-w-sm rounded-2xl border border-violet-500/40 bg-slate-950/95 flex flex-col items-center gap-5 px-6 py-8 text-center"
+                      style={{ boxShadow: "0 0 40px rgba(139,92,246,0.3), 0 0 80px rgba(139,92,246,0.12)" }}
+                    >
+                      <div className="text-[9px] font-bold uppercase tracking-[0.3em] text-violet-400">Stájový souboj 1v1</div>
+                      <div className="text-3xl font-black text-white" style={{ textShadow: "0 0 28px rgba(139,92,246,0.7)" }}>
+                        STÁJOVÝ SOUBOJ
+                      </div>
+                      {defReady || !isPending ? (
+                        <div className="text-sm text-emerald-300 font-semibold">Jsi připraven — spouštění odpočtu…</div>
+                      ) : (
+                        <>
+                          <div className="text-base text-violet-200">
+                            <strong>{sdPending.challengerName ?? "Hráč"}</strong> tě vyzval na souboj
+                          </div>
+                          <button
+                            onClick={handleDefenderReady}
+                            className="rounded-xl border border-emerald-500/60 bg-emerald-900/50 px-6 py-3 text-base font-black text-emerald-300 hover:bg-emerald-800/70 hover:border-emerald-400/80 transition-all"
+                            style={{ boxShadow: "0 0 20px rgba(52,211,153,0.2)" }}
+                          >
+                            ⚔️ Jsem připraven
+                          </button>
+                        </>
+                      )}
                     </div>
-                    {!defReady && isPending && (
-                      <button
-                        onClick={handleDefenderReady}
-                        className="shrink-0 rounded border border-emerald-600/60 bg-emerald-900/40 px-3 py-1 text-[11px] font-semibold text-emerald-300 hover:bg-emerald-800/60 transition"
-                      >
-                        Jsem připraven
-                      </button>
-                    )}
                   </div>
                 );
               }
 
-              // spectator
+              // spectator pending
               return (
-                <div className="mx-auto w-full max-w-[760px] rounded-lg border border-slate-700/40 bg-slate-900/50 px-3 py-2 text-[11px] text-slate-400 flex items-center gap-2 mt-1">
+                <div className="fixed bottom-4 left-1/2 z-[44] -translate-x-1/2 rounded-lg border border-slate-700/40 bg-slate-900/80 px-3 py-2 text-[11px] text-slate-400 flex items-center gap-2 backdrop-blur-sm">
                   <span>⚔️</span>
-                  <span>Probíhá příprava stájového 1v1: <strong>{sdPending.challengerName ?? "?"}</strong> vs <strong>{sdPending.defenderName ?? "?"}</strong></span>
+                  <span>Příprava stájového 1v1: <strong>{sdPending.challengerName ?? "?"}</strong> vs <strong>{sdPending.defenderName ?? "?"}</strong></span>
                 </div>
               );
             })()}
@@ -3342,7 +3359,28 @@ export default function GameBoard({ gameCode }: Props) {
                   const glows: string[] = [];
                   if (isTrail) glows.push("drop-shadow(0 0 7px rgba(251,191,36,0.95))");
                   if (isHoverHighlight) glows.push("drop-shadow(0 0 7px rgba(96,165,250,0.95))");
-                  if (owner) glows.push("drop-shadow(0 0 5px rgba(99,102,241,0.8))");
+                  if (owner) {
+                    const ownerHex = (() => {
+                      const c = owner.color;
+                      if (!c) return "#6366f1";
+                      if (c.startsWith("#") || c.startsWith("rgb")) return c;
+                      const tw: Record<string, string> = {
+                        "bg-emerald-500": "#10b981", "bg-violet-500": "#8b5cf6",
+                        "bg-amber-500":   "#f59e0b", "bg-rose-500":   "#f43f5e",
+                        "bg-sky-500":     "#0ea5e9", "bg-indigo-500": "#6366f1",
+                        "bg-pink-500":    "#ec4899", "bg-orange-500": "#f97316",
+                        "bg-teal-500":    "#14b8a6", "bg-red-500":    "#ef4444",
+                        "bg-blue-500":    "#3b82f6", "bg-green-500":  "#22c55e",
+                        "bg-yellow-500":  "#eab308", "bg-purple-500": "#a855f7",
+                        "bg-cyan-500":    "#06b6d4", "bg-lime-500":   "#84cc16",
+                        "bg-fuchsia-500": "#d946ef",
+                      };
+                      return tw[c] ?? "#6366f1";
+                    })();
+                    glows.push(`drop-shadow(0 0 6px ${ownerHex}cc)`);
+                    glows.push(`drop-shadow(0 0 14px ${ownerHex}88)`);
+                    glows.push(`drop-shadow(0 0 24px ${ownerHex}44)`);
+                  }
 
                   const fieldBgPrimaryPath = field.type === "racer"
                     ? resolveRacerCardImagePath(
