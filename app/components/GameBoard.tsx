@@ -1111,8 +1111,17 @@ export default function GameBoard({ gameCode }: Props) {
           };
           boardSurfaceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
           const duelCreatedAt = Date.now();
+          const shouldAutoUseOnline1v1 =
+            gameMode === "online" &&
+            currentPlayer.id !== ownerPlayer.id &&
+            !!challenger.horse &&
+            !!defender.horse;
+          const effectiveMode: "online_1v1" | "pvbot_awareness" =
+            stableDuelMode === "online_1v1" || shouldAutoUseOnline1v1
+              ? "online_1v1"
+              : "pvbot_awareness";
           // pvbot_awareness: otevři StableDuelBoardLayer ihned (scroll+rAF); online_1v1: čekej na handshake
-          if (stableDuelMode !== "online_1v1") {
+          if (effectiveMode !== "online_1v1") {
             openStableDuelOverlay(
               { challenger, defender, isPreview: false, challengerId: currentPlayer.id, defenderId: ownerPlayer.id },
               `pvbot_${currentPlayer.id}_${ownerPlayer.id}_${duelCreatedAt}`,
@@ -1120,7 +1129,6 @@ export default function GameBoard({ gameCode }: Props) {
           }
           // Sdílený pending stav — informuje všechny klienty přes Realtime
           if (gameId) {
-            const effectiveMode = stableDuelMode; // může se v budoucnu lišit (fallback)
             const duelPending: StableDuelPendingOffer = {
               type: "stable_duel_pending",
               phase: "pending",
@@ -1137,6 +1145,7 @@ export default function GameBoard({ gameCode }: Props) {
             console.log("[stable-duel-trigger]", {
               stableDuelMode,
               effectiveMode,
+              autoOnline1v1: shouldAutoUseOnline1v1,
               challengerId: currentPlayer.id,
               defenderId: ownerPlayer.id,
               gameMode,
