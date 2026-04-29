@@ -287,11 +287,11 @@ function PreStartPhase({
                 <NeonKeyCap label="A" color={challengerColor} />
                 <span className="text-slate-600 text-[10px] mx-0.5">/</span>
                 <NeonKeyCap label="D" color={challengerColor} />
-                <span className="text-[8px] text-slate-600 ml-1.5">zatáčet</span>
+                <span className="text-sm text-slate-300 ml-2">zatáčet</span>
               </div>
               <div className="flex items-center gap-1">
                 <NeonKeyCap label="SPACE" color={challengerColor} />
-                <span className="text-[8px] text-slate-600 ml-1.5">{p1IsLegendary ? "legendary boost" : "nitro"}</span>
+                <span className="text-sm text-slate-300 ml-2">{p1IsLegendary ? "legendary boost" : "nitro"}</span>
               </div>
             </div>
           )}
@@ -301,11 +301,11 @@ function PreStartPhase({
               <NeonKeyCap label="←" color={defenderColor} />
               <span className="text-slate-600 text-[10px] mx-0.5">/</span>
               <NeonKeyCap label="→" color={defenderColor} />
-              <span className="text-[8px] text-slate-600 ml-1.5">zatáčet</span>
+              <span className="text-sm text-slate-300 ml-2">zatáčet</span>
             </div>
             <div className="flex items-center gap-1">
               <NeonKeyCap label="S" color={defenderColor} />
-              <span className="text-[8px] text-slate-600 ml-1.5">{p2IsLegendary ? "legendary boost" : "nitro"}</span>
+              <span className="text-sm text-slate-300 ml-2">{p2IsLegendary ? "legendary boost" : "nitro"}</span>
             </div>
           </div>
         </div>
