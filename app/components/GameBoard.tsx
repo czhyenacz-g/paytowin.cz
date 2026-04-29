@@ -922,7 +922,8 @@ export default function GameBoard({ gameCode }: Props) {
     const activePendingRace = gameState?.offer_pending?.type === "race" ? gameState.offer_pending as RaceOffer : null;
     const activePendingBankrupt = gameState?.offer_pending?.type === "bankrupt_announcement";
     const activePendingRacePlaceholder = gameState?.offer_pending?.type === "race_pending";
-    if (!gameState || pendingRacer || pendingCard || pendingOffer || pendingRollDecision || activePendingRace || activePendingBankrupt || activePendingRacePlaceholder || isRolling || isMoving || bankruptWarning) return;
+    const activePendingStableDuel = gameState?.offer_pending?.type === "stable_duel_pending";
+    if (!gameState || pendingRacer || pendingCard || pendingOffer || pendingRollDecision || activePendingRace || activePendingBankrupt || activePendingRacePlaceholder || activePendingStableDuel || isRolling || isMoving || bankruptWarning) return;
 
     const roll = Math.floor(Math.random() * 6) + 1;
     const currentPlayer = players[gameState.current_player_index];
@@ -2410,9 +2411,12 @@ export default function GameBoard({ gameCode }: Props) {
       countdownStartedAt: Date.now(),
       startsAt: Date.now() + 3000,
     };
+    console.log("[stable-duel-countdown] challenger writes countdown", { duelKey, startsAt: updated.startsAt });
     supabase.from("game_state").update({
       offer_pending: updated as unknown as Record<string, unknown>,
-    }).eq("game_id", gameId);
+    }).eq("game_id", gameId).then(res => {
+      if (res.error) console.error("[stable-duel-countdown] supabase write failed", res.error);
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState?.offer_pending, gameId, myPlayerId]);
 
