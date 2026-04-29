@@ -212,7 +212,8 @@ function PreStartPhase({
 
   return (
     <div
-      className="flex flex-1 flex-col items-center justify-center gap-1.5 px-4 cursor-pointer select-none"
+      className="flex flex-1 flex-col items-center justify-center gap-1.5 px-4 overflow-y-auto min-h-0 cursor-pointer select-none"
+      style={{ zoom: 0.9 }}
       onClick={onClick}
     >
       <style>{`
@@ -762,7 +763,7 @@ export default function StableDuelBoardLayer({
       style={{ background: "rgba(5,8,20,0.92)", backdropFilter: "blur(2px)" }}
     >
       {/* Broadcast error banner */}
-      {broadcastError && (
+      {broadcastError && phase !== "prestart" && (
         <div className="shrink-0 bg-amber-900/60 border-b border-amber-700/50 px-4 py-1.5 text-center text-[11px] text-amber-300">
           ⚠ Spojení se soupeřem může být nestabilní
         </div>
