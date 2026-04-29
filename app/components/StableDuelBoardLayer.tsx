@@ -45,8 +45,10 @@ interface Props {
   gameId?: string;
   challengerId?: string;
   defenderId?: string;
-  // online_1v1: skip internal prestart/countdown, open arena immediately
-  autoStartArena?: boolean;
+  // online_1v1: drive prestart countdown from shared DB startsAt, no manual start button
+  useSharedCountdown?: boolean;
+  sharedCountdownEndsAt?: number;
+  disableManualStart?: boolean;
 }
 
 type Phase = "prestart" | "arena" | "result" | "waiting_result";
@@ -185,6 +187,7 @@ function PreStartPhase({
   isDev,
   duelRole,
   p2IsLegendary,
+  disableManualStart,
   onClick,
 }: {
   challenger: DuelContestant;
@@ -194,6 +197,7 @@ function PreStartPhase({
   isDev: boolean;
   duelRole?: "challenger_authority" | "defender_remote";
   p2IsLegendary?: boolean;
+  disableManualStart?: boolean;
   onClick: () => void;
 }) {
   const meta = MINIGAME_META[minigameType];
@@ -325,7 +329,7 @@ function PreStartPhase({
         }
       </div>
 
-      <div className="text-[9px] text-slate-700">klikni pro přeskočení</div>
+      {!disableManualStart && <div className="text-[9px] text-slate-700">klikni pro přeskočení</div>}
     </div>
   );
 }
@@ -526,10 +530,17 @@ export default function StableDuelBoardLayer({
   gameId,
   challengerId,
   defenderId,
-  autoStartArena = false,
+  useSharedCountdown = false,
+  sharedCountdownEndsAt,
+  disableManualStart = false,
 }: Props) {
-  const [phase, setPhase]         = React.useState<Phase>(() => autoStartArena ? "arena" : "prestart");
-  const [countdown, setCountdown] = React.useState(PRESTART_TICKS);
+  const [phase, setPhase]         = React.useState<Phase>("prestart");
+  const [countdown, setCountdown] = React.useState(() => {
+    if (useSharedCountdown && sharedCountdownEndsAt) {
+      return Math.max(1, Math.ceil((sharedCountdownEndsAt - Date.now()) / 1000));
+    }
+    return PRESTART_TICKS;
+  });
   const [duelKey, setDuelKey]     = React.useState(0);
   const [duelResult, setDuelResult] = React.useState<MinigameResult | null>(null);
   const [broadcastError, setBroadcastError] = React.useState(false);
@@ -560,14 +571,28 @@ export default function StableDuelBoardLayer({
     setDuelKey(k => k + 1);
   }, []);
 
+  // Internal tick countdown — only for pvbot/preview (not shared countdown)
   React.useEffect(() => {
-    if (phase !== "prestart") return;
+    if (phase !== "prestart" || useSharedCountdown) return;
     if (countdown <= 0) { startArena(); return; }
     const id = setTimeout(() => setCountdown(c => c - 1), 1000);
     return () => clearTimeout(id);
-  }, [phase, countdown, startArena]);
+  }, [phase, countdown, startArena, useSharedCountdown]);
 
-  const handleSkip = () => { if (phase === "prestart") startArena(); };
+  // Shared countdown — driven by startsAt from DB, no per-tick DB writes
+  React.useEffect(() => {
+    if (!useSharedCountdown || !sharedCountdownEndsAt || phase !== "prestart") return;
+    const update = () => {
+      const remaining = sharedCountdownEndsAt - Date.now();
+      if (remaining <= 0) { startArena(); return; }
+      setCountdown(Math.ceil(remaining / 1000));
+    };
+    update();
+    const id = setInterval(update, 250);
+    return () => clearInterval(id);
+  }, [useSharedCountdown, sharedCountdownEndsAt, phase, startArena]);
+
+  const handleSkip = () => { if (phase === "prestart" && !disableManualStart) startArena(); };
 
   const handleDuelResult = (result: MinigameResult) => {
     // defender_remote: lokální výsledek není autoritativní — čekej na challenger
@@ -756,6 +781,7 @@ export default function StableDuelBoardLayer({
           isDev={isDev}
           duelRole={duelRole}
           p2IsLegendary={p2IsLegendary}
+          disableManualStart={disableManualStart}
           onClick={handleSkip}
         />
       )}

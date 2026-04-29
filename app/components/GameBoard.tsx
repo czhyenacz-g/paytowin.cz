@@ -377,14 +377,14 @@ export default function GameBoard({ gameCode }: Props) {
   const [flipBoardAnim, setFlipBoardAnim] = React.useState<"idle" | "out" | "back-in">("idle");
   const flipTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   // Stájový souboj — board overlay (game flow)
-  const [stableDuelCtx, setStableDuelCtx] = React.useState<{ challenger: DuelContestant; defender: DuelContestant; isPreview: boolean; challengerId?: string; defenderId?: string; duelRole?: "challenger_authority" | "defender_remote"; duelId?: string } | null>(null);
+  const [stableDuelCtx, setStableDuelCtx] = React.useState<{ challenger: DuelContestant; defender: DuelContestant; isPreview: boolean; challengerId?: string; defenderId?: string; duelRole?: "challenger_authority" | "defender_remote"; duelId?: string; sharedCountdownEndsAt?: number } | null>(null);
   const stableDuelProceedRef = React.useRef<((resultLog?: string[]) => Promise<void>) | null>(null);
   const boardSurfaceRef = React.useRef<HTMLDivElement>(null);
   // Idempotency refs pro countdown a overlay — klíčovány identitou duelu
   const countdownStartedRef = React.useRef<string | null>(null);
   const overlayOpenedRef    = React.useRef<string | null>(null);
   // Lokální zobrazovací stav countdownu (3/2/1/START) — jen UI, žádný DB zápis
-  const [countdownDisplay, setCountdownDisplay] = React.useState<"3" | "2" | "1" | "START" | null>(null);
+  const [countdownDisplay, setCountdownDisplay] = React.useState<string | null>(null);
   // Dev: přepínač režimu Stable Duel — default pvbot_awareness, opt-in online_1v1
   const [stableDuelMode, setStableDuelMode] = React.useState<"pvbot_awareness" | "online_1v1">(() => {
     if (typeof window !== "undefined") {
@@ -886,7 +886,7 @@ export default function GameBoard({ gameCode }: Props) {
    * Idempotentní: stejný duelKey otevře overlay jen jednou (ref guard).
    */
   const openStableDuelOverlay = React.useCallback((
-    ctx: { challenger: DuelContestant; defender: DuelContestant; isPreview: boolean; challengerId?: string; defenderId?: string; duelRole?: "challenger_authority" | "defender_remote"; duelId?: string },
+    ctx: { challenger: DuelContestant; defender: DuelContestant; isPreview: boolean; challengerId?: string; defenderId?: string; duelRole?: "challenger_authority" | "defender_remote"; duelId?: string; sharedCountdownEndsAt?: number },
     duelKey: string,
   ) => {
     if (overlayOpenedRef.current === duelKey) return;
@@ -2429,8 +2429,9 @@ export default function GameBoard({ gameCode }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState?.offer_pending, gameId, myPlayerId]);
 
-  // Lokální interval počítá countdown z DB startsAt → aktualizuje countdownDisplay.
-  // Nespouští žádný DB zápis. Po dosažení 0 otevře overlay (challenger only).
+  // Lokální interval počítá countdown z DB startsAt.
+  // Pro spectatory aktualizuje countdownDisplay na board panelu.
+  // Pro aktivní hráče otevře overlay hned při phase === "countdown" (ne až po startsAt).
   React.useEffect(() => {
     const sdPending = gameState?.offer_pending?.type === "stable_duel_pending"
       ? gameState.offer_pending as StableDuelPendingOffer
@@ -2441,6 +2442,7 @@ export default function GameBoard({ gameCode }: Props) {
       return;
     }
     const isChallenger = myPlayerId === sdPending.challengerId;
+    const isDefender   = myPlayerId === sdPending.defenderId;
     const cId = sdPending.challengerId;
     const dId = sdPending.defenderId;
     const cName = sdPending.challengerName;
@@ -2448,29 +2450,34 @@ export default function GameBoard({ gameCode }: Props) {
     const createdAt = sdPending.createdAt;
     const duelKey = `overlay_${cId}_${dId}_${createdAt}_${startsAt}`;
 
+    // Open overlay immediately for active players — shared countdown runs inside overlay
+    if (isChallenger || isDefender) {
+      const cPlayer = players.find(p => p.id === cId);
+      const dPlayer = players.find(p => p.id === dId);
+      const duelId = `stable_duel:${cId}:${dId}:${createdAt}`;
+      const ctxBase = {
+        challenger: { name: cName ?? cPlayer?.name ?? "Challenger", horse: cPlayer?.horses[0] ?? null, color: cPlayer?.color ?? "#00ff88" },
+        defender:   { name: dName ?? dPlayer?.name ?? "Defender",   horse: dPlayer?.horses[0] ?? null, color: dPlayer?.color ?? "#c084fc" },
+        isPreview: false,
+        challengerId: cId,
+        defenderId: dId,
+        duelId,
+        sharedCountdownEndsAt: startsAt,
+      };
+      if (isChallenger) {
+        openStableDuelOverlay({ ...ctxBase, duelRole: "challenger_authority" }, duelKey);
+      } else {
+        openStableDuelOverlay({ ...ctxBase, duelRole: "defender_remote" }, `def_${duelKey}`);
+      }
+    }
+
+    // Board panel display — used by spectators; active players see the overlay countdown
     const tick = () => {
       const remaining = startsAt - Date.now();
-      if (remaining > 2000) setCountdownDisplay("3");
-      else if (remaining > 1000) setCountdownDisplay("2");
-      else if (remaining > 0) setCountdownDisplay("1");
-      else {
+      if (remaining > 0) {
+        setCountdownDisplay(String(Math.max(1, Math.ceil(remaining / 1000))));
+      } else {
         setCountdownDisplay("START");
-        const cPlayer = players.find(p => p.id === cId);
-        const dPlayer = players.find(p => p.id === dId);
-        const duelId = `stable_duel:${cId}:${dId}:${createdAt}`;
-        const ctxBase = {
-          challenger: { name: cName ?? cPlayer?.name ?? "Challenger", horse: cPlayer?.horses[0] ?? null, color: cPlayer?.color ?? "#00ff88" },
-          defender:   { name: dName ?? dPlayer?.name ?? "Defender",   horse: dPlayer?.horses[0] ?? null, color: dPlayer?.color ?? "#c084fc" },
-          isPreview: false,
-          challengerId: cId,
-          defenderId: dId,
-          duelId,
-        };
-        if (isChallenger) {
-          openStableDuelOverlay({ ...ctxBase, duelRole: "challenger_authority" }, duelKey);
-        } else if (myPlayerId === dId) {
-          openStableDuelOverlay({ ...ctxBase, duelRole: "defender_remote" }, `def_${duelKey}`);
-        }
       }
     };
 
@@ -4227,7 +4234,9 @@ export default function GameBoard({ gameCode }: Props) {
                     gameId={gameId ?? undefined}
                     challengerId={stableDuelCtx.challengerId}
                     defenderId={stableDuelCtx.defenderId}
-                    autoStartArena={!!stableDuelCtx.duelRole}
+                    useSharedCountdown={!!stableDuelCtx.duelRole}
+                    sharedCountdownEndsAt={stableDuelCtx.sharedCountdownEndsAt}
+                    disableManualStart={!!stableDuelCtx.duelRole}
                   />
                 )}
 
