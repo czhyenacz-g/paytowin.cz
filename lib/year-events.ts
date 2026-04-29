@@ -49,39 +49,39 @@ export interface YearEventOverrides {
  * …
  */
 export const CAMPAIGN_EVENTS: Record<number, YearEvent> = {
-  0: {
-    title: "SENZACE",
-    body: "Na závodiště proudí noví diváci. Vlivní muži začínají sledovat každou sázku.",
-  },
-  1: {
-    title: "POPLATEK ZA OCHRANU",
-    body: "Bojím se, že tihle lidé budou chtít každý rok více a více.",
-  },
-  2: {
-    title: "DOHLED",
-    body: "Město zpřísňuje kontrolu. Každý výdělek přitahuje další ruce.",
-  },
-  3: {
-    title: "CHAOS V SÁZKÁCH",
-    body: "Zákony o sázení se mění ze dne na den. Staré informace přestávají platit.",
-    resetNonRacerCards: true,
-  },
-  4: {
-    title: "BOOM",
-    body: "Peníze obíhají rychleji než dřív. S nimi ale rostou i požadavky okolí.",
-  },
-  5: {
-    title: "STÁVKA",
-    body: "Ulice i podniky jsou neklidné. Kdo chce pokračovat, musí zaplatit víc.",
-  },
-  6: {
-    title: "HOREČKA",
-    body: "Dav žádá rychlost, show a velká jména. Úspěch je dražší než kdy dřív.",
-  },
-  7: {
-    title: "CHAMTIVOST",
-    body: "Všichni chtějí vydělat víc. Opatrnost ustupuje risku.",
-  },
+    0: {
+        title: "SENZACE",
+        body: "Závody táhnou davy. Sázky sledují i vlivní hráči.",
+    },
+    1: {
+        title: "OCHRANA",
+        body: "Za klid se platí. Každý rok víc.",
+    },
+    2: {
+        title: "DOHLED",
+        body: "Město zpřísňuje kontrolu sázek.",
+    },
+    3: {
+        title: "ZÁKON",
+        body: "Nová pravidla mění hru. Staré triky končí.",
+        resetNonRacerCards: true,
+    },
+    4: {
+        title: "BOOM",
+        body: "Peníze proudí. Náklady rostou.",
+    },
+    5: {
+        title: "STÁVKA",
+        body: "Provoz vázne. Pokračovat bude dražší.",
+    },
+    6: {
+        title: "HOREČKA",
+        body: "Dav chce rychlost, show a velká jména.",
+    },
+    7: {
+        title: "CHAMTIVOST",
+        body: "Všichni chtějí víc. Risk se vyplácí.",
+    },
 };
 
 // ─── Historical milestone events ──────────────────────────────────────────────
@@ -93,7 +93,7 @@ export const CAMPAIGN_EVENTS: Record<number, YearEvent> = {
 export const HISTORICAL_EVENTS: Record<number, YearEvent> = {
   1929: {
     title: "KRACH NA BURZE",
-    body: "Trhy se otřásly. Důvěra mizí a peníze najednou váží víc než sliby.",
+    body: "Otřes trhu a následný pád.",
     resetNonRacerCards: true,
     dominatesEffects: true,
   },
@@ -111,7 +111,7 @@ export const HISTORICAL_EVENTS: Record<number, YearEvent> = {
   },
   1933: {
     title: "NOVÝ REŽIM",
-    body: "V Německu sílí nacisté. Strach, propaganda a moc začínají měnit Evropu.",
+    body: "V Německu sílí nacisté. Strach a propaganda začínají měnit Evropu.",
   },
   1934: {
     title: "ČISTKY",
@@ -131,7 +131,7 @@ export const HISTORICAL_EVENTS: Record<number, YearEvent> = {
   },
   1938: {
     title: "MNICHOV",
-    body: "Evropa ustupuje nátlaku. Hranice, sliby i jistoty se znovu mění.",
+    body: "Evropa ustupuje nátlaku. Hranice i sliby se znovu mění.",
   },
   1939: {
     title: "VÁLKA",
