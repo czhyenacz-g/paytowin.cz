@@ -45,6 +45,8 @@ interface Props {
   gameId?: string;
   challengerId?: string;
   defenderId?: string;
+  // online_1v1: skip internal prestart/countdown, open arena immediately
+  autoStartArena?: boolean;
 }
 
 type Phase = "prestart" | "arena" | "result" | "waiting_result";
@@ -524,8 +526,9 @@ export default function StableDuelBoardLayer({
   gameId,
   challengerId,
   defenderId,
+  autoStartArena = false,
 }: Props) {
-  const [phase, setPhase]         = React.useState<Phase>("prestart");
+  const [phase, setPhase]         = React.useState<Phase>(() => autoStartArena ? "arena" : "prestart");
   const [countdown, setCountdown] = React.useState(PRESTART_TICKS);
   const [duelKey, setDuelKey]     = React.useState(0);
   const [duelResult, setDuelResult] = React.useState<MinigameResult | null>(null);

@@ -2418,12 +2418,12 @@ export default function GameBoard({ gameCode }: Props) {
       phase: "countdown",
       countdownOwnerId: sdPending.challengerId,
       countdownStartedAt: Date.now(),
-      startsAt: Date.now() + 3000,
+      startsAt: Date.now() + 10000,
     };
     console.log("[stable-duel-countdown] challenger writes countdown", { duelKey, startsAt: updated.startsAt });
     supabase.from("game_state").update({
       offer_pending: updated as unknown as Record<string, unknown>,
-    }).eq("game_id", gameId).then(res => {
+    }).eq("game_id", gameId).then((res: { error: unknown }) => {
       if (res.error) console.error("[stable-duel-countdown] supabase write failed", res.error);
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -3169,12 +3169,18 @@ export default function GameBoard({ gameCode }: Props) {
                   );
                 }
                 return (
-                  <div className="mx-auto w-full max-w-[760px] rounded-lg border border-indigo-600/50 bg-indigo-950/80 px-4 py-5 flex flex-col items-center gap-1 mt-1">
+                  <div className="mx-auto w-full max-w-[760px] rounded-lg border border-indigo-600/50 bg-indigo-950/80 px-4 py-5 flex flex-col items-center gap-2 mt-1">
                     <div className="text-[9px] uppercase tracking-widest text-indigo-400 font-bold">Stájový souboj 1v1</div>
                     <div className="text-6xl font-black text-white" style={{ textShadow: "0 0 32px rgba(99,102,241,0.9)" }}>
                       {countdownDisplay ?? "…"}
                     </div>
-                    <div className="text-[11px] text-indigo-300">{sdPending.challengerName ?? "?"} vs {sdPending.defenderName ?? "?"}</div>
+                    <div className="text-[11px] font-semibold text-indigo-200">{sdPending.challengerName ?? "?"} vs {sdPending.defenderName ?? "?"}</div>
+                    <div className="text-[10px] text-indigo-400">Po odpočtu se hra spustí automaticky</div>
+                    <div className="flex gap-3 text-[10px] text-slate-400 mt-1">
+                      <span>Challenger: <span className="font-mono text-indigo-300">A/D</span> zatáčet · <span className="font-mono text-indigo-300">Space</span> nitro</span>
+                      <span className="text-slate-600">|</span>
+                      <span>Defender: <span className="font-mono text-violet-300">←/→</span> zatáčet · <span className="font-mono text-violet-300">S</span> nitro</span>
+                    </div>
                   </div>
                 );
               }
@@ -4221,6 +4227,7 @@ export default function GameBoard({ gameCode }: Props) {
                     gameId={gameId ?? undefined}
                     challengerId={stableDuelCtx.challengerId}
                     defenderId={stableDuelCtx.defenderId}
+                    autoStartArena={!!stableDuelCtx.duelRole}
                   />
                 )}
 
