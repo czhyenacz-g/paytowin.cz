@@ -133,11 +133,30 @@ export default function LandingPage() {
   const [playedGamesCount, setPlayedGamesCount] = React.useState<number | null>(null);
   const [xpTotal, setXpTotal] = React.useState<number | null>(null);
   const [winsTotal, setWinsTotal] = React.useState<number | null>(null);
+  const [isDevJoin, setIsDevJoin] = React.useState(false);
   // Načti session + předvyplň ?join=KOD z URL
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const join = params.get("join");
     if (join) setJoinCode(join.toUpperCase());
+
+    // Dev join — pouze localhost / dev build, nikdy produkce
+    if (params.get("dev") === "1" && join) {
+      const isLocalDev =
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1" ||
+        process.env.NODE_ENV === "development";
+      if (isLocalDev) {
+        let devId = localStorage.getItem("devGuestId");
+        if (!devId) {
+          devId = `dev_${crypto.randomUUID()}`;
+          localStorage.setItem("devGuestId", devId);
+        }
+        setName(`Dev-${devId.slice(-4).toUpperCase()}`);
+        setIsDevJoin(true);
+        return;
+      }
+    }
 
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) return;
@@ -445,6 +464,44 @@ export default function LandingPage() {
   const selectedCommunityTheme = communityThemes.find((theme) => theme.id === selectedThemeId);
   const selectedThemeLabel = selectedBuiltinTheme?.name ?? selectedCommunityTheme?.name ?? selectedThemeId;
   const selectedCommunityCountLabel = `${communityThemes.length} map${communityThemes.length === 1 ? "a" : communityThemes.length < 5 ? "y" : ""}`;
+
+  if (isDevJoin) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6">
+        <div className="w-full max-w-sm space-y-4">
+          <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-center">
+            <div className="text-xs font-bold uppercase tracking-widest text-amber-400">⚙ Dev Join — lokální testování</div>
+            <div className="mt-0.5 text-[11px] text-amber-300/70">Funguje jen na localhost / dev buildu</div>
+          </div>
+          <div className="rounded-2xl bg-white p-6 shadow-xl space-y-4">
+            <div>
+              <div className="text-base font-bold text-slate-800">Připojit ke hře</div>
+              <div className="mt-0.5 text-sm text-slate-500">Kód: <span className="font-mono font-semibold">{joinCode}</span></div>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Tvoje jméno</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Dev hráč"
+                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-800 outline-none focus:border-slate-500 placeholder:text-slate-400"
+                autoFocus
+              />
+            </div>
+            {error && <p className="text-sm text-red-600">{error}</p>}
+            <button
+              onClick={joinGame}
+              disabled={loading}
+              className="w-full rounded-2xl bg-slate-900 px-4 py-4 text-lg font-semibold text-white shadow transition hover:bg-slate-800 disabled:bg-slate-400"
+            >
+              {loading ? "Připojuji…" : "Připojit →"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col bg-slate-900 overflow-hidden" style={{ height: "100dvh" }}>
