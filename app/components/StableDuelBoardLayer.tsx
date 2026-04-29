@@ -236,7 +236,7 @@ function PreStartPhase({
       </div>
 
       {/* ── Middle: Odpočet + název minihry ─────────────────────────────────── */}
-      <div className="flex-1 flex flex-col items-center justify-end gap-1 px-4 pb-3">
+      <div className="flex-1 flex flex-col items-center justify-center gap-2 px-4">
         {(isDev || duelRole) && (
           <div className="flex items-center gap-2">
             {isDev && (
@@ -272,7 +272,7 @@ function PreStartPhase({
       </div>
 
       {/* ── Bottom: OVLÁDÁNÍ ────────────────────────────────────────────────── */}
-      <div className="shrink-0 flex flex-col items-center gap-1.5 px-4 pb-2">
+      <div className="shrink-0 flex flex-col items-center gap-2 px-4 pb-3">
         <div
           className="text-[11px] font-black uppercase tracking-[0.3em] text-white"
           style={{ textShadow: "0 0 14px rgba(255,255,255,0.5), 0 0 28px rgba(255,255,255,0.2)" }}
