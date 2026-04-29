@@ -212,7 +212,7 @@ function PreStartPhase({
 
   return (
     <div
-      className="flex flex-1 flex-col items-center justify-center gap-1.5 px-4 overflow-y-auto min-h-0 cursor-pointer select-none"
+      className="flex flex-1 flex-col min-h-0 overflow-y-auto cursor-pointer select-none"
       style={{ zoom: 0.9 }}
       onClick={onClick}
     >
@@ -223,89 +223,56 @@ function PreStartPhase({
         }
       `}</style>
 
-      {/* Top label */}
-      <div className="flex items-center gap-2">
-        <div className="text-[9px] font-mono tracking-widest text-slate-500 uppercase">Stájový souboj</div>
-        {isDev && (
-          <div className="rounded px-1.5 py-0.5 text-[8px] font-mono font-bold uppercase tracking-wider bg-slate-800 border border-slate-700 text-slate-500">
-            {minigameType}
-          </div>
-        )}
-        {duelRole === "defender_remote" && (
-          <div className="rounded px-1.5 py-0.5 text-[8px] font-mono font-bold uppercase tracking-wider bg-violet-900/60 border border-violet-700/50 text-violet-400">
-            DEFENDER
-          </div>
-        )}
-        {duelRole === "challenger_authority" && (
-          <div className="rounded px-1.5 py-0.5 text-[8px] font-mono font-bold uppercase tracking-wider bg-emerald-900/60 border border-emerald-700/50 text-emerald-400">
-            CHALLENGER
-          </div>
-        )}
-      </div>
-
-      {/* Main title + countdown */}
-      <div className="flex flex-col items-center gap-0.5">
+      {/* ── Top: Karty + VS ─────────────────────────────────────────────────── */}
+      <div className="shrink-0 flex items-center justify-center gap-3 px-3 pt-3 pb-2">
+        <PlayerCard contestant={cWithColor} label="Challenger" />
         <div
-          className="text-3xl sm:text-4xl font-black text-white tracking-tight text-center leading-tight"
-          style={{ textShadow: "0 0 30px rgba(255,200,0,0.35)" }}
-        >
-          PŘIPRAVTE SE
-        </div>
-        <div
-          key={countdown}
-          className="text-5xl font-black tabular-nums leading-none mt-1"
-          style={{ color: countColor, textShadow: `0 0 24px ${countColor}` }}
-        >
-          {countdown > 0 ? countdown : "GO!"}
-        </div>
-      </div>
-
-      {/* Game name */}
-      <div
-        className="text-base font-black tracking-tight"
-        style={{ color: meta.color, textShadow: `0 0 16px rgba(${meta.glowRgb},0.5)` }}
-      >
-        {meta.title}
-      </div>
-
-      {/* Artwork */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={meta.image}
-        alt=""
-        width={176}
-        height={235}
-        className="rounded-lg object-cover"
-        style={{ maxWidth: 176 }}
-        onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-      />
-
-      {/* Cards + VS */}
-      <div className="flex items-start gap-2">
-        {/* Challenger card */}
-        <div className="flex flex-col items-center gap-1.5">
-          <PlayerCard contestant={cWithColor} label="Challenger" />
-        </div>
-
-        {/* VS */}
-        <div
-          className="text-5xl font-black tracking-tighter shrink-0 leading-none px-1 self-center mt-6"
-          style={{
-            color: "#dc2626",
-            animation: "vs-pulse 1.2s ease-in-out infinite",
-          }}
+          className="text-5xl font-black tracking-tighter shrink-0 leading-none px-1"
+          style={{ color: "#dc2626", animation: "vs-pulse 1.2s ease-in-out infinite" }}
         >
           VS
         </div>
+        <PlayerCard contestant={dWithColor} label="Defender" />
+      </div>
 
-        {/* Defender card */}
-        <div className="flex flex-col items-center gap-1.5">
-          <PlayerCard contestant={dWithColor} label="Defender" />
+      {/* ── Middle: Odpočet + název minihry ─────────────────────────────────── */}
+      <div className="flex-1 flex flex-col items-center justify-center gap-2 px-4">
+        {(isDev || duelRole) && (
+          <div className="flex items-center gap-2">
+            {isDev && (
+              <div className="rounded px-1.5 py-0.5 text-[8px] font-mono font-bold uppercase tracking-wider bg-slate-800 border border-slate-700 text-slate-500">
+                {minigameType}
+              </div>
+            )}
+            {duelRole === "defender_remote" && (
+              <div className="rounded px-1.5 py-0.5 text-[8px] font-mono font-bold uppercase tracking-wider bg-violet-900/60 border border-violet-700/50 text-violet-400">
+                DEFENDER
+              </div>
+            )}
+            {duelRole === "challenger_authority" && (
+              <div className="rounded px-1.5 py-0.5 text-[8px] font-mono font-bold uppercase tracking-wider bg-emerald-900/60 border border-emerald-700/50 text-emerald-400">
+                CHALLENGER
+              </div>
+            )}
+          </div>
+        )}
+        <div
+          key={countdown}
+          className="text-8xl font-black tabular-nums leading-none"
+          style={{ color: countColor, textShadow: `0 0 32px ${countColor}, 0 0 64px ${countColor}88` }}
+        >
+          {countdown > 0 ? countdown : "GO!"}
+        </div>
+        <div
+          className="text-base font-black tracking-tight"
+          style={{ color: meta.color, textShadow: `0 0 16px rgba(${meta.glowRgb},0.5)` }}
+        >
+          {meta.title}
         </div>
       </div>
 
-      {/* OVLÁDÁNÍ */}
-      <div className="flex flex-col items-center gap-2 mt-1 w-full">
+      {/* ── Bottom: OVLÁDÁNÍ ────────────────────────────────────────────────── */}
+      <div className="shrink-0 flex flex-col items-center gap-2 px-4 pb-3">
         <div
           className="text-[11px] font-black uppercase tracking-[0.3em] text-white"
           style={{ textShadow: "0 0 14px rgba(255,255,255,0.5), 0 0 28px rgba(255,255,255,0.2)" }}
@@ -345,9 +312,8 @@ function PreStartPhase({
         {duelRole === "defender_remote" && (
           <div className="text-[9px] text-slate-700">inputy se posílají challengerovi</div>
         )}
+        {!disableManualStart && <div className="text-[9px] text-slate-700">klikni pro přeskočení</div>}
       </div>
-
-      {!disableManualStart && <div className="text-[9px] text-slate-700">klikni pro přeskočení</div>}
     </div>
   );
 }
