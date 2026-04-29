@@ -1119,10 +1119,11 @@ export default function GameBoard({ gameCode }: Props) {
           }
           // Sdílený pending stav — informuje všechny klienty přes Realtime
           if (gameId) {
+            const effectiveMode = stableDuelMode; // může se v budoucnu lišit (fallback)
             const duelPending: StableDuelPendingOffer = {
               type: "stable_duel_pending",
               phase: "pending",
-              mode: stableDuelMode,
+              mode: effectiveMode,
               challengerId: currentPlayer.id,
               defenderId: ownerPlayer.id,
               challengerName: currentPlayer.name,
@@ -1130,8 +1131,16 @@ export default function GameBoard({ gameCode }: Props) {
               fieldIndex: field.index,
               minigameType: selectStableMinigame({ themeId, challengerHorse: challenger.horse, defenderHorse: defender.horse }),
               createdAt: duelCreatedAt,
-              ...(stableDuelMode === "online_1v1" ? { challengerReady: true, defenderReady: false } : {}),
+              ...(effectiveMode === "online_1v1" ? { challengerReady: true, defenderReady: false } : {}),
             };
+            console.log("[stable-duel-trigger]", {
+              stableDuelMode,
+              effectiveMode,
+              challengerId: currentPlayer.id,
+              defenderId: ownerPlayer.id,
+              gameMode,
+              offerPendingMode: duelPending.mode,
+            });
             await supabase.from("game_state").update({
               offer_pending: duelPending as unknown as Record<string, unknown>,
             }).eq("game_id", gameId);

@@ -81,6 +81,9 @@ export default function DevToolbar({
       >
         {stableDuelMode === "online_1v1" ? "🎮 1v1" : "🤖 PvBot"}
       </button>
+      <span className="rounded-[3px] bg-black/10 px-1.5 py-0.5 font-mono text-[9px] text-slate-500 select-all" title="stableDuelMode">
+        {stableDuelMode}
+      </span>
     </div>
   );
 }
