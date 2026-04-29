@@ -167,7 +167,17 @@ export function applyTick(
     legendaryDashRemaining: p2LegNext,
   };
 
+  // ── Early exit: if normal step already decided winner, extra steps don't run ──
+  // Prevents false draw when P2 crashes normally but P1's nitro extra-step also
+  // happens to hit P2's existing trail in the same tick (→ both dead → wrong draw).
+  if (!p1alive || !p2alive) {
+    const status: DuelState["status"] = (!p1alive && !p2alive) ? "draw" : !p1alive ? "p2_win" : "p1_win";
+    const winner: DuelState["winner"] = (!p1alive && !p2alive) ? null : !p1alive ? 2 : 1;
+    return { tick: newTick, status, winner, p1: newP1, p2: newP2 };
+  }
+
   // ── Extra step for P1: nitro OR legendary (one extra step per tick) ──────────
+  // Reached only when both players survived the normal step.
 
   if (p1alive && p1ExtraActive) {
     const extra = step(newP1.pos, newP1.dir);
