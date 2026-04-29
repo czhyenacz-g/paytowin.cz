@@ -1211,11 +1211,12 @@ export default function GameBoard({ gameCode }: Props) {
             });
           };
           boardSurfaceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+          const duelCreatedAt = Date.now();
           // pvbot_awareness: otevři StableDuelBoardLayer ihned (scroll+rAF); online_1v1: čekej na handshake
           if (stableDuelMode !== "online_1v1") {
             openStableDuelOverlay(
               { challenger, defender, isPreview: false, challengerId: currentPlayer.id, defenderId: ownerPlayer.id },
-              `pvbot_${currentPlayer.id}_${ownerPlayer.id}`,
+              `pvbot_${currentPlayer.id}_${ownerPlayer.id}_${duelCreatedAt}`,
             );
           }
           // Sdílený pending stav — informuje všechny klienty přes Realtime
@@ -1230,7 +1231,7 @@ export default function GameBoard({ gameCode }: Props) {
               defenderName: ownerPlayer.name,
               fieldIndex: field.index,
               minigameType: selectStableMinigame({ themeId, challengerHorse: challenger.horse, defenderHorse: defender.horse }),
-              createdAt: Date.now(),
+              createdAt: duelCreatedAt,
               ...(stableDuelMode === "online_1v1" ? { challengerReady: true, defenderReady: false } : {}),
             };
             await supabase.from("game_state").update({
