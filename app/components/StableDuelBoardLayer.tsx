@@ -378,7 +378,7 @@ function ArenaPhase({
       <DuelArena
         config={BOARD_DUEL_CONFIG}
         mode={duelRole ? "pvp" : "pvbot"}
-        autoStart
+        autoStart={duelRole === "challenger_authority" || duelRole === "defender_remote"}
         backgroundUrl={backgroundUrl}
         overlayOpacity={0.20}
         p1Speed={p1Speed}

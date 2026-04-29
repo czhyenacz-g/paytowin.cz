@@ -177,13 +177,14 @@ export default function DuelArena({
   stateRef.current  = state;
   runningRef.current = running;
 
-  // Reset when config / mode / speeds change
+  // Reset when config / mode / speeds change (also on mount — respects autoStart)
   React.useEffect(() => {
     const fresh = createInitialState(config, p1Speed, p2Speed);
-    setState(fresh);
-    stateRef.current = fresh;
-    setRunning(false);
-    runningRef.current = false;
+    const initState = autoStart ? { ...fresh, status: "running" as const } : fresh;
+    setState(initState);
+    stateRef.current = initState;
+    setRunning(autoStart);
+    runningRef.current = autoStart;
     setLastInputs({ p1: "straight", p2: "straight" });
     p1BoostActivateRef.current = false;
     p2BoostActivateRef.current = false;
@@ -195,7 +196,7 @@ export default function DuelArena({
     setP2LegDisplay("ready");
     setP1LegFlash(false);
     setP2LegFlash(false);
-  }, [config, mode, p1Speed, p2Speed]);
+  }, [config, mode, p1Speed, p2Speed, autoStart]);
 
   // onResult — fired once when game ends
   const onResultRef = React.useRef(onResult);
