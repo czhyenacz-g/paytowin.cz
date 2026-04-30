@@ -298,19 +298,21 @@ function PreStartPhase({
               </div>
             </div>
           )}
-          <div className="flex flex-col items-center gap-1.5">
-            <div className="text-[8px] uppercase tracking-widest" style={{ color: `${defenderColor}bb` }}>Defender</div>
-            <div className="flex items-center gap-1">
-              <NeonKeyCap label="←" color={defenderColor} />
-              <span className="text-slate-600 text-[10px] mx-0.5">/</span>
-              <NeonKeyCap label="→" color={defenderColor} />
-              <span className="text-sm text-slate-300 ml-2">zatáčet</span>
+          {duelRole !== "challenger_authority" && (
+            <div className="flex flex-col items-center gap-1.5">
+              <div className="text-[8px] uppercase tracking-widest" style={{ color: `${defenderColor}bb` }}>Defender</div>
+              <div className="flex items-center gap-1">
+                <NeonKeyCap label="←" color={defenderColor} />
+                <span className="text-slate-600 text-[10px] mx-0.5">/</span>
+                <NeonKeyCap label="→" color={defenderColor} />
+                <span className="text-sm text-slate-300 ml-2">zatáčet</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <NeonKeyCap label="S" color={defenderColor} />
+                <span className="text-sm text-slate-300 ml-2">{p2IsLegendary ? "legendary boost" : "nitro"}</span>
+              </div>
             </div>
-            <div className="flex items-center gap-1">
-              <NeonKeyCap label="S" color={defenderColor} />
-              <span className="text-sm text-slate-300 ml-2">{p2IsLegendary ? "legendary boost" : "nitro"}</span>
-            </div>
-          </div>
+          )}
         </div>
         {duelRole === "defender_remote" && (
           <div className="text-[9px] text-slate-700">inputy se posílají challengerovi</div>

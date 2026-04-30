@@ -3200,10 +3200,11 @@ export default function GameBoard({ gameCode }: Props) {
                       </div>
                       <div className="text-[11px] font-semibold text-indigo-200">{sdPending.challengerName ?? "?"} vs {sdPending.defenderName ?? "?"}</div>
                       <div className="text-[10px] text-indigo-400">Po odpočtu se hra spustí automaticky</div>
-                      <div className="flex gap-3 text-[10px] text-slate-400 mt-1">
-                        <span>Challenger: <span className="font-mono text-indigo-300">A/D</span> zatáčet · <span className="font-mono text-indigo-300">Space</span> nitro</span>
-                        <span className="text-slate-600">|</span>
-                        <span>Defender: <span className="font-mono text-violet-300">←/→</span> zatáčet · <span className="font-mono text-violet-300">S</span> nitro</span>
+                      <div className="text-[10px] text-slate-400 mt-1">
+                        {isChallenger
+                          ? <span>Tvoje ovládání: <span className="font-mono text-indigo-300">A / D</span> zatáčet · <span className="font-mono text-indigo-300">SPACE</span> boost</span>
+                          : <span>Tvoje ovládání: <span className="font-mono text-violet-300">← / →</span> zatáčet · <span className="font-mono text-violet-300">S</span> boost</span>
+                        }
                       </div>
                     </div>
                   </div>
@@ -3285,9 +3286,11 @@ export default function GameBoard({ gameCode }: Props) {
                               }
                             </div>
                             <div className="text-sm text-slate-500 italic">Vyhni se soupeři i jeho lanu.</div>
-                            <div className="flex flex-col gap-1 text-[11px] text-slate-500 font-mono">
-                              <span><span className="text-indigo-400">Challenger:</span> A / D + SPACE</span>
-                              <span><span className="text-violet-400">Defender:</span> ← / → + S</span>
+                            <div className="text-[11px] text-slate-500 font-mono">
+                              {isChallenger
+                                ? <span><span className="text-indigo-400">Tvoje ovládání:</span> A / D zatáčet · SPACE boost</span>
+                                : <span><span className="text-violet-400">Tvoje ovládání:</span> ← / → zatáčet · S boost</span>
+                              }
                             </div>
 
                             {isDefender && (
