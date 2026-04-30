@@ -28,6 +28,7 @@ export default function LocalNewPage() {
   const [playerNames, setPlayerNames] = React.useState<string[]>(["", ""]);
   const [selectedThemeId, setSelectedThemeId] = React.useState("horse-day");
   const [selectedBoardId, setSelectedBoardId] = React.useState("small-stadium");
+  const [fogOfWar, setFogOfWar] = React.useState(true);
   const [stateSubsidy, setStateSubsidy] = React.useState(2000);
   const [baseTax, setBaseTax] = React.useState(500);
   const [lapTaxCoefficient, setLapTaxCoefficient] = React.useState(1);
@@ -100,6 +101,7 @@ export default function LocalNewPage() {
         owner_discord_id: discordId || null,
         max_players: playerCount,
         economy: { stateSubsidy, baseTax, lapTaxCoefficient, maxTax },
+        fog_of_war: fogOfWar,
       })
       .select()
       .single();
@@ -333,7 +335,17 @@ export default function LocalNewPage() {
                 <span className="text-slate-400 text-xs">{economyOpen ? "▲ Skrýt" : "▼ Upravit"}</span>
               </button>
               {economyOpen && (
-                <div className="border-t border-slate-200 px-4 pb-4 pt-3 grid grid-cols-2 gap-3">
+                <div className="border-t border-slate-200 px-4 pb-4 pt-3 space-y-3">
+                  <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+                    <input
+                      type="checkbox"
+                      checked={fogOfWar}
+                      onChange={(e) => setFogOfWar(e.target.checked)}
+                      className="h-4 w-4 rounded accent-slate-800"
+                    />
+                    <span className="text-sm font-medium text-slate-700">🌫️ Fog of War — pole jsou skrytá dokud na ně nevstoupíš</span>
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-medium text-slate-600 mb-1">Příspěvek od podporovatelů (START)</label>
                     <input type="number" min={0} step={100} value={stateSubsidy} onChange={e => setStateSubsidy(Number(e.target.value))}
@@ -353,6 +365,7 @@ export default function LocalNewPage() {
                     <label className="block text-xs font-medium text-slate-600 mb-1">Stropní výpalné (daně)</label>
                     <input type="number" min={0} step={500} value={maxTax} onChange={e => setMaxTax(Number(e.target.value))}
                       className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none focus:border-slate-500" />
+                  </div>
                   </div>
                 </div>
               )}
