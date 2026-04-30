@@ -16,16 +16,16 @@
 export const UI_TEXT = {
   guide: {
     noRacer: {
-      title: "Chceš závodit? Nejdřív si pořiď racera.",
-      body:  "Bez vlastního závodníka se do většiny závodních akcí nedostaneš. Sleduj pole s racerem a kup prvního, který ti sedne do strategie.",
+      title: "Chceš závodit? Nejdřív musíš mít na čem!.",
+      body:  "Kup prvního, který ti sedne do strategie. Bez něj budeš jen platit za prohlídky stájí.",
     },
     hasRacer: {
-      title: "Máš racera. Pokud ho úplně vyčerpáš, přijdeš o něj!",
-      body:  "Po každém závodě sleduj, kolik mu zbývá sil. Když si označíš hlavního racera, budeš ho mít po ruce rychleji.",
+      title: "Super! Máš už na čem jezdit. Pokud ho ale úplně vyčerpáš (stamina = 0), seberou ti ho!",
+      body:  "Po každém závodě klesá stamina. S boosty/nitrem mnohem rychleji. Tak se snaž neprohrát",
     },
     setPreferred: {
-      title: "Vyber si hlavního racera. Do dalších závodů se ti bude hodit jako první volba.",
-      body:  "Označený závodník je po ruce rychleji a usnadní ti výběr, když budeš chtít jít do dalšího závodu bez zdržení.",
+      title: "Vyber si hlavního racera (hvězdičkou).",
+      body:  "Do dalších závodů bude nasazen jako první.",
     },
   },
 
