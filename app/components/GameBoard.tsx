@@ -3234,60 +3234,83 @@ export default function GameBoard({ gameCode }: Props) {
               // pending / both_ready — fixed center overlays
               const isPending = sdPhase === "pending";
 
-              if (isChallenger) {
-                return (
-                  <div className="fixed inset-0 z-[44] flex items-center justify-center bg-black/70 backdrop-blur-sm">
-                    <div className="w-full max-w-sm rounded-2xl border border-indigo-500/40 bg-slate-950/95 flex flex-col items-center gap-4 px-6 py-8 text-center"
-                      style={{ boxShadow: "0 0 40px rgba(99,102,241,0.25), 0 0 80px rgba(99,102,241,0.12)" }}
-                    >
-                      <div className="text-[9px] font-bold uppercase tracking-[0.3em] text-indigo-400">Stájový souboj 1v1</div>
-                      <div className="text-2xl font-black text-white" style={{ textShadow: "0 0 24px rgba(99,102,241,0.6)" }}>
-                        {isPending ? "⏳ Čekáš na soupeře" : "✓ Oba připraveni"}
-                      </div>
-                      {isPending
-                        ? <div className="text-sm text-indigo-300">Čekáš na <strong>{sdPending.defenderName ?? "?"}</strong>…</div>
-                        : <div className="text-sm text-emerald-300 font-semibold">Spouštím odpočet…</div>
-                      }
-                      {isPending && (
-                        <button
-                          onClick={handleFallbackToPvBot}
-                          className="mt-1 rounded-lg border border-amber-600/60 bg-amber-900/40 px-4 py-2 text-sm text-amber-300 hover:bg-amber-800/60 transition"
-                        >
-                          Hrát proti botovi<br/>(pokuď druhý hráč nereaguje)
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              }
-
-              if (isDefender) {
+              if (isChallenger || isDefender) {
                 const defReady = sdPending.defenderReady ?? false;
+                const bothReady = !isPending;
                 return (
-                  <div className="fixed inset-0 z-[44] flex items-center justify-center bg-black/70 backdrop-blur-sm">
-                    <div className="w-full max-w-sm rounded-2xl border border-violet-500/40 bg-slate-950/95 flex flex-col items-center gap-5 px-6 py-8 text-center"
-                      style={{ boxShadow: "0 0 40px rgba(139,92,246,0.3), 0 0 80px rgba(139,92,246,0.12)" }}
+                  <div className="fixed inset-0 z-[44] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                    <div
+                      className="w-full max-w-2xl rounded-2xl border border-indigo-500/30 bg-slate-950/97 overflow-hidden flex flex-col sm:flex-row"
+                      style={{ boxShadow: "0 0 60px rgba(99,102,241,0.25), 0 0 120px rgba(99,102,241,0.1)" }}
                     >
-                      <div className="text-[9px] font-bold uppercase tracking-[0.3em] text-violet-400">Stájový souboj 1v1</div>
-                      <div className="text-3xl font-black text-white" style={{ textShadow: "0 0 28px rgba(139,92,246,0.7)" }}>
-                        STÁJOVÝ SOUBOJ
+                      {/* Levá část — promo karta minihry */}
+                      <div className="sm:w-[45%] shrink-0 relative flex items-center justify-center bg-black/40 min-h-[200px] sm:min-h-0">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src="/minigames/neon_rope.webp"
+                          alt="Neon Rope Duel"
+                          className="absolute inset-0 w-full h-full object-cover"
+                          style={{ opacity: 0.85 }}
+                        />
+                        <div
+                          className="absolute inset-0"
+                          style={{ background: "linear-gradient(to right, transparent 60%, rgba(2,4,16,0.97) 100%)" }}
+                        />
+                        <div
+                          className="absolute inset-0 rounded-l-2xl"
+                          style={{ boxShadow: "inset 0 0 0 2px rgba(99,102,241,0.25)" }}
+                        />
                       </div>
-                      {defReady || !isPending ? (
-                        <div className="text-sm text-emerald-300 font-semibold">Jsi připraven — spouštění odpočtu…</div>
-                      ) : (
-                        <>
-                          <div className="text-base text-violet-200">
-                            <strong>{sdPending.challengerName ?? "Hráč"}</strong> tě vyzval na souboj
+
+                      {/* Pravá část — text + akce */}
+                      <div className="flex-1 flex flex-col justify-center gap-4 px-7 py-8">
+                        <div className="text-[9px] font-bold uppercase tracking-[0.3em] text-indigo-400">Stájový souboj 1v1</div>
+                        <div
+                          className="text-3xl font-black text-white leading-tight"
+                          style={{ textShadow: "0 0 32px rgba(99,102,241,0.7)" }}
+                        >
+                          STÁJOVÝ SOUBOJ
+                        </div>
+
+                        {bothReady ? (
+                          <div className="text-sm text-emerald-300 font-semibold">
+                            {isChallenger ? "Spouštím odpočet…" : "Jsi připraven — spouštění odpočtu…"}
                           </div>
-                          <button
-                            onClick={handleDefenderReady}
-                            className="rounded-xl border border-emerald-500/60 bg-emerald-900/50 px-6 py-3 text-base font-black text-emerald-300 hover:bg-emerald-800/70 hover:border-emerald-400/80 transition-all"
-                            style={{ boxShadow: "0 0 20px rgba(52,211,153,0.2)" }}
-                          >
-                            ⚔️ Jsem připraven
-                          </button>
-                        </>
-                      )}
+                        ) : (
+                          <>
+                            <div className="text-base text-slate-300">
+                              {isDefender
+                                ? <><strong className="text-white">{sdPending.challengerName ?? "Hráč"}</strong> tě vyzval na souboj</>
+                                : <>Čekáš na <strong className="text-white">{sdPending.defenderName ?? "?"}</strong>…</>
+                              }
+                            </div>
+                            <div className="text-sm text-slate-500 italic">Vyhni se soupeři i jeho lanu.</div>
+                            <div className="flex flex-col gap-1 text-[11px] text-slate-500 font-mono">
+                              <span><span className="text-indigo-400">Challenger:</span> A / D + SPACE</span>
+                              <span><span className="text-violet-400">Defender:</span> ← / → + S</span>
+                            </div>
+
+                            {isDefender && (
+                              <button
+                                onClick={handleDefenderReady}
+                                className="mt-1 rounded-xl border border-emerald-500/60 bg-emerald-900/50 px-6 py-3.5 text-base font-black text-emerald-300 hover:bg-emerald-800/70 hover:border-emerald-400/80 transition-all self-start"
+                                style={{ boxShadow: "0 0 20px rgba(52,211,153,0.2)" }}
+                              >
+                                ⚔️ JSEM PŘIPRAVEN
+                              </button>
+                            )}
+
+                            {isChallenger && isPending && (
+                              <button
+                                onClick={handleFallbackToPvBot}
+                                className="mt-1 rounded-lg border border-amber-600/60 bg-amber-900/40 px-4 py-2 text-sm text-amber-300 hover:bg-amber-800/60 transition self-start"
+                              >
+                                Hrát proti botovi (pokud druhý hráč nereaguje)
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
