@@ -53,7 +53,7 @@ interface Props {
 
 type Phase = "prestart" | "arena" | "result" | "waiting_result";
 
-const BOARD_DUEL_CONFIG: DuelConfig  = { gridW: 28, gridH: 20, maxTicks: 200, tickMs: 156 };
+const BOARD_DUEL_CONFIG: DuelConfig  = { gridW: 34, gridH: 24, maxTicks: 244, tickMs: 156 };
 const BOARD_SPEED_CONFIG: SpeedConfig = {
   arenaW: 480, arenaH: 320,
   maxTicks: 120, tickMs: 80,
