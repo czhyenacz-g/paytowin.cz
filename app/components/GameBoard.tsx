@@ -1118,7 +1118,7 @@ export default function GameBoard({ gameCode }: Props) {
             !!challenger.horse &&
             !!defender.horse;
           const effectiveMode: "online_1v1" | "pvbot_awareness" =
-            stableDuelMode === "online_1v1" || shouldAutoUseOnline1v1
+            gameMode === "online" && (stableDuelMode === "online_1v1" || shouldAutoUseOnline1v1)
               ? "online_1v1"
               : "pvbot_awareness";
           // pvbot_awareness: otevři StableDuelBoardLayer ihned (scroll+rAF); online_1v1: čekej na handshake
