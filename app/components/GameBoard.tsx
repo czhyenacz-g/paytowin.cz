@@ -74,7 +74,7 @@ import type { Player, Horse, ActiveEffect, GameState, OfferPending, RerollOffer,
 import { DEFAULT_ECONOMY } from "@/lib/types/game";
 import { resolveYearEvent } from "@/lib/year-events";
 import type { CenterEvent, FlashEvent } from "@/lib/types/events";
-import { mapToCenterEvent, resolveRacerDisplay } from "@/lib/game/viewModel";
+import { mapToCenterEvent, resolveRacerDisplay, buildRollDecisionOptions } from "@/lib/game/viewModel";
 import CenterEventModal from "./modals/CenterEventModal";
 import FlashToast from "./modals/FlashToast";
 import RaceModal from "./RaceModal";
@@ -2692,19 +2692,7 @@ export default function GameBoard({ gameCode }: Props) {
     !hasPreferredRacer &&
     gameStatus === "playing";
   const rollDecisionOptions = pendingRollDecision
-    ? ([-1, 0, 1] as RollAdjustment[]).map((adjustment) => {
-        const finalRoll = pendingRollDecision.baseRoll + adjustment;
-        const isAffordable = adjustment === 0 || (currentPlayer?.coins ?? 0) >= 600;
-        const isValid = finalRoll >= 1;
-        const targetField = isValid ? FIELDS[(pendingRollDecision.basePosition + finalRoll) % FIELDS.length] : null;
-        return {
-          adjustment,
-          finalRoll,
-          cost: adjustment === 0 ? 0 : 600,
-          isDisabled: !isValid || !isAffordable,
-          targetField,
-        };
-      })
+    ? buildRollDecisionOptions(pendingRollDecision, FIELDS, currentPlayer?.coins ?? 0)
     : [];
 
   // Mapa (racer.id ?? racer.name) → vlastník — id-first, name fallback pro stará data
