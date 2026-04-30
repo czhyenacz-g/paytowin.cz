@@ -3240,7 +3240,7 @@ export default function GameBoard({ gameCode }: Props) {
                 return (
                   <div className="fixed inset-0 z-[44] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
                     <div
-                      className="w-full max-w-2xl rounded-2xl border border-indigo-500/30 bg-slate-950/97 overflow-hidden flex flex-col sm:flex-row"
+                      className="w-full max-w-2xl rounded-2xl border border-indigo-500/30 bg-slate-950/97 overflow-hidden flex flex-col sm:flex-row sm:min-h-[450px]"
                       style={{ boxShadow: "0 0 60px rgba(99,102,241,0.25), 0 0 120px rgba(99,102,241,0.1)" }}
                     >
                       {/* Levá část — promo karta minihry */}
