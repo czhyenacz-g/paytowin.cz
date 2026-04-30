@@ -24,7 +24,7 @@ export const UI_TEXT = {
       body:  "Po každém závodě klesá stamina. S boosty/nitrem mnohem rychleji. Tak se snaž neprohrát",
     },
     setPreferred: {
-      title: "Vyber si hlavního racera (hvězdičkou).",
+      title: "Vyber si hlavního (hvězdičkou).",
       body:  "Do dalších závodů bude nasazen jako první.",
     },
   },

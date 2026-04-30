@@ -263,6 +263,9 @@ function PreStartPhase({
         >
           {countdown > 0 ? countdown : "GO!"}
         </div>
+        <div className="text-xs text-slate-400 text-center leading-snug">
+          Vyhni se soupeři i jeho lanu.
+        </div>
         <div
           className="text-base font-black tracking-tight"
           style={{ color: meta.color, textShadow: `0 0 16px rgba(${meta.glowRgb},0.5)` }}
