@@ -240,10 +240,14 @@ Po změně spusť npx tsc --noEmit a ověř výstup.
 | 1 | FIELD_POSITIONS, FIELD_POSITIONS_STADIUM, FIELD_ROTATIONS_STADIUM, FIGURINE_POSITIONS, FIGURINE_POSITIONS_STADIUM | lib/board/layout.ts | 364e1c0 | −110 |
 | 2 | DEV tlačítka (Shell/Layer/Flip/Duel/Speed/Legendary/Stable/PvBot) | app/components/board/DevToolbar.tsx | 4b1a5e2 | −71 |
 | 3 | finished screen (newspaper, ScoreTable, solo prohra) | app/components/board/GameFinishedScreen.tsx | ac50fbc | −90 |
+| 4 | mapToCenterEvent, resolveRacerDisplay | lib/game/viewModel.ts | 2f72e39 | −64 |
+| 5 | buildRollDecisionOptions | lib/game/viewModel.ts | 8dc0a37 | −12 |
+| 6 | getFieldDetail, getFieldMetaLabel, getFieldAccentColor, getFieldTone | lib/board/fieldHelpers.ts | e9eb9ed | −46 |
+| 7 | Field card loop (FIELDS.map → FieldCardList) | app/components/board/FieldCardList.tsx | e9eb9ed | −144 |
 
 **Původní počet řádků:** 4593
-**Aktuální počet řádků:** 4359
-**Celková úspora:** −234 řádků (−5 %)
+**Aktuální počet řádků:** 4211
+**Celková úspora:** −382 řádků (−8 %)
 
 ---
 Hlavní rizika (neopomíjet při jakékoli extrakci)
