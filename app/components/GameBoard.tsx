@@ -1500,6 +1500,7 @@ export default function GameBoard({ gameCode }: Props) {
               speed:       themeRacer.speed,
               price:       themeRacer.price,
               emoji:       themeRacer.emoji,
+              image:       themeRacer.image,
               maxStamina:  themeRacer.maxStamina ?? themeRacer.stamina,
               stamina:     themeRacer.maxStamina ?? themeRacer.stamina,
               isLegendary: themeRacer.isLegendary,
