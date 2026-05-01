@@ -22,6 +22,7 @@ import {
   FIGURINE_POSITIONS,
   FIGURINE_POSITIONS_STADIUM,
 } from "@/lib/board/layout";
+import { getFieldDetail, getFieldMetaLabel, getFieldAccentColor, getFieldTone } from "@/lib/board/fieldHelpers";
 import { logEvent } from "@/lib/analytics";
 import { UI_TEXT } from "@/lib/ui-text";
 import { applyBoardShuffle } from "@/lib/board/shuffle";
@@ -93,6 +94,7 @@ import SpeedDevShell from "./speed/SpeedDevShell";
 import LegendaryRaceDevShell from "./legendary/LegendaryRaceDevShell";
 import StableDuelBoardLayer, { type DuelContestant } from "./StableDuelBoardLayer";
 import DevToolbar from "./board/DevToolbar";
+import FieldCardList from "./board/FieldCardList";
 import GameFinishedScreen from "./board/GameFinishedScreen";
 import IntroOverlay from "./IntroOverlay";
 import ScoreTable from "./ScoreTable";
@@ -148,35 +150,6 @@ function DiceFace({ value, size = 80, rolling = false }: { value: number | null;
 
 
 // ─── Pole: detail text pro hover stav ────────────────────────────────────────
-function getFieldDetail(field: Field, ownerName: string | null): string | null {
-  if (field.type === "neutral") return null;
-  if (field.type === "racer") {
-    if (!field.racer) return null;
-    if (ownerName) return `✓ ${ownerName}`;
-    return `${field.racer.price} 💰 ${"⭐".repeat(Math.min(field.racer.speed, 5))}`;
-  }
-  if (field.type === "chance")  return "🎴 náhodná karta";
-  if (field.type === "finance") return "💼 finance karta";
-  if (field.type === "mafia")   return "🎭 Mafie karta";
-  if (field.type === "gamble")  return "🎲 hazard";
-  return field.description || null;
-}
-
-function getFieldMetaLabel(field: Field, ownerName: string | null): string | null {
-  if (field.type === "start") return "START";
-  if (field.type === "racer") {
-    if (!field.racer) return null;
-    if (ownerName) return "obsazeno";
-    return `${field.racer.price} 💰`;
-  }
-  if (field.type === "coins_gain") return field.description || "odměna";
-  if (field.type === "coins_lose") return field.description || "ztráta";
-  if (field.type === "chance") return "osud";
-  if (field.type === "finance") return "Finance";
-  if (field.type === "mafia")   return "Mafie";
-  if (field.type === "gamble") return "hazard";
-  return field.description || null;
-}
 
 /**
  * scheduleMorseAudio — naplánuje přehrání morseovky na WebAudio timeline.
@@ -221,49 +194,6 @@ function scheduleMorseAudio(ctx: AudioContext, morse: string): void {
   }
 }
 
-/**
- * getFieldAccentColor — barva akcentní horní hrany karty (strana od středu).
- * Nezávislé na theme — jde o herní sémantiku pole, ne o theme barvu.
- */
-function getFieldAccentColor(field: Field): string {
-  switch (field.type) {
-    case "start":      return "#ef4444"; // red-500
-    case "coins_gain": return "#34d399"; // emerald-400
-    case "coins_lose": return "#f87171"; // red-400
-    case "gamble":     return "#c084fc"; // violet-400
-    case "racer":
-    case "horse":      return "#fbbf24"; // amber-400
-    case "chance":     return "#38bdf8"; // sky-400
-    case "finance":    return "#38bdf8"; // sky-400
-    case "mafia":      return "#a855f7"; // purple-500
-    default:           return "#94a3b8"; // slate-400 (neutral)
-  }
-}
-
-function getFieldTone(field: Field, themeId: string) {
-  const usesDarkSurface = field.type === "start" || themeId.endsWith("night");
-  return usesDarkSurface
-    ? {
-        cardOverlay: "bg-gradient-to-b from-black/18 via-black/0 via-[42%] to-black/72",
-        topBadge: "border border-white/14 bg-black/42 text-slate-100 shadow-[0_1px_0_rgba(255,255,255,0.06)]",
-        titleText: "text-slate-50",
-        metaText: "text-slate-200/90",
-        footerPanel: "bg-gradient-to-t from-black/78 via-black/60 to-black/8",
-        detailPanel: "border border-white/12 bg-black/58 text-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
-        detailText: "text-slate-100",
-        ownerText: "text-slate-200/85",
-      }
-    : {
-        cardOverlay: "bg-gradient-to-b from-white/10 via-transparent via-[36%] to-black/44",
-        topBadge: "border border-black/10 bg-white/74 text-slate-800 shadow-[0_1px_0_rgba(255,255,255,0.4)]",
-        titleText: "text-white",
-        metaText: "text-white/80",
-        footerPanel: "bg-gradient-to-t from-slate-950/78 via-slate-950/58 to-transparent",
-        detailPanel: "border border-black/8 bg-white/88 text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]",
-        detailText: "text-slate-700",
-        ownerText: "text-slate-700/75",
-      };
-}
 
 // ─── Komponenta ───────────────────────────────────────────────────────────────
 
@@ -3358,143 +3288,23 @@ export default function GameBoard({ gameCode }: Props) {
               </div>
 
               <div className="absolute inset-0 overflow-visible">
-                {FIELDS.map((field) => {
-                  const pos = board.shape === "stadium"
-                    ? FIELD_POSITIONS_STADIUM[field.index]
-                    : FIELD_POSITIONS[field.index];
-                  const isTrail = trailFields.includes(field.index);
-                  const isHoverHighlight = hoveredPlayerId
-                    ? displayPlayers.some(p => p.id === hoveredPlayerId && p.position === field.index && !isBankrupt(p))
-                    : false;
-                  const owner = field.type === "racer" && field.racer ? racerOwnership[racerOwnershipKey(field.racer)] ?? null : null;
-                  const detail = getFieldDetail(field, owner?.name ?? null);
-                  const metaLabel = getFieldMetaLabel(field, owner?.name ?? null);
-                  const isHovered = hoveredFieldIdx === field.index;
-                  const tone = getFieldTone(field, themeId);
-                  const isDefaultMoveTarget = ghostMoveTarget === field.index;
-
-                  // Outward shift při hoveru — odsouvá kartu od středu aby byl střed vidět
-                  const posLeft = parseFloat(pos.left as string);
-                  const posTop  = parseFloat(pos.top  as string);
-                  const odx = posLeft - 50;
-                  const ody = posTop  - 50;
-                  const olen = Math.sqrt(odx * odx + ody * ody) || 1;
-                  const hoverShift = isHovered ? `translate(${(odx / olen) * 70}px, ${(ody / olen) * 70}px) ` : "";
-
-                  // Rotace segmentu: 0° = RIGHT, segment „spodek" míří ven od středu
-                  const rotDeg = board.shape === "stadium"
-                    ? (FIELD_ROTATIONS_STADIUM[field.index] ?? 0)
-                    : field.index * (360 / 21) - 90;
-
-                  const glows: string[] = [];
-                  if (isTrail) glows.push("drop-shadow(0 0 7px rgba(251,191,36,0.95))");
-                  if (isHoverHighlight) glows.push("drop-shadow(0 0 7px rgba(96,165,250,0.95))");
-                  if (owner) {
-                    const ownerHex = (() => {
-                      const c = owner.color;
-                      if (!c) return "#6366f1";
-                      if (c.startsWith("#") || c.startsWith("rgb")) return c;
-                      const tw: Record<string, string> = {
-                        "bg-emerald-500": "#10b981", "bg-violet-500": "#8b5cf6",
-                        "bg-amber-500":   "#f59e0b", "bg-rose-500":   "#f43f5e",
-                        "bg-sky-500":     "#0ea5e9", "bg-indigo-500": "#6366f1",
-                        "bg-pink-500":    "#ec4899", "bg-orange-500": "#f97316",
-                        "bg-teal-500":    "#14b8a6", "bg-red-500":    "#ef4444",
-                        "bg-blue-500":    "#3b82f6", "bg-green-500":  "#22c55e",
-                        "bg-yellow-500":  "#eab308", "bg-purple-500": "#a855f7",
-                        "bg-cyan-500":    "#06b6d4", "bg-lime-500":   "#84cc16",
-                        "bg-fuchsia-500": "#d946ef",
-                      };
-                      return tw[c] ?? "#6366f1";
-                    })();
-                    glows.push(`drop-shadow(0 0 6px ${ownerHex}cc)`);
-                    glows.push(`drop-shadow(0 0 14px ${ownerHex}88)`);
-                    glows.push(`drop-shadow(0 0 24px ${ownerHex}44)`);
-                  }
-
-                  const fieldBgPrimaryPath = field.type === "racer"
-                    ? resolveRacerCardImagePath(
-                        themeId,
-                        field.racer?.id,
-                        field.racer?.image,
-                      )
-                    : resolveFieldCardImagePath(
-                        themeId,
-                        field.type,
-                        themeManifest.assets?.fieldTextures?.[field.type]
-                      );
-                  const fieldBgImage = buildCardBackgroundImageValue(fieldBgPrimaryPath);
-
-                  return (
-                    <div
-                      key={field.index}
-                      className="absolute overflow-visible"
-                      style={{
-                        top: pos.top,
-                        left: pos.left,
-                        width: "82px",
-                        height: "112px",
-                        transform: `${hoverShift}translate(-50%, -50%) rotate(${rotDeg}deg) scale(${isHovered ? 2.52 : 1.0})`,
-                        transition: "transform 0.18s ease-out, box-shadow 0.18s ease-out",
-                        zIndex: isHovered ? 100 : 2,
-                        filter: glows.length > 0 ? glows.join(" ") : undefined,
-                        cursor: "default",
-                      }}
-                      onMouseEnter={() => setHoveredFieldIdx(field.index)}
-                      onMouseLeave={() => setHoveredFieldIdx(null)}
-                    >
-                      {/* Fog of War: skrytá karta — vlastní render, žádný obsah normální karty neprosvítá */}
-                      {(!isFieldVisible(field) || showingHiddenRef.current.has(field.index)) ? (
-                        <div
-                          className={`relative h-full w-full overflow-hidden rounded-[2px] ring-1 ring-black/20 shadow-[0_10px_18px_rgba(15,23,42,0.16)]${flippingFields.has(field.index) ? " fog-card-flip" : ""}`}
-                          style={{
-                            backgroundImage: "url('/fog-of-war-card.webp')",
-                            backgroundSize: "cover",
-                            backgroundPosition: "center",
-                            border: "1px solid rgba(0,0,0,0.82)",
-                            borderTopWidth: "6px",
-                            borderTopColor: "rgba(30,41,59,0.9)",
-                            perspective: "400px",
-                          }}
-                        />
-                      ) : (
-                      <div
-                        className={`group relative h-full w-full overflow-hidden rounded-[2px] ring-1 ring-black/10 shadow-[0_10px_18px_rgba(15,23,42,0.16)] ${theme.colors.fieldStyles[field.type]}${flippingFields.has(field.index) ? " fog-card-flip" : ""}`}
-                        style={{
-                          height: "100%",
-                          width: "100%",
-                          backgroundImage: fieldBgImage,
-                          backgroundSize: "cover, cover",
-                          backgroundPosition: "center, center",
-                          border: "1px solid rgba(0,0,0,0.82)",
-                          borderTopWidth: "6px",
-                          borderTopColor: getFieldAccentColor(field),
-                        }}
-                      >
-                        <div className={`pointer-events-none absolute inset-0 ${tone.cardOverlay}`} />
-                        {/* Jemný bílý overlay pro neracer pole — odlišuje je od hero racer karet */}
-                        {field.type !== "racer" && field.type !== "start" && (
-                          <div className="pointer-events-none absolute inset-0 bg-white/25 transition-opacity duration-150 group-hover:opacity-0" />
-                        )}
-                      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-2 pb-2">
-                        <div className="flex justify-center">
-                          <div className="inline-flex max-w-[58px] items-center justify-center rounded-[10px] bg-white/50 px-1.5 py-0.5 text-[5.5px] font-black uppercase leading-[1.05] tracking-[0.04em] text-slate-950 shadow-[0_1px_0_rgba(255,255,255,0.35)]">
-                              <span className="whitespace-normal break-words text-center">
-                                {field.type === "start" ? "START" : field.label}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div
-                          className="relative z-10 flex h-full w-full flex-col justify-between"
-                          style={{ transform: `rotate(${-rotDeg}deg)` }}
-                        />
-                      </div>
-                      )}
-                    </div>
-                  );
-                })}
+                <FieldCardList
+                  fields={FIELDS}
+                  boardShape={board.shape}
+                  trailFields={trailFields}
+                  hoveredPlayerId={hoveredPlayerId}
+                  displayPlayers={displayPlayers}
+                  racerOwnership={racerOwnership}
+                  hoveredFieldIdx={hoveredFieldIdx}
+                  ghostMoveTarget={ghostMoveTarget}
+                  themeId={themeId}
+                  themeManifest={themeManifest}
+                  fieldStyles={theme.colors.fieldStyles}
+                  flippingFields={flippingFields}
+                  showingHiddenRef={showingHiddenRef}
+                  isFieldVisible={isFieldVisible}
+                  onHoverField={setHoveredFieldIdx}
+                />
 
                 {/* Ghost marker pro původní cíl hodu — zobrazen na pozici figurky (blíže středu) */}
                 {ghostMoveTarget !== null && (() => {
