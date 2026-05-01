@@ -247,10 +247,12 @@ Po změně spusť npx tsc --noEmit a ověř výstup.
 | 8 | Pravý panel + DiceFace + DICE_DOTS | app/components/board/GamePanel.tsx | ace847e | −535 |
 | 9 | Mrtvé importy (DevRaceFlipLayer, 3× assets) | — | bb9b1e7 | −6 |
 | 10 | Stable Duel status banners (IIFE → komponenta) | app/components/board/StableDuelStatusBanners.tsx | 8405640 | −217 |
+| 11 | Player list + horse cards (z GamePanel) | app/components/board/PlayerList.tsx | 8ebb10c | GamePanel −145 |
 
-**Původní počet řádků:** 4593
-**Aktuální počet řádků:** 3463
-**Celková úspora:** −1130 řádků (−25 %)
+**Původní počet řádků GameBoard.tsx:** 4593
+**Aktuální počet řádků GameBoard.tsx:** 3463 (−1130, −25 %)
+**GamePanel.tsx:** 588 řádků (−145 po extrakci PlayerList)
+**PlayerList.tsx:** 205 řádků
 
 ---
 Hlavní rizika (neopomíjet při jakékoli extrakci)
