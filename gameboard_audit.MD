@@ -245,10 +245,12 @@ Po změně spusť npx tsc --noEmit a ověř výstup.
 | 6 | getFieldDetail, getFieldMetaLabel, getFieldAccentColor, getFieldTone | lib/board/fieldHelpers.ts | e9eb9ed | −46 |
 | 7 | Field card loop (FIELDS.map → FieldCardList) | app/components/board/FieldCardList.tsx | e9eb9ed | −144 |
 | 8 | Pravý panel + DiceFace + DICE_DOTS | app/components/board/GamePanel.tsx | ace847e | −535 |
+| 9 | Mrtvé importy (DevRaceFlipLayer, 3× assets) | — | bb9b1e7 | −6 |
+| 10 | Stable Duel status banners (IIFE → komponenta) | app/components/board/StableDuelStatusBanners.tsx | 8405640 | −217 |
 
 **Původní počet řádků:** 4593
-**Aktuální počet řádků:** 3676
-**Celková úspora:** −917 řádků (−20 %)
+**Aktuální počet řádků:** 3463
+**Celková úspora:** −1130 řádků (−25 %)
 
 ---
 Hlavní rizika (neopomíjet při jakékoli extrakci)
