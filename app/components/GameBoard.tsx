@@ -95,6 +95,7 @@ import LegendaryRaceDevShell from "./legendary/LegendaryRaceDevShell";
 import StableDuelBoardLayer, { type DuelContestant } from "./StableDuelBoardLayer";
 import DevToolbar from "./board/DevToolbar";
 import FieldCardList from "./board/FieldCardList";
+import GamePanel from "./board/GamePanel";
 import GameFinishedScreen from "./board/GameFinishedScreen";
 import IntroOverlay from "./IntroOverlay";
 import ScoreTable from "./ScoreTable";
@@ -109,45 +110,6 @@ import { sfxPlay, type SoundId } from "@/lib/audio/sfx";
 // Úhel pole i: α = 180° − i × (360°/21), kde 0° = vpravo, 90° = nahoru (CSS y je inverzní).
 // Vzorec: left = 50 + 42·cos(α), top = 50 − 42·sin(α).
 // Mezera mezi sousedními poli ≈ 24 px (na boardu max-w 760 px) — rovnoměrná po celém okruhu.
-
-// ─── Kostka ───────────────────────────────────────────────────────────────────
-
-// Souřadnice teček pro každou stranu kostky [cx, cy] v SVG viewBox 0–100
-const DICE_DOTS: [number, number][][] = [
-  [[50, 50]],                                                          // 1
-  [[28, 28], [72, 72]],                                                // 2
-  [[28, 28], [50, 50], [72, 72]],                                      // 3
-  [[28, 28], [72, 28], [28, 72], [72, 72]],                            // 4
-  [[28, 28], [72, 28], [50, 50], [28, 72], [72, 72]],                  // 5
-  [[28, 28], [72, 28], [28, 50], [72, 50], [28, 72], [72, 72]],        // 6
-];
-
-function DiceFace({ value, size = 80, rolling = false }: { value: number | null; size?: number; rolling?: boolean }) {
-  if (value === null) {
-    // Prázdná kostka před prvním hodem
-    return (
-      <svg width={size} height={size} viewBox="0 0 100 100" style={{ filter: "drop-shadow(0 3px 6px rgba(0,0,0,0.12))" }}>
-        <rect x="6" y="6" width="88" height="88" rx="18" fill="#f8fafc" stroke="#cbd5e1" strokeWidth="3"/>
-      </svg>
-    );
-  }
-  const dots = DICE_DOTS[(value - 1 + 6) % 6];
-  return (
-    <svg
-      width={size} height={size} viewBox="0 0 100 100"
-      className={rolling ? "animate-spin" : "transition-transform duration-150"}
-      style={{ filter: "drop-shadow(0 3px 8px rgba(0,0,0,0.18))" }}
-    >
-      <rect x="6" y="6" width="88" height="88" rx="18" fill="white" stroke="#e2e8f0" strokeWidth="2.5"/>
-      {/* Lehký 3D highlight */}
-      <rect x="6" y="6" width="88" height="44" rx="18" fill="rgba(255,255,255,0.55)"/>
-      {dots.map(([cx, cy], i) => (
-        <circle key={i} cx={cx} cy={cy} r="9" fill="#1e293b"/>
-      ))}
-    </svg>
-  );
-}
-
 
 // ─── Pole: detail text pro hover stav ────────────────────────────────────────
 
@@ -3593,558 +3555,61 @@ export default function GameBoard({ gameCode }: Props) {
           </div>
 
           {/* Pravý panel */}
-          <div className="flex flex-col gap-3">
-            <div className={`rounded-[4px] p-5 shadow-xl ring-1 ring-black/[0.06] ${theme.colors.cardBackground}`}>
-              <div className="flex items-center justify-between mb-4">
-                <div className={`text-[10px] font-bold uppercase tracking-widest ${theme.colors.textMuted}`}>{UI_TEXT.board.gamePanelTitle}</div>
-                <button
-                  onClick={toggleSound}
-                  title={soundEnabled ? "Vypnout zvuky" : "Zapnout zvuky"}
-                  className="rounded-[3px] px-2 py-1 text-base text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
-                >
-                  {soundEnabled ? "🔊" : "🔇"}
-                </button>
-              </div>
-              <div className="space-y-3">
-                {shouldShowRacerGuide && (
-                  <div className="relative overflow-hidden rounded-[4px] border border-amber-300 bg-gradient-to-br from-amber-50 via-white to-amber-100 p-4 shadow-sm">
-                    <div className="pointer-events-none absolute -right-4 -top-4 text-6xl opacity-10">{theme.labels.racingEmoji}</div>
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[3px] bg-amber-100 text-2xl">
-                        🎩
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">
-                          Průvodce
-                        </div>
-                        <div className="mt-1 text-sm font-semibold text-slate-800">
-                          {UI_TEXT.guide.noRacer.title}
-                        </div>
-                        <p className="mt-1 text-xs leading-relaxed text-slate-600">
-                          {UI_TEXT.guide.noRacer.body}
-                        </p>
-                      </div>
-                      <button
-                        onClick={dismissRacerGuide}
-                        className="shrink-0 rounded-[3px] px-2 py-1 text-xs font-medium text-slate-400 transition hover:bg-white/70 hover:text-slate-700"
-                        title="Skrýt nápovědu"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {!shouldShowRacerGuide && shouldShowStaminaGuide && (
-                  <div className="relative overflow-hidden rounded-[4px] border border-sky-300 bg-gradient-to-br from-sky-50 via-white to-cyan-100 p-4 shadow-sm">
-                    <div className="pointer-events-none absolute -right-4 -top-4 text-6xl opacity-10">{theme.labels.racingEmoji}</div>
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[3px] bg-sky-100 text-2xl">
-                        🎩
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="text-xs font-black uppercase tracking-[0.18em] text-sky-700">
-                          Průvodce
-                        </div>
-                        <div className="mt-1 text-sm font-semibold text-slate-800">
-                          {UI_TEXT.guide.hasRacer.title}
-                        </div>
-                        <p className="mt-1 text-xs leading-relaxed text-slate-600">
-                          {UI_TEXT.guide.hasRacer.body}
-                        </p>
-                      </div>
-                      <button
-                        onClick={dismissStaminaGuide}
-                        className="shrink-0 rounded-[3px] px-2 py-1 text-xs font-medium text-slate-400 transition hover:bg-white/70 hover:text-slate-700"
-                        title="Skrýt nápovědu"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {!shouldShowRacerGuide && !shouldShowStaminaGuide && shouldShowPreferredGuide && (
-                  <div className="relative overflow-hidden rounded-[4px] border border-violet-300 bg-gradient-to-br from-violet-50 via-white to-fuchsia-100 p-4 shadow-sm">
-                    <div className="pointer-events-none absolute -right-4 -top-4 text-6xl opacity-10">⭐</div>
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[3px] bg-violet-100 text-2xl">
-                        🎩
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="text-xs font-black uppercase tracking-[0.18em] text-violet-700">
-                          Průvodce
-                        </div>
-                        <div className="mt-1 text-sm font-semibold text-slate-800">
-                          {UI_TEXT.guide.setPreferred.title}
-                        </div>
-                        <p className="mt-1 text-xs leading-relaxed text-slate-600">
-                          {UI_TEXT.guide.setPreferred.body}
-                        </p>
-                      </div>
-                      <button
-                        onClick={dismissPreferredGuide}
-                        className="shrink-0 rounded-[3px] px-2 py-1 text-xs font-medium text-slate-400 transition hover:bg-white/70 hover:text-slate-700"
-                        title="Skrýt nápovědu"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                <div className={`rounded-[4px] p-4 transition-colors border border-black/[0.06] ${isRolling ? theme.colors.rollPanelRolling : theme.colors.rollPanelIdle}`}>
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">{UI_TEXT.board.lastRollTitle}</div>
-                  <div className="flex items-center gap-3">
-                    <DiceFace
-                      value={(isRolling || isMoving || hasPendingRollDecision) && displayRoll !== null ? displayRoll : (gameState?.last_roll ?? null)}
-                      size={72}
-                      rolling={isRolling}
-                    />
-                    {((isRolling || isMoving || hasPendingRollDecision) && displayRoll !== null ? displayRoll : gameState?.last_roll) && (
-                      <span className={`text-3xl font-bold ${isRolling ? "text-amber-600" : "text-slate-700"}`}>
-                        {(isRolling || isMoving || hasPendingRollDecision) && displayRoll !== null ? displayRoll : gameState?.last_roll}
-                      </span>
-                    )}
-                    {currentPlayer && (
-                      <div className="ml-auto mr-2 flex flex-col items-end gap-0.5">
-                        <div className="flex items-center gap-1.5">
-                          <div className={`h-2.5 w-2.5 shrink-0 rounded-full ${currentPlayer.color}`} />
-                          <span className="text-[11px] font-bold text-slate-700 truncate max-w-[80px]">{currentPlayer.name}</span>
-                        </div>
-                        <span className="text-[10px] text-slate-400">na tahu</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {bankruptWarning ? (
-                  <div className="rounded-[4px] border-2 border-red-500 bg-red-950 p-4 space-y-3">
-                    <div>
-                      <div className="text-sm font-bold text-red-300">💀 Všechno, nebo nic</div>
-                      <div className="mt-1 text-xs text-red-400/80">
-                        Prodají se všichni tví koně bance za 80 % ceny.
-                        {!bankruptWarning.willSurvive && " Ani to nestačí — zkrachuješ tak či tak."}
-                      </div>
-                    </div>
-                    <div className="text-xs text-red-400">
-                      {bankruptWarning.horses.length} {bankruptWarning.horses.length === 1 ? "kůň" : "koní"} · výnos{" "}
-                      <strong className="text-white">{bankruptWarning.totalSellValue} 💰</strong>
-                    </div>
-                    {bankruptWarning.willSurvive && (
-                      <div className="text-xs text-emerald-400">✓ Prodej tě zachrání.</div>
-                    )}
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => bankruptWarningResolverRef.current?.(true)}
-                        className="flex-1 rounded-[3px] bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 transition"
-                      >
-                        Prodat všechny koně
-                      </button>
-                      <button
-                        onClick={() => bankruptWarningResolverRef.current?.(false)}
-                        className="flex-1 rounded-[3px] border border-red-700 px-3 py-2 text-sm font-semibold text-red-300 hover:bg-red-900 transition"
-                      >
-                        Nechat zkrachovat
-                      </button>
-                    </div>
-                  </div>
-                ) : pendingCard ? (
-                  <div className={`rounded-[4px] border-2 p-4 space-y-2 ${
-                    pendingCard.card.type === "chance"
-                      ? "border-sky-400 bg-sky-50"
-                      : "border-teal-400 bg-teal-50"
-                  }`}>
-                    <div className={`text-xs font-bold uppercase tracking-widest ${
-                      pendingCard.card.type === "chance" ? "text-sky-600" : "text-teal-600"
-                    }`}>
-                      {pendingCard.card.type === "chance" ? "🎴 Osud" : "💼 Finance"}
-                    </div>
-                    <div className="text-sm font-medium text-slate-800 leading-snug">
-                      {pendingCard.card.text}
-                    </div>
-                    <div className={`mt-1 inline-block rounded-[3px] px-3 py-1 text-xs font-bold ${
-                      pendingCard.card.type === "chance"
-                        ? "bg-sky-100 text-sky-800"
-                        : "bg-teal-100 text-teal-800"
-                    }`}>
-                      {pendingCard.card.effectLabel}
-                    </div>
-                    <div className="text-xs text-slate-400 pt-1">
-                      Lízl: {players[pendingCard.playerIndex]?.name ?? "?"} · efekt se aplikuje za chvíli…
-                    </div>
-                  </div>
-                ) : pendingRacer ? (
-                  <div
-                    className="rounded-[4px] border-2 border-amber-400 bg-amber-50 p-4 space-y-3"
-                  >
-                    <div className="text-sm font-semibold text-amber-900">
-                      {/* theme.labels.racerField + racer — UI text z theme */}
-                      {theme.labels.racerField} nabízí {theme.labels.racer.toLowerCase()}:
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {pendingRacer.racer.image ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={pendingRacer.racer.image}
-                          alt={pendingRacer.racer.name}
-                          className="h-12 w-12 rounded-lg object-cover bg-slate-100 shrink-0"
-                          onError={(e) => { e.currentTarget.style.display = "none"; }}
-                        />
-                      ) : (
-                        <div className="text-3xl shrink-0">{pendingRacer.racer.emoji}</div>
-                      )}
-                      <div>
-                        <div className="font-bold text-slate-800">{pendingRacer.racer.name}</div>
-                        <div className="text-sm text-slate-500">{UI_TEXT.racer.speedLabel} {"⭐".repeat(pendingRacer.racer.speed)}</div>
-                        <div className="text-sm font-semibold text-amber-700">{UI_TEXT.racer.priceLabel} {pendingRacer.racer.price} 💰</div>
-                        <div className="text-xs text-slate-400">
-                          {players[pendingRacer.playerIndex]?.name} má: {players[pendingRacer.playerIndex]?.coins ?? 0} 💰
-                        </div>
-                      </div>
-                    </div>
-                    {isMyTurn ? (
-                      <div className="flex gap-2">
-                        <button
-                          onClick={buyRacer}
-                          disabled={(players[pendingRacer.playerIndex]?.coins ?? 0) < pendingRacer.racer.price}
-                          className="flex-1 rounded-[3px] bg-amber-500 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-600 disabled:cursor-not-allowed disabled:bg-slate-300"
-                        >
-                          {UI_TEXT.racer.buyButton}
-                        </button>
-                        <button
-                          onClick={skipRacer}
-                          className="flex-1 rounded-[3px] border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                        >
-                          {UI_TEXT.racer.skipButton}
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="rounded-[3px] bg-slate-100 px-3 py-2 text-center text-sm text-slate-500">
-                        {UI_TEXT.racer.waitingForDecision} {players[pendingRacer.playerIndex]?.name}…
-                      </div>
-                    )}
-                  </div>
-                ) : pendingRollDecision ? (
-                  <div className="rounded-[4px] border border-slate-300 bg-white p-4 shadow-sm">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">
-                          {UI_TEXT.rollDecision.title}
-                        </div>
-                        <div className="mt-1 text-sm font-semibold text-slate-800">
-                          Padlo <span className="text-base">{pendingRollDecision.baseRoll}</span>. Vyber finální tah.
-                        </div>
-                      </div>
-                      {isMyPendingRollDecisionTurn && rollDecisionCountdown !== null && (
-                        <div className="rounded-[3px] bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-500 tabular-nums">
-                          {rollDecisionCountdown} s
-                        </div>
-                      )}
-                    </div>
-                    {isMyPendingRollDecisionTurn ? (
-                      <>
-                        <div className="mt-3 grid grid-cols-3 gap-2">
-                          {rollDecisionOptions.map((option) => {
-                            const signedLabel = option.adjustment > 0 ? `+${option.adjustment}` : `${option.adjustment}`;
-                            return (
-                              <button
-                                key={option.adjustment}
-                                onClick={() => resolveRollDecision(option.adjustment)}
-                                disabled={option.isDisabled}
-                                className={`rounded-[3px] border px-3 py-3 text-left transition ${
-                                  option.adjustment === 0
-                                    ? "border-slate-300 bg-slate-50 hover:bg-slate-100"
-                                    : "border-amber-200 bg-amber-50 hover:bg-amber-100"
-                                } disabled:cursor-not-allowed disabled:opacity-45`}
-                              >
-                                <div className="text-xs font-black uppercase tracking-wide text-slate-500">
-                                  {option.adjustment === 0 ? UI_TEXT.rollDecision.normalOption : `${signedLabel} ${UI_TEXT.rollDecision.stepUnit}`}
-                                </div>
-                                <div className="mt-1 text-lg font-bold text-slate-800">
-                                  {option.finalRoll}
-                                </div>
-                                <div className="mt-1 text-[11px] font-medium text-slate-500">
-                                  {option.cost === 0 ? UI_TEXT.rollDecision.free : `-${option.cost} 💰`}
-                                </div>
-                                {option.targetField && (
-                                  <div className="mt-2 text-[11px] leading-snug text-slate-600">
-                                    {isFieldVisible(option.targetField)
-                                      ? <>{option.targetField.emoji} {option.targetField.label}</>
-                                      : <>🌫️ ???</>
-                                    }
-                                  </div>
-                                )}
-                              </button>
-                            );
-                          })}
-                        </div>
-                        <div className="mt-2 text-[11px] text-slate-400">
-                          {UI_TEXT.rollDecision.autoFallbackHint}
-                        </div>
-                      </>
-                    ) : (
-                      <div className="mt-3 rounded-[3px] bg-slate-100 px-3 py-3 text-center text-sm text-slate-500">
-                        {UI_TEXT.rollDecision.waitingForPlayer} {currentPlayer?.name ?? "…"}…
-                      </div>
-                    )}
-                  </div>
-                ) : isSpectator ? (
-                  <div className="w-full rounded-[4px] border border-indigo-200 bg-indigo-50 px-4 py-4 text-center space-y-1.5">
-                    <div className="text-sm font-semibold text-indigo-700">👀 Sleduješ hru jako pozorovatel</div>
-                    {gameCode && (
-                      <div className="text-xs text-indigo-500">
-                        Chceš hrát? Zadej kód{" "}
-                        <span className="font-mono font-bold">{gameCode}</span>{" "}
-                        na{" "}
-                        <a href={`/?join=${gameCode}`} className="underline hover:text-indigo-700">úvodní stránce</a>.
-                      </div>
-                    )}
-                  </div>
-                ) : iAmBankrupt ? (
-                  <div className="w-full rounded-[4px] bg-slate-800 px-4 py-4 text-center">
-                    <div className="text-sm font-semibold text-slate-300">💀 Jsi pozorovatel</div>
-                    <div className="mt-1 text-xs text-slate-500">Sleduj, kdo přežije do konce.</div>
-                  </div>
-                ) : isRolling ? (
-                  <div className="w-full rounded-[4px] bg-amber-100 px-4 py-4 text-center text-amber-700 font-semibold animate-pulse">
-                    {UI_TEXT.board.rollingStatus}
-                  </div>
-                ) : isMoving ? (
-                  <div className="w-full rounded-[4px] bg-slate-100 px-4 py-4 text-center text-slate-600 font-semibold">
-                    {theme.labels.racingEmoji} {UI_TEXT.board.movingStatus}
-                  </div>
-                ) : isMyTurn ? (
-                  <div className="space-y-2">
-                    {canReroll && (
-                      <div className="rounded-[3px] bg-amber-100 px-3 py-2 text-center text-xs font-semibold text-amber-800">
-                        {UI_TEXT.board.freeRerollNotice}
-                      </div>
-                    )}
-                    <button
-                      onClick={rollDice}
-                      disabled={!gameState || players.length === 0}
-                      className={`w-full rounded-[4px] px-4 py-4 text-lg font-semibold text-white shadow transition disabled:cursor-not-allowed disabled:bg-slate-400 ${canReroll ? "bg-amber-500 hover:bg-amber-600" : "bg-slate-900 hover:bg-slate-800"}`}
-                    >
-                      {canReroll ? UI_TEXT.board.rerollButton : UI_TEXT.board.rollButton}
-                    </button>
-                  </div>
-                ) : (
-                  <div className="w-full rounded-[4px] bg-slate-100 px-4 py-4 text-center text-slate-500">
-                    {UI_TEXT.board.waitingForPlayer} <span className="font-semibold text-slate-700">{currentPlayer?.name ?? "…"}</span>
-                  </div>
-                )}
-
-                {/* Hráči */}
-                <div className="border-t border-black/[0.06] my-1" />
-                <div>
-                  <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">{UI_TEXT.board.playersTitle}</div>
-                  <div className="space-y-2">
-                    {players.map((player, index) => {
-                      const isCurrent = gameState?.current_player_index === index;
-                      const bankrupt = isBankrupt(player);
-                      const field = FIELDS[player.position];
-                      // Discord avatar: preferuj player.discord_avatar_url (uložen v DB při joinu).
-                      // Fallback pro vlastního hráče: session avatar (pro případ starých záznamů bez DB pole).
-                      const isMe = !isLocalGame && player.id === myPlayerId;
-                      const avatarUrl = player.discord_avatar_url ?? (isMe ? myDiscordAvatar : null);
-                      const showAvatar = !!avatarUrl;
-                      return (
-                        <div
-                          key={player.id}
-                          onMouseEnter={() => !bankrupt && setHoveredPlayerId(player.id)}
-                          onMouseLeave={() => setHoveredPlayerId(null)}
-                          className={`rounded-[4px] border-2 p-3 transition-all cursor-default ${
-                            bankrupt
-                              ? "border-red-200 bg-red-50/50 opacity-35"
-                              : hoveredPlayerId === player.id
-                              ? theme.colors.playerCardHover
-                              : isCurrent
-                              ? `${theme.colors.playerCardActive} shadow-md`
-                              : theme.colors.playerCardNormal
-                          }`}
-                        >
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-2 min-w-0">
-                                {showAvatar ? (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img
-                                    src={avatarUrl!}
-                                    alt=""
-                                    className={`h-8 w-8 shrink-0 rounded-full object-cover ring-2 shadow ${bankrupt ? "ring-slate-300 opacity-40" : "ring-black/20"}`}
-                                  />
-                                ) : (
-                                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-black text-black ring-2 ring-black/20 shadow ${bankrupt ? "bg-slate-400" : player.color}`}>
-                                    {player.name.charAt(0).toUpperCase()}
-                                  </div>
-                                )}
-                                <div className="min-w-0">
-                                  <div className={`font-semibold text-sm leading-tight ${bankrupt ? "text-slate-400 line-through" : theme.colors.textPrimary}`}>
-                                    {player.name}
-                                  </div>
-                                  {bankrupt ? (
-                                    <div className="text-xs font-semibold text-red-500">{UI_TEXT.board.bankruptLabel}</div>
-                                  ) : (
-                                    <div className={`text-xs truncate ${theme.colors.textMuted}`}>{field?.emoji} {field?.label}</div>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="text-right shrink-0 space-y-1">
-                                <div className={`text-sm font-bold ${bankrupt ? "text-red-400" : theme.colors.textPrimary}`}>
-                                  {player.coins} 💰
-                                </div>
-                                {isCurrent && !bankrupt && (
-                                  <div className={`rounded-full px-2 py-0.5 text-center text-[10px] font-semibold ${theme.colors.activePlayerBadge}`}>
-                                    {UI_TEXT.board.activePlayerBadge}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            {!bankrupt && player.horses.length > 0 && (
-                              <div className="border-t border-black/8 pt-2 space-y-1.5">
-                                {[...player.horses]
-                                  .sort((a, b) => (b.isPreferred ? 1 : 0) - (a.isPreferred ? 1 : 0))
-                                  .map((h) => {
-                                    const hKey = racerOwnershipKey(h);
-                                    const isOwn = isLocalGame ? viewerRole === "player" : player.id === myPlayerId;
-                                    return (
-                                      <div
-                                        key={hKey}
-                                        className={`rounded-[3px] px-2.5 py-2 text-xs ${
-                                          h.isPreferred
-                                            ? "border border-yellow-200 bg-yellow-50"
-                                            : "border border-black/[0.06] bg-slate-50"
-                                        }`}
-                                        onMouseEnter={() => {
-                                          const rst = racerSoundType(h, getThemeRacers(theme));
-                                          if (rst === "horse") playSfx("hoof_hover");
-                                          else if (rst === "car") playSfx("engine_hover");
-                                        }}
-                                      >
-                                        <div className={`flex items-start gap-2 text-sm font-semibold leading-snug ${h.isPreferred ? "text-amber-700" : "text-slate-700"}`}>
-                                          {h.image
-                                            ? ( // eslint-disable-next-line @next/next/no-img-element
-                                              <img src={h.image} alt={h.name} className="mt-0.5 h-6 w-6 shrink-0 rounded object-cover bg-slate-100" onError={(e) => { e.currentTarget.style.display = "none"; }} />)
-                                            : <span className="mt-0.5 shrink-0 text-base">{h.emoji}</span>
-                                          }
-                                          <span className="min-w-0 flex-1 break-words">
-                                            {h.name}
-                                          </span>
-                                        </div>
-                                        <div className="mt-1.5 ml-6 inline-flex max-w-full flex-wrap items-center gap-1.5">
-                                          <span className="whitespace-nowrap rounded-[2px] bg-white/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
-                                            ⚡ {h.speed}
-                                          </span>
-                                          <span className="whitespace-nowrap rounded-[2px] bg-white/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
-                                            {UI_TEXT.board.staminaLabel} {h.stamina ?? h.maxStamina ?? 100}%
-                                          </span>
-                                          {isOwn ? (
-                                            <span className="inline-flex items-center gap-1 whitespace-nowrap">
-                                              {h.isPreferred && (
-                                                <span className="rounded-[2px] bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600">
-                                                  {UI_TEXT.board.preferredBadge}
-                                                </span>
-                                              )}
-                                              <button
-                                                onClick={() => setPreferredRacer(player.id, h.isPreferred ? null : hKey)}
-                                                className={`shrink-0 text-sm leading-none transition-colors ${
-                                                  h.isPreferred
-                                                    ? "text-amber-400 hover:text-slate-300"
-                                                    : "text-slate-300 hover:text-amber-400"
-                                                }`}
-                                                title={h.isPreferred ? "Odnastavit hlavního závodníka" : "Nastavit jako hlavního závodníka"}
-                                              >
-                                                {h.isPreferred ? "★" : "☆"}
-                                              </button>
-                                              {isCurrent && !gameState?.horse_pending && !gameState?.card_pending && !gameState?.offer_pending && (
-                                                <button
-                                                  onClick={() => sellRacerToBank(player, h)}
-                                                  className="shrink-0 rounded-[2px] bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors"
-                                                  title={`Prodat bance za ${Math.floor(h.price * 0.8)} 💰 (80 % ceny)`}
-                                                >
-                                                  Prodat
-                                                </button>
-                                              )}
-                                            </span>
-                                          ) : h.isPreferred ? (
-                                            <span className="inline-flex items-center gap-1 whitespace-nowrap">
-                                              <span className="rounded-[2px] bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600">
-                                                Hlavní
-                                              </span>
-                                              <span className="shrink-0 text-sm leading-none text-amber-400">★</span>
-                                            </span>
-                                          ) : null}
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* DEV: Race Board Layer — absolute overlay uvnitř board surface */}
-                {process.env.NODE_ENV === "development" && devRaceBoardLayer && (
-                  <DevRaceBoardLayer
-                    playerName={players.find(p => p.id === myPlayerId)?.name ?? players[0]?.name ?? "Hráč"}
-                    playerColor={players.find(p => p.id === myPlayerId)?.color ?? "#64748b"}
-                    racingEmoji={theme.labels.racingEmoji}
-                    onExit={() => setDevRaceBoardLayer(false)}
-                  />
-                )}
-
-                {/* Stájový souboj — board overlay (game flow + dev preview) */}
-                {stableDuelCtx && (
-                  <StableDuelBoardLayer
-                    challenger={stableDuelCtx.challenger}
-                    defender={stableDuelCtx.defender}
-                    isDev={stableDuelCtx.isPreview}
-                    themeId={themeId}
-                    backgroundUrl={minigameBgUrl || undefined}
-                    onFinish={handleStableDuelFinish}
-                    duelRole={stableDuelCtx.duelRole}
-                    duelId={stableDuelCtx.duelId}
-                    gameId={gameId ?? undefined}
-                    challengerId={stableDuelCtx.challengerId}
-                    defenderId={stableDuelCtx.defenderId}
-                    useSharedCountdown={!!stableDuelCtx.duelRole}
-                    sharedCountdownEndsAt={stableDuelCtx.sharedCountdownEndsAt}
-                    disableManualStart={!!stableDuelCtx.duelRole}
-                  />
-                )}
-
-              </div>
-
-              {/* DEV: Race Flip Layer — sourozenec boardu, ne dítě; flip efekt navazuje na rotaci boardu */}
-              {process.env.NODE_ENV === "development" && devFlipOpen && (
-                <DevRaceFlipLayer
-                  playerName={players.find(p => p.id === myPlayerId)?.name ?? players[0]?.name ?? "Hráč"}
-                  playerColor={players.find(p => p.id === myPlayerId)?.color ?? "#64748b"}
-                  racingEmoji={theme.labels.racingEmoji}
-                  onExit={closeDevFlip}
-                />
-              )}
-            </div>
-
-            {/* Log */}
-            {(gameState?.log?.length ?? 0) > 0 && (
-              <div className={`rounded-[4px] px-4 py-3 shadow-sm ring-1 ring-black/[0.05] ${theme.colors.cardBackground}`}>
-                <div className={`text-[10px] font-bold uppercase tracking-widest mb-2 ${theme.colors.textMuted}`}>{UI_TEXT.board.moveLogTitle}</div>
-                <div className="space-y-1 max-h-36 overflow-y-auto">
-                  {(gameState?.log ?? []).map((entry, i) => (
-                    <div key={i} className={`text-[11px] leading-snug ${i === 0 ? `font-medium ${theme.colors.textPrimary}` : theme.colors.textMuted}`}>
-                      {entry}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+          <GamePanel
+            theme={theme}
+            players={players}
+            gameState={gameState}
+            currentPlayer={currentPlayer}
+            soundEnabled={soundEnabled}
+            toggleSound={toggleSound}
+            shouldShowRacerGuide={shouldShowRacerGuide}
+            shouldShowStaminaGuide={shouldShowStaminaGuide}
+            shouldShowPreferredGuide={shouldShowPreferredGuide}
+            dismissRacerGuide={dismissRacerGuide}
+            dismissStaminaGuide={dismissStaminaGuide}
+            dismissPreferredGuide={dismissPreferredGuide}
+            isRolling={isRolling}
+            isMoving={isMoving}
+            displayRoll={displayRoll}
+            hasPendingRollDecision={hasPendingRollDecision}
+            bankruptWarning={bankruptWarning}
+            bankruptWarningResolverRef={bankruptWarningResolverRef}
+            pendingCard={pendingCard}
+            pendingRacer={pendingRacer}
+            pendingRollDecision={pendingRollDecision}
+            isMyTurn={isMyTurn}
+            isMyPendingRollDecisionTurn={isMyPendingRollDecisionTurn}
+            rollDecisionOptions={rollDecisionOptions}
+            rollDecisionCountdown={rollDecisionCountdown}
+            resolveRollDecision={resolveRollDecision}
+            isFieldVisible={isFieldVisible}
+            isSpectator={isSpectator}
+            iAmBankrupt={iAmBankrupt}
+            canReroll={canReroll}
+            gameCode={gameCode}
+            rollDice={rollDice}
+            buyRacer={buyRacer}
+            skipRacer={skipRacer}
+            setPreferredRacer={setPreferredRacer}
+            sellRacerToBank={sellRacerToBank}
+            myPlayerId={myPlayerId}
+            myDiscordAvatar={myDiscordAvatar}
+            isLocalGame={isLocalGame}
+            viewerRole={viewerRole}
+            hoveredPlayerId={hoveredPlayerId}
+            setHoveredPlayerId={setHoveredPlayerId}
+            playSfx={playSfx}
+            FIELDS={FIELDS}
+            gameId={gameId}
+            themeId={themeId}
+            minigameBgUrl={minigameBgUrl}
+            stableDuelCtx={stableDuelCtx}
+            handleStableDuelFinish={handleStableDuelFinish}
+            devRaceBoardLayer={devRaceBoardLayer}
+            setDevRaceBoardLayer={setDevRaceBoardLayer}
+            devFlipOpen={devFlipOpen}
+            closeDevFlip={closeDevFlip}
+          />
 
         </div>
       </div>
