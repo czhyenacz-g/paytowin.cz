@@ -17,7 +17,7 @@ import {
   FIGURINE_POSITIONS,
   FIGURINE_POSITIONS_STADIUM,
 } from "@/lib/board/layout";
-import { getFieldDetail, getFieldMetaLabel, getFieldAccentColor, getFieldTone } from "@/lib/board/fieldHelpers";
+import { getFieldDetail } from "@/lib/board/fieldHelpers";
 import { logEvent } from "@/lib/analytics";
 import { UI_TEXT } from "@/lib/ui-text";
 import { applyBoardShuffle } from "@/lib/board/shuffle";
@@ -70,7 +70,7 @@ import type { Player, Horse, ActiveEffect, GameState, OfferPending, RerollOffer,
 import { DEFAULT_ECONOMY } from "@/lib/types/game";
 import { resolveYearEvent } from "@/lib/year-events";
 import type { CenterEvent, FlashEvent } from "@/lib/types/events";
-import { mapToCenterEvent, resolveRacerDisplay, buildRollDecisionOptions } from "@/lib/game/viewModel";
+import { mapToCenterEvent, buildRollDecisionOptions } from "@/lib/game/viewModel";
 import CenterEventModal from "./modals/CenterEventModal";
 import FlashToast from "./modals/FlashToast";
 import RaceModal from "./RaceModal";
@@ -82,7 +82,6 @@ import { selectStableMinigame } from "@/lib/minigames/selectStableMinigame";
 import BuildInfoBar from "./BuildInfoBar";
 import ThemeAssetInspector from "./ThemeAssetInspector";
 import DevRaceModeShell from "./DevRaceModeShell";
-import DevRaceBoardLayer from "./DevRaceBoardLayer";
 import DevDuelShell  from "./duel/DuelDevShell";
 import SpeedDevShell from "./speed/SpeedDevShell";
 import LegendaryRaceDevShell from "./legendary/LegendaryRaceDevShell";
