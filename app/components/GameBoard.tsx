@@ -3458,5 +3458,6 @@ export default function GameBoard({ gameCode }: Props) {
       </div>
     </div>
   );
+
 }
 
