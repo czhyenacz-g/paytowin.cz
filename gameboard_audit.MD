@@ -244,10 +244,11 @@ Po změně spusť npx tsc --noEmit a ověř výstup.
 | 5 | buildRollDecisionOptions | lib/game/viewModel.ts | 8dc0a37 | −12 |
 | 6 | getFieldDetail, getFieldMetaLabel, getFieldAccentColor, getFieldTone | lib/board/fieldHelpers.ts | e9eb9ed | −46 |
 | 7 | Field card loop (FIELDS.map → FieldCardList) | app/components/board/FieldCardList.tsx | e9eb9ed | −144 |
+| 8 | Pravý panel + DiceFace + DICE_DOTS | app/components/board/GamePanel.tsx | ace847e | −535 |
 
 **Původní počet řádků:** 4593
-**Aktuální počet řádků:** 4211
-**Celková úspora:** −382 řádků (−8 %)
+**Aktuální počet řádků:** 3676
+**Celková úspora:** −917 řádků (−20 %)
 
 ---
 Hlavní rizika (neopomíjet při jakékoli extrakci)
