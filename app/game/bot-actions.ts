@@ -122,7 +122,7 @@ export async function executeBotTurnAction(
   const ctx = await fetchBotContext(gameId);
   if (!ctx) return { ok: false, reason: "context fetch failed" };
 
-  const { state, players, economy, theme, FIELDS } = ctx;
+  const { state, players, economy, theme, FIELDS, racers } = ctx;
 
   // Guards
   if (state.turn_count !== expectedTurnCount) return { ok: false, reason: "stale turn_count" };
@@ -211,12 +211,13 @@ export async function executeBotTurnAction(
     return { ok: true };
   }
 
-  // Karty — aplikujeme jednoduché efekty, složité přeskočíme s varováním
+  // Karty
   if (field.type === "chance" || field.type === "finance" || field.type === "mafia") {
     const card = drawCard(field.type, theme.content?.cards, theme.cardThemeTag);
     const effect = card.effect;
     let finalPlayer = movedPlayer;
     const cardLog: string[] = [`${botPlayer.name} lízl kartu: ${card.text}`];
+    let cardMovedToRacer: Horse | undefined;
 
     if (effect.kind === "coins" && effect.value !== undefined) {
       finalPlayer = { ...finalPlayer, coins: finalPlayer.coins + effect.value };
@@ -225,26 +226,151 @@ export async function executeBotTurnAction(
       finalPlayer = { ...finalPlayer, skip_next_turn: true };
       cardLog.push(`${botPlayer.name}: přeskočí příští tah`);
     } else if (effect.kind === "stamina_debuff" && effect.factor !== undefined && effect.duration !== undefined) {
+      // no-stacking: replace existing debuff
+      const existing = (finalPlayer.active_effects ?? []).filter(e => e.kind !== "stamina_debuff");
       const newEffect: ActiveEffect = { kind: "stamina_debuff", factor: effect.factor, turnsLeft: effect.duration };
-      finalPlayer = { ...finalPlayer, active_effects: [...(finalPlayer.active_effects ?? []), newEffect] };
-    } else {
-      // move / give_racer — příliš složité pro server MVP, přeskočíme
-      console.warn(`[bot] skipping complex card effect "${effect.kind}" for bot ${botPlayer.name}`);
+      finalPlayer = { ...finalPlayer, active_effects: [...existing, newEffect] };
+    } else if (effect.kind === "move" && effect.value !== undefined) {
+      const fc = FIELDS.length;
+      const oldPos = finalPlayer.position;
+      const newPos = ((oldPos + effect.value) % fc + fc) % fc;
+      finalPlayer = { ...finalPlayer, position: newPos };
+      cardLog.push(`posun ${effect.value > 0 ? "+" : ""}${effect.value} → pole ${newPos}`);
+
+      // START crossing (pouze dopředný přesun přes pole 0)
+      const passedStartCard = effect.value > 0 && newPos < oldPos;
+      if (passedStartCard || newPos === 0) {
+        if (passedStartCard) {
+          finalPlayer = { ...finalPlayer, coins: finalPlayer.coins + economy.stateSubsidy };
+          cardLog.push(`${botPlayer.name} prošel STARTem — +${economy.stateSubsidy} 💰`);
+        }
+        const currentLaps = finalPlayer.laps ?? 0;
+        const startTax = getStartTax(currentLaps, economy);
+        finalPlayer = { ...finalPlayer, laps: currentLaps + 1 };
+        if (startTax > 0) {
+          finalPlayer = { ...finalPlayer, coins: finalPlayer.coins - startTax };
+          cardLog.push(`Výpalné za průchod STARTem — -${startTax} 💰`);
+        }
+      }
+
+      // Efekty přistávacího pole (chain guard depth=1: karty se nevylosují, rent skip)
+      const landingField = FIELDS[newPos];
+      if (landingField) {
+        const lt = landingField.type;
+        if (lt === "chance" || lt === "finance" || lt === "mafia") {
+          cardLog.push(`${botPlayer.name}: přistál na poli ${lt} — karta se nevylosuje (přesun byl kartou).`);
+        } else if ((lt === "racer" || lt === "horse") && landingField.racer) {
+          const alreadyOwned = playerOwnsRacer(finalPlayer, landingField.racer);
+          const landingOwner = players.find(p => p.id !== botPlayer.id && playerOwnsRacer(p, landingField.racer!));
+          if (!alreadyOwned && !landingOwner) {
+            cardMovedToRacer = landingField.racer;
+            cardLog.push(`${botPlayer.name}: přišel na ${landingField.racer.emoji} ${landingField.label} — možnost koupě.`);
+          }
+        } else if (landingField.action) {
+          const { player: afterField, log: fieldLog } = landingField.action(finalPlayer);
+          finalPlayer = afterField as Player;
+          if (fieldLog) cardLog.push(fieldLog);
+        }
+      }
+    } else if (effect.kind === "give_racer") {
+      const ownedKeys = new Set(players.flatMap(p => p.horses.map(h => racerOwnershipKey(h))));
+      const freeRacers = FIELDS
+        .filter(f => (f.type === "racer" || f.type === "horse") && f.racer)
+        .map(f => f.racer!)
+        .filter(r => !ownedKeys.has(racerOwnershipKey(r)));
+
+      let chosen: Horse | undefined;
+      let usedFallback = false;
+      if (effect.racerId) {
+        chosen = freeRacers.find(r => r.id === effect.racerId);
+        if (!chosen) {
+          // Off-board legendary lookup in theme racers
+          const themeRacer = racers.find(rc => rc.id === effect.racerId);
+          if (themeRacer && !ownedKeys.has(racerOwnershipKey(themeRacer))) {
+            chosen = {
+              id:          themeRacer.id,
+              name:        themeRacer.name,
+              speed:       themeRacer.speed,
+              price:       themeRacer.price,
+              emoji:       themeRacer.emoji,
+              image:       themeRacer.image,
+              maxStamina:  themeRacer.maxStamina ?? 100,
+              stamina:     themeRacer.maxStamina ?? 100,
+              isLegendary: themeRacer.isLegendary,
+            };
+          } else {
+            chosen = freeRacers[Math.floor(Math.random() * freeRacers.length)];
+            usedFallback = true;
+          }
+        }
+      } else {
+        chosen = freeRacers[Math.floor(Math.random() * freeRacers.length)];
+      }
+
+      if (chosen) {
+        const newHorse: Horse = { ...chosen, stamina: chosen.maxStamina ?? chosen.stamina ?? 100 };
+        finalPlayer = { ...finalPlayer, horses: [...finalPlayer.horses, newHorse] };
+        cardLog.push(usedFallback
+          ? `${botPlayer.name}: ${card.text} — požadovaný závodník nebyl dostupný, získal ${chosen.emoji} ${chosen.name}!`
+          : `${botPlayer.name}: ${card.text} — získal ${chosen.emoji} ${chosen.name}!`
+        );
+      } else {
+        cardLog.push(`${botPlayer.name}: ${card.text} — žádný volný závodník není k dispozici.`);
+      }
     }
 
+    // effect2 — Mafia trade-off druhý efekt
+    if (card.effect2) {
+      const e2 = card.effect2;
+      if (e2.kind === "coins" && e2.value !== undefined) {
+        finalPlayer = { ...finalPlayer, coins: finalPlayer.coins + e2.value };
+      } else if (e2.kind === "move" && e2.value !== undefined) {
+        const fc = FIELDS.length;
+        finalPlayer = { ...finalPlayer, position: ((finalPlayer.position + e2.value) % fc + fc) % fc };
+      } else if (e2.kind === "skip_turn") {
+        finalPlayer = { ...finalPlayer, skip_next_turn: true };
+      }
+    }
+
+    const anyCardMove = effect.kind === "move" || card.effect2?.kind === "move";
     const playerUpdates: Record<string, unknown> = {
       coins: finalPlayer.coins,
       skip_next_turn: finalPlayer.skip_next_turn ?? false,
     };
+    if (anyCardMove) {
+      playerUpdates.position = finalPlayer.position;
+      if (finalPlayer.laps !== movedPlayer.laps) playerUpdates.laps = finalPlayer.laps ?? 0;
+    }
+    if (effect.kind === "give_racer") playerUpdates.horses = finalPlayer.horses;
     if (finalPlayer.active_effects !== movedPlayer.active_effects) {
       playerUpdates.active_effects = finalPlayer.active_effects;
     }
     await supabase.from("players").update(playerUpdates).eq("id", botPlayer.id);
 
     const log = [...cardLog, ...extraLog, ...logEntries];
+
+    // Karta s přesunem na volný racer: spustíme horse_pending (bot dokončí přes executeBotHorseDecisionAction)
+    if (cardMovedToRacer) {
+      await supabase.from("game_state").update({
+        horse_pending: true,
+        turn_count: newTurnCount,
+        card_pending: null,
+        offer_pending: null,
+        log: log.slice(0, 20),
+        last_roll: roll,
+      }).eq("game_id", gameId);
+      return { ok: true };
+    }
+
     const updatedForNext2 = updatedPlayers.map(p => p.id === botPlayer.id ? finalPlayer : p);
     const nextIdx3 = getNextActiveIndex(state.current_player_index, updatedForNext2);
-    await botFinishTurn(gameId, botPlayer, finalPlayer, updatedForNext2, { nextIndex: nextIdx3, turnCount: newTurnCount, log, lastRoll: roll });
+    await botFinishTurn(gameId, botPlayer, finalPlayer, updatedForNext2, {
+      nextIndex: nextIdx3,
+      turnCount: newTurnCount,
+      log,
+      lastRoll: roll,
+      ...(effect.kind === "give_racer" ? { updatedHorses: finalPlayer.horses } : {}),
+    });
     return { ok: true };
   }
 
