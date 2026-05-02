@@ -54,6 +54,7 @@ function EconomyFields({
   maxTax, setMaxTax,
   fogOfWar, setFogOfWar,
   addBotPlayer, setAddBotPlayer,
+  requireApproval, setRequireApproval,
 }: {
   stateSubsidy: number; setStateSubsidy: (v: number) => void;
   baseTax: number; setBaseTax: (v: number) => void;
@@ -61,6 +62,7 @@ function EconomyFields({
   maxTax: number; setMaxTax: (v: number) => void;
   fogOfWar: boolean; setFogOfWar: (v: boolean) => void;
   addBotPlayer: boolean; setAddBotPlayer: (v: boolean) => void;
+  requireApproval: boolean; setRequireApproval: (v: boolean) => void;
 }) {
   const [open, setOpen] = React.useState(false);
   return (
@@ -83,6 +85,18 @@ function EconomyFields({
               className="h-4 w-4 rounded accent-slate-800"
             />
             <span className="text-sm font-medium text-slate-700">🤖 Přidat bota, ať můžeš hrát hned</span>
+          </label>
+          <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+            <input
+              type="checkbox"
+              checked={requireApproval}
+              onChange={(e) => setRequireApproval(e.target.checked)}
+              className="h-4 w-4 rounded accent-slate-800"
+            />
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-slate-700">🔐 Schvalovat hráče před připojením</span>
+              <span className="text-xs text-slate-500">Zakladatel hry bude nové hráče přijímat nebo odmítat.</span>
+            </div>
           </label>
           <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
             <input
@@ -146,6 +160,7 @@ export default function LandingPage() {
   const [winsTotal, setWinsTotal] = React.useState<number | null>(null);
   const [isDevJoin, setIsDevJoin] = React.useState(false);
   const [addBotPlayer, setAddBotPlayer] = React.useState(false);
+  const [requireApproval, setRequireApproval] = React.useState(false);
   // Načti session + předvyplň ?join=KOD z URL
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -301,6 +316,7 @@ export default function LandingPage() {
         max_players: maxPlayers,
         economy: { stateSubsidy, baseTax, lapTaxCoefficient, maxTax },
         fog_of_war: fogOfWar,
+        require_approval: requireApproval,
       })
       .select()
       .single();
@@ -854,6 +870,7 @@ export default function LandingPage() {
                               maxTax={maxTax} setMaxTax={setMaxTax}
                               fogOfWar={fogOfWar} setFogOfWar={setFogOfWar}
                               addBotPlayer={addBotPlayer} setAddBotPlayer={setAddBotPlayer}
+                              requireApproval={requireApproval} setRequireApproval={setRequireApproval}
                             />
 
                             {error && <p className="text-sm text-red-600">{error}</p>}
@@ -1051,6 +1068,7 @@ export default function LandingPage() {
                       maxTax={maxTax} setMaxTax={setMaxTax}
                       fogOfWar={fogOfWar} setFogOfWar={setFogOfWar}
                       addBotPlayer={addBotPlayer} setAddBotPlayer={setAddBotPlayer}
+                      requireApproval={requireApproval} setRequireApproval={setRequireApproval}
                     />
 
                     {error && <p className="text-sm text-red-600">{error}</p>}
