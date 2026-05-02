@@ -8,6 +8,7 @@ import { THEMES } from "@/lib/themes";
 import { BOARD_PRESETS } from "@/lib/board";
 import MapMenuStrip from "./MapMenuStrip";
 import BrandLogo from "./BrandLogo";
+import JoinableGamesList from "./landing/JoinableGamesList";
 import { logEvent } from "@/lib/analytics";
 import {
   requestJoinAction,
@@ -528,16 +529,17 @@ export default function LandingPage() {
     setLoading(false);
   };
 
-  const joinGame = async () => {
+  const joinGame = async (overrideCode?: string) => {
     if (!name.trim()) return setError("Zadej své jméno.");
-    if (!joinCode.trim()) return setError("Zadej kód hry.");
+    const effectiveCode = (overrideCode ?? joinCode).trim().toUpperCase();
+    if (!effectiveCode) return setError("Zadej kód hry.");
     setLoading(true);
     setError("");
 
     const { data: game, error: gameErr } = await supabase
       .from("games")
       .select()
-      .eq("code", joinCode.trim().toUpperCase())
+      .eq("code", effectiveCode)
       .single();
 
     if (gameErr || !game) {
@@ -737,7 +739,7 @@ export default function LandingPage() {
               </div>
             )}
             <button
-              onClick={joinGame}
+              onClick={() => joinGame()}
               disabled={loading || joinApprovalStatus === "pending"}
               className="w-full rounded-2xl bg-slate-900 px-4 py-4 text-lg font-semibold text-white shadow transition hover:bg-slate-800 disabled:bg-slate-400"
             >
@@ -823,7 +825,7 @@ export default function LandingPage() {
                           className="h-11 min-w-0 flex-1 rounded-2xl border border-slate-700 bg-slate-800 px-4 text-sm uppercase tracking-[0.2em] text-slate-100 outline-none placeholder:tracking-normal placeholder:text-slate-400 focus:border-slate-500"
                         />
                         <button
-                          onClick={joinGame}
+                          onClick={() => joinGame()}
                           disabled={loading || joinApprovalStatus === "pending"}
                           className="h-11 shrink-0 rounded-2xl bg-emerald-500 px-4 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 disabled:bg-slate-600 disabled:text-white/50"
                         >
@@ -917,6 +919,13 @@ export default function LandingPage() {
                     ))}
                   </div>
                 )}
+
+                {/* ── Lobby: joinable games ── */}
+                <JoinableGamesList
+                  onJoin={(code) => joinGame(code)}
+                  playerName={name}
+                  isDiscordLoggedIn={!!discordUser?.id}
+                />
 
                 <div className="flex items-center justify-center gap-4 text-xs text-slate-400">
                   <a href="/pravidla" className="hover:text-slate-200 underline">Pravidla hry</a>
