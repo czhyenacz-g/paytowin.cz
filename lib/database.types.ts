@@ -17,6 +17,8 @@ export interface Database {
           economy: Json | null;
           fog_of_war: boolean;
           require_approval: boolean;
+          xp_awarded: boolean;
+          win_stars_awarded: boolean;
         };
         Insert: {
           code: string;
@@ -29,6 +31,8 @@ export interface Database {
           economy?: Json | null;
           fog_of_war?: boolean;
           require_approval?: boolean;
+          xp_awarded?: boolean;
+          win_stars_awarded?: boolean;
         };
         Update: {
           code?: string;
@@ -41,6 +45,8 @@ export interface Database {
           economy?: Json | null;
           fog_of_war?: boolean;
           require_approval?: boolean;
+          xp_awarded?: boolean;
+          win_stars_awarded?: boolean;
         };
       };
       players: {

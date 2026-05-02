@@ -135,3 +135,53 @@ export async function awardRaceStarAction(
 
   return { ok: true };
 }
+
+/**
+ * awardWinStarAction — přidělí +1 hvězdu vítězi hry proti reálným hráčům.
+ * Guard: games.win_stars_awarded; min. 2 hráči s Discord identitou; vítěz nesmí být bot.
+ */
+export async function awardWinStarAction(
+  gameId: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!gameId) return { ok: false, error: "gameId chybí" };
+
+  const { data: game, error: gameErr } = await supabase
+    .from("games")
+    .select("id, status, win_stars_awarded")
+    .eq("id", gameId)
+    .single();
+
+  if (gameErr || !game) return { ok: false, error: gameErr?.message ?? "Hra nenalezena" };
+  if (game.status !== "finished") return { ok: false, error: "Hra ještě neskončila" };
+  if (game.win_stars_awarded) return { ok: false, error: "Win stars již uděleny" };
+
+  const { data: players, error: playersErr } = await supabase
+    .from("players")
+    .select("id, discord_id, coins, is_bot")
+    .eq("game_id", gameId);
+
+  if (playersErr) return { ok: false, error: playersErr.message };
+
+  const humanPlayers = (players ?? []).filter(p => !p.is_bot && p.discord_id);
+  if (humanPlayers.length < 2) return { ok: false, error: "Méně než 2 hráči s Discord identitou" };
+
+  const winner = (players ?? []).find(p => (p.coins ?? 0) > 0 && !p.is_bot && p.discord_id);
+  if (!winner?.discord_id) return { ok: false, error: "Výherce nemá Discord identitu nebo je bot" };
+
+  const { error: rpcErr } = await supabase.rpc("increment_xp_and_wins", {
+    p_discord_id: winner.discord_id,
+    p_xp:        0,
+    p_win:       false,
+    p_stars:     0,
+    p_win_stars: 1,
+  });
+  if (rpcErr) return { ok: false, error: rpcErr.message };
+
+  const { error: markErr } = await supabase
+    .from("games")
+    .update({ win_stars_awarded: true })
+    .eq("id", gameId);
+  if (markErr) return { ok: false, error: markErr.message };
+
+  return { ok: true };
+}

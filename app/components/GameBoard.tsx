@@ -8,7 +8,7 @@ import { resolveRacerRefsAction } from "@/app/admin/racers/actions";
 import { themeToManifest } from "@/lib/themes/manifest";
 import { loadThemeManifestAsync } from "@/lib/themes/loader";
 import { getBoardById } from "@/lib/board";
-import { awardXpAction, awardRaceStarAction } from "@/app/game/actions";
+import { awardXpAction, awardRaceStarAction, awardWinStarAction } from "@/app/game/actions";
 import { STADIUM_ASPECT } from "@/lib/board/constants";
 import {
   FIELD_POSITIONS,
@@ -2100,8 +2100,9 @@ export default function GameBoard({ gameCode }: Props) {
       // Okamžitý lokální update — stejný vzor jako cancelGame.
       // Realtime propaguje ostatním klientům, ale tento klient nečeká.
       setGameStatus("finished");
-      // XP — fire and forget; duplikaci hlídá games.xp_awarded guard
+      // XP + win stars — fire and forget; duplikaci hlídají guard sloupce
       awardXpAction(gameId).catch(() => {});
+      awardWinStarAction(gameId).catch(() => {});
     }
   };
 
