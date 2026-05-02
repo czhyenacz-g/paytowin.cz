@@ -34,6 +34,12 @@ export type ReinstateJoinResult =
   | { ok: true;  status: "pending" }
   | { ok: false; reason: "request_not_found" | "not_owner" | "already_approved" }
 
+export type CheckJoinStatusResult =
+  | { ok: true;  status: "pending" }
+  | { ok: true;  status: "rejected" }
+  | { ok: true;  status: "approved"; playerId: string; gameCode: string }
+  | { ok: false; reason: "not_found" | "no_discord_id" | "approved_but_player_missing" }
+
 // ─── requestJoinAction ────────────────────────────────────────────────────────
 
 /**
@@ -294,4 +300,67 @@ export async function reinstateJoinRequestAction(
   }
 
   return { ok: true, status: "pending" };
+}
+
+// ─── checkJoinRequestStatusAction ────────────────────────────────────────────
+
+/**
+ * Žadatel zkontroluje stav své žádosti.
+ * Vyžaduje discordId — anon hráči nepoužívají approval flow.
+ * Pokud je approved, najde players row a vrátí playerId + gameCode pro redirect.
+ */
+export async function checkJoinRequestStatusAction(params: {
+  gameCode:  string;
+  discordId: string;
+}): Promise<CheckJoinStatusResult> {
+  const { gameCode, discordId } = params;
+
+  if (!discordId) {
+    return { ok: false, reason: "no_discord_id" };
+  }
+
+  const { data: game } = await supabase
+    .from("games")
+    .select("id, code")
+    .eq("code", gameCode.toUpperCase())
+    .single();
+
+  if (!game) {
+    return { ok: false, reason: "not_found" };
+  }
+
+  const { data: req } = await supabase
+    .from("game_join_requests")
+    .select("id, status")
+    .eq("game_id", game.id)
+    .eq("discord_id", discordId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!req) {
+    return { ok: false, reason: "not_found" };
+  }
+
+  if (req.status === "pending") {
+    return { ok: true, status: "pending" };
+  }
+
+  if (req.status === "rejected") {
+    return { ok: true, status: "rejected" };
+  }
+
+  // approved → najdi player row
+  const { data: player } = await supabase
+    .from("players")
+    .select("id")
+    .eq("game_id", game.id)
+    .eq("discord_id", discordId)
+    .maybeSingle();
+
+  if (!player) {
+    return { ok: false, reason: "approved_but_player_missing" };
+  }
+
+  return { ok: true, status: "approved", playerId: player.id, gameCode: game.code };
 }

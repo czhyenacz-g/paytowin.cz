@@ -14,6 +14,7 @@ import {
   approveJoinRequestAction,
   rejectJoinRequestAction,
   reinstateJoinRequestAction,
+  checkJoinRequestStatusAction,
 } from "@/app/game/join-actions";
 
 interface DiscordUser {
@@ -183,6 +184,8 @@ export default function LandingPage() {
   const [requireApproval, setRequireApproval] = React.useState(false);
   const [joinApprovalStatus, setJoinApprovalStatus] = React.useState<"pending" | "rejected" | "approved" | null>(null);
   const [joinApprovalMessage, setJoinApprovalMessage] = React.useState<string | null>(null);
+  const [pendingGameCode, setPendingGameCode] = React.useState<string | null>(null);
+  const [checkingApproval, setCheckingApproval] = React.useState(false);
   const [ownerGameRequests, setOwnerGameRequests] = React.useState<OwnerGameRequests[]>([]);
   const [ownerRequestActionError, setOwnerRequestActionError] = React.useState<Record<string, string>>({});
   // Načti session + předvyplň ?join=KOD z URL
@@ -385,6 +388,43 @@ export default function LandingPage() {
     await fetchOwnerRequests(discordUser.id);
   };
 
+  const handleCheckApproval = async () => {
+    if (!pendingGameCode) return;
+    if (!discordUser?.id) {
+      setJoinApprovalMessage("Pro schválené hry musíš být přihlášen přes Discord.");
+      return;
+    }
+    setCheckingApproval(true);
+    const result = await checkJoinRequestStatusAction({
+      gameCode:  pendingGameCode,
+      discordId: discordUser.id,
+    });
+    setCheckingApproval(false);
+
+    if (!result.ok) {
+      if (result.reason === "not_found") {
+        setJoinApprovalMessage("Žádost nenalezena. Zkus se připojit znovu.");
+        setJoinApprovalStatus(null);
+      } else if (result.reason === "approved_but_player_missing") {
+        setJoinApprovalMessage("Žádost je schválena, ale hráčský záznam chybí. Kontaktuj zakladatele.");
+      } else {
+        setJoinApprovalMessage(`Chyba při kontrole: ${result.reason}`);
+      }
+      return;
+    }
+
+    if (result.status === "pending") {
+      setJoinApprovalMessage("Pořád čekáš na schválení zakladatelem.");
+    } else if (result.status === "rejected") {
+      setJoinApprovalStatus("rejected");
+      setJoinApprovalMessage("Tvoje žádost byla odmítnuta. Zakladatel tě může znovu povolit.");
+    } else {
+      // approved — nastav localStorage a redirect
+      localStorage.setItem(`paytowin_player_${result.gameCode}`, result.playerId);
+      router.push(`/game/${result.gameCode}`);
+    }
+  };
+
   const loginWithDiscord = async () => {
     await supabase.auth.signInWithOAuth({
       provider: "discord",
@@ -563,9 +603,11 @@ export default function LandingPage() {
         // pending nebo already_pending
         setJoinApprovalStatus("pending");
         setJoinApprovalMessage("Žádost odeslána. Čekáš na schválení zakladatelem hry.");
+        setPendingGameCode(game.code);
       } else if (result.reason === "already_rejected") {
         setJoinApprovalStatus("rejected");
         setJoinApprovalMessage("Tvoje žádost byla odmítnuta. Zakladatel tě může znovu povolit.");
+        setPendingGameCode(game.code);
       } else {
         setError(`Nepodařilo se odeslat žádost. (${result.reason})`);
       }
@@ -663,8 +705,17 @@ export default function LandingPage() {
             </div>
             {error && <p className="text-sm text-red-600">{error}</p>}
             {joinApprovalStatus === "pending" && (
-              <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                ⏳ {joinApprovalMessage}
+              <div className="space-y-2">
+                <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                  ⏳ {joinApprovalMessage}
+                </div>
+                <button
+                  onClick={handleCheckApproval}
+                  disabled={checkingApproval}
+                  className="w-full rounded-xl border border-amber-400 bg-amber-100 px-4 py-2.5 text-sm font-semibold text-amber-800 hover:bg-amber-200 transition disabled:opacity-50"
+                >
+                  {checkingApproval ? "Kontroluji…" : "🔄 Zkontrolovat schválení"}
+                </button>
               </div>
             )}
             {joinApprovalStatus === "rejected" && (
@@ -781,8 +832,17 @@ export default function LandingPage() {
                   <p className="text-center text-sm text-red-600">{error}</p>
                 )}
                 {joinApprovalStatus === "pending" && (
-                  <div className="mx-auto max-w-sm rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-center text-sm text-amber-300">
-                    ⏳ {joinApprovalMessage}
+                  <div className="mx-auto max-w-sm space-y-2">
+                    <div className="rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-center text-sm text-amber-300">
+                      ⏳ {joinApprovalMessage}
+                    </div>
+                    <button
+                      onClick={handleCheckApproval}
+                      disabled={checkingApproval}
+                      className="w-full rounded-xl border border-amber-500/40 bg-amber-500/15 px-4 py-2.5 text-sm font-semibold text-amber-300 hover:bg-amber-500/25 transition disabled:opacity-50"
+                    >
+                      {checkingApproval ? "Kontroluji…" : "🔄 Zkontrolovat schválení"}
+                    </button>
                   </div>
                 )}
                 {joinApprovalStatus === "rejected" && (
