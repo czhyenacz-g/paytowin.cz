@@ -852,8 +852,8 @@ export default function LandingPage() {
                                 className="h-4 w-4 rounded accent-slate-800"
                               />
                               <div>
-                                <span className="text-sm font-medium text-slate-700">🤖 Přidat Stájového bota</span>
-                                <span className="ml-2 text-xs text-slate-400">hraje za tebe, když čekáš na hráče</span>
+                                <span className="text-sm font-medium text-slate-700">🤖 Přidat bota, ať můžeš hrát hned</span>
+                                <span className="ml-2 text-xs text-slate-400">bot hraje, dokud nepřijdou další hráči</span>
                               </div>
                             </label>
 
@@ -1052,6 +1052,19 @@ export default function LandingPage() {
                       maxTax={maxTax} setMaxTax={setMaxTax}
                       fogOfWar={fogOfWar} setFogOfWar={setFogOfWar}
                     />
+
+                    <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={addBotPlayer}
+                        onChange={(e) => setAddBotPlayer(e.target.checked)}
+                        className="h-4 w-4 rounded accent-slate-800"
+                      />
+                      <div>
+                        <span className="text-sm font-medium text-slate-700">🤖 Přidat bota, ať můžeš hrát hned</span>
+                        <span className="ml-2 text-xs text-slate-400">bot hraje, dokud nepřijdou další hráči</span>
+                      </div>
+                    </label>
 
                     {error && <p className="text-sm text-red-600">{error}</p>}
 
