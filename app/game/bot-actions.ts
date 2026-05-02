@@ -133,6 +133,20 @@ export async function executeBotTurnAction(
   const botPlayer = players[state.current_player_index];
   if (!botPlayer?.is_bot) return { ok: false, reason: "current player is not a bot" };
 
+  // Auto-skip: GameBoard useEffect se pro bota nevyhodnotí (myPlayerId ≠ bot.id)
+  if (botPlayer.skip_next_turn) {
+    const skipLog = [`${botPlayer.name} přeskakuje tah (penalizace z karty)`];
+    const logEntries0: string[] = Array.isArray(state.log) ? (state.log as string[]) : [];
+    const nextSkipIndex = getNextActiveIndex(state.current_player_index, players);
+    await supabase.from("players").update({ skip_next_turn: false }).eq("id", botPlayer.id);
+    await supabase.from("game_state").update({
+      current_player_index: nextSkipIndex,
+      turn_count: state.turn_count + 1,
+      log: [...skipLog, ...logEntries0].slice(0, 20),
+    }).eq("game_id", gameId);
+    return { ok: true };
+  }
+
   // Roll dice (1-6)
   const roll = Math.ceil(Math.random() * 6);
   const fieldCount = FIELDS.length;
@@ -333,14 +347,13 @@ export async function executeBotTurnAction(
     }
 
     const anyCardMove = effect.kind === "move" || card.effect2?.kind === "move";
-    const playerUpdates: Record<string, unknown> = {
-      coins: finalPlayer.coins,
-      skip_next_turn: finalPlayer.skip_next_turn ?? false,
-    };
+    const anyCardSkip = effect.kind === "skip_turn" || card.effect2?.kind === "skip_turn";
+    const playerUpdates: Record<string, unknown> = { coins: finalPlayer.coins };
     if (anyCardMove) {
       playerUpdates.position = finalPlayer.position;
       if (finalPlayer.laps !== movedPlayer.laps) playerUpdates.laps = finalPlayer.laps ?? 0;
     }
+    if (anyCardSkip) playerUpdates.skip_next_turn = true;
     if (effect.kind === "give_racer") playerUpdates.horses = finalPlayer.horses;
     if (finalPlayer.active_effects !== movedPlayer.active_effects) {
       playerUpdates.active_effects = finalPlayer.active_effects;
