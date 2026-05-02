@@ -167,6 +167,8 @@ export function normalizePlayer(raw: unknown): Player {
     discord_id: (r.discord_id as string | null | undefined) ?? null,
     discord_avatar_url: (r.discord_avatar_url as string | null | undefined) ?? null,
     laps: Number(r.laps ?? 0),
+    is_bot: Boolean(r.is_bot ?? false),
+    active_effects: Array.isArray(r.active_effects) ? (r.active_effects as import("@/lib/types/game").ActiveEffect[]) : [],
   };
 }
 
