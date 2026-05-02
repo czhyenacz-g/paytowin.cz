@@ -37,6 +37,7 @@ create table if not exists game_state (
 alter table game_state add column if not exists turn_count      int  not null default 0;
 alter table game_state add column if not exists horse_pending   bool not null default false;
 alter table game_state add column if not exists mass_race_done  bool not null default false;
+alter table players    add column if not exists is_bot          bool not null default false;
 
 create table if not exists horse_catalog (
   id     uuid primary key default gen_random_uuid(),
