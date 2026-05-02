@@ -266,7 +266,7 @@ export default function GameBoard({ gameCode }: Props) {
   const flipTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   // Stájový souboj — board overlay (game flow)
   const [stableDuelCtx, setStableDuelCtx] = React.useState<{ challenger: DuelContestant; defender: DuelContestant; isPreview: boolean; challengerId?: string; defenderId?: string; duelRole?: "challenger_authority" | "defender_remote"; duelId?: string; sharedCountdownEndsAt?: number } | null>(null);
-  const stableDuelProceedRef = React.useRef<((resultLog?: string[]) => Promise<void>) | null>(null);
+  const stableDuelProceedRef = React.useRef<((resultLog?: string[], updatedCurrentPlayerHorses?: import("@/lib/types/game").Horse[]) => Promise<void>) | null>(null);
   const boardSurfaceRef = React.useRef<HTMLDivElement>(null);
   // Idempotency refs pro countdown a overlay — klíčovány identitou duelu
   const countdownStartedRef = React.useRef<string | null>(null);
@@ -990,7 +990,7 @@ export default function GameBoard({ gameCode }: Props) {
             horse: ownerPlayer.horses[0] ?? null,
             color: ownerPlayer.color,
           };
-          stableDuelProceedRef.current = async (resultLog?: string[]) => {
+          stableDuelProceedRef.current = async (resultLog?: string[], updatedCurrentPlayerHorses?: import("@/lib/types/game").Horse[]) => {
             await finishTurn({
               nextIndex, turnCount: newTurnCount,
               log: [
@@ -1000,6 +1000,7 @@ export default function GameBoard({ gameCode }: Props) {
               lastRoll: roll,
               clearOfferPending: { type: "stable_duel_pending", challengerId: currentPlayer.id, defenderId: ownerPlayer.id },
               ...(yearEventTelegramPayload ? { yearEventTelegram: yearEventTelegramPayload } : {}),
+              ...(updatedCurrentPlayerHorses ? { updatedCurrentPlayerHorses } : {}),
             });
           };
           boardSurfaceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -2233,7 +2234,7 @@ export default function GameBoard({ gameCode }: Props) {
               ) {
                 if (proceed) {
                   console.log("[stable-duel-cleanup] calling proceed");
-                  await proceed(resultLog);
+                  await proceed(resultLog, updatedCHorses);
                   console.log("[stable-duel-cleanup] success");
                 } else {
                   console.warn("[stable-duel-cleanup] skipped — proceed is null");
@@ -2248,7 +2249,7 @@ export default function GameBoard({ gameCode }: Props) {
           return;
         }
 
-        if (proceed) await proceed(resultLog);
+        if (proceed) await proceed(resultLog, updatedCHorses);
         return;
       }
     }
