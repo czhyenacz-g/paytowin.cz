@@ -16,6 +16,7 @@ export interface Database {
           max_players: number | null;
           economy: Json | null;
           fog_of_war: boolean;
+          require_approval: boolean;
         };
         Insert: {
           code: string;
@@ -27,6 +28,7 @@ export interface Database {
           max_players?: number | null;
           economy?: Json | null;
           fog_of_war?: boolean;
+          require_approval?: boolean;
         };
         Update: {
           code?: string;
@@ -38,6 +40,7 @@ export interface Database {
           max_players?: number | null;
           economy?: Json | null;
           fog_of_war?: boolean;
+          require_approval?: boolean;
         };
       };
       players: {
@@ -113,6 +116,33 @@ export interface Database {
           card_pending?: Json | null;
           offer_pending?: Json | null;
           revealed_fields?: Json;
+        };
+      };
+      game_join_requests: {
+        Row: {
+          id:                 string;
+          game_id:            string;
+          name:               string;
+          discord_id:         string | null;
+          discord_avatar_url: string | null;
+          status:             "pending" | "approved" | "rejected";
+          created_at:         string;
+          reviewed_at:        string | null;
+        };
+        Insert: {
+          game_id:             string;
+          name:                string;
+          discord_id?:         string | null;
+          discord_avatar_url?: string | null;
+          status?:             "pending" | "approved" | "rejected";
+          reviewed_at?:        string | null;
+        };
+        Update: {
+          name?:               string;
+          discord_id?:         string | null;
+          discord_avatar_url?: string | null;
+          status?:             "pending" | "approved" | "rejected";
+          reviewed_at?:        string | null;
         };
       };
       horse_catalog: {
