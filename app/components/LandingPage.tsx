@@ -9,12 +9,31 @@ import { BOARD_PRESETS } from "@/lib/board";
 import MapMenuStrip from "./MapMenuStrip";
 import BrandLogo from "./BrandLogo";
 import { logEvent } from "@/lib/analytics";
-import { requestJoinAction } from "@/app/game/join-actions";
+import {
+  requestJoinAction,
+  approveJoinRequestAction,
+  rejectJoinRequestAction,
+  reinstateJoinRequestAction,
+} from "@/app/game/join-actions";
 
 interface DiscordUser {
   id: string;
   name: string;
   avatar: string | null;
+}
+
+interface JoinRequest {
+  id: string;
+  name: string;
+  discord_id: string | null;
+  discord_avatar_url: string | null;
+  status: "pending" | "approved" | "rejected";
+}
+
+interface OwnerGameRequests {
+  gameId:   string;
+  gameCode: string;
+  requests: JoinRequest[];
 }
 
 interface PanelConfig {
@@ -164,6 +183,8 @@ export default function LandingPage() {
   const [requireApproval, setRequireApproval] = React.useState(false);
   const [joinApprovalStatus, setJoinApprovalStatus] = React.useState<"pending" | "rejected" | "approved" | null>(null);
   const [joinApprovalMessage, setJoinApprovalMessage] = React.useState<string | null>(null);
+  const [ownerGameRequests, setOwnerGameRequests] = React.useState<OwnerGameRequests[]>([]);
+  const [ownerRequestActionError, setOwnerRequestActionError] = React.useState<Record<string, string>>({});
   // Načti session + předvyplň ?join=KOD z URL
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -282,6 +303,86 @@ export default function LandingPage() {
     setActivePanel(null);
     setShareCode(null);
     setError("");
+  };
+
+  const fetchOwnerRequests = React.useCallback(async (discordId: string) => {
+    // Načti hry, kde jsem owner a require_approval=true
+    const { data: games } = await supabase
+      .from("games")
+      .select("id, code")
+      .eq("owner_discord_id", discordId)
+      .eq("require_approval", true)
+      .in("status", ["waiting", "playing"]);
+
+    if (!games?.length) {
+      setOwnerGameRequests([]);
+      return;
+    }
+
+    const gameIds = games.map(g => g.id);
+    const { data: requests } = await supabase
+      .from("game_join_requests")
+      .select("id, game_id, name, discord_id, discord_avatar_url, status")
+      .in("game_id", gameIds)
+      .in("status", ["pending", "rejected"]);
+
+    if (!requests?.length) {
+      setOwnerGameRequests([]);
+      return;
+    }
+
+    const grouped: OwnerGameRequests[] = games
+      .map(g => ({
+        gameId:   g.id,
+        gameCode: g.code,
+        requests: requests
+          .filter(r => r.game_id === g.id)
+          .map(r => ({
+            id:                 r.id,
+            name:               r.name,
+            discord_id:         r.discord_id,
+            discord_avatar_url: r.discord_avatar_url,
+            status:             r.status as "pending" | "rejected",
+          })),
+      }))
+      .filter(g => g.requests.length > 0);
+
+    setOwnerGameRequests(grouped);
+  }, []);
+
+  // Načti žádosti vždy po přihlášení Discordem
+  React.useEffect(() => {
+    if (discordUser?.id) fetchOwnerRequests(discordUser.id);
+  }, [discordUser?.id, fetchOwnerRequests]);
+
+  const handleApproveRequest = async (requestId: string) => {
+    if (!discordUser?.id) return;
+    setOwnerRequestActionError(prev => ({ ...prev, [requestId]: "" }));
+    const result = await approveJoinRequestAction(requestId, discordUser.id);
+    if (!result.ok) {
+      setOwnerRequestActionError(prev => ({ ...prev, [requestId]: result.reason }));
+    }
+    await fetchOwnerRequests(discordUser.id);
+  };
+
+  const handleRejectRequest = async (requestId: string) => {
+    if (!discordUser?.id) return;
+    setOwnerRequestActionError(prev => ({ ...prev, [requestId]: "" }));
+    const result = await rejectJoinRequestAction(requestId, discordUser.id);
+    if (!result.ok) {
+      setOwnerRequestActionError(prev => ({ ...prev, [requestId]: result.reason }));
+    }
+    await fetchOwnerRequests(discordUser.id);
+  };
+
+  const handleReinstateRequest = async (requestId: string) => {
+    if (!discordUser?.id) return;
+    setOwnerRequestActionError(prev => ({ ...prev, [requestId]: "" }));
+    const result = await reinstateJoinRequestAction(requestId, discordUser.id);
+    if (!result.ok) {
+      setOwnerRequestActionError(prev => ({ ...prev, [requestId]: result.reason }));
+    }
+    await fetchOwnerRequests(discordUser.id);
   };
 
   const loginWithDiscord = async () => {
@@ -687,6 +788,60 @@ export default function LandingPage() {
                 {joinApprovalStatus === "rejected" && (
                   <div className="mx-auto max-w-sm rounded-xl border border-red-400/40 bg-red-500/10 px-4 py-3 text-center text-sm text-red-300">
                     🚫 {joinApprovalMessage}
+                  </div>
+                )}
+
+                {/* ── Owner panel: žádosti o připojení ── */}
+                {ownerGameRequests.length > 0 && (
+                  <div className="mx-auto w-full max-w-5xl rounded-2xl border border-slate-700 bg-slate-800/60 p-4 space-y-4">
+                    <div className="text-xs font-semibold uppercase tracking-wider text-slate-400">🔐 Žádosti o připojení</div>
+                    {ownerGameRequests.map(({ gameCode, requests }) => (
+                      <div key={gameCode} className="space-y-2">
+                        <div className="text-xs text-slate-500 font-mono">Hra: <span className="text-slate-300 font-semibold">{gameCode}</span></div>
+                        {requests.map(req => (
+                          <div key={req.id} className="flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5">
+                            {req.discord_avatar_url ? (
+                              <img src={req.discord_avatar_url} alt="" className="h-7 w-7 rounded-full shrink-0" />
+                            ) : (
+                              <div className="h-7 w-7 rounded-full bg-slate-700 shrink-0 flex items-center justify-center text-xs text-slate-400">
+                                {req.name[0]?.toUpperCase() ?? "?"}
+                              </div>
+                            )}
+                            <span className="flex-1 truncate text-sm text-slate-200">{req.name}</span>
+                            {ownerRequestActionError[req.id] && (
+                              <span className="text-xs text-red-400">{ownerRequestActionError[req.id]}</span>
+                            )}
+                            {req.status === "pending" && (
+                              <>
+                                <button
+                                  onClick={() => handleApproveRequest(req.id)}
+                                  className="rounded-lg bg-emerald-600 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-500 transition shrink-0"
+                                >
+                                  Přijmout
+                                </button>
+                                <button
+                                  onClick={() => handleRejectRequest(req.id)}
+                                  className="rounded-lg bg-red-700/80 px-3 py-1 text-xs font-semibold text-white hover:bg-red-600 transition shrink-0"
+                                >
+                                  Odmítnout
+                                </button>
+                              </>
+                            )}
+                            {req.status === "rejected" && (
+                              <>
+                                <span className="text-xs text-red-400 shrink-0">Odmítnuto</span>
+                                <button
+                                  onClick={() => handleReinstateRequest(req.id)}
+                                  className="rounded-lg border border-slate-600 px-3 py-1 text-xs font-semibold text-slate-300 hover:bg-slate-700 transition shrink-0"
+                                >
+                                  Znovu povolit
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ))}
                   </div>
                 )}
 
