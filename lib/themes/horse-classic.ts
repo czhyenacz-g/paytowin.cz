@@ -59,7 +59,7 @@ export const horseClassicTheme: Theme = {
     fieldCount: 21,
     racerSlotIndexes: [3, 10, 17, 19],
     fields: [
-      { index: 0,  type: "start",      label: "Start / Cíl",         emoji: "🏁",  amount: 2000 },
+      { index: 0,  type: "start",      label: "Start / Cíl",         emoji: "🏁",  amount: 1000 },
       { index: 1,  type: "mafia",      label: "Záhadný mecenáš",     emoji: "🎩",  amount: 50 },
       { index: 2,  type: "coins_lose", label: "Veterinář",           emoji: "🩺",  amount: -600 },
       { index: 3,  type: "racer",      label: "Závodník",            emoji: "🐎" },

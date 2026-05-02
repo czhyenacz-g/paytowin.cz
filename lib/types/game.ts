@@ -22,7 +22,7 @@ export interface EconomyConfig {
 }
 
 export const DEFAULT_ECONOMY: EconomyConfig = {
-  stateSubsidy: 2000,
+  stateSubsidy: 1000,
   baseTax: 500,
   lapTaxCoefficient: 1,
   maxTax: 5000,

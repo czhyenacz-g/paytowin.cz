@@ -192,7 +192,7 @@ export const horseDayTheme: Theme = {
         "type": "start",
         "label": "START",
         "emoji": "🏁",
-        "amount": 2000
+        "amount": 1000
       },
       {
         "index": 1,

@@ -32,7 +32,7 @@ export const SMALL_BOARD: BoardConfig = {
       "type": "start",
       "label": "START",
       "emoji": "🏁",
-      "amount": 2000
+      "amount": 1000
     },
     {
       "index": 1,

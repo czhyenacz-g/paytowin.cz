@@ -152,7 +152,7 @@ export const carNightTheme: Theme = {
     "fieldCount": 21,
     "racerSlotIndexes": [3, 10, 13, 17, 19],
     "fields": [
-      { "index": 0,  "type": "start",      "label": "Start",              "emoji": "🏁",  "amount": 2000 },
+      { "index": 0,  "type": "start",      "label": "Start",              "emoji": "🏁",  "amount": 1000 },
       { "index": 1,  "type": "mafia",      "label": "Konektáž",           "emoji": "🤫",  "amount": 50 },
       { "index": 2,  "type": "coins_lose", "label": "Mechanik",           "emoji": "🔧",  "amount": -600 },
       { "index": 3,  "type": "racer",      "label": "Auto",               "emoji": "🏎️" },
