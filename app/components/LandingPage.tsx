@@ -76,6 +76,7 @@ function EconomyFields({
   fogOfWar, setFogOfWar,
   addBotPlayer, setAddBotPlayer,
   requireApproval, setRequireApproval,
+  isDiscordLoggedIn = false,
 }: {
   stateSubsidy: number; setStateSubsidy: (v: number) => void;
   baseTax: number; setBaseTax: (v: number) => void;
@@ -84,6 +85,7 @@ function EconomyFields({
   fogOfWar: boolean; setFogOfWar: (v: boolean) => void;
   addBotPlayer: boolean; setAddBotPlayer: (v: boolean) => void;
   requireApproval: boolean; setRequireApproval: (v: boolean) => void;
+  isDiscordLoggedIn?: boolean;
 }) {
   const [open, setOpen] = React.useState(false);
   return (
@@ -107,16 +109,20 @@ function EconomyFields({
             />
             <span className="text-sm font-medium text-slate-700">🤖 Přidat bota, ať můžeš hrát hned</span>
           </label>
-          <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+          <label className={`flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5 ${isDiscordLoggedIn ? "cursor-pointer" : "cursor-not-allowed opacity-60"}`}>
             <input
               type="checkbox"
               checked={requireApproval}
-              onChange={(e) => setRequireApproval(e.target.checked)}
-              className="h-4 w-4 rounded accent-slate-800"
+              disabled={!isDiscordLoggedIn}
+              onChange={(e) => isDiscordLoggedIn && setRequireApproval(e.target.checked)}
+              className="h-4 w-4 rounded accent-slate-800 disabled:cursor-not-allowed"
             />
             <div className="flex flex-col">
               <span className="text-sm font-medium text-slate-700">🔐 Schvalovat hráče před připojením</span>
-              <span className="text-xs text-slate-500">Zakladatel hry bude nové hráče přijímat nebo odmítat.</span>
+              {isDiscordLoggedIn
+                ? <span className="text-xs text-slate-500">Zakladatel hry bude nové hráče přijímat nebo odmítat.</span>
+                : <span className="text-xs text-slate-400">Vyžaduje přihlášení přes Discord.</span>
+              }
             </div>
           </label>
           <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
@@ -590,6 +596,11 @@ export default function LandingPage() {
 
     // ── Require approval větev ────────────────────────────────────────────────
     if (game.require_approval) {
+      if (!discordUser?.id) {
+        setError("Tato hra vyžaduje schválení zakladatelem. Pro připojení se přihlas přes Discord.");
+        setLoading(false);
+        return;
+      }
       const result = await requestJoinAction({
         gameCode:          game.code,
         name:              name.trim(),
@@ -1134,6 +1145,7 @@ export default function LandingPage() {
                               fogOfWar={fogOfWar} setFogOfWar={setFogOfWar}
                               addBotPlayer={addBotPlayer} setAddBotPlayer={setAddBotPlayer}
                               requireApproval={requireApproval} setRequireApproval={setRequireApproval}
+                              isDiscordLoggedIn={!!discordUser?.id}
                             />
 
                             {error && <p className="text-sm text-red-600">{error}</p>}
@@ -1332,6 +1344,7 @@ export default function LandingPage() {
                       fogOfWar={fogOfWar} setFogOfWar={setFogOfWar}
                       addBotPlayer={addBotPlayer} setAddBotPlayer={setAddBotPlayer}
                       requireApproval={requireApproval} setRequireApproval={setRequireApproval}
+                      isDiscordLoggedIn={!!discordUser?.id}
                     />
 
                     {error && <p className="text-sm text-red-600">{error}</p>}
