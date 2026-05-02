@@ -9,6 +9,7 @@ import { BOARD_PRESETS } from "@/lib/board";
 import MapMenuStrip from "./MapMenuStrip";
 import BrandLogo from "./BrandLogo";
 import { logEvent } from "@/lib/analytics";
+import { requestJoinAction } from "@/app/game/join-actions";
 
 interface DiscordUser {
   id: string;
@@ -161,6 +162,8 @@ export default function LandingPage() {
   const [isDevJoin, setIsDevJoin] = React.useState(false);
   const [addBotPlayer, setAddBotPlayer] = React.useState(false);
   const [requireApproval, setRequireApproval] = React.useState(false);
+  const [joinApprovalStatus, setJoinApprovalStatus] = React.useState<"pending" | "rejected" | "approved" | null>(null);
+  const [joinApprovalMessage, setJoinApprovalMessage] = React.useState<string | null>(null);
   // Načti session + předvyplň ?join=KOD z URL
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -444,6 +447,31 @@ export default function LandingPage() {
       return;
     }
 
+    // ── Require approval větev ────────────────────────────────────────────────
+    if (game.require_approval) {
+      const result = await requestJoinAction({
+        gameCode:          game.code,
+        name:              name.trim(),
+        discordId:         discordUser?.id ?? null,
+        discordAvatarUrl:  discordUser?.avatar ?? null,
+      });
+
+      setLoading(false);
+
+      if (result.ok) {
+        // pending nebo already_pending
+        setJoinApprovalStatus("pending");
+        setJoinApprovalMessage("Žádost odeslána. Čekáš na schválení zakladatelem hry.");
+      } else if (result.reason === "already_rejected") {
+        setJoinApprovalStatus("rejected");
+        setJoinApprovalMessage("Tvoje žádost byla odmítnuta. Zakladatel tě může znovu povolit.");
+      } else {
+        setError(`Nepodařilo se odeslat žádost. (${result.reason})`);
+      }
+      return;
+    }
+
+    // ── Přímý join (require_approval === false) ───────────────────────────────
     const turnOrder = existingPlayers?.length ?? 0;
     const color = PLAYER_COLORS[turnOrder % PLAYER_COLORS.length];
 
@@ -533,9 +561,19 @@ export default function LandingPage() {
               />
             </div>
             {error && <p className="text-sm text-red-600">{error}</p>}
+            {joinApprovalStatus === "pending" && (
+              <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                ⏳ {joinApprovalMessage}
+              </div>
+            )}
+            {joinApprovalStatus === "rejected" && (
+              <div className="rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+                🚫 {joinApprovalMessage}
+              </div>
+            )}
             <button
               onClick={joinGame}
-              disabled={loading}
+              disabled={loading || joinApprovalStatus === "pending"}
               className="w-full rounded-2xl bg-slate-900 px-4 py-4 text-lg font-semibold text-white shadow transition hover:bg-slate-800 disabled:bg-slate-400"
             >
               {loading ? "Připojuji…" : "Připojit →"}
@@ -621,7 +659,7 @@ export default function LandingPage() {
                         />
                         <button
                           onClick={joinGame}
-                          disabled={loading}
+                          disabled={loading || joinApprovalStatus === "pending"}
                           className="h-11 shrink-0 rounded-2xl bg-emerald-500 px-4 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 disabled:bg-slate-600 disabled:text-white/50"
                         >
                           Připojit
@@ -640,6 +678,16 @@ export default function LandingPage() {
 
                 {error && (
                   <p className="text-center text-sm text-red-600">{error}</p>
+                )}
+                {joinApprovalStatus === "pending" && (
+                  <div className="mx-auto max-w-sm rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-center text-sm text-amber-300">
+                    ⏳ {joinApprovalMessage}
+                  </div>
+                )}
+                {joinApprovalStatus === "rejected" && (
+                  <div className="mx-auto max-w-sm rounded-xl border border-red-400/40 bg-red-500/10 px-4 py-3 text-center text-sm text-red-300">
+                    🚫 {joinApprovalMessage}
+                  </div>
                 )}
 
                 <div className="flex items-center justify-center gap-4 text-xs text-slate-400">
