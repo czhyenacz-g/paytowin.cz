@@ -134,6 +134,7 @@ export default function LandingPage() {
   const [xpTotal, setXpTotal] = React.useState<number | null>(null);
   const [winsTotal, setWinsTotal] = React.useState<number | null>(null);
   const [isDevJoin, setIsDevJoin] = React.useState(false);
+  const [addBotPlayer, setAddBotPlayer] = React.useState(false);
   // Načti session + předvyplň ?join=KOD z URL
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -318,6 +319,21 @@ export default function LandingPage() {
       setError("Nepodařilo se vytvořit hráče. Zkus to znovu.");
       setLoading(false);
       return;
+    }
+
+    if (addBotPlayer) {
+      await supabase.from("players").insert({
+        game_id: game.id,
+        name: "Stájový bot",
+        color: PLAYER_COLORS[1],
+        position: 0,
+        coins: 10000,
+        horses: [],
+        turn_order: 1,
+        is_bot: true,
+        discord_id: null,
+        discord_avatar_url: null,
+      });
     }
 
     await supabase.from("game_state").insert({
@@ -827,6 +843,19 @@ export default function LandingPage() {
                               maxTax={maxTax} setMaxTax={setMaxTax}
                               fogOfWar={fogOfWar} setFogOfWar={setFogOfWar}
                             />
+
+                            <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                              <input
+                                type="checkbox"
+                                checked={addBotPlayer}
+                                onChange={(e) => setAddBotPlayer(e.target.checked)}
+                                className="h-4 w-4 rounded accent-slate-800"
+                              />
+                              <div>
+                                <span className="text-sm font-medium text-slate-700">🤖 Přidat Stájového bota</span>
+                                <span className="ml-2 text-xs text-slate-400">hraje za tebe, když čekáš na hráče</span>
+                              </div>
+                            </label>
 
                             {error && <p className="text-sm text-red-600">{error}</p>}
 

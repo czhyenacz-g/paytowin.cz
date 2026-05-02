@@ -112,6 +112,8 @@ export interface Player {
   laps?: number;
   /** Aktuálně aktivní dočasné efekty (debuffs apod.). Uloženy jako JSONB v DB. */
   active_effects?: ActiveEffect[];
+  /** True pro bot hráče — jasně označen v UI, nehraje manuálně. */
+  is_bot?: boolean;
 }
 
 // ─── Herní stav ───────────────────────────────────────────────────────────────

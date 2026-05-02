@@ -93,8 +93,11 @@ export default function PlayerList({
                         </div>
                       )}
                       <div className="min-w-0">
-                        <div className={`font-semibold text-sm leading-tight ${bankrupt ? "text-slate-400 line-through" : theme.colors.textPrimary}`}>
+                        <div className={`flex items-center gap-1.5 font-semibold text-sm leading-tight ${bankrupt ? "text-slate-400 line-through" : theme.colors.textPrimary}`}>
                           {player.name}
+                          {player.is_bot && (
+                            <span className="shrink-0 rounded-[3px] bg-slate-200 px-1 py-0 text-[9px] font-bold uppercase tracking-widest text-slate-500">BOT</span>
+                          )}
                         </div>
                         {bankrupt ? (
                           <div className="text-xs font-semibold text-red-500">{UI_TEXT.board.bankruptLabel}</div>

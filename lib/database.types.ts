@@ -53,6 +53,7 @@ export interface Database {
           skip_next_turn: boolean;
           discord_id: string | null;
           discord_avatar_url: string | null;
+          is_bot: boolean;
         };
         Insert: {
           game_id: string;
@@ -65,6 +66,7 @@ export interface Database {
           skip_next_turn?: boolean;
           discord_id?: string | null;
           discord_avatar_url?: string | null;
+          is_bot?: boolean;
         };
         Update: {
           position?: number;
@@ -75,6 +77,7 @@ export interface Database {
           skip_next_turn?: boolean;
           discord_id?: string | null;
           discord_avatar_url?: string | null;
+          is_bot?: boolean;
         };
       };
       game_state: {
