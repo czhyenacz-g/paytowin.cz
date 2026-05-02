@@ -9,7 +9,6 @@ import { themeToManifest } from "@/lib/themes/manifest";
 import { loadThemeManifestAsync } from "@/lib/themes/loader";
 import { getBoardById } from "@/lib/board";
 import { awardXpAction, awardRaceStarAction } from "@/app/game/actions";
-import { executeBotTurnAction, executeBotHorseDecisionAction } from "@/app/game/bot-actions";
 import { STADIUM_ASPECT } from "@/lib/board/constants";
 import {
   FIELD_POSITIONS,
@@ -88,6 +87,7 @@ import SpeedDevShell from "./speed/SpeedDevShell";
 import LegendaryRaceDevShell from "./legendary/LegendaryRaceDevShell";
 import StableDuelBoardLayer, { type DuelContestant } from "./StableDuelBoardLayer";
 import DevToolbar from "./board/DevToolbar";
+import { useOnlineBotTrigger } from "./board/hooks/useOnlineBotTrigger";
 import FieldCardList from "./board/FieldCardList";
 import GamePanel from "./board/GamePanel";
 import StableDuelStatusBanners from "./board/StableDuelStatusBanners";
@@ -380,8 +380,6 @@ export default function GameBoard({ gameCode }: Props) {
   const knownPlayerIdsRef = React.useRef<Set<string> | null>(null);
   // Late-join spectator telegram: true = sessionStorage flag byl přečten, telegram čeká na render
   const lateJoinRef = React.useRef<boolean>(false);
-  // Bot turn scheduling guard — zabrání double-execute při rychlých Realtime událostech
-  const botTurnScheduledRef = React.useRef(false);
   // flippingFields: pole právě animující flip
   const [flippingFields, setFlippingFields] = React.useState<Set<number>>(new Set());
   // showingHiddenRef: pole v první půlce flipu — stále zobrazují hidden card
@@ -691,6 +689,9 @@ export default function GameBoard({ gameCode }: Props) {
     return { players: normalized, state: stateData ? normalizeState(stateData) : null };
   };
 
+  // ── Online bot trigger ────────────────────────────────────────────────────────
+  useOnlineBotTrigger({ gameId, gameState, players, myPlayerId, isLocalGame: gameMode === "local" });
+
   // ── Realtime subscriptions ───────────────────────────────────────────────────
   React.useEffect(() => {
     if (!gameId) return;
@@ -721,26 +722,6 @@ export default function GameBoard({ gameCode }: Props) {
             setPendingRacer(null);
           }
 
-          // Bot trigger — spustí se jen pro game ownera (hráč[0]) a jen pokud bot je na tahu
-          const botCurrentPlayer = freshPlayers[freshState.current_player_index];
-          const isGameOwner = !isLocalGame && freshPlayers[0]?.id === myPlayerId;
-          if (botCurrentPlayer?.is_bot && isGameOwner && !botTurnScheduledRef.current) {
-            botTurnScheduledRef.current = true;
-            const delay = 900 + Math.random() * 1100;
-            if (freshState.horse_pending) {
-              setTimeout(async () => {
-                try { await executeBotHorseDecisionAction(gameId!, freshState.turn_count); }
-                finally { botTurnScheduledRef.current = false; }
-              }, delay);
-            } else if (!freshState.card_pending && !freshState.offer_pending) {
-              setTimeout(async () => {
-                try { await executeBotTurnAction(gameId!, freshState.turn_count); }
-                finally { botTurnScheduledRef.current = false; }
-              }, delay);
-            } else {
-              botTurnScheduledRef.current = false;
-            }
-          }
         }
       )
       .subscribe();
