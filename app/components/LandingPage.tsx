@@ -53,12 +53,14 @@ function EconomyFields({
   lapTaxCoefficient, setLapTaxCoefficient,
   maxTax, setMaxTax,
   fogOfWar, setFogOfWar,
+  addBotPlayer, setAddBotPlayer,
 }: {
   stateSubsidy: number; setStateSubsidy: (v: number) => void;
   baseTax: number; setBaseTax: (v: number) => void;
   lapTaxCoefficient: number; setLapTaxCoefficient: (v: number) => void;
   maxTax: number; setMaxTax: (v: number) => void;
   fogOfWar: boolean; setFogOfWar: (v: boolean) => void;
+  addBotPlayer: boolean; setAddBotPlayer: (v: boolean) => void;
 }) {
   const [open, setOpen] = React.useState(false);
   return (
@@ -73,6 +75,15 @@ function EconomyFields({
       </button>
       {open && (
         <div className="border-t border-slate-200 px-4 pb-4 pt-3 space-y-3">
+          <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+            <input
+              type="checkbox"
+              checked={addBotPlayer}
+              onChange={(e) => setAddBotPlayer(e.target.checked)}
+              className="h-4 w-4 rounded accent-slate-800"
+            />
+            <span className="text-sm font-medium text-slate-700">🤖 Přidat bota, ať můžeš hrát hned</span>
+          </label>
           <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
             <input
               type="checkbox"
@@ -842,20 +853,8 @@ export default function LandingPage() {
                               lapTaxCoefficient={lapTaxCoefficient} setLapTaxCoefficient={setLapTaxCoefficient}
                               maxTax={maxTax} setMaxTax={setMaxTax}
                               fogOfWar={fogOfWar} setFogOfWar={setFogOfWar}
+                              addBotPlayer={addBotPlayer} setAddBotPlayer={setAddBotPlayer}
                             />
-
-                            <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-                              <input
-                                type="checkbox"
-                                checked={addBotPlayer}
-                                onChange={(e) => setAddBotPlayer(e.target.checked)}
-                                className="h-4 w-4 rounded accent-slate-800"
-                              />
-                              <div>
-                                <span className="text-sm font-medium text-slate-700">🤖 Přidat bota, ať můžeš hrát hned</span>
-                                <span className="ml-2 text-xs text-slate-400">bot hraje, dokud nepřijdou další hráči</span>
-                              </div>
-                            </label>
 
                             {error && <p className="text-sm text-red-600">{error}</p>}
 
@@ -1051,20 +1050,8 @@ export default function LandingPage() {
                       lapTaxCoefficient={lapTaxCoefficient} setLapTaxCoefficient={setLapTaxCoefficient}
                       maxTax={maxTax} setMaxTax={setMaxTax}
                       fogOfWar={fogOfWar} setFogOfWar={setFogOfWar}
+                      addBotPlayer={addBotPlayer} setAddBotPlayer={setAddBotPlayer}
                     />
-
-                    <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-                      <input
-                        type="checkbox"
-                        checked={addBotPlayer}
-                        onChange={(e) => setAddBotPlayer(e.target.checked)}
-                        className="h-4 w-4 rounded accent-slate-800"
-                      />
-                      <div>
-                        <span className="text-sm font-medium text-slate-700">🤖 Přidat bota, ať můžeš hrát hned</span>
-                        <span className="ml-2 text-xs text-slate-400">bot hraje, dokud nepřijdou další hráči</span>
-                      </div>
-                    </label>
 
                     {error && <p className="text-sm text-red-600">{error}</p>}
 
