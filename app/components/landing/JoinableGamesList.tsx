@@ -34,10 +34,14 @@ interface Props {
   isDiscordLoggedIn: boolean;
 }
 
+const INITIAL_VISIBLE = 3;
+
 export default function JoinableGamesList({ onJoin, playerName, isDiscordLoggedIn }: Props) {
   const [games, setGames] = React.useState<LobbyGame[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [fetchError, setFetchError] = React.useState<string | null>(null);
+  const [expanded, setExpanded] = React.useState(false);
+  const [showAll, setShowAll] = React.useState(false);
 
   const load = React.useCallback(async () => {
     setLoading(true);
@@ -60,104 +64,121 @@ export default function JoinableGamesList({ onJoin, playerName, isDiscordLoggedI
 
   React.useEffect(() => { load(); }, [load]);
 
+  const visibleGames = showAll ? games : games.slice(0, INITIAL_VISIBLE);
+  const hiddenCount = games.length - INITIAL_VISIBLE;
+
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="text-sm font-semibold text-slate-200">Hry, ke kterým se můžeš připojit</div>
-          <div className="text-xs text-slate-400 mt-0.5">Vyber otevřenou online hru nebo požádej zakladatele o vstup.</div>
-        </div>
-        <button
-          onClick={load}
-          disabled={loading}
-          className="text-xs text-slate-400 hover:text-slate-200 transition underline disabled:opacity-40"
-        >
-          {loading ? "Načítám…" : "Obnovit"}
-        </button>
-      </div>
+    <div className="rounded-2xl border border-slate-700/60 overflow-hidden">
 
-      {fetchError && (
-        <p className="text-center text-sm text-red-400">{fetchError}</p>
-      )}
+      {/* ── Sbalitelná hlavička ── */}
+      <button
+        type="button"
+        onClick={() => setExpanded(e => !e)}
+        className="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-slate-800/40 transition"
+      >
+        <span className="flex items-center gap-2 text-xs font-medium text-slate-400">
+          Hry k připojení
+          {!loading && games.length > 0 && (
+            <span className="rounded-full bg-slate-700 px-1.5 py-px text-[10px] font-semibold text-slate-300 tabular-nums">
+              {games.length}
+            </span>
+          )}
+        </span>
+        <span className="text-[10px] text-slate-500 select-none">{expanded ? "▲" : "▼"}</span>
+      </button>
 
-      {!loading && !fetchError && games.length === 0 && (
-        <div className="rounded-2xl border border-slate-700 bg-slate-800/40 px-4 py-6 text-center">
-          <div className="text-slate-400 text-sm">🏁 Zatím tu nejsou žádné otevřené hry.</div>
-          <div className="text-slate-500 text-xs mt-1">Založ vlastní hru nebo přidej bota.</div>
-        </div>
-      )}
+      {/* ── Rozbalený obsah ── */}
+      {expanded && (
+        <div className="border-t border-slate-700/60 px-3 pb-3 pt-2 space-y-2">
 
-      {!loading && games.length > 0 && (
-        <div className="space-y-2">
-          {games.map(game => {
-            const playerCount = game.players.length;
-            const maxP = game.max_players ?? 32;
-            const isFull = playerCount >= maxP;
-            const hasBot = game.players.some(p => !!p.is_bot);
-            const isApproval = game.require_approval;
-            const isPlaying = game.status === "playing";
-            const themeName = THEME_LABELS[game.theme_id ?? ""] ?? game.theme_id ?? "—";
-            const boardName = BOARD_LABELS[game.board_id ?? ""] ?? game.board_id ?? "—";
+          {/* Obnovit */}
+          <div className="flex justify-end">
+            <button
+              onClick={load}
+              disabled={loading}
+              className="text-[10px] text-slate-500 hover:text-slate-300 underline disabled:opacity-40 transition"
+            >
+              {loading ? "Načítám…" : "Obnovit"}
+            </button>
+          </div>
 
-            return (
-              <div key={game.id} className="rounded-2xl border border-slate-700 bg-slate-800/60 px-4 py-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 space-y-1.5">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-mono font-bold text-slate-100 tracking-widest text-sm">{game.code}</span>
-                      {hasBot && (
-                        <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-400">
-                          🤖 S botem
-                        </span>
-                      )}
-                      {isApproval && (
-                        <span className="rounded-full bg-slate-700 px-2 py-0.5 text-[10px] font-semibold text-slate-300">
-                          🔐 Schvalování
-                        </span>
-                      )}
-                      {isPlaying && (
-                        <span className="rounded-full bg-emerald-900/60 px-2 py-0.5 text-[10px] font-semibold text-emerald-400">
-                          ▶ Probíhá
-                        </span>
-                      )}
+          {fetchError && (
+            <p className="text-xs text-red-400 text-center">{fetchError}</p>
+          )}
+
+          {!loading && !fetchError && games.length === 0 && (
+            <p className="text-xs text-slate-500 text-center py-1">
+              🏁 Žádné otevřené hry. Založ vlastní nebo přidej bota.
+            </p>
+          )}
+
+          {!loading && games.length > 0 && (
+            <>
+              <div className="space-y-1.5">
+                {visibleGames.map(game => {
+                  const playerCount = game.players.length;
+                  const maxP = game.max_players ?? 32;
+                  const isFull = playerCount >= maxP;
+                  const hasBot = game.players.some(p => !!p.is_bot);
+                  const isApproval = game.require_approval;
+                  const isPlaying = game.status === "playing";
+                  const themeName = THEME_LABELS[game.theme_id ?? ""] ?? (game.theme_id ?? "—");
+                  const boardName = BOARD_LABELS[game.board_id ?? ""] ?? (game.board_id ?? "—");
+
+                  return (
+                    <div key={game.id} className="flex items-center justify-between gap-2 rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2">
+                      <div className="min-w-0 space-y-0.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-mono font-bold text-slate-100 tracking-widest text-xs">{game.code}</span>
+                          {hasBot && (
+                            <span className="rounded-full bg-amber-500/20 px-1.5 py-px text-[9px] font-semibold text-amber-400">🤖 Bot</span>
+                          )}
+                          {isApproval && (
+                            <span className="rounded-full bg-slate-700 px-1.5 py-px text-[9px] font-semibold text-slate-300">🔐</span>
+                          )}
+                          {isPlaying && (
+                            <span className="rounded-full bg-emerald-900/60 px-1.5 py-px text-[9px] font-semibold text-emerald-400">▶</span>
+                          )}
+                        </div>
+                        <div className="text-[10px] text-slate-500 truncate">
+                          {themeName} · {boardName} · 👤 {playerCount}/{maxP}
+                        </div>
+                      </div>
+
+                      <div className="shrink-0">
+                        {isFull ? (
+                          <span className="text-[10px] text-slate-500">Plná</span>
+                        ) : isApproval && !isDiscordLoggedIn ? (
+                          <span
+                            className="text-[10px] text-slate-500 cursor-default"
+                            title="Vyžaduje přihlášení přes Discord."
+                          >
+                            Vyžaduje Discord
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => onJoin(game.code)}
+                            className="rounded-lg bg-emerald-500 px-2.5 py-1 text-[10px] font-semibold text-slate-950 hover:bg-emerald-400 transition"
+                          >
+                            {isApproval ? "Požádat →" : "Připojit →"}
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-xs text-slate-400">
-                      {themeName} · {boardName}
-                    </div>
-                    <div className="text-xs text-slate-400">
-                      👤 {playerCount} / {maxP} hráčů
-                    </div>
-                  </div>
-
-                  <div className="shrink-0 pt-0.5">
-                    {isFull ? (
-                      <button
-                        disabled
-                        className="rounded-xl bg-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-500 cursor-not-allowed"
-                      >
-                        Plná
-                      </button>
-                    ) : isApproval && !isDiscordLoggedIn ? (
-                      <button
-                        disabled
-                        title="Tato hra vyžaduje schválení zakladatelem — přihlas se přes Discord."
-                        className="rounded-xl bg-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-500 cursor-not-allowed"
-                      >
-                        Vyžaduje Discord
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => onJoin(game.code)}
-                        className="rounded-xl bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-slate-950 hover:bg-emerald-400 transition"
-                      >
-                        {isApproval ? "Požádat →" : "Připojit →"}
-                      </button>
-                    )}
-                  </div>
-                </div>
+                  );
+                })}
               </div>
-            );
-          })}
+
+              {hiddenCount > 0 && !showAll && (
+                <button
+                  onClick={() => setShowAll(true)}
+                  className="w-full rounded-xl border border-slate-700 py-1.5 text-[10px] font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 transition"
+                >
+                  Zobrazit další hry ({hiddenCount})
+                </button>
+              )}
+            </>
+          )}
         </div>
       )}
     </div>
