@@ -2713,6 +2713,8 @@ export default function GameBoard({ gameCode }: Props) {
         players={players}
         bustOrder={gameState?.bust_order ?? []}
         pageBackground={theme.colors.pageBackground}
+        myPlayerId={myPlayerId}
+        gameMode={gameMode}
       />
     );
   }

@@ -15,13 +15,43 @@ interface GameFinishedScreenProps {
   players: Player[];
   bustOrder: string[];
   pageBackground: string;
+  myPlayerId?: string | null;
+  gameMode?: "online" | "local";
 }
 
-export default function GameFinishedScreen({ players, bustOrder, pageBackground }: GameFinishedScreenProps) {
+export default function GameFinishedScreen({
+  players,
+  bustOrder,
+  pageBackground,
+  myPlayerId = null,
+  gameMode = "local",
+}: GameFinishedScreenProps) {
   const winner = players.find(p => !isBankrupt(p));
   const losers = players.filter(p => isBankrupt(p));
   const isSoloLoss = players.length === 1 && !winner;
   const matchTitles = players.length >= 2 ? computeMatchTitles(players, bustOrder) : undefined;
+
+  // Personalization — jen pro online hráče s identitou
+  const isPersonalized = !!myPlayerId && gameMode === "online";
+  const iWon = isPersonalized && winner?.id === myPlayerId;
+  const winnerIsBot = !!winner?.is_bot;
+  const myPlayer = isPersonalized ? (players.find(p => p.id === myPlayerId) ?? null) : null;
+
+  // Win star eligibility — stejná logika jako awardWinStarAction
+  const humanPlayers = players.filter(p => !p.is_bot && p.discord_id);
+  const isWinStarEligible = humanPlayers.length >= 2 && !!winner?.discord_id && !winner.is_bot;
+
+  // Moje pořadí — řazení identické se ScoreTable
+  const sortedIds = [...players]
+    .sort((a, b) => {
+      if (!isBankrupt(a) && !isBankrupt(b)) return b.coins - a.coins;
+      if (!isBankrupt(a)) return -1;
+      if (!isBankrupt(b)) return 1;
+      return (bustOrder.indexOf(b.id) ?? -1) - (bustOrder.indexOf(a.id) ?? -1);
+    })
+    .map(p => p.id);
+  const myRankIndex = myPlayerId ? sortedIds.indexOf(myPlayerId) : -1;
+  const myRank = myRankIndex >= 0 ? myRankIndex + 1 : null;
 
   const bustLine = (playerId: string) => {
     const idx = bustOrder.indexOf(playerId);
@@ -43,10 +73,9 @@ export default function GameFinishedScreen({ players, bustOrder, pageBackground 
         {/* Aged-paper overlay pro čitelnost */}
         <div className="absolute inset-0 bg-[#f4efe4]/82 z-0" />
 
-        {/* Veškerý obsah nad overlayem */}
         <div className="relative z-10">
 
-          {/* ── Novinový masthead — text skrytý (titulek je v bg obrázku), výška zachována ── */}
+          {/* ── Novinový masthead ── */}
           <div className="px-6 pt-5 pb-4 border-b-[3px] border-stone-500 text-center">
             <div className="invisible text-[8px] font-bold uppercase tracking-[0.32em] text-stone-500">— Mimořádné vydání —</div>
             <div className="invisible mt-1 font-serif text-[26px] font-black uppercase tracking-[0.12em] text-stone-900 leading-none">Pay to Win Gazette</div>
@@ -55,28 +84,115 @@ export default function GameFinishedScreen({ players, bustOrder, pageBackground 
 
           {isSoloLoss ? (
             /* ── Solo prohra ── */
-            <div className="px-6 py-8 text-center border-b border-stone-500">
-              <div className="text-5xl">💀</div>
-              <div className="mt-3 text-[9px] font-bold uppercase tracking-[0.22em] text-stone-500">Tréninková zpráva</div>
-              <h2 className="mt-1 font-serif text-2xl font-black text-stone-900">Zkrachoval jsi</h2>
-              <p className="mt-1 text-xs italic text-stone-500">Tréninková hra skončila porážkou.</p>
-            </div>
-          ) : (
-            /* ── Multiplayer výhra ── */
             <>
-              <div className="px-6 py-5 border-b border-stone-500">
-                <div className="text-[9px] font-bold uppercase tracking-[0.22em] text-stone-500">Vítěz sezóny</div>
-                <h2 className="mt-1 font-serif text-[28px] font-black leading-tight text-stone-900">
-                  {winner?.name ?? "—"}
-                </h2>
-                <p className="mt-1.5 text-xs italic text-stone-500">
-                  Poslední závodník, který opustil závod bez dluhů.
-                </p>
+              <div className="px-6 py-8 text-center border-b border-stone-500">
+                <div className="text-5xl">💀</div>
+                <div className="mt-3 text-[9px] font-bold uppercase tracking-[0.22em] text-stone-500">Tréninková zpráva</div>
+                <h2 className="mt-1 font-serif text-2xl font-black text-stone-900">Zkrachoval jsi</h2>
+                <p className="mt-1 text-xs italic text-stone-500">Tréninková hra skončila porážkou.</p>
               </div>
+              {isPersonalized && (
+                <div className="px-6 py-3 border-b border-stone-400 bg-stone-50/60">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-600">
+                    <span className="text-amber-500">⚡</span> XP za účast
+                  </span>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              {/* ── Hero blok — 4 stavy ── */}
+              {iWon ? (
+                <div className="px-6 py-5 border-b border-stone-500 bg-amber-50/70">
+                  <div className="text-[9px] font-bold uppercase tracking-[0.22em] text-amber-700">Vítěz sezóny</div>
+                  <h2 className="mt-1 font-serif text-[32px] font-black leading-tight text-amber-800">
+                    🏆 Vyhrál jsi
+                  </h2>
+                  <p className="mt-1.5 text-xs italic text-stone-600">
+                    Tvoje stáj ovládla závodní sezónu.
+                  </p>
+                </div>
+              ) : isPersonalized && winnerIsBot ? (
+                <div className="px-6 py-5 border-b border-stone-500">
+                  <div className="text-[9px] font-bold uppercase tracking-[0.22em] text-stone-500">Výsledek kola</div>
+                  <h2 className="mt-1 font-serif text-[28px] font-black leading-tight text-stone-700">
+                    🤖 Vyhrál bot
+                  </h2>
+                  <p className="mt-1.5 text-xs italic text-stone-500">
+                    Tréninkový soupeř byl tentokrát rychlejší.
+                  </p>
+                </div>
+              ) : isPersonalized ? (
+                <div className="px-6 py-5 border-b border-stone-500">
+                  <div className="text-[9px] font-bold uppercase tracking-[0.22em] text-stone-500">Konečné výsledky</div>
+                  <h2 className="mt-1 font-serif text-[28px] font-black leading-tight text-stone-900">
+                    {winner?.name ?? "—"}
+                  </h2>
+                  <p className="mt-1.5 text-xs italic text-stone-500">Vyhrál závod bez dluhů.</p>
+                  {myRank !== null && (
+                    <p className="mt-2 text-xs font-medium text-stone-700">
+                      Tvoje místo: {myRank}.{myPlayer && isBankrupt(myPlayer) ? " — zkrachoval jsi" : ""}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                /* Local / spectator — obecný newspaper styl */
+                <div className="px-6 py-5 border-b border-stone-500">
+                  <div className="text-[9px] font-bold uppercase tracking-[0.22em] text-stone-500">Vítěz sezóny</div>
+                  <h2 className="mt-1 font-serif text-[28px] font-black leading-tight text-stone-900">
+                    {winner?.name ?? "—"}
+                  </h2>
+                  <p className="mt-1.5 text-xs italic text-stone-500">
+                    Poslední závodník, který opustil závod bez dluhů.
+                  </p>
+                </div>
+              )}
+
+              {/* ── Reward box — jen pro online hráče s identitou ── */}
+              {isPersonalized && (
+                <div className="px-6 py-3 border-b border-stone-400 bg-stone-50/60 space-y-1.5">
+                  {iWon ? (
+                    <>
+                      <div className="flex items-center gap-2 text-xs font-medium text-stone-700">
+                        <span className="text-amber-500">⚡</span> XP za výhru
+                      </div>
+                      {isWinStarEligible ? (
+                        <div className="flex items-center gap-2 text-xs font-medium text-amber-700">
+                          <span>⭐</span> +1 výherní hvězda
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 text-xs text-stone-400 italic">
+                          <span>⭐</span> Výherní hvězdy se počítají jen za hry proti reálným hráčům
+                        </div>
+                      )}
+                      {winner && (
+                        <div className="flex items-center gap-2 text-xs font-medium text-stone-600">
+                          <span>💰</span> {winner.coins.toLocaleString("cs-CZ")} zůstatek
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2 text-xs font-medium text-stone-600">
+                        <span className="text-amber-500">⚡</span> XP za účast
+                      </div>
+                      {!isWinStarEligible && (
+                        <div className="flex items-center gap-2 text-xs text-stone-400 italic">
+                          <span>⭐</span> Výherní hvězdy se počítají jen za hry proti reálným hráčům
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* ── Konečné pořadí ── */}
               <div className="px-6 py-4 border-b border-stone-500">
                 <div className="mb-2 text-[9px] font-bold uppercase tracking-[0.22em] text-stone-500">Konečné pořadí</div>
                 <ScoreTable players={players} bustOrder={bustOrder} titles={matchTitles} />
               </div>
+
+              {/* ── Padlí závodníci ── */}
               {sortedLosers.length > 0 && (
                 <div className="px-6 py-4 border-b border-stone-500">
                   <div className="mb-2 text-[9px] font-bold uppercase tracking-[0.22em] text-stone-500">Padlí závodníci</div>
