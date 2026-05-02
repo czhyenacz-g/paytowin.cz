@@ -24,7 +24,7 @@ export default function DevToolbar({
   onToggleStableDuelMode,
 }: DevToolbarProps) {
   return (
-    <div className="flex items-center gap-1 shrink-0">
+    <div className="flex flex-wrap gap-1">
       <button
         onClick={onOpenRaceMode}
         className="rounded-[3px] border border-purple-300 bg-purple-50 px-2.5 py-1 text-[11px] font-semibold text-purple-700 hover:bg-purple-100 transition"

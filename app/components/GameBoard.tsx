@@ -2972,34 +2972,35 @@ export default function GameBoard({ gameCode }: Props) {
                   </button>
                 </div>
               )}
-              {/* DEV-only: Race Mode experiments */}
-              {process.env.NODE_ENV === "development" && (
-                <DevToolbar
-                  onOpenRaceMode={() => setDevRaceMode(true)}
-                  onOpenRaceBoardLayer={() => setDevRaceBoardLayer(true)}
-                  onOpenFlip={openDevFlip}
-                  onOpenDuel={() => setDevDuelOpen(true)}
-                  onOpenSpeed={() => setDevSpeedOpen(true)}
-                  onOpenLegendary={() => setDevLegendaryOpen(true)}
-                  onOpenStableDuel={() => {
-                    const p0 = players[0];
-                    const p1 = players[1] ?? players[0];
-                    setStableDuelCtx({
-                      challenger: { name: p0?.name ?? "Hráč 1", horse: p0?.horses[0] ?? null, color: p0?.color ?? "#00ff88" },
-                      defender:   { name: p1?.name ?? "Hráč 2", horse: p1?.horses[0] ?? null, color: p1?.color ?? "#c084fc" },
-                      isPreview: true,
-                    });
-                    boardSurfaceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-                  }}
-                  stableDuelMode={stableDuelMode}
-                  onToggleStableDuelMode={() => {
-                    const next: "pvbot_awareness" | "online_1v1" = stableDuelMode === "online_1v1" ? "pvbot_awareness" : "online_1v1";
-                    setStableDuelMode(next);
-                    localStorage.setItem("stableDuelMode", next);
-                  }}
-                />
-              )}
             </div>
+
+            {/* DEV-only: Race Mode experiments — vlastní řádek pod HUD */}
+            {process.env.NODE_ENV === "development" && (
+              <DevToolbar
+                onOpenRaceMode={() => setDevRaceMode(true)}
+                onOpenRaceBoardLayer={() => setDevRaceBoardLayer(true)}
+                onOpenFlip={openDevFlip}
+                onOpenDuel={() => setDevDuelOpen(true)}
+                onOpenSpeed={() => setDevSpeedOpen(true)}
+                onOpenLegendary={() => setDevLegendaryOpen(true)}
+                onOpenStableDuel={() => {
+                  const p0 = players[0];
+                  const p1 = players[1] ?? players[0];
+                  setStableDuelCtx({
+                    challenger: { name: p0?.name ?? "Hráč 1", horse: p0?.horses[0] ?? null, color: p0?.color ?? "#00ff88" },
+                    defender:   { name: p1?.name ?? "Hráč 2", horse: p1?.horses[0] ?? null, color: p1?.color ?? "#c084fc" },
+                    isPreview: true,
+                  });
+                  boardSurfaceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+                stableDuelMode={stableDuelMode}
+                onToggleStableDuelMode={() => {
+                  const next: "pvbot_awareness" | "online_1v1" = stableDuelMode === "online_1v1" ? "pvbot_awareness" : "online_1v1";
+                  setStableDuelMode(next);
+                  localStorage.setItem("stableDuelMode", next);
+                }}
+              />
+            )}
 
             <div className="flex flex-wrap gap-2 text-xs">
               <span className="rounded-[3px] bg-emerald-100 px-2 py-1 text-emerald-800">🟢 {theme.labels.legend.gain}</span>
