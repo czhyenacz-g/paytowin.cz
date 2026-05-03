@@ -106,8 +106,18 @@ export default function BetsPreview({ compact = false }: Props) {
         </div>
 
         {/* Info box */}
-        <div className="rounded-2xl border border-slate-700 bg-slate-800/40 px-5 py-4 text-sm text-slate-400">
-          💡 Až bude web mít traffic, napojíme affiliate partnera nebo ručně vybraný externí odkaz.
+        <div className="rounded-2xl border border-slate-700 bg-slate-800/40 px-5 py-4 text-sm text-slate-400 space-y-3">
+          <p>
+            💡 Až bude web mít traffic, napojíme affiliate partnera nebo ručně vybraný externí odkaz.
+            Pokud máte zájem stát se partnerem PayToWin.cz, ozvěte se — připravujeme prostor pro reklamu,
+            speciální eventy i soutěže o produkty.
+          </p>
+          <Link
+            href="/partners"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-600 bg-slate-700/50 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-700 transition"
+          >
+            Chci se stát partnerem →
+          </Link>
         </div>
 
         {/* Zpět */}
