@@ -20,6 +20,15 @@ const BOARD_LABELS: Record<string, string> = {
 const MAX_WAITING_GAME_AGE_MS = 48 * 60 * 60 * 1000;  // 48 hours
 const MAX_PLAYING_GAME_AGE_MS = 7  * 24 * 60 * 60 * 1000; // 7 days
 
+function formatRelativeTime(dateString: string | null | undefined): string {
+  if (!dateString) return "neznámé";
+  const diff = Date.now() - new Date(dateString).getTime();
+  if (diff < 60_000)              return "teď";
+  if (diff < 60 * 60_000)         return `před ${Math.floor(diff / 60_000)} min`;
+  if (diff < 24 * 60 * 60_000)    return `před ${Math.floor(diff / 3_600_000)} h`;
+  return `před ${Math.floor(diff / 86_400_000)} d`;
+}
+
 type LobbyGame = {
   id: string;
   code: string;
@@ -30,6 +39,7 @@ type LobbyGame = {
   require_approval: boolean;
   created_at: string;
   players: { id: string; is_bot: boolean | null }[];
+  game_state: { updated_at: string }[] | null;
 };
 
 interface Props {
@@ -52,7 +62,7 @@ export default function JoinableGamesList({ onJoin, playerName, isDiscordLoggedI
     setFetchError(null);
     const { data, error: qErr } = await supabase
       .from("games")
-      .select("id, code, status, theme_id, board_id, max_players, require_approval, created_at, players(id, is_bot)")
+      .select("id, code, status, theme_id, board_id, max_players, require_approval, created_at, players(id, is_bot), game_state(updated_at)")
       .eq("game_mode", "online")
       .in("status", ["waiting", "playing"])
       .order("created_at", { ascending: false })
@@ -70,9 +80,15 @@ export default function JoinableGamesList({ onJoin, playerName, isDiscordLoggedI
 
   const now = Date.now();
   const freshGames = games.filter(g => {
-    const age = now - new Date(g.created_at).getTime();
-    if (g.status === "waiting") return age < MAX_WAITING_GAME_AGE_MS;
-    if (g.status === "playing") return age < MAX_PLAYING_GAME_AGE_MS;
+    const lastAction = g.game_state?.[0]?.updated_at ?? null;
+    if (g.status === "waiting") {
+      return now - new Date(g.created_at).getTime() < MAX_WAITING_GAME_AGE_MS;
+    }
+    if (g.status === "playing") {
+      // prefer game_state.updated_at for playing games; fall back to created_at
+      const activityTs = lastAction ?? g.created_at;
+      return now - new Date(activityTs).getTime() < MAX_PLAYING_GAME_AGE_MS;
+    }
     return false;
   });
 
@@ -136,6 +152,7 @@ export default function JoinableGamesList({ onJoin, playerName, isDiscordLoggedI
                   const isPlaying = game.status === "playing";
                   const themeName = THEME_LABELS[game.theme_id ?? ""] ?? (game.theme_id ?? "—");
                   const boardName = BOARD_LABELS[game.board_id ?? ""] ?? (game.board_id ?? "—");
+                  const lastActionAt = game.game_state?.[0]?.updated_at ?? null;
 
                   return (
                     <div key={game.id} className="flex items-center justify-between gap-2 rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2">
@@ -154,6 +171,15 @@ export default function JoinableGamesList({ onJoin, playerName, isDiscordLoggedI
                         </div>
                         <div className="text-[10px] text-slate-500 truncate">
                           {themeName} · {boardName} · 👤 {playerCount}/{maxP}
+                        </div>
+                        <div className="text-[10px] text-slate-600 space-x-2">
+                          <span>Založeno {formatRelativeTime(game.created_at)}</span>
+                          <span>·</span>
+                          {isPlaying ? (
+                            <span>Poslední akce {lastActionAt ? formatRelativeTime(lastActionAt) : "neznámá"}</span>
+                          ) : (
+                            <span>{lastActionAt ? `Poslední akce ${formatRelativeTime(lastActionAt)}` : "Zatím bez tahu"}</span>
+                          )}
                         </div>
                       </div>
 
