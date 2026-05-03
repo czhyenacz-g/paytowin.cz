@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { getBuiltinRacerConfigs } from "@/lib/racers/builtInRacers";
+import { listRacersAction } from "@/app/admin/racers/actions";
+import { racerProfilesToConfigs } from "@/lib/racers/builtInRacers";
 import RacersGallery from "@/app/components/racers/RacersGallery";
 
 export const metadata: Metadata = {
@@ -7,8 +8,12 @@ export const metadata: Metadata = {
   description: "Prohlédni si všechny dostupné závodníky — koně, lamy, velbloudy i auta. Každý má jiný charakter, rychlost a příběh.",
 };
 
-export default function RacersPage() {
-  const racers = getBuiltinRacerConfigs();
+export const dynamic = "force-dynamic";
+
+export default async function RacersPage() {
+  const profiles = await listRacersAction({ isBuiltin: true, isPublic: true });
+  const racers = racerProfilesToConfigs(profiles);
+
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-6xl px-4 py-10">

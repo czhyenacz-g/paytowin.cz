@@ -1,13 +1,9 @@
 import type { RacerConfig } from "@/lib/themes";
+import type { RacerProfile } from "./types";
 import { getBuiltinRacerProfiles } from "./seed-builtin";
 
-/**
- * Returns all built-in racers as RacerConfig[], suitable for UI components.
- * Converts RacerProfile fields (imageUrl → image, type → racerType) to RacerConfig shape.
- * Static — no DB call.
- */
-export function getBuiltinRacerConfigs(): RacerConfig[] {
-  return getBuiltinRacerProfiles().map((p) => ({
+export function racerProfilesToConfigs(profiles: RacerProfile[]): RacerConfig[] {
+  return profiles.map((p) => ({
     id:          p.id,
     name:        p.name,
     speed:       p.speed,
@@ -20,4 +16,9 @@ export function getBuiltinRacerConfigs(): RacerConfig[] {
     isBuiltIn:   p.isBuiltin,
     racerType:   p.type,
   }));
+}
+
+/** Static fallback (no DB). */
+export function getBuiltinRacerConfigs(): RacerConfig[] {
+  return racerProfilesToConfigs(getBuiltinRacerProfiles());
 }
