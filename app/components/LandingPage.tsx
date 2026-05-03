@@ -934,6 +934,8 @@ export default function LandingPage() {
                   <span>·</span>
                   <a href="/o-nas" className="hover:text-slate-200 underline">O nás</a>
                   <span>·</span>
+                  <a href="/racers" className="hover:text-slate-200 underline">Závodníci</a>
+                  <span>·</span>
                   <a href="/bets" className="hover:text-slate-200 underline">Dostihy a sázky 18+</a>
                   <span>·</span>
                   <a href="/partners" className="hover:text-slate-200 underline">Partnerství</a>
