@@ -17,6 +17,7 @@ import {
   reinstateJoinRequestAction,
   checkJoinRequestStatusAction,
 } from "@/app/game/join-actions";
+import { notifyDiscordNewGameAction } from "@/app/game/discord-actions";
 
 interface DiscordUser {
   id: string;
@@ -526,6 +527,15 @@ export default function LandingPage() {
     });
 
     logEvent({ name: "create_game_success", game_code: code, theme_id: selectedThemeId, board_id: selectedBoardId });
+    void notifyDiscordNewGameAction({
+      gameCode:        code,
+      themeId:         selectedThemeId,
+      boardId:         selectedBoardId,
+      hasBot:          addBotPlayer,
+      requireApproval: requireApproval,
+      maxPlayers:      maxPlayers,
+      ownerName:       name.trim() || null,
+    }).catch(() => {});
     localStorage.setItem(`paytowin_player_${code}`, newPlayer.id);
     setShareCode(code);
     setLoading(false);
