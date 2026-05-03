@@ -98,6 +98,7 @@ export const horseDayTheme: Theme = {
       "price": 4000,
       "emoji": "🟢",
       "maxStamina": 80,
+      "flavorText": "Vítr nemá brzy — buď fouká, nebo ne.",
       "isBuiltIn": true,
       "racerType": "horse",
       "slotIndex": 1
@@ -109,6 +110,7 @@ export const horseDayTheme: Theme = {
       "price": 3000,
       "emoji": "🟡",
       "maxStamina": 90,
+      "flavorText": "Zlatá srst, stříbrné nervy. Spolehlivá jako zlatý standard.",
       "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/zlata_hriva.webp",
       "isBuiltIn": true,
       "racerType": "horse",

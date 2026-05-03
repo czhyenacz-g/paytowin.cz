@@ -141,6 +141,7 @@ export const horseClassicTheme: Theme = {
       "price": 4500,
       "emoji": "🐴",
       "maxStamina": 78,
+      "flavorText": "Závodí s elegancí. Dech si hlídá sám.",
       "image": "/themes/_shared/racer-horse_classic_pablo.webp",
       "isBuiltIn": true,
       "racerType": "horse",
