@@ -47,7 +47,7 @@ export default function RacerDetailCard({ racer }: Props) {
       {/* Hero image */}
       <div
         className="relative bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden"
-        style={{ aspectRatio: "4 / 3" }}
+        style={{ aspectRatio: "4 / 3.45" }}
       >
         {racer.image ? (
           <img
