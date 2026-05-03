@@ -18,6 +18,7 @@ import { decideBotHorsePurchase } from "@/lib/bot/botDecision";
 import { DEFAULT_ECONOMY } from "@/lib/types/game";
 import type { Player, Horse, EconomyConfig, ActiveEffect } from "@/lib/types/game";
 import type { RacerConfig } from "@/lib/themes";
+import { awardMoneySpentAction } from "@/app/game/actions";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -106,6 +107,7 @@ async function botFinishTurn(
   const activePlayers = updatedPlayers.filter(p => !isBankrupt(p));
   if (updatedPlayers.length >= 2 && activePlayers.length <= 1) {
     await supabase.from("games").update({ status: "finished" }).eq("id", gameId);
+    awardMoneySpentAction(gameId).catch(() => {});
   }
 }
 

@@ -8,7 +8,7 @@ import { resolveRacerRefsAction } from "@/app/admin/racers/actions";
 import { themeToManifest } from "@/lib/themes/manifest";
 import { loadThemeManifestAsync } from "@/lib/themes/loader";
 import { getBoardById } from "@/lib/board";
-import { awardXpAction, awardRaceStarAction, awardWinStarAction } from "@/app/game/actions";
+import { awardXpAction, awardRaceStarAction, awardWinStarAction, awardMoneySpentAction } from "@/app/game/actions";
 import { STADIUM_ASPECT } from "@/lib/board/constants";
 import {
   FIELD_POSITIONS,
@@ -1269,6 +1269,18 @@ export default function GameBoard({ gameCode }: Props) {
 
     await supabase.from("players").update({ coins: finalCoins, horses: finalHorses }).eq("id", player.id);
 
+    // Spend event — jen Discord hráči; chyba nesmí rozbít nákup
+    if (player.discord_id && gameId) {
+      supabase.from("spend_events").insert({
+        game_id:    gameId,
+        player_id:  player.id,
+        discord_id: player.discord_id,
+        event_type: "racer_purchase",
+        amount:     racer.price,
+        metadata:   { racer_id: racer.id ?? null, racer_name: racer.name, field_index: player.position, source: "buy_racer" },
+      }).then(({ error }) => { if (error) console.warn("[spend_events] insert failed", error); });
+    }
+
     // Optimistický update: okamžitě promítni nové horses + coins do lokálního stavu
     setPlayers(prev => prev.map(p =>
       p.id === player.id ? { ...p, coins: finalCoins, horses: finalHorses } : p
@@ -2100,9 +2112,10 @@ export default function GameBoard({ gameCode }: Props) {
       // Okamžitý lokální update — stejný vzor jako cancelGame.
       // Realtime propaguje ostatním klientům, ale tento klient nečeká.
       setGameStatus("finished");
-      // XP + win stars — fire and forget; duplikaci hlídají guard sloupce
+      // XP + win stars + spend — fire and forget; duplikaci hlídají guard sloupce
       awardXpAction(gameId).catch(() => {});
       awardWinStarAction(gameId).catch(() => {});
+      awardMoneySpentAction(gameId).catch(() => {});
     }
   };
 

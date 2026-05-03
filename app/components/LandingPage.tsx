@@ -187,6 +187,7 @@ export default function LandingPage() {
   const [xpTotal, setXpTotal] = React.useState<number | null>(null);
   const [winsTotal, setWinsTotal] = React.useState<number | null>(null);
   const [winStarsTotal, setWinStarsTotal] = React.useState<number | null>(null);
+  const [moneySpentTotal, setMoneySpentTotal] = React.useState<number | null>(null);
   const [isDevJoin, setIsDevJoin] = React.useState(false);
   const [addBotPlayer, setAddBotPlayer] = React.useState(false);
   const [requireApproval, setRequireApproval] = React.useState(false);
@@ -298,16 +299,17 @@ export default function LandingPage() {
       .eq("discord_id", discordUser.id)
       .eq("games.status", "finished")
       .then(({ count }) => setPlayedGamesCount(count ?? 0));
-    // XP + výhry z user_profiles
+    // XP + výhry + útrata z user_profiles
     supabase
       .from("user_profiles")
-      .select("xp_total, wins_total, win_stars_total")
+      .select("xp_total, wins_total, win_stars_total, money_spent_total")
       .eq("discord_id", discordUser.id)
       .single()
       .then(({ data }) => {
         setXpTotal(data?.xp_total ?? 0);
         setWinsTotal(data?.wins_total ?? 0);
-        setWinStarsTotal((data as { win_stars_total?: number } | null)?.win_stars_total ?? 0);
+        setWinStarsTotal(data?.win_stars_total ?? 0);
+        setMoneySpentTotal(data?.money_spent_total ?? 0);
       });
   }, [activePanel, discordUser?.id]);
 
@@ -1211,12 +1213,13 @@ export default function LandingPage() {
                     </div>
 
                     {/* Stats grid */}
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
                       {[
                         { label: "Odehrané hry", value: discordUser ? (playedGamesCount !== null ? String(playedGamesCount) : "…") : "–" },
                         { label: "Výhry",        value: discordUser ? (winsTotal !== null ? String(winsTotal) : "…") : "–" },
                         { label: "XP",           value: discordUser ? (xpTotal !== null ? String(xpTotal) : "…") : "–" },
                         { label: "Hvězdy",       value: discordUser ? (winStarsTotal !== null ? String(winStarsTotal) : "…") : "–" },
+                        { label: "Utraceno 💰",  value: discordUser ? (moneySpentTotal !== null ? moneySpentTotal.toLocaleString("cs-CZ") : "…") : "–" },
                       ].map((s) => (
                         <div key={s.label} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-center">
                           <div className="text-2xl font-black text-slate-900">{s.value}</div>

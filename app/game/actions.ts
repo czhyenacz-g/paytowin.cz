@@ -137,6 +137,74 @@ export async function awardRaceStarAction(
 }
 
 /**
+ * awardMoneySpentAction — agreguje útrata za racer_purchase do user_profiles.money_spent_total.
+ * Guard: games.money_spent_awarded. Počítá jen spend_events s counted_in_profile=false a discord_id NOT NULL.
+ * Volá se jednou po dokončení hry; bezpečné opakovat díky guardu.
+ */
+export async function awardMoneySpentAction(
+  gameId: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!gameId) return { ok: false, error: "gameId chybí" };
+
+  const { data: game, error: gameErr } = await supabase
+    .from("games")
+    .select("id, status, money_spent_awarded")
+    .eq("id", gameId)
+    .single();
+
+  if (gameErr || !game) return { ok: false, error: gameErr?.message ?? "Hra nenalezena" };
+  if (game.status !== "finished")    return { ok: false, error: "Hra ještě neskončila" };
+  if (game.money_spent_awarded)      return { ok: false, error: "Money spent již zpracováno" };
+
+  const { data: events, error: eventsErr } = await supabase
+    .from("spend_events")
+    .select("discord_id, amount")
+    .eq("game_id", gameId)
+    .eq("counted_in_profile", false)
+    .eq("event_type", "racer_purchase")
+    .not("discord_id", "is", null);
+
+  if (eventsErr) return { ok: false, error: eventsErr.message };
+
+  // Seskup součty podle discord_id
+  const totals = new Map<string, number>();
+  for (const ev of events ?? []) {
+    if (!ev.discord_id) continue;
+    totals.set(ev.discord_id, (totals.get(ev.discord_id) ?? 0) + ev.amount);
+  }
+
+  // RPC upsert pro každého hráče
+  for (const [discordId, total] of totals.entries()) {
+    const { error } = await supabase.rpc("increment_xp_and_wins", {
+      p_discord_id:  discordId,
+      p_xp:          0,
+      p_win:         false,
+      p_money_spent: total,
+    });
+    if (error) return { ok: false, error: `RPC selhal pro ${discordId}: ${error.message}` };
+  }
+
+  // Označ eventy jako zaúčtované
+  if ((events ?? []).length > 0) {
+    await supabase
+      .from("spend_events")
+      .update({ counted_in_profile: true })
+      .eq("game_id", gameId)
+      .eq("counted_in_profile", false)
+      .eq("event_type", "racer_purchase");
+  }
+
+  // Guard — nastav vždy (i když nebyly žádné eventy)
+  const { error: markErr } = await supabase
+    .from("games")
+    .update({ money_spent_awarded: true })
+    .eq("id", gameId);
+
+  if (markErr) return { ok: false, error: markErr.message };
+  return { ok: true };
+}
+
+/**
  * awardWinStarAction — přidělí +1 hvězdu vítězi hry proti reálným hráčům.
  * Guard: games.win_stars_awarded; min. 2 hráči s Discord identitou; vítěz nesmí být bot.
  */

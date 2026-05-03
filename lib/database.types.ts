@@ -19,6 +19,7 @@ export interface Database {
           require_approval: boolean;
           xp_awarded: boolean;
           win_stars_awarded: boolean;
+          money_spent_awarded: boolean;
         };
         Insert: {
           code: string;
@@ -33,6 +34,7 @@ export interface Database {
           require_approval?: boolean;
           xp_awarded?: boolean;
           win_stars_awarded?: boolean;
+          money_spent_awarded?: boolean;
         };
         Update: {
           code?: string;
@@ -47,6 +49,61 @@ export interface Database {
           require_approval?: boolean;
           xp_awarded?: boolean;
           win_stars_awarded?: boolean;
+          money_spent_awarded?: boolean;
+        };
+      };
+      spend_events: {
+        Row: {
+          id: string;
+          game_id: string;
+          player_id: string | null;
+          discord_id: string | null;
+          event_type: "racer_purchase" | "move_correction" | "duel_bet" | "event_entry" | "map_publish";
+          amount: number;
+          metadata: Json | null;
+          counted_in_profile: boolean;
+          created_at: string;
+        };
+        Insert: {
+          game_id: string;
+          player_id?: string | null;
+          discord_id?: string | null;
+          event_type: "racer_purchase" | "move_correction" | "duel_bet" | "event_entry" | "map_publish";
+          amount: number;
+          metadata?: Json | null;
+          counted_in_profile?: boolean;
+        };
+        Update: {
+          counted_in_profile?: boolean;
+          metadata?: Json | null;
+        };
+      };
+      user_profiles: {
+        Row: {
+          discord_id: string;
+          xp_total: number;
+          wins_total: number;
+          stars_total: number;
+          win_stars_total: number;
+          money_spent_total: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          discord_id: string;
+          xp_total?: number;
+          wins_total?: number;
+          stars_total?: number;
+          win_stars_total?: number;
+          money_spent_total?: number;
+        };
+        Update: {
+          xp_total?: number;
+          wins_total?: number;
+          stars_total?: number;
+          win_stars_total?: number;
+          money_spent_total?: number;
+          updated_at?: string;
         };
       };
       players: {
