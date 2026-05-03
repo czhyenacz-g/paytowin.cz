@@ -26,6 +26,7 @@
 import React from "react";
 import type { RacerConfig } from "@/lib/themes";
 import RacerEditorPanel from "./RacerEditorPanel";
+import RacerDetailCard from "./RacerDetailCard";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -87,7 +88,7 @@ export default function RacerRosterPanel({
   const isRacerLocked = (r: RacerConfig) =>
     isBuiltInTheme || (r.isBuiltIn === true && process.env.NODE_ENV === "production");
 
-  // ── Akce ──────────────────────────────────────────────────────────────────
+  // ── Akce ────────────────────────────────���──────────────────────────────���──
 
   function handleAdd() {
     if (catalogReadOnly || isBuiltInTheme) return;
@@ -151,8 +152,7 @@ export default function RacerRosterPanel({
     if (!pickedId) {
       // "prázdný" → odeber racera ze slotu, ponech v membership jako off-board
       const inSlot = racers.find((r, i) => (r.slotIndex ?? i) === targetSlot);
-      if (!inSlot) return; // slot je už prázdný
-      // Najdi nejnižší volný off-board slotIndex (>= racerFieldCount) bez konfliktu
+      if (!inSlot) return;
       const usedSlots = new Set(
         racers.filter((r) => r.id !== inSlot.id).map((r, i) => r.slotIndex ?? i)
       );
@@ -175,15 +175,16 @@ export default function RacerRosterPanel({
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
-  // Badge text v headeru
   const badgeText = hasSlotContext
     ? `${racers.length} závodníků / ${racerFieldCount} ${racerFieldCount === 1 ? "pole" : "polí"}`
     : `${racers.length} závodník${racers.length === 1 ? "" : "ů"}`;
 
+  const selectedRacer = selectedId ? (racers.find((r) => r.id === selectedId) ?? null) : null;
+
   return (
     <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
 
-      {/* Header */}
+      {/* Header — full width */}
       <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-4 py-2.5">
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold uppercase tracking-widest text-slate-500">
@@ -198,11 +199,8 @@ export default function RacerRosterPanel({
           </span>
         </div>
 
-        {/* Header action */}
         {isBuiltInTheme ? (
-          <span className="text-[10px] text-slate-400 flex items-center gap-1">
-            🔒 vestavěné
-          </span>
+          <span className="text-[10px] text-slate-400 flex items-center gap-1">🔒 vestavěné</span>
         ) : catalogReadOnly ? (
           <button
             onClick={onEditRacers}
@@ -230,200 +228,220 @@ export default function RacerRosterPanel({
         )}
       </div>
 
-      {/* Slot count info — jen pokud je znám počet racer polí */}
-      {mismatch && (
-        <div className={`px-4 py-2 text-xs font-medium border-b ${
-          shortage
-            ? "bg-amber-50 border-amber-200 text-amber-700"
-            : "bg-slate-50 border-slate-200 text-slate-500"
-        }`}>
-          {shortage ? (
-            <>
-              ⚠️ Board má <strong>{racerFieldCount} racer {racerFieldCount === 1 ? "pole" : "polí"}</strong>, ale
-              katalog obsahuje jen <strong>{racers.length}</strong> závodníků —
-              přidej ještě {(racerFieldCount as number) - racers.length}.
-            </>
-          ) : (
-            <>
-              {racers.length - (racerFieldCount as number)} závodník(ů) bez slotu na boardu —
-              mohou být dáni přes chance kartu nebo jiný herní mechanismus.
-            </>
-          )}
-        </div>
-      )}
+      {/* Body: left list + right detail */}
+      <div className="flex flex-col md:flex-row">
 
-      {/* Slot Assignment — jen pokud je znám počet racer polí */}
-      {hasSlotContext && (racerFieldCount as number) > 0 && (
-        <div className="border-b border-slate-100 px-4 py-3">
-          <div className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-            Přiřazení slotů
-          </div>
-          <div className="space-y-1.5">
-            {Array.from({ length: racerFieldCount as number }, (_, slotIdx) => {
-              const assigned = racers.find((r) => (r.slotIndex ?? racers.indexOf(r)) === slotIdx);
+        {/* ── Left: list ──────────────────────────────────────────── */}
+        <div className="flex-1 min-w-0">
+
+          {/* Mismatch warning */}
+          {mismatch && (
+            <div className={`px-4 py-2 text-xs font-medium border-b ${
+              shortage
+                ? "bg-amber-50 border-amber-200 text-amber-700"
+                : "bg-slate-50 border-slate-200 text-slate-500"
+            }`}>
+              {shortage ? (
+                <>
+                  ⚠️ Board má <strong>{racerFieldCount} racer {racerFieldCount === 1 ? "pole" : "polí"}</strong>, ale
+                  katalog obsahuje jen <strong>{racers.length}</strong> závodníků —
+                  přidej ještě {(racerFieldCount as number) - racers.length}.
+                </>
+              ) : (
+                <>
+                  {racers.length - (racerFieldCount as number)} závodník(ů) bez slotu na boardu —
+                  mohou být dáni přes chance kartu nebo jiný herní mechanismus.
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Slot Assignment */}
+          {hasSlotContext && (racerFieldCount as number) > 0 && (
+            <div className="border-b border-slate-100 px-4 py-3">
+              <div className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+                Přiřazení slotů
+              </div>
+              <div className="space-y-1.5">
+                {Array.from({ length: racerFieldCount as number }, (_, slotIdx) => {
+                  const assigned = racers.find((r) => (r.slotIndex ?? racers.indexOf(r)) === slotIdx);
+                  return (
+                    <div key={slotIdx} className="flex items-center gap-2">
+                      <span className="w-5 shrink-0 text-right font-mono text-[10px] text-slate-400">
+                        {slotIdx + 1}.
+                      </span>
+                      {isBuiltInTheme ? (
+                        <span className="text-xs text-slate-600">
+                          {assigned
+                            ? <>{assigned.emoji} {assigned.name}</>
+                            : <span className="italic text-slate-300">— prázdný —</span>
+                          }
+                        </span>
+                      ) : (
+                        <select
+                          value={assigned?.id ?? ""}
+                          onChange={(e) => handleSlotAssign(slotIdx, e.target.value)}
+                          className="flex-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-amber-300"
+                        >
+                          <option value="">— prázdný —</option>
+                          {racers.map((r) => (
+                            <option key={r.id} value={r.id}>
+                              {r.emoji} {r.name} · ⚡{r.speed} · {r.price} 💰
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Prázdný stav */}
+          {racers.length === 0 && (
+            <div className="px-4 py-8 text-center text-sm text-slate-400 italic">
+              {catalogReadOnly
+                ? "Žádní závodníci — přidej je v Racer Adminu."
+                : "Žádní závodníci — přidej prvního tlačítkem výše."
+              }
+            </div>
+          )}
+
+          {/* Roster rows */}
+          <div className="divide-y divide-slate-100">
+            {racers.map((r, idx) => {
+              const isSelected = selectedId === r.id;
+              const rSlot      = r.slotIndex ?? idx;
+              const isOrphan   = hasSlotContext && rSlot >= (racerFieldCount as number);
+              const locked     = isRacerLocked(r);
+
               return (
-                <div key={slotIdx} className="flex items-center gap-2">
-                  <span className="w-5 shrink-0 text-right font-mono text-[10px] text-slate-400">
-                    {slotIdx + 1}.
+                <div
+                  key={r.id}
+                  className={`flex items-center gap-3 px-4 py-2.5 transition-colors select-none cursor-pointer ${
+                    isSelected
+                      ? locked ? "bg-slate-100" : "bg-amber-50"
+                      : "hover:bg-slate-50"
+                  }`}
+                  onClick={() => setSelectedId(isSelected ? null : r.id)}
+                >
+                  <span className={`text-[10px] font-mono w-4 shrink-0 text-center ${
+                    isOrphan ? "text-slate-300" : "text-slate-400"
+                  }`}>
+                    {isOrphan ? "–" : `${rSlot + 1}.`}
                   </span>
-                  {isBuiltInTheme ? (
-                    <span className="text-xs text-slate-600">
-                      {assigned
-                        ? <>{assigned.emoji} {assigned.name}</>
-                        : <span className="italic text-slate-300">— prázdný —</span>
-                      }
+
+                  <span className="text-xl leading-none shrink-0">{r.emoji}</span>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-slate-800 truncate">{r.name}</div>
+                    <div className="text-[10px] text-slate-400 font-mono space-x-1.5">
+                      <span className="text-slate-300">{r.id}</span>
+                      <span>·</span>
+                      <span>⚡ {r.speed}</span>
+                      <span>·</span>
+                      <span>{r.price} 💰</span>
+                      {r.isLegendary && <span className="text-amber-500">· leg</span>}
+                    </div>
+                  </div>
+
+                  {hasSlotContext && (
+                    <span className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${
+                      isOrphan
+                        ? "bg-slate-100 text-slate-400"
+                        : "bg-emerald-100 text-emerald-700"
+                    }`}>
+                      {isOrphan ? "off-board" : "na boardu"}
                     </span>
-                  ) : (
-                    <select
-                      value={assigned?.id ?? ""}
-                      onChange={(e) => handleSlotAssign(slotIdx, e.target.value)}
-                      className="flex-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-amber-300"
+                  )}
+
+                  {!catalogReadOnly && (
+                    <div
+                      className="flex items-center gap-0.5 shrink-0"
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      <option value="">— prázdný —</option>
-                      {racers.map((r) => (
-                        <option key={r.id} value={r.id}>
-                          {r.emoji} {r.name} · ⚡{r.speed} · {r.price} 💰
-                        </option>
-                      ))}
-                    </select>
+                      {locked ? (
+                        <span
+                          className="text-[11px] text-slate-300 px-1"
+                          title="Vestavěný závodník — nelze editovat ani smazat"
+                        >
+                          🔒
+                        </span>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => handleMoveUp(idx)}
+                            disabled={idx === 0}
+                            title="Posunout nahoru"
+                            className="rounded p-1 text-xs text-slate-400 hover:text-slate-700 disabled:opacity-20 transition-colors"
+                          >
+                            ↑
+                          </button>
+                          <button
+                            onClick={() => handleMoveDown(idx)}
+                            disabled={idx >= racers.length - 1}
+                            title="Posunout dolů"
+                            className="rounded p-1 text-xs text-slate-400 hover:text-slate-700 disabled:opacity-20 transition-colors"
+                          >
+                            ↓
+                          </button>
+                          <button
+                            onClick={() => handleDelete(idx)}
+                            title="Smazat závodníka"
+                            className="ml-1 rounded p-1 text-xs text-slate-400 hover:text-red-500 transition-colors"
+                          >
+                            ✕
+                          </button>
+                        </>
+                      )}
+                    </div>
                   )}
                 </div>
               );
             })}
           </div>
+
+          {/* Footer */}
+          <div className="border-t border-slate-100 px-4 py-2 text-[10px] text-slate-400">
+            {catalogReadOnly
+              ? "Závodníky edituj v Racer Adminu — v builderu lze měnit jen přiřazení slotů."
+              : hasSlotContext
+                ? "Slot 1 → 1. racer pole zleva. Výběrem \"prázdný\" odebereš ze slotu (racer zůstane v membership)."
+                : "Závodníci v katalogu — uložením se změní v theme souboru / DB."
+            }
+          </div>
+
         </div>
-      )}
 
-      {/* Prázdný stav */}
-      {racers.length === 0 && (
-        <div className="px-4 py-8 text-center text-sm text-slate-400 italic">
-          {catalogReadOnly
-            ? "Žádní závodníci — přidej je v Racer Adminu."
-            : "Žádní závodníci — přidej prvního tlačítkem výše."
-          }
-        </div>
-      )}
-
-      {/* Roster list */}
-      <div className="divide-y divide-slate-100">
-        {racers.map((r, idx) => {
-          const isSelected = selectedId === r.id;
-          // isOrphan: závodník je v theme membership, ale nemá board slot.
-          // Správně: porovnáváme slotIndex, ne pozici v poli.
-          const rSlot    = r.slotIndex ?? idx;
-          const isOrphan = hasSlotContext && rSlot >= (racerFieldCount as number);
-          const locked   = isRacerLocked(r);
-
-          return (
-            <div key={r.id}>
-
-              {/* Row */}
-              <div
-                className={`flex items-center gap-3 px-4 py-2.5 transition-colors select-none ${
-                  catalogReadOnly
-                    ? "cursor-default"
-                    : "cursor-pointer " + (isSelected ? (locked ? "bg-slate-100" : "bg-amber-50") : "hover:bg-slate-50")
-                }`}
-                onClick={() => {
-                  if (!catalogReadOnly) setSelectedId(isSelected ? null : r.id);
-                }}
-              >
-                {/* Slot číslo — pro off-board racery zobrazí "–" místo matoucího čísla */}
-                <span className={`text-[10px] font-mono w-4 shrink-0 text-center ${
-                  isOrphan ? "text-slate-300" : "text-slate-400"
-                }`}>
-                  {isOrphan ? "–" : `${rSlot + 1}.`}
-                </span>
-
-                <span className="text-xl leading-none shrink-0">{r.emoji}</span>
-
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-slate-800 truncate">{r.name}</div>
-                  <div className="text-[10px] text-slate-400 font-mono space-x-1.5">
-                    <span className="font-mono text-slate-300">{r.id}</span>
-                    <span>·</span>
-                    <span>⚡ {r.speed}</span>
-                    <span>·</span>
-                    <span>{r.price} 💰</span>
-                    {r.isLegendary && <span className="text-amber-500">· leg</span>}
+        {/* ── Right: detail panel ──────────────────────────────────── */}
+        <div className="w-full md:w-72 xl:w-80 shrink-0 border-t border-slate-100 md:border-t-0 md:border-l">
+          {selectedRacer ? (
+            <div>
+              <RacerDetailCard racer={selectedRacer} />
+              {!catalogReadOnly && (
+                <div className="border-t border-slate-100 px-4 pb-4 pt-3">
+                  <div className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+                    Editace
                   </div>
-                </div>
-
-                {/* Board status badge — jen pokud je znám kontext boardu */}
-                {hasSlotContext && (
-                  <span className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${
-                    isOrphan
-                      ? "bg-slate-100 text-slate-400"
-                      : "bg-emerald-100 text-emerald-700"
-                  }`}>
-                    {isOrphan ? "off-board" : "na boardu"}
-                  </span>
-                )}
-
-                {/* Akce — skryty v catalogReadOnly módu */}
-                {!catalogReadOnly && (
-                  <div
-                    className="flex items-center gap-0.5 shrink-0"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {locked ? (
-                      <span className="text-[11px] text-slate-300 px-1" title="Vestavěný závodník — nelze editovat ani smazat">🔒</span>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => handleMoveUp(idx)}
-                          disabled={idx === 0}
-                          title="Posunout nahoru (přeřadit slot)"
-                          className="rounded p-1 text-xs text-slate-400 hover:text-slate-700 disabled:opacity-20 transition-colors"
-                        >
-                          ↑
-                        </button>
-                        <button
-                          onClick={() => handleMoveDown(idx)}
-                          disabled={idx === racers.length - 1}
-                          title="Posunout dolů (přeřadit slot)"
-                          className="rounded p-1 text-xs text-slate-400 hover:text-slate-700 disabled:opacity-20 transition-colors"
-                        >
-                          ↓
-                        </button>
-                        <button
-                          onClick={() => handleDelete(idx)}
-                          title="Smazat závodníka"
-                          className="ml-1 rounded p-1 text-xs text-slate-400 hover:text-red-500 transition-colors"
-                        >
-                          ✕
-                        </button>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Inline RacerEditorPanel — jen v plném módu (ne catalogReadOnly) */}
-              {isSelected && !catalogReadOnly && (
-                <div className={`px-4 pb-3 ${locked ? "bg-slate-50/60" : "bg-amber-50/40"}`}>
                   <RacerEditorPanel
-                    racer={r}
+                    racer={selectedRacer}
                     onChange={handleChange}
-                    readOnly={locked}
+                    readOnly={isRacerLocked(selectedRacer)}
                     themeId={themeId}
                   />
                 </div>
               )}
-
             </div>
-          );
-        })}
-      </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center min-h-[220px] h-full text-center px-6 py-10">
+              <div className="text-5xl mb-3 select-none opacity-30">🏁</div>
+              <div className="text-sm font-semibold text-slate-600">Vyber závodníka</div>
+              <div className="mt-1 text-xs text-slate-400">Klikni na položku vlevo pro zobrazení detailu</div>
+            </div>
+          )}
+        </div>
 
-      {/* Footer nápověda */}
-      <div className="border-t border-slate-100 px-4 py-2 text-[10px] text-slate-400">
-        {catalogReadOnly
-          ? "Závodníky edituj v Racer Adminu — v builderu lze měnit jen přiřazení slotů."
-          : hasSlotContext
-            ? "Slot 1 → 1. racer pole zleva. Přiřaď závodníka přes select výše; výběrem \"prázdný\" odebereš ze slotu (ale racer zůstane v membership)."
-            : "Závodníci v katalogu — uložením se změní v theme souboru / DB."
-        }
       </div>
 
     </div>
