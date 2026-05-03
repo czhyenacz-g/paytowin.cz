@@ -16,6 +16,10 @@ const BOARD_LABELS: Record<string, string> = {
   "small-stadium": "Stadion",
 };
 
+// UI-only freshness filter; cron cleanup can cancel old games later.
+const MAX_WAITING_GAME_AGE_MS = 48 * 60 * 60 * 1000;  // 48 hours
+const MAX_PLAYING_GAME_AGE_MS = 7  * 24 * 60 * 60 * 1000; // 7 days
+
 type LobbyGame = {
   id: string;
   code: string;
@@ -64,8 +68,16 @@ export default function JoinableGamesList({ onJoin, playerName, isDiscordLoggedI
 
   React.useEffect(() => { load(); }, [load]);
 
-  const visibleGames = showAll ? games : games.slice(0, INITIAL_VISIBLE);
-  const hiddenCount = games.length - INITIAL_VISIBLE;
+  const now = Date.now();
+  const freshGames = games.filter(g => {
+    const age = now - new Date(g.created_at).getTime();
+    if (g.status === "waiting") return age < MAX_WAITING_GAME_AGE_MS;
+    if (g.status === "playing") return age < MAX_PLAYING_GAME_AGE_MS;
+    return false;
+  });
+
+  const visibleGames = showAll ? freshGames : freshGames.slice(0, INITIAL_VISIBLE);
+  const hiddenCount = freshGames.length - INITIAL_VISIBLE;
 
   return (
     <div className="rounded-2xl border border-slate-700/60 overflow-hidden">
@@ -78,9 +90,9 @@ export default function JoinableGamesList({ onJoin, playerName, isDiscordLoggedI
       >
         <span className="flex items-center gap-2 text-xs font-medium text-slate-400">
           Hry k připojení
-          {!loading && games.length > 0 && (
+          {!loading && freshGames.length > 0 && (
             <span className="rounded-full bg-slate-700 px-1.5 py-px text-[10px] font-semibold text-slate-300 tabular-nums">
-              {games.length}
+              {freshGames.length}
             </span>
           )}
         </span>
@@ -106,13 +118,13 @@ export default function JoinableGamesList({ onJoin, playerName, isDiscordLoggedI
             <p className="text-xs text-red-400 text-center">{fetchError}</p>
           )}
 
-          {!loading && !fetchError && games.length === 0 && (
+          {!loading && !fetchError && freshGames.length === 0 && (
             <p className="text-xs text-slate-500 text-center py-1">
               🏁 Žádné otevřené hry. Založ vlastní nebo přidej bota.
             </p>
           )}
 
-          {!loading && games.length > 0 && (
+          {!loading && freshGames.length > 0 && (
             <>
               <div className="space-y-1.5">
                 {visibleGames.map(game => {
