@@ -67,7 +67,7 @@ interface Props {
   bankruptWarning: { playerName: string; horses: Horse[]; totalSellValue: number; willSurvive: boolean } | null;
   bankruptWarningResolverRef: React.MutableRefObject<((sellAll: boolean) => void) | null>;
   pendingCard: { card: GameCard; playerIndex: number } | null;
-  pendingRacer: { racer: Horse; playerIndex: number } | null;
+  pendingRacer: { racer: Horse; playerIndex: number; flavorText?: string } | null;
   pendingRollDecision: { baseRoll: number; basePosition: number } | null;
   isMyTurn: boolean;
   isMyPendingRollDecisionTurn: boolean;
@@ -376,6 +376,9 @@ export default function GamePanel({
                   <div className="text-xs text-slate-400">
                     {players[pendingRacer.playerIndex]?.name} má: {players[pendingRacer.playerIndex]?.coins ?? 0} 💰
                   </div>
+                  {pendingRacer.flavorText && (
+                    <p className="mt-1 text-xs italic text-slate-500">„{pendingRacer.flavorText}"</p>
+                  )}
                 </div>
               </div>
               {isMyTurn ? (

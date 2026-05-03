@@ -214,7 +214,7 @@ export default function GameBoard({ gameCode }: Props) {
   const [players, setPlayers] = React.useState<Player[]>([]);
   const [gameState, setGameState] = React.useState<GameState | null>(null);
   const [loading, setLoading] = React.useState(!!gameCode);
-  const [pendingRacer, setPendingRacer] = React.useState<{ racer: Horse; playerIndex: number } | null>(null);
+  const [pendingRacer, setPendingRacer] = React.useState<{ racer: Horse; playerIndex: number; flavorText?: string } | null>(null);
   const [pendingCard, setPendingCard] = React.useState<{ card: GameCard; playerIndex: number } | null>(null);
   const cardAppliedRef = React.useRef<string | null>(null);
   const [pendingOffer, setPendingOffer] = React.useState<RerollOffer | null>(null);
@@ -716,7 +716,7 @@ export default function GameBoard({ gameCode }: Props) {
             const currentP = freshPlayers[freshState.current_player_index];
             const field = currentP ? fieldsRef.current[currentP.position] : null;
             if (field?.type === "racer" && field.racer) {
-              setPendingRacer({ racer: field.racer, playerIndex: freshState.current_player_index });
+              setPendingRacer({ racer: field.racer, playerIndex: freshState.current_player_index, flavorText: field.flavorText });
             }
           } else {
             setPendingRacer(null);
@@ -1119,7 +1119,7 @@ export default function GameBoard({ gameCode }: Props) {
           ...(fogOfWar ? { revealed_fields: buildFogReveal(newPosition, fogRevealBase) } : {}),
         }).eq("game_id", gameId);
         if (canReroll) setCanReroll(false);
-        setPendingRacer({ racer: field.racer, playerIndex: gameState.current_player_index });
+        setPendingRacer({ racer: field.racer, playerIndex: gameState.current_player_index, flavorText: field.flavorText });
       }
     } else if (field.type === "chance" || field.type === "finance" || field.type === "mafia") {
       // ── Karta: lízni, zobraz všem, efekt se aplikuje automaticky po 2.5 s ──
@@ -1419,6 +1419,7 @@ export default function GameBoard({ gameCode }: Props) {
     const logLines: string[] = [];
     const newLog = gameState.log ?? [];
     let cardMovedToRacer: Horse | undefined;
+    let cardMovedToRacerFlavorText: string | undefined;
     let cardYearEventTelegram: { text: string; turn: number } | undefined;
 
     if (card.effect.kind === "coins" && card.effect.value !== undefined) {
@@ -1476,6 +1477,7 @@ export default function GameBoard({ gameCode }: Props) {
           const ownerPlayer = players.find(p => p.id !== player.id && playerOwnsRacer(p, landingField.racer!));
           if (!alreadyOwned && !ownerPlayer) {
             cardMovedToRacer = landingField.racer as Horse;
+            cardMovedToRacerFlavorText = landingField.flavorText;
             logLines.push(`${player.name}: přišel na ${landingField.racer.emoji} ${landingField.label} — možnost koupě.`);
             console.log(`[turn-flow] card move landed on free racer — horse_pending will be set`);
           } else {
@@ -1602,7 +1604,7 @@ export default function GameBoard({ gameCode }: Props) {
         log: [...logLines, ...newLog].slice(0, 20),
         year_event_telegram: cardYearEventTelegram ?? null,
       }).eq("game_id", gameId);
-      setPendingRacer({ racer: cardMovedToRacer, playerIndex });
+      setPendingRacer({ racer: cardMovedToRacer, playerIndex, flavorText: cardMovedToRacerFlavorText });
       setPendingCard(null);
       return;
     }
@@ -2437,7 +2439,7 @@ export default function GameBoard({ gameCode }: Props) {
       const currentP = players[gameState.current_player_index];
       const field = currentP ? fieldsRef.current[currentP.position] : null;
       if (field?.type === "racer" && field.racer) {
-        setPendingRacer({ racer: field.racer, playerIndex: gameState.current_player_index });
+        setPendingRacer({ racer: field.racer, playerIndex: gameState.current_player_index, flavorText: field.flavorText });
       }
     } else {
       setPendingRacer(null);
