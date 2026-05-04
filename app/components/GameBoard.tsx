@@ -73,6 +73,7 @@ import type { CenterEvent, FlashEvent } from "@/lib/types/events";
 import { mapToCenterEvent, buildRollDecisionOptions } from "@/lib/game/viewModel";
 import CenterEventModal from "./modals/CenterEventModal";
 import FlashToast from "./modals/FlashToast";
+import RacerLostModal, { type RacerCategory } from "./modals/RacerLostModal";
 import RaceModal from "./RaceModal";
 import RaceEventOverlay from "./RaceEventOverlay";
 import type { MinigameResult } from "./race/RacingMinigame";
@@ -295,6 +296,7 @@ export default function GameBoard({ gameCode }: Props) {
   /** Závodníci načtení z globální registry (racerRefs flow). Null = použij inline theme racers. */
   const [resolvedRacers, setResolvedRacers] = React.useState<RacerConfig[] | null>(null);
   const [flashEvent, setFlashEvent] = React.useState<FlashEvent | null>(null);
+  const [racerLostModal, setRacerLostModal] = React.useState<{ horse: import("@/lib/types/game").Horse; playerName: string; racerCategory: RacerCategory } | null>(null);
   const flashTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const [telegramMessage, setTelegramMessage] = React.useState<TelegramMessage | null>(null);
   const telegramTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1929,6 +1931,15 @@ export default function GameBoard({ gameCode }: Props) {
       showFlash({ type: "legendary_gone", emoji: legendaryEntry.horse!.emoji, playerName: legendaryEntry.player!.name, racerName: legendaryEntry.horse!.name });
     }
 
+    // Modal pro ztrátu běžného racera — jen pro tohoto hráče, ne bota, ne legendu
+    const myBurnout = burnedOutEntries.find(
+      e => !e.horse!.isLegendary && e.player!.id === myPlayerId && !e.player!.is_bot,
+    );
+    if (myBurnout?.horse) {
+      const racerCategory: RacerCategory = themeId.startsWith("car") ? "car" : "animal";
+      setRacerLostModal({ horse: myBurnout.horse, playerName: myBurnout.player!.name, racerCategory });
+    }
+
     const stateUpdate: Record<string, unknown> = {
       current_player_index: evt.nextIndex,
       turn_count: evt.turnCount,
@@ -2797,6 +2808,16 @@ export default function GameBoard({ gameCode }: Props) {
 
       {/* ── Flash Toast (auto-dismiss spotlight pro výrazné momenty) ─────── */}
       {flashEvent && <FlashToast event={flashEvent} />}
+
+      {/* ── Racer Lost Modal (stamina burnout po závodě) ─────────────────── */}
+      {racerLostModal && (
+        <RacerLostModal
+          horse={racerLostModal.horse}
+          playerName={racerLostModal.playerName}
+          racerCategory={racerLostModal.racerCategory}
+          onDismiss={() => setRacerLostModal(null)}
+        />
+      )}
 
       {/* ── Telegram Strip (roční eventy / test mode) ────────────────────── */}
       <TelegramStrip message={telegramMessage} />
