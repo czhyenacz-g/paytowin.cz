@@ -980,14 +980,15 @@ export default function GameBoard({ gameCode }: Props) {
           await supabase.from("players").update({ position: newPosition, coins: movedPlayer.coins, laps: movedPlayer.laps ?? 0 }).eq("id", currentPlayer.id);
           const updatedPlayersForNext = players.map(p => p.id === currentPlayer.id ? movedPlayer : p);
           const nextIndex = getNextActiveIndex(gameState.current_player_index, updatedPlayersForNext);
+          const getPreferredHorse = (horses: Horse[]) => horses.find(h => h.isPreferred) ?? horses[0] ?? null;
           const challenger: DuelContestant = {
             name: currentPlayer.name,
-            horse: movedPlayer.horses[0] ?? null,
+            horse: getPreferredHorse(movedPlayer.horses),
             color: currentPlayer.color,
           };
           const defender: DuelContestant = {
             name: ownerPlayer.name,
-            horse: ownerPlayer.horses[0] ?? null,
+            horse: getPreferredHorse(ownerPlayer.horses),
             color: ownerPlayer.color,
           };
           stableDuelProceedRef.current = async (resultLog?: string[], updatedCurrentPlayerHorses?: import("@/lib/types/game").Horse[]) => {
