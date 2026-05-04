@@ -83,6 +83,7 @@ export const CHANCE_CARDS: GameCard[] = [
     text: "Uvědomil sis, že příští závod musíš vyhrát za každou cenu. Vtom se z mlhy vynořil Železník.",
     effect: { kind: "give_racer", racerId: "zeleznik" },
     effectLabel: "Získáš Železníka",
+    imagePath: "/themes/_shared/racer-zeleznik.webp",
     themeTags: ["horse"],
   },
   {
