@@ -198,6 +198,7 @@ export default function LandingPage() {
   const [checkingApproval, setCheckingApproval] = React.useState(false);
   const [ownerGameRequests, setOwnerGameRequests] = React.useState<OwnerGameRequests[]>([]);
   const [ownerRequestActionError, setOwnerRequestActionError] = React.useState<Record<string, string>>({});
+  const playerNameInputRef = React.useRef<HTMLInputElement | null>(null);
   // Načti session + předvyplň ?join=KOD z URL
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -541,6 +542,16 @@ export default function LandingPage() {
     setLoading(false);
   };
 
+  const handleJoinFromLobby = (code: string) => {
+    setJoinCode(code);
+    if (!name.trim()) {
+      setError(`Nejdřív zadej jméno. Hra ${code} je připravená k připojení.`);
+      playerNameInputRef.current?.focus();
+      return;
+    }
+    void joinGame(code);
+  };
+
   const joinGame = async (overrideCode?: string) => {
     if (!name.trim()) return setError("Zadej své jméno.");
     const effectiveCode = (overrideCode ?? joinCode).trim().toUpperCase();
@@ -820,6 +831,7 @@ export default function LandingPage() {
 
                     <div className="flex flex-1 flex-col gap-2 lg:flex-row">
                       <input
+                        ref={playerNameInputRef}
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
@@ -934,7 +946,7 @@ export default function LandingPage() {
 
                 {/* ── Lobby: joinable games ── */}
                 <JoinableGamesList
-                  onJoin={(code) => joinGame(code)}
+                  onJoin={handleJoinFromLobby}
                   playerName={name}
                   isDiscordLoggedIn={!!discordUser?.id}
                 />
