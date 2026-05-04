@@ -161,19 +161,22 @@ export async function executeBotTurnAction(
 
   let movedPlayer: Player = { ...botPlayer, position: newPosition };
 
-  // START crossing
+  const extraLog: string[] = [];
+
+  // START crossing — shodné s lidským rollDice flow v GameBoard.tsx
   if (passedStart || newPosition === 0) {
     const currentLaps = movedPlayer.laps ?? 0;
     const startTax    = getStartTax(currentLaps, economy);
-    movedPlayer = {
-      ...movedPlayer,
-      coins: movedPlayer.coins + economy.stateSubsidy - startTax,
-      laps:  currentLaps + 1,
-    };
+    if (passedStart) {
+      movedPlayer = { ...movedPlayer, coins: movedPlayer.coins + economy.stateSubsidy };
+      extraLog.push(`${botPlayer.name} prošel STARTem — +${economy.stateSubsidy} 💰`);
+    }
+    movedPlayer = { ...movedPlayer, laps: currentLaps + 1 };
+    if (startTax > 0) {
+      movedPlayer = { ...movedPlayer, coins: movedPlayer.coins - startTax };
+      extraLog.push(`${botPlayer.name}: Výpalné (daně) za průchod STARTem — -${startTax} 💰`);
+    }
   }
-
-  const extraLog: string[] = [];
-  if (passedStart) extraLog.push(`${botPlayer.name} prošel STARTem — +${economy.stateSubsidy} 💰`);
 
   const field = FIELDS[newPosition];
 
