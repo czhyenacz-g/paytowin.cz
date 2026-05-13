@@ -2203,13 +2203,12 @@ export default function GameBoard({ gameCode }: Props) {
         const newCCoins = Math.max(0, challenger.coins + s.p1.coinsDelta);
         const newDCoins = Math.max(0, defender.coins   + s.p2.coinsDelta);
 
-        const updatedCHorses = cKey
-          ? challenger.horses.map(h =>
-              racerOwnershipKey(h) === cKey
-                ? { ...h, stamina: Math.max(0, (h.stamina ?? h.maxStamina ?? 100) - s.p1.stamina.total) }
-                : h
-            )
-          : challenger.horses;
+        const updatedCHorses = (() => {
+          if (!cKey) return challenger.horses;
+          const newStamina = Math.max(0, ((challenger.horses.find(h => racerOwnershipKey(h) === cKey)?.stamina) ?? 0) - s.p1.stamina.total);
+          if (newStamina === 0) return normalizeFavoriteHorse(challenger.horses.filter(h => racerOwnershipKey(h) !== cKey));
+          return challenger.horses.map(h => racerOwnershipKey(h) === cKey ? { ...h, stamina: newStamina } : h);
+        })();
 
         // Bot/defender stamina skip dokud hraje jen jeden hráč na jednom zařízení
         const updatedDHorses = STABLE_DUEL_APPLY_BOT_STAMINA_LOSS && dKey
