@@ -290,6 +290,8 @@ export default function GameBoard({ gameCode }: Props) {
   // Refs pro ochranu animace před Realtime přepsáním pozice
   const animatingPlayerIdRef = React.useRef<string | null>(null);
   const animPositionRef = React.useRef<number | null>(null);
+  // Předchozí pozice hráčů — pro detekci pohybu soupeřů
+  const prevPlayersRef = React.useRef<Player[]>([]);
 
   const [boardBgUrl, setBoardBgUrl] = React.useState<string>("");
   const [minigameBgUrl, setMinigameBgUrl] = React.useState<string>("");
@@ -538,6 +540,26 @@ export default function GameBoard({ gameCode }: Props) {
     pendingRaceRef.current = !!isRaceNow;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState?.offer_pending?.type]);
+
+  // Zvuky kroků pro pohyb soupeřů a botů (online mód)
+  React.useEffect(() => {
+    const prev = prevPlayersRef.current;
+    prevPlayersRef.current = players;
+    if (gameMode === "local") return; // rollDice obstarává zvuky pro všechny v lokální hře
+    if (prev.length === 0) return;
+    const fc = fieldsRef.current.length;
+    players.forEach(p => {
+      if (p.id === myPlayerId) return; // vlastní pohyb hraje rollDice
+      const old = prev.find(op => op.id === p.id);
+      if (!old || p.position === old.position) return;
+      const steps = (p.position - old.position + fc) % fc;
+      if (steps < 1 || steps > 6) return;
+      for (let i = 0; i < steps; i++) {
+        setTimeout(() => playStepSound(), i * 160);
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [players, gameMode, myPlayerId]);
 
   // Year event telegram — globální broadcast pro všechny klienty a pozorovatele.
   // seenYearEventTurnRef brání dvojímu zobrazení na aktivním hráčovi (který už zavolal
