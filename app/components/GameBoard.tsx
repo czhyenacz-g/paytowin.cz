@@ -530,7 +530,12 @@ export default function GameBoard({ gameCode }: Props) {
     if (!soundEnabledRef.current) return;
     try {
       if (!audioCtxRef.current) audioCtxRef.current = new AudioContext();
-      sfxPlay(id, audioCtxRef.current);
+      const ctx = audioCtxRef.current;
+      if (ctx.state === "suspended") {
+        ctx.resume().then(() => sfxPlay(id, ctx)).catch(() => {});
+      } else {
+        sfxPlay(id, ctx);
+      }
     } catch { /* AudioContext nedostupný */ }
   }, []);
 

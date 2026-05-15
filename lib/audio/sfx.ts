@@ -8,22 +8,25 @@
 
 export type SoundId = "dice" | "coin_gain" | "coin_loss" | "race" | "newspaper" | "bankrupt"
   | "hoof_hover" | "engine_hover" | "hoof_move" | "engine_move"
-  | "hoof_step" | "engine_step";
+  | "hoof_step" | "engine_step"
+  | "countdown_tick" | "countdown_go";
 
 // Cooldown guard — zabraňuje spamování (ms)
 const COOLDOWNS: Record<SoundId, number> = {
-  dice:          400,
-  coin_gain:     150,
-  coin_loss:     150,
-  race:          600,
-  newspaper:     300,
-  bankrupt:      1200,
-  hoof_hover:    350,
-  engine_hover:  350,
-  hoof_move:     500,
-  engine_move:   500,
-  hoof_step:     130,
-  engine_step:   130,
+  dice:           400,
+  coin_gain:      150,
+  coin_loss:      150,
+  race:           600,
+  newspaper:      300,
+  bankrupt:       1200,
+  hoof_hover:     350,
+  engine_hover:   350,
+  hoof_move:      500,
+  engine_move:    500,
+  hoof_step:      130,
+  engine_step:    130,
+  countdown_tick: 800,
+  countdown_go:   1500,
 };
 const lastPlayed = new Map<SoundId, number>();
 
@@ -274,21 +277,53 @@ function synthEngineStep(ctx: AudioContext): void {
   }
 }
 
+// Krátké ostré pípnutí pro countdown 3/2/1
+function synthCountdownTick(ctx: AudioContext): void {
+  const t = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  osc.type = "sine";
+  osc.frequency.setValueAtTime(1100, t);
+  osc.frequency.exponentialRampToValueAtTime(880, t + 0.06);
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0, t);
+  gain.gain.linearRampToValueAtTime(0.32, t + 0.005);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.start(t); osc.stop(t + 0.09);
+}
+
+// Vzestupný čtyřtónový burst pro GO!
+function synthCountdownGo(ctx: AudioContext): void {
+  [440, 660, 880, 1100].forEach((freq, i) => {
+    const t = ctx.currentTime + i * 0.055;
+    const osc = ctx.createOscillator();
+    osc.type = "square";
+    osc.frequency.value = freq;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.20, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(t); osc.stop(t + 0.14);
+  });
+}
+
 // ─── Dispatch tabulka ─────────────────────────────────────────────────────────
 
 const SYNTHS: Record<SoundId, (ctx: AudioContext) => void> = {
-  dice:          synthDice,
-  coin_gain:     synthCoinGain,
-  coin_loss:     synthCoinLoss,
-  race:          synthRace,
-  newspaper:     synthNewspaper,
-  bankrupt:      synthBankrupt,
-  hoof_hover:    synthHoofHover,
-  engine_hover:  synthEngineHover,
-  hoof_move:     synthHoofMove,
-  engine_move:   synthEngineMove,
-  hoof_step:     synthHoofStep,
-  engine_step:   synthEngineStep,
+  dice:           synthDice,
+  coin_gain:      synthCoinGain,
+  coin_loss:      synthCoinLoss,
+  race:           synthRace,
+  newspaper:      synthNewspaper,
+  bankrupt:       synthBankrupt,
+  hoof_hover:     synthHoofHover,
+  engine_hover:   synthEngineHover,
+  hoof_move:      synthHoofMove,
+  engine_move:    synthEngineMove,
+  hoof_step:      synthHoofStep,
+  engine_step:    synthEngineStep,
+  countdown_tick: synthCountdownTick,
+  countdown_go:   synthCountdownGo,
 };
 
 // ─── Public API ───────────────────────────────────────────────────────────────

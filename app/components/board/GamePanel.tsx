@@ -549,6 +549,7 @@ export default function GamePanel({
               themeId={themeId}
               backgroundUrl={minigameBgUrl || undefined}
               onFinish={handleStableDuelFinish}
+              playSfx={playSfx}
               duelRole={stableDuelCtx.duelRole}
               duelId={stableDuelCtx.duelId}
               gameId={gameId ?? undefined}

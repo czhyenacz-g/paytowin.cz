@@ -23,6 +23,7 @@ import { getRopeDuelSpeedLabel } from "@/lib/duel/helpers";
 import { selectStableMinigame, type StableMinigameType } from "@/lib/minigames/selectStableMinigame";
 import type { MinigameResult } from "@/lib/minigames/types";
 import { computeMinigameSettlement, computeDuelReward, type MinigameSettlement } from "@/lib/minigames/settlement";
+import type { SoundId } from "@/lib/audio/sfx";
 import { supabase } from "@/lib/supabase";
 import type { StableDuelInputEvent, StableDuelSnapshotEvent } from "@/lib/duel/broadcastTypes";
 
@@ -41,6 +42,7 @@ interface Props {
   themeId?: string;
   backgroundUrl?: string;
   onFinish: (result: MinigameResult) => void;
+  playSfx?: (id: SoundId) => void;
   // PvP v1
   duelRole?: "challenger_authority" | "defender_remote";
   duelId?: string;
@@ -621,6 +623,7 @@ export default function StableDuelBoardLayer({
   useSharedCountdown = false,
   sharedCountdownEndsAt,
   disableManualStart = false,
+  playSfx,
 }: Props) {
   const [phase, setPhase]         = React.useState<Phase>("prestart");
   const [countdown, setCountdown] = React.useState(() => {
@@ -636,6 +639,26 @@ export default function StableDuelBoardLayer({
   // Snapshot sync debug layer
   const [lastSnapshot, setLastSnapshot] = React.useState<StableDuelSnapshotEvent | null>(null);
   const lastLocalStateRef = React.useRef<any>(null);
+
+  // Countdown SFX — ref zabraňuje duplicitě při re-renderu se stejnou hodnotou
+  const lastTickPlayedRef = React.useRef<number | null>(null);
+
+  // Tick pro 3/2/1 — hraje jednou per hodnota
+  React.useEffect(() => {
+    if (phase !== "prestart" || countdown <= 0 || countdown > 3) return;
+    if (lastTickPlayedRef.current === countdown) return;
+    lastTickPlayedRef.current = countdown;
+    playSfx?.("countdown_tick");
+  }, [countdown, phase, playSfx]);
+
+  // GO! — hraje při přechodu prestart → arena
+  const prevPhaseRef = React.useRef<Phase>("prestart");
+  React.useEffect(() => {
+    if (prevPhaseRef.current === "prestart" && phase === "arena") {
+      playSfx?.("countdown_go");
+    }
+    prevPhaseRef.current = phase;
+  }, [phase, playSfx]);
 
   // challenger_authority: ref pro remote P2 (defender) inputy
   const remoteP2Ref = React.useRef<{ dir: Dir; nitroActivate: boolean; legendaryActivate: boolean } | null>(null);
