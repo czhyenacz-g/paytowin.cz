@@ -22,7 +22,7 @@ import type { Horse } from "@/lib/types/game";
 import { getRopeDuelSpeedLabel } from "@/lib/duel/helpers";
 import { selectStableMinigame, type StableMinigameType } from "@/lib/minigames/selectStableMinigame";
 import type { MinigameResult } from "@/lib/minigames/types";
-import { computeMinigameSettlement, type MinigameSettlement } from "@/lib/minigames/settlement";
+import { computeMinigameSettlement, computeDuelReward, type MinigameSettlement } from "@/lib/minigames/settlement";
 import { supabase } from "@/lib/supabase";
 import type { StableDuelInputEvent, StableDuelSnapshotEvent } from "@/lib/duel/broadcastTypes";
 
@@ -30,6 +30,8 @@ export interface DuelContestant {
   name: string;
   horse: Horse | null;
   color: string;
+  /** Aktuální coins hráče — pro výpočet rizika bankrotu v preview. */
+  coins?: number;
 }
 
 interface Props {
@@ -179,6 +181,91 @@ function PlayerCard({ contestant, label }: { contestant: DuelContestant; label: 
   );
 }
 
+function DuelStakesPreview({
+  reward,
+  challengerName,
+  challengerColor,
+  challengerCoins,
+  defenderName,
+  defenderColor,
+  defenderCoins,
+  minigameType,
+}: {
+  reward: number;
+  challengerName: string;
+  challengerColor: string;
+  challengerCoins?: number;
+  defenderName: string;
+  defenderColor: string;
+  defenderCoins?: number;
+  minigameType: StableMinigameType;
+}) {
+  const meta = MINIGAME_META[minigameType];
+  const cBankrupt = challengerCoins !== undefined && challengerCoins - reward < 0;
+  const dBankrupt = defenderCoins !== undefined && defenderCoins - reward < 0;
+
+  return (
+    <div
+      className="shrink-0 mx-3 rounded-xl px-4 py-2.5 text-center"
+      style={{
+        background: "rgba(8,12,28,0.88)",
+        border: "1px solid rgba(255,255,255,0.07)",
+        boxShadow: "0 0 32px rgba(0,0,0,0.5), inset 0 0 12px rgba(0,0,0,0.3)",
+      }}
+    >
+      {/* Stakes */}
+      <div className="flex items-center justify-center gap-3">
+        <span
+          className="text-xl font-black tabular-nums"
+          style={{ color: "#4ade80", textShadow: "0 0 14px #4ade8088" }}
+        >
+          +{reward} 💰
+        </span>
+        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-600">vs</span>
+        <span
+          className="text-xl font-black tabular-nums"
+          style={{ color: "#f87171", textShadow: "0 0 14px #f8717188" }}
+        >
+          −{reward} 💰
+        </span>
+      </div>
+      <div className="text-[9px] uppercase tracking-widest text-slate-600 mt-0.5">při výhře / prohře</div>
+
+      {/* Bankruptcy risk */}
+      {(cBankrupt || dBankrupt) && (
+        <div className="mt-2 flex flex-col gap-0.5">
+          {cBankrupt && (
+            <div
+              className="text-[10px] font-bold"
+              style={{ color: "#fb923c", textShadow: "0 0 8px rgba(251,146,60,0.45)" }}
+            >
+              💀 Riziko bankrotu:{" "}
+              <span style={{ color: challengerColor }}>{challengerName}</span>
+            </div>
+          )}
+          {dBankrupt && (
+            <div
+              className="text-[10px] font-bold"
+              style={{ color: "#fb923c", textShadow: "0 0 8px rgba(251,146,60,0.45)" }}
+            >
+              💀 Riziko bankrotu:{" "}
+              <span style={{ color: defenderColor }}>{defenderName}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Minigame type */}
+      <div
+        className="mt-1.5 text-[9px] font-mono font-bold uppercase tracking-[0.18em]"
+        style={{ color: meta.color, textShadow: `0 0 8px rgba(${meta.glowRgb},0.4)` }}
+      >
+        {meta.title}
+      </div>
+    </div>
+  );
+}
+
 function PreStartPhase({
   challenger,
   defender,
@@ -234,6 +321,18 @@ function PreStartPhase({
         </div>
         <PlayerCard contestant={dWithColor} label="Defender" />
       </div>
+
+      {/* ── Stakes preview ───────────────────────────────────────────────────── */}
+      <DuelStakesPreview
+        reward={computeDuelReward(challenger.horse?.price, defender.horse?.price)}
+        challengerName={challenger.name}
+        challengerColor={challengerColor}
+        challengerCoins={challenger.coins}
+        defenderName={defender.name}
+        defenderColor={defenderColor}
+        defenderCoins={defender.coins}
+        minigameType={minigameType}
+      />
 
       {/* ── Middle: Odpočet + název minihry ─────────────────────────────────── */}
       <div className="flex-1 flex flex-col items-center justify-center gap-2 px-4">

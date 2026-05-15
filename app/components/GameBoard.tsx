@@ -1009,11 +1009,13 @@ export default function GameBoard({ gameCode }: Props) {
             name: currentPlayer.name,
             horse: getPreferredHorse(movedPlayer.horses),
             color: currentPlayer.color,
+            coins: movedPlayer.coins,
           };
           const defender: DuelContestant = {
             name: ownerPlayer.name,
             horse: getPreferredHorse(ownerPlayer.horses),
             color: ownerPlayer.color,
+            coins: ownerPlayer.coins,
           };
           stableDuelProceedRef.current = async (resultLog?: string[], updatedCurrentPlayerHorses?: import("@/lib/types/game").Horse[]) => {
             await finishTurn({
@@ -2346,8 +2348,8 @@ export default function GameBoard({ gameCode }: Props) {
     const dPlayer = players.find(p => p.id === sdPending.defenderId);
     openStableDuelOverlay(
       {
-        challenger: { name: sdPending.challengerName ?? cPlayer?.name ?? "Challenger", horse: cPlayer?.horses[0] ?? null, color: cPlayer?.color ?? "#00ff88" },
-        defender:   { name: sdPending.defenderName ?? dPlayer?.name ?? "Defender",   horse: dPlayer?.horses[0] ?? null, color: dPlayer?.color ?? "#c084fc" },
+        challenger: { name: sdPending.challengerName ?? cPlayer?.name ?? "Challenger", horse: cPlayer?.horses[0] ?? null, color: cPlayer?.color ?? "#00ff88", coins: cPlayer?.coins },
+        defender:   { name: sdPending.defenderName ?? dPlayer?.name ?? "Defender",   horse: dPlayer?.horses[0] ?? null, color: dPlayer?.color ?? "#c084fc", coins: dPlayer?.coins },
         isPreview: false,
         challengerId: sdPending.challengerId,
         defenderId: sdPending.defenderId,
@@ -2416,8 +2418,8 @@ export default function GameBoard({ gameCode }: Props) {
       const dPlayer = players.find(p => p.id === dId);
       const duelId = `stable_duel:${cId}:${dId}:${createdAt}`;
       const ctxBase = {
-        challenger: { name: cName ?? cPlayer?.name ?? "Challenger", horse: cPlayer?.horses[0] ?? null, color: cPlayer?.color ?? "#00ff88" },
-        defender:   { name: dName ?? dPlayer?.name ?? "Defender",   horse: dPlayer?.horses[0] ?? null, color: dPlayer?.color ?? "#c084fc" },
+        challenger: { name: cName ?? cPlayer?.name ?? "Challenger", horse: cPlayer?.horses[0] ?? null, color: cPlayer?.color ?? "#00ff88", coins: cPlayer?.coins },
+        defender:   { name: dName ?? dPlayer?.name ?? "Defender",   horse: dPlayer?.horses[0] ?? null, color: dPlayer?.color ?? "#c084fc", coins: dPlayer?.coins },
         isPreview: false,
         challengerId: cId,
         defenderId: dId,
