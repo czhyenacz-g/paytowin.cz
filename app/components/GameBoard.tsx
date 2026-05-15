@@ -203,6 +203,8 @@ function AmbientBackground({ primary, alt }: { primary: string; alt: string }) {
 
 // ─── GameBoard ────────────────────────────────────────────────────────────────
 
+const getPreferredHorse = (horses: Horse[]) => horses.find(h => h.isPreferred) ?? horses[0] ?? null;
+
 export default function GameBoard({ gameCode }: Props) {
   const [gameId, setGameId] = React.useState<string | null>(null);
   const [themeId, setThemeId] = React.useState<string>("horse-day");
@@ -1004,7 +1006,6 @@ export default function GameBoard({ gameCode }: Props) {
           await supabase.from("players").update({ position: newPosition, coins: movedPlayer.coins, laps: movedPlayer.laps ?? 0 }).eq("id", currentPlayer.id);
           const updatedPlayersForNext = players.map(p => p.id === currentPlayer.id ? movedPlayer : p);
           const nextIndex = getNextActiveIndex(gameState.current_player_index, updatedPlayersForNext);
-          const getPreferredHorse = (horses: Horse[]) => horses.find(h => h.isPreferred) ?? horses[0] ?? null;
           const challenger: DuelContestant = {
             name: currentPlayer.name,
             horse: getPreferredHorse(movedPlayer.horses),
@@ -2348,8 +2349,8 @@ export default function GameBoard({ gameCode }: Props) {
     const dPlayer = players.find(p => p.id === sdPending.defenderId);
     openStableDuelOverlay(
       {
-        challenger: { name: sdPending.challengerName ?? cPlayer?.name ?? "Challenger", horse: cPlayer?.horses[0] ?? null, color: cPlayer?.color ?? "#00ff88", coins: cPlayer?.coins },
-        defender:   { name: sdPending.defenderName ?? dPlayer?.name ?? "Defender",   horse: dPlayer?.horses[0] ?? null, color: dPlayer?.color ?? "#c084fc", coins: dPlayer?.coins },
+        challenger: { name: sdPending.challengerName ?? cPlayer?.name ?? "Challenger", horse: getPreferredHorse(cPlayer?.horses ?? []), color: cPlayer?.color ?? "#00ff88", coins: cPlayer?.coins },
+        defender:   { name: sdPending.defenderName ?? dPlayer?.name ?? "Defender",   horse: getPreferredHorse(dPlayer?.horses ?? []), color: dPlayer?.color ?? "#c084fc", coins: dPlayer?.coins },
         isPreview: false,
         challengerId: sdPending.challengerId,
         defenderId: sdPending.defenderId,
@@ -2418,8 +2419,8 @@ export default function GameBoard({ gameCode }: Props) {
       const dPlayer = players.find(p => p.id === dId);
       const duelId = `stable_duel:${cId}:${dId}:${createdAt}`;
       const ctxBase = {
-        challenger: { name: cName ?? cPlayer?.name ?? "Challenger", horse: cPlayer?.horses[0] ?? null, color: cPlayer?.color ?? "#00ff88", coins: cPlayer?.coins },
-        defender:   { name: dName ?? dPlayer?.name ?? "Defender",   horse: dPlayer?.horses[0] ?? null, color: dPlayer?.color ?? "#c084fc", coins: dPlayer?.coins },
+        challenger: { name: cName ?? cPlayer?.name ?? "Challenger", horse: getPreferredHorse(cPlayer?.horses ?? []), color: cPlayer?.color ?? "#00ff88", coins: cPlayer?.coins },
+        defender:   { name: dName ?? dPlayer?.name ?? "Defender",   horse: getPreferredHorse(dPlayer?.horses ?? []), color: dPlayer?.color ?? "#c084fc", coins: dPlayer?.coins },
         isPreview: false,
         challengerId: cId,
         defenderId: dId,
