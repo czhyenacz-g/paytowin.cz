@@ -69,7 +69,7 @@ export const horseNightTheme: Theme = {
       "price": 1200,
       "emoji": "🌹",
       "maxStamina": 100,
-      "flavorText": "Nějaká kůň musí být nejlevnější.",
+      "flavorText": "Nejlevnější kůň ve hře. Když nemáš na vítězství, máš aspoň na účast.",
       "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/divoka_ruze.webp",
       "isBuiltIn": true,
       "racerType": "horse",

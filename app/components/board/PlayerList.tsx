@@ -7,6 +7,8 @@ import type { Theme, RacerConfig } from "@/lib/themes";
 import { getThemeRacers } from "@/lib/themes";
 import { UI_TEXT } from "@/lib/ui-text";
 import type { SoundId } from "@/lib/audio/sfx";
+import { getPlayerStateMarkers } from "@/lib/playerMarkers";
+import PlayerStateMarkers from "./PlayerStateMarkers";
 
 function racerSoundType(h: { id?: string }, themeRacers: RacerConfig[]): "horse" | "car" | null {
   if (!h.id) return null;
@@ -56,6 +58,7 @@ export default function PlayerList({
           {players.map((player, index) => {
             const isCurrent = gameState?.current_player_index === index;
             const bankrupt = isBankrupt(player);
+            const markers = getPlayerStateMarkers(player, players);
             const field = FIELDS[player.position];
             // Discord avatar: preferuj player.discord_avatar_url (uložen v DB při joinu).
             // Fallback pro vlastního hráče: session avatar (pro případ starých záznamů bez DB pole).
@@ -98,6 +101,7 @@ export default function PlayerList({
                           {player.is_bot && (
                             <span className="shrink-0 rounded-[3px] bg-slate-200 px-1 py-0 text-[9px] font-bold uppercase tracking-widest text-slate-500">BOT</span>
                           )}
+                          <PlayerStateMarkers markers={markers} />
                         </div>
                         {bankrupt ? (
                           <div className="text-xs font-semibold text-red-500">{UI_TEXT.board.bankruptLabel}</div>
