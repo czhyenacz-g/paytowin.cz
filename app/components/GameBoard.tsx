@@ -3403,12 +3403,12 @@ export default function GameBoard({ gameCode }: Props) {
                     <div className="relative z-10">
                       <div className="text-4xl">{theme.labels.racingEmoji}</div>
                       <div className={`mt-1 text-sm font-semibold ${theme.colors.centerTitle}`}>{theme.labels.centerTitle}</div>
-                      <div className={`mt-1 text-xs ${theme.colors.centerSubtitle}`}>{theme.labels.centerSubtitle}</div>
-                      <div className={`mt-2 text-[11px] font-semibold tabular-nums ${theme.colors.centerSubtitle} opacity-70`}>
+                      <div className={`mt-1 text-xs font-medium ${theme.colors.centerSubtitle}`}>{theme.labels.centerSubtitle}</div>
+                      <div className={`mt-2 text-[11px] font-semibold tabular-nums ${theme.colors.centerSubtitle}`}>
                         {gameYear}
                       </div>
                       {currentYearEvent && (
-                        <div className={`mt-1 text-[10px] font-semibold leading-tight ${theme.colors.centerSubtitle}`}>
+                        <div className={`mt-1 text-[10px] font-bold leading-tight ${theme.colors.centerSubtitle}`}>
                           {currentYearEvent.title}
                         </div>
                       )}
