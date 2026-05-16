@@ -16,8 +16,8 @@ const CARD_ACCENT = {
   },
   mafia: {
     headerBg:    "bg-purple-600",
-    badgeBg:     "bg-purple-100",
-    badgeText:   "text-purple-800",
+    badgeBg:     "bg-red-100",
+    badgeText:   "text-red-800",
   },
 };
 
@@ -109,15 +109,36 @@ function CardEventContent({
   // Standardní layout bez obrázku
   return (
     <div className="rounded-3xl shadow-2xl overflow-hidden">
-      <div className={`px-6 pt-6 pb-4 ${accent.headerBg}`}>
-        <div className="text-xs font-bold uppercase tracking-widest text-white/70">
-          {event.category}
+      {event.cardType === "mafia" ? (
+        <div
+          className="px-6 pt-6 pb-5"
+          style={{
+            background: "linear-gradient(135deg, #0d0d0d 0%, #1c0606 60%, #0d0d0d 100%)",
+            borderBottom: "2px solid #7f1d1d",
+          }}
+        >
+          <span className="text-lg opacity-40">🎭</span>
+          <div
+            className="mt-2 text-3xl font-black uppercase tracking-[0.28em]"
+            style={{ color: "#ef4444", textShadow: "0 0 18px rgba(220,38,38,0.4)" }}
+          >
+            MAFIE
+          </div>
+          <div className="mt-2 text-xs font-semibold text-white/55">
+            {event.playerName} lízl kartu:
+          </div>
         </div>
-        <div className="mt-1 text-3xl">{event.emoji}</div>
-        <div className="mt-2 text-xs font-semibold text-white/80">
-          {event.playerName} lízl kartu:
+      ) : (
+        <div className={`px-6 pt-6 pb-4 ${accent.headerBg}`}>
+          <div className="text-xs font-bold uppercase tracking-widest text-white/70">
+            {event.category}
+          </div>
+          <div className="mt-1 text-3xl">{event.emoji}</div>
+          <div className="mt-2 text-xs font-semibold text-white/80">
+            {event.playerName} lízl kartu:
+          </div>
         </div>
-      </div>
+      )}
       <div className="bg-white px-6 py-5 space-y-4">
         <p className="text-base font-medium text-slate-800 leading-snug">
           {event.text}
