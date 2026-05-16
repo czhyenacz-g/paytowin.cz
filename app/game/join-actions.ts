@@ -2,6 +2,7 @@
 
 import { supabase } from "@/lib/supabase";
 import { PLAYER_COLORS } from "@/lib/game";
+import { STARTING_COINS } from "@/lib/game-constants";
 
 // ─── Typy ────────────────────────────────────────────────────────────────────
 
@@ -184,7 +185,7 @@ export async function approveJoinRequestAction(
       name:               req.name,
       color,
       position:           0,
-      coins:              10000,
+      coins:              STARTING_COINS,
       horses:             [],
       turn_order:         turnOrder,
       discord_id:         req.discord_id ?? null,

@@ -2,6 +2,13 @@ import type { Player } from "@/lib/types/game";
 import { isBankrupt } from "@/lib/engine";
 import { computeMatchTitles } from "@/lib/match-titles";
 import ScoreTable from "../ScoreTable";
+import type { ScenarioDefinition } from "@/lib/scenarios";
+import {
+  getPersonalObjectiveForPlayer,
+  evaluateObjectiveForPlayer,
+  evaluateSharedObjectiveForPlayers,
+} from "@/lib/scenarios";
+import ObjectiveResultPanel from "./ObjectiveResultPanel";
 
 const BUST_LINES = [
   "Mafii se dluhy musí splácet. Bohužel jsi neměl už z čeho.",
@@ -17,6 +24,7 @@ interface GameFinishedScreenProps {
   pageBackground: string;
   myPlayerId?: string | null;
   gameMode?: "online" | "local";
+  scenario?: ScenarioDefinition | null;
 }
 
 export default function GameFinishedScreen({
@@ -25,6 +33,7 @@ export default function GameFinishedScreen({
   pageBackground,
   myPlayerId = null,
   gameMode = "local",
+  scenario = null,
 }: GameFinishedScreenProps) {
   const winner = players.find(p => !isBankrupt(p));
   const losers = players.filter(p => isBankrupt(p));
@@ -36,6 +45,27 @@ export default function GameFinishedScreen({
   const iWon = isPersonalized && winner?.id === myPlayerId;
   const winnerIsBot = !!winner?.is_bot;
   const myPlayer = isPersonalized ? (players.find(p => p.id === myPlayerId) ?? null) : null;
+
+  // Objective evaluation — čistě odvozené, žádný state
+  const isLocalGame = gameMode === "local";
+  const personalObjective =
+    scenario && !isLocalGame && myPlayer
+      ? getPersonalObjectiveForPlayer(scenario, myPlayer)
+      : null;
+  const personalResult =
+    personalObjective?.condition && myPlayer
+      ? evaluateObjectiveForPlayer(personalObjective, myPlayer)
+      : null;
+
+  const sharedObjectiveDef = scenario?.sharedObjectives?.[0] ?? null;
+  const sharedResults =
+    scenario && isLocalGame && sharedObjectiveDef?.condition
+      ? evaluateSharedObjectiveForPlayers(scenario, players, { players })
+      : [];
+  const sharedWinner = sharedResults.find((r) => r.completed) ?? null;
+  const sharedWinnerName = sharedWinner
+    ? (players.find((p) => p.id === sharedWinner.playerId)?.name ?? "—")
+    : null;
 
   // Win star eligibility — stejná logika jako awardWinStarAction
   const humanPlayers = players.filter(p => !p.is_bot && p.discord_id);
@@ -184,6 +214,35 @@ export default function GameFinishedScreen({
                     </>
                   )}
                 </div>
+              )}
+
+              {/* ── Výsledek osobního kontraktu (online) ── */}
+              {personalResult && personalObjective && (
+                <ObjectiveResultPanel
+                  mode="personal"
+                  objectiveTitle={personalObjective.title}
+                  objectiveTask={personalObjective.task}
+                  completed={personalResult.completed}
+                  reason={personalResult.reason}
+                  rewardLabel={personalResult.rewardLabel}
+                />
+              )}
+
+              {/* ── Výsledek společného kontraktu (hotseat) ── */}
+              {sharedObjectiveDef && isLocalGame && sharedObjectiveDef.condition && (
+                <ObjectiveResultPanel
+                  mode="shared"
+                  objectiveTitle={sharedObjectiveDef.title}
+                  objectiveTask={sharedObjectiveDef.task}
+                  completed={sharedWinner !== null}
+                  reason={
+                    sharedWinner !== null
+                      ? (sharedResults.find((r) => r.completed)?.reason ?? "")
+                      : "Žádný hráč podmínku nesplnil."
+                  }
+                  rewardLabel={sharedObjectiveDef.rewardLabel}
+                  winnerName={sharedWinnerName}
+                />
               )}
 
               {/* ── Konečné pořadí ── */}

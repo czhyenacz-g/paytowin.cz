@@ -18,6 +18,7 @@ import {
   checkJoinRequestStatusAction,
 } from "@/app/game/join-actions";
 import { notifyDiscordNewGameAction } from "@/app/game/discord-actions";
+import { STARTING_COINS } from "@/lib/game-constants";
 
 interface DiscordUser {
   id: string;
@@ -491,7 +492,7 @@ export default function LandingPage() {
       name: name.trim(),
       color: PLAYER_COLORS[0],
       position: 0,
-      coins: 10000,
+      coins: STARTING_COINS,
       horses: [],
       turn_order: 0,
       discord_id: discordUser?.id ?? null,
@@ -511,7 +512,7 @@ export default function LandingPage() {
         name: "Stájový bot",
         color: PLAYER_COLORS[1],
         position: 0,
-        coins: 10000,
+        coins: STARTING_COINS,
         horses: [],
         turn_order: 1,
         is_bot: true,
@@ -661,7 +662,7 @@ export default function LandingPage() {
       name: name.trim(),
       color,
       position: 0,
-      coins: 10000,
+      coins: STARTING_COINS,
       horses: [],
       turn_order: turnOrder,
       discord_id: discordUser?.id ?? null,

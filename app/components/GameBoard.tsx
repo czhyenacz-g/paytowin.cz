@@ -89,6 +89,8 @@ import GamePanel from "./board/GamePanel";
 import StableDuelStatusBanners from "./board/StableDuelStatusBanners";
 import GameFinishedScreen from "./board/GameFinishedScreen";
 import IntroOverlay from "./IntroOverlay";
+import StartFlowOverlay from "./start-flow/StartFlowOverlay";
+import { getScenarioForTheme } from "@/lib/scenarios";
 import ScoreTable from "./ScoreTable";
 import BrandLogo from "./BrandLogo";
 import { useBgMusic } from "@/lib/audio/music";
@@ -245,8 +247,6 @@ export default function GameBoard({ gameCode }: Props) {
   const [staminaGuideDismissed, setStaminaGuideDismissed] = React.useState(false);
   const [preferredGuideDismissed, setPreferredGuideDismissed] = React.useState(false);
   const [guideDismissedTurn, setGuideDismissedTurn] = React.useState<number | null>(null);
-  const [introVisible, setIntroVisible] = React.useState(false);
-  const introShownRef = React.useRef(false);
   // dev-only: Race Mode shell overlay (mimo game state)
   const [devRaceMode, setDevRaceMode] = React.useState(false);
   // dev-only: Race Board layer (vrstva uvnitř boardu)
@@ -2601,17 +2601,11 @@ export default function GameBoard({ gameCode }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState?.current_player_index, players.map(p => p.skip_next_turn).join(",")]);
 
-  // Intro overlay — zobrazí se jednou po dokončení načítání
-  React.useEffect(() => {
-    if (loading || introShownRef.current) return;
-    introShownRef.current = true;
-    setIntroVisible(true);
-  }, [loading]);
-
   // Herní rok — startovní rok theme + počet průchodů STARTem lídra (player.laps)
   const leadLaps = players.reduce((max, p) => Math.max(max, p.laps ?? 0), 0);
   const gameYear = (theme.mapMeta?.yearStart ?? 1921) + leadLaps;
   const currentYearEvent = resolveYearEvent(leadLaps, gameYear, theme.yearEvents);
+  const scenario = getScenarioForTheme(themeId);
 
   // Pro render desky: animující hráč se zobrazuje na animPosition, ne na DB pozici
   const displayPlayers = players.map((p, i) =>
@@ -2837,6 +2831,7 @@ export default function GameBoard({ gameCode }: Props) {
         pageBackground={theme.colors.pageBackground}
         myPlayerId={myPlayerId}
         gameMode={gameMode}
+        scenario={scenario}
       />
     );
   }
@@ -3544,14 +3539,15 @@ export default function GameBoard({ gameCode }: Props) {
 
         </div>
       </div>
-      {introVisible && (
-        <IntroOverlay
-          year={theme.mapMeta?.yearStart ?? 1921}
-          place={theme.mapMeta?.place ?? "místní okruh"}
-          subtitle={theme.mapMeta?.subtitle ?? "Každá mapa má svoje pravidla."}
-          onDone={() => setIntroVisible(false)}
-        />
-      )}
+      <StartFlowOverlay
+        loading={loading}
+        isLocalGame={isLocalGame}
+        scenario={scenario}
+        year={theme.mapMeta?.yearStart ?? 1921}
+        place={theme.mapMeta?.place ?? "místní okruh"}
+        subtitle={theme.mapMeta?.subtitle ?? "Každá mapa má svoje pravidla."}
+        player={myPlayer}
+      />
       <BuildInfoBar theme={theme} boardId={boardId} />
       <ThemeAssetInspector themeId={themeId} theme={theme} />
 

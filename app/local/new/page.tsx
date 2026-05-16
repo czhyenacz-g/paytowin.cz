@@ -4,6 +4,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { generateGameCode, PLAYER_COLORS } from "@/lib/game";
+import { STARTING_COINS } from "@/lib/game-constants";
 import { THEMES } from "@/lib/themes";
 import { BOARD_PRESETS } from "@/lib/board";
 
@@ -123,7 +124,7 @@ export default function LocalNewPage() {
           name,
           color: PLAYER_COLORS[i % PLAYER_COLORS.length],
           position: 0,
-          coins: 10000,
+          coins: STARTING_COINS,
           horses: [],
           turn_order: i,
         }))
