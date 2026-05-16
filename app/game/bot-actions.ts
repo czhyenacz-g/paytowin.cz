@@ -12,6 +12,7 @@ import {
   isBankrupt,
   playerOwnsRacer,
   racerOwnershipKey,
+  computeRent,
 } from "@/lib/engine";
 import { drawCard } from "@/lib/cards";
 import { decideBotHorsePurchase } from "@/lib/bot/botDecision";
@@ -209,7 +210,7 @@ export async function executeBotTurnAction(
       await botFinishTurn(gameId, botPlayer, movedPlayer, updatedPlayers, { nextIndex, turnCount: newTurnCount, log, lastRoll: roll, revealedFields: fogReveal(newPosition) });
     } else if (ownerPlayer) {
       // Platba nájmu
-      const rent = Math.round(field.racer.price * 0.2);
+      const rent = computeRent(field.racer.price);
       const paidBot   = { ...movedPlayer, coins: movedPlayer.coins - rent };
       const paidOwner = { ...ownerPlayer, coins: ownerPlayer.coins + rent };
       const log = [`${botPlayer.name} zaplatil nájem ${rent} 💰 hráči ${ownerPlayer.name} za ${field.racer.emoji} ${field.racer.name}`, ...extraLog, ...logEntries];

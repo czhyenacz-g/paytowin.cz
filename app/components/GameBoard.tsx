@@ -36,6 +36,9 @@ import {
   normalizeState,
   playerOwnsRacer,
   racerOwnershipKey,
+  getPreferredHorse,
+  normalizeFavoriteHorse,
+  computeRent,
   REROLL_COST,
   REROLL_CHANCE,
 } from "@/lib/engine";
@@ -56,15 +59,6 @@ function canTriggerRivalsRace(p1: Player, p2: Player): boolean {
   return p1.horses.length > 0 && p2.horses.length > 0;
 }
 
-/**
- * Zajistí, že pokud hráč vlastní koně, právě jeden má isPreferred=true.
- * Pokud žádný preferred není, nastaví prvního. Prázdné pole vrátí beze změny.
- * Existující výběr ponechá — funkce ho nikdy nepřepíše.
- */
-function normalizeFavoriteHorse(horses: Horse[]): Horse[] {
-  if (horses.length === 0 || horses.some(h => h.isPreferred)) return horses;
-  return horses.map((h, i) => i === 0 ? { ...h, isPreferred: true } : h);
-}
 import { drawCard } from "@/lib/cards";
 import type { GameCard } from "@/lib/cards";
 import type { Player, Horse, ActiveEffect, GameState, OfferPending, RerollOffer, RaceOffer, BankruptAnnouncement, RacePendingEvent, StableDuelPendingOffer, PostTurnEvent, RaceType, EconomyConfig } from "@/lib/types/game";
@@ -204,7 +198,6 @@ function AmbientBackground({ primary, alt }: { primary: string; alt: string }) {
 
 // ─── GameBoard ────────────────────────────────────────────────────────────────
 
-const getPreferredHorse = (horses: Horse[]) => horses.find(h => h.isPreferred) ?? horses[0] ?? null;
 
 export default function GameBoard({ gameCode }: Props) {
   const [gameId, setGameId] = React.useState<string | null>(null);
@@ -1082,7 +1075,7 @@ export default function GameBoard({ gameCode }: Props) {
           }
         } else {
           // ── Rent fallback: jeden nebo oba hráči nemají závodníka ──────────────
-          const rent = Math.round(field.racer.price * 0.2);
+          const rent = computeRent(field.racer.price);
           const rentedPlayer = { ...movedPlayer, coins: movedPlayer.coins - rent };
           const paidOwner = { ...ownerPlayer, coins: ownerPlayer.coins + rent };
 

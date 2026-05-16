@@ -138,6 +138,26 @@ export function normalizeRacer(rc: RacerConfig): Horse {
   };
 }
 
+/** Vrátí preferred koně hráče, nebo prvního v poli, nebo null. */
+export function getPreferredHorse(horses: Horse[]): Horse | null {
+  return horses.find(h => h.isPreferred) ?? horses[0] ?? null;
+}
+
+/**
+ * Zajistí, že pokud hráč vlastní koně, právě jeden má isPreferred=true.
+ * Pokud žádný preferred není, nastaví prvního. Prázdné pole vrátí beze změny.
+ * Existující výběr ponechá — funkce ho nikdy nepřepíše.
+ */
+export function normalizeFavoriteHorse(horses: Horse[]): Horse[] {
+  if (horses.length === 0 || horses.some(h => h.isPreferred)) return horses;
+  return horses.map((h, i) => i === 0 ? { ...h, isPreferred: true } : h);
+}
+
+/** Nájem za přistání na cizím závodníkovi (20 % ceny). */
+export function computeRent(racerPrice: number): number {
+  return Math.round(racerPrice * 0.2);
+}
+
 /** Vrátí index dalšího aktivního (neozkrachovalého) hráče. */
 export function getNextActiveIndex(currentIndex: number, players: Player[]): number {
   if (players.length === 0) return 0;
