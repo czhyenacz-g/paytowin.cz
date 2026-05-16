@@ -13,14 +13,16 @@ import {
   playerOwnsRacer,
   racerOwnershipKey,
   computeRent,
+  getPreferredHorse,
 } from "@/lib/engine";
 import { drawCard } from "@/lib/cards";
 import { decideBotHorsePurchase } from "@/lib/bot/botDecision";
 import { DEFAULT_ECONOMY } from "@/lib/types/game";
-import type { Player, Horse, EconomyConfig, ActiveEffect } from "@/lib/types/game";
+import type { Player, Horse, EconomyConfig, ActiveEffect, StableDuelPendingOffer } from "@/lib/types/game";
 import type { RacerConfig } from "@/lib/themes";
 import { awardMoneySpentAction } from "@/app/game/actions";
 import { buildFogReveal } from "@/lib/fog";
+import { selectStableMinigame } from "@/lib/minigames/selectStableMinigame";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -209,7 +211,33 @@ export async function executeBotTurnAction(
       const log = [`${botPlayer.name} přijel ke své vlastní stáji: ${field.racer.emoji} ${field.racer.name}`, ...extraLog, ...logEntries];
       await botFinishTurn(gameId, botPlayer, movedPlayer, updatedPlayers, { nextIndex, turnCount: newTurnCount, log, lastRoll: roll, revealedFields: fogReveal(newPosition) });
     } else if (ownerPlayer) {
-      // Platba nájmu
+      if (movedPlayer.horses.length > 0 && ownerPlayer.horses.length > 0) {
+        // ── PvBot Stable Duel: lidský hráč (ownerPlayer) = challenger, bot = defender ──
+        const duelCreatedAt = Date.now();
+        const challengerHorse = getPreferredHorse(ownerPlayer.horses);
+        const defenderHorse   = getPreferredHorse(movedPlayer.horses);
+        const duelPending: StableDuelPendingOffer = {
+          type:           "stable_duel_pending",
+          phase:          "pending",
+          mode:           "pvbot_awareness",
+          challengerId:   ownerPlayer.id,
+          defenderId:     botPlayer.id,
+          challengerName: ownerPlayer.name,
+          defenderName:   botPlayer.name,
+          fieldIndex:     field.index,
+          minigameType:   selectStableMinigame({ themeId: game.theme_id, challengerHorse, defenderHorse }),
+          createdAt:      duelCreatedAt,
+        };
+        const log = [`⚔️ ${botPlayer.name} přistál na stáji ${ownerPlayer.name} (${field.racer.emoji} ${field.racer.name}) — stájový souboj!`, ...extraLog, ...logEntries];
+        await supabase.from("game_state").update({
+          offer_pending: duelPending as unknown as Record<string, unknown>,
+          log: log.slice(0, 20),
+          last_roll: roll,
+        }).eq("game_id", gameId);
+        // Tah botovi se nesmí ukončit — hra čeká na vyřešení duelu lidským hráčem
+        return { ok: true };
+      }
+      // Rent fallback — jeden nebo oba nemají závodníka
       const rent = computeRent(field.racer.price);
       const paidBot   = { ...movedPlayer, coins: movedPlayer.coins - rent };
       const paidOwner = { ...ownerPlayer, coins: ownerPlayer.coins + rent };

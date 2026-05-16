@@ -266,8 +266,10 @@ export default function GameBoard({ gameCode }: Props) {
   const stableDuelProceedRef = React.useRef<((resultLog?: string[], updatedCurrentPlayerHorses?: import("@/lib/types/game").Horse[]) => Promise<void>) | null>(null);
   const boardSurfaceRef = React.useRef<HTMLDivElement>(null);
   // Idempotency refs pro countdown a overlay — klíčovány identitou duelu
-  const countdownStartedRef = React.useRef<string | null>(null);
-  const overlayOpenedRef    = React.useRef<string | null>(null);
+  const countdownStartedRef  = React.useRef<string | null>(null);
+  const overlayOpenedRef     = React.useRef<string | null>(null);
+  // Guard: createdAt posledního bot-created duelu který jsme zpracovali (proti re-triggeru)
+  const botDuelHandledRef    = React.useRef<number | null>(null);
   // Lokální zobrazovací stav countdownu (3/2/1/START) — jen UI, žádný DB zápis
   const [countdownDisplay, setCountdownDisplay] = React.useState<string | null>(null);
   // Dev: přepínač režimu Stable Duel — default pvbot_awareness, opt-in online_1v1
@@ -2459,6 +2461,64 @@ export default function GameBoard({ gameCode }: Props) {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState?.offer_pending, stableDuelCtx]);
+
+  // ── Bot-created pvbot duel: auto-open overlay for human challenger ───────────
+  // Když bot zapíše offer_pending s challengerId === myPlayerId a mode pvbot_awareness,
+  // rollDice se nespustilo — overlay a stableDuelProceedRef musíme nastavit zde.
+  React.useEffect(() => {
+    const sdPending = gameState?.offer_pending?.type === "stable_duel_pending"
+      ? gameState.offer_pending as StableDuelPendingOffer
+      : null;
+    if (!sdPending || sdPending.mode !== "pvbot_awareness") return;
+    if (sdPending.challengerId !== myPlayerId) return;
+    if (stableDuelCtx) return;
+    if (stableDuelProceedRef.current) return; // nastaveno rollDice — nepřepisovat
+    if (!gameState || !gameId || players.length === 0) return;
+    if (botDuelHandledRef.current === sdPending.createdAt) return; // idempotent guard
+
+    const cPlayer = players.find(p => p.id === sdPending.challengerId);
+    const dPlayer = players.find(p => p.id === sdPending.defenderId);
+    if (!cPlayer || !dPlayer) return;
+
+    botDuelHandledRef.current = sdPending.createdAt;
+
+    const challenger: DuelContestant = {
+      name:   sdPending.challengerName ?? cPlayer.name,
+      horse:  getPreferredHorse(cPlayer.horses),
+      color:  cPlayer.color,
+      coins:  cPlayer.coins,
+    };
+    const defender: DuelContestant = {
+      name:   sdPending.defenderName ?? dPlayer.name,
+      horse:  getPreferredHorse(dPlayer.horses),
+      color:  dPlayer.color,
+      coins:  dPlayer.coins,
+    };
+
+    const capturedNextIndex  = getNextActiveIndex(gameState.current_player_index, players);
+    const capturedTurnCount  = gameState.turn_count + 1;
+    const capturedLog        = [...(gameState.log ?? [])];
+    const capturedCId        = sdPending.challengerId;
+    const capturedDId        = sdPending.defenderId;
+
+    stableDuelProceedRef.current = async (resultLog?: string[]) => {
+      await finishTurn({
+        nextIndex:          capturedNextIndex,
+        turnCount:          capturedTurnCount,
+        log:                [
+          ...(resultLog ?? [`⚔️ ${challenger.name} vs ${defender.name} — stájový souboj skončil`]),
+          ...capturedLog,
+        ],
+        clearOfferPending:  { type: "stable_duel_pending", challengerId: capturedCId, defenderId: capturedDId },
+      });
+    };
+
+    openStableDuelOverlay(
+      { challenger, defender, isPreview: false, challengerId: sdPending.challengerId, defenderId: sdPending.defenderId },
+      `pvbot_bot_${sdPending.challengerId}_${sdPending.defenderId}_${sdPending.createdAt}`,
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState?.offer_pending, myPlayerId, stableDuelCtx, players, gameId, openStableDuelOverlay]);
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
