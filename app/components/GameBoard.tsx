@@ -19,6 +19,7 @@ import {
 } from "@/lib/board/layout";
 import { getFieldDetail } from "@/lib/board/fieldHelpers";
 import { logEvent } from "@/lib/analytics";
+import { buildFogReveal as libBuildFogReveal } from "@/lib/fog";
 import { UI_TEXT } from "@/lib/ui-text";
 import { applyBoardShuffle } from "@/lib/board/shuffle";
 import { textToMorse, extractCapsSegment } from "@/lib/morse";
@@ -359,12 +360,7 @@ export default function GameBoard({ gameCode }: Props) {
     return revealedFields.includes(field.index);
   }
   function buildFogReveal(fieldIndex: number, base?: number[]): number[] {
-    const current = base ?? revealedFields;
-    if (current.includes(fieldIndex)) return current;
-    // Racer a start pole jsou vždy viditelné — nepřidávat do revealedFields (zamezí zbytečnému flipu)
-    const fieldType = FIELDS.find(f => f.index === fieldIndex)?.type;
-    if (fieldType === "racer" || fieldType === "start") return current;
-    return [...current, fieldIndex];
+    return libBuildFogReveal(fieldIndex, FIELDS, base ?? revealedFields);
   }
   /** Krizový reset — zachová jen racer/start pole, všechna ostatní schová. */
   function buildCrisisReset(fields: typeof FIELDS): number[] {

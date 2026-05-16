@@ -19,12 +19,13 @@ import { DEFAULT_ECONOMY } from "@/lib/types/game";
 import type { Player, Horse, EconomyConfig, ActiveEffect } from "@/lib/types/game";
 import type { RacerConfig } from "@/lib/themes";
 import { awardMoneySpentAction } from "@/app/game/actions";
+import { buildFogReveal } from "@/lib/fog";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 async function fetchBotContext(gameId: string) {
   const [gameRes, stateRes, playersRes] = await Promise.all([
-    supabase.from("games").select("id, economy, theme_id, board_id").eq("id", gameId).single(),
+    supabase.from("games").select("id, economy, theme_id, board_id, fog_of_war").eq("id", gameId).single(),
     supabase.from("game_state").select("*").eq("game_id", gameId).single(),
     supabase.from("players").select("*").eq("game_id", gameId).order("turn_order"),
   ]);
@@ -61,6 +62,7 @@ async function botFinishTurn(
     log: string[];
     lastRoll?: number;
     updatedHorses?: Horse[];
+    revealedFields?: number[];
   },
 ) {
   const updatedPlayers = allPlayers.map(p =>
@@ -88,6 +90,7 @@ async function botFinishTurn(
     log: params.log.slice(0, 20),
   };
   if (params.lastRoll !== undefined) stateUpdate.last_roll = params.lastRoll;
+  if (params.revealedFields !== undefined) stateUpdate.revealed_fields = params.revealedFields;
 
   const playerUpdate: Record<string, unknown> = {};
   if (regenHorses.length > 0) playerUpdate.horses = regenHorses;
@@ -124,7 +127,12 @@ export async function executeBotTurnAction(
   const ctx = await fetchBotContext(gameId);
   if (!ctx) return { ok: false, reason: "context fetch failed" };
 
-  const { state, players, economy, theme, FIELDS, racers } = ctx;
+  const { game, state, players, economy, theme, FIELDS, racers } = ctx;
+
+  // Fog of War: helper pro výpočet revealed_fields po přistání bota na poli
+  const currentRevealed: number[] = Array.isArray(state.revealed_fields) ? (state.revealed_fields as number[]) : [];
+  const fogReveal = (pos: number): number[] | undefined =>
+    game.fog_of_war ? buildFogReveal(pos, FIELDS, currentRevealed) : undefined;
 
   // Guards
   if (state.turn_count !== expectedTurnCount) return { ok: false, reason: "stale turn_count" };
@@ -198,7 +206,7 @@ export async function executeBotTurnAction(
     if (alreadyOwned) {
       // Bot přijel na vlastní pole — bez efektu
       const log = [`${botPlayer.name} přijel ke své vlastní stáji: ${field.racer.emoji} ${field.racer.name}`, ...extraLog, ...logEntries];
-      await botFinishTurn(gameId, botPlayer, movedPlayer, updatedPlayers, { nextIndex, turnCount: newTurnCount, log, lastRoll: roll });
+      await botFinishTurn(gameId, botPlayer, movedPlayer, updatedPlayers, { nextIndex, turnCount: newTurnCount, log, lastRoll: roll, revealedFields: fogReveal(newPosition) });
     } else if (ownerPlayer) {
       // Platba nájmu
       const rent = Math.round(field.racer.price * 0.2);
@@ -213,7 +221,7 @@ export async function executeBotTurnAction(
         p.id === botPlayer.id ? paidBot : p.id === ownerPlayer.id ? paidOwner : p
       );
       const nextIdx2 = getNextActiveIndex(state.current_player_index, updatedForNext);
-      await botFinishTurn(gameId, botPlayer, paidBot, updatedForNext, { nextIndex: nextIdx2, turnCount: newTurnCount, log, lastRoll: roll });
+      await botFinishTurn(gameId, botPlayer, paidBot, updatedForNext, { nextIndex: nextIdx2, turnCount: newTurnCount, log, lastRoll: roll, revealedFields: fogReveal(newPosition) });
     } else {
       // Nikdo nevlastní — horse_pending=true, bot koupí/přeskočí v executeBotHorseDecisionAction
       const log = [`${botPlayer.name} přijel na pole závodníka: ${field.racer.emoji} ${field.racer.name}`, ...extraLog, ...logEntries];
@@ -387,6 +395,7 @@ export async function executeBotTurnAction(
       turnCount: newTurnCount,
       log,
       lastRoll: roll,
+      revealedFields: fogReveal(finalPlayer.position),
       ...(effect.kind === "give_racer" ? { updatedHorses: finalPlayer.horses } : {}),
     });
     return { ok: true };
@@ -402,13 +411,13 @@ export async function executeBotTurnAction(
     const log = [result.log, ...extraLog, ...logEntries].filter(Boolean) as string[];
     const updatedForNext3 = updatedPlayers.map(p => p.id === botPlayer.id ? finalPlayer : p);
     const nextIdx4 = getNextActiveIndex(state.current_player_index, updatedForNext3);
-    await botFinishTurn(gameId, botPlayer, finalPlayer, updatedForNext3, { nextIndex: nextIdx4, turnCount: newTurnCount, log, lastRoll: roll });
+    await botFinishTurn(gameId, botPlayer, finalPlayer, updatedForNext3, { nextIndex: nextIdx4, turnCount: newTurnCount, log, lastRoll: roll, revealedFields: fogReveal(newPosition) });
     return { ok: true };
   }
 
   // Fallback — neutral pole bez action
   const log = [`${botPlayer.name} hodil ${roll} a stál na ${field.label ?? field.type}`, ...extraLog, ...logEntries];
-  await botFinishTurn(gameId, botPlayer, movedPlayer, updatedPlayers, { nextIndex, turnCount: newTurnCount, log, lastRoll: roll });
+  await botFinishTurn(gameId, botPlayer, movedPlayer, updatedPlayers, { nextIndex, turnCount: newTurnCount, log, lastRoll: roll, revealedFields: fogReveal(newPosition) });
   return { ok: true };
 }
 
@@ -423,7 +432,12 @@ export async function executeBotHorseDecisionAction(
   const ctx = await fetchBotContext(gameId);
   if (!ctx) return { ok: false, reason: "context fetch failed" };
 
-  const { state, players, FIELDS, racers } = ctx;
+  const { game, state, players, FIELDS, racers } = ctx;
+
+  // Fog of War: racer pole jsou vždy viditelné, takže fogReveal je no-op, ale zajišťuje konzistenci
+  const currentRevealed: number[] = Array.isArray(state.revealed_fields) ? (state.revealed_fields as number[]) : [];
+  const fogReveal = (pos: number): number[] | undefined =>
+    game.fog_of_war ? buildFogReveal(pos, FIELDS, currentRevealed) : undefined;
 
   if (state.turn_count !== expectedTurnCount) return { ok: false, reason: "stale turn_count" };
   if (!state.horse_pending) return { ok: false, reason: "horse_pending is false" };
@@ -475,11 +489,11 @@ export async function executeBotHorseDecisionAction(
     const log = [`${botPlayer.name} koupil závodníka ${field.racer.emoji} ${field.racer.name} (${hKey})`, ...logEntries];
     const updatedPlayers = players.map(p => p.id === botPlayer.id ? paidBot : p);
     await botFinishTurn(gameId, botPlayer, paidBot, updatedPlayers, {
-      nextIndex, turnCount: newTurnCount, log, updatedHorses,
+      nextIndex, turnCount: newTurnCount, log, updatedHorses, revealedFields: fogReveal(botPlayer.position),
     });
   } else {
     const log = [`${botPlayer.name} odmítl koupit závodníka ${field.racer.emoji} ${field.racer.name}`, ...logEntries];
-    await botFinishTurn(gameId, botPlayer, botPlayer, players, { nextIndex, turnCount: newTurnCount, log });
+    await botFinishTurn(gameId, botPlayer, botPlayer, players, { nextIndex, turnCount: newTurnCount, log, revealedFields: fogReveal(botPlayer.position) });
   }
 
   return { ok: true };
