@@ -272,7 +272,7 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
                   style={{ opacity: isHovered ? 1 : 0 }}
                 >
                   <span
-                    className="inline-block rounded px-2 py-0.5 text-[11px] font-black tracking-widest uppercase"
+                    className="inline-block rounded px-2 py-0.5 text-[11px] font-black tracking-widest uppercase whitespace-nowrap"
                     style={{
                       background: panel.accentColor,
                       color: panel.id === "profil" ? "#0f172a" : "#000",
