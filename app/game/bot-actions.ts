@@ -14,7 +14,9 @@ import {
   racerOwnershipKey,
   computeRent,
   getPreferredHorse,
+  ROLL_CORRECTION_COST,
 } from "@/lib/engine";
+import { chooseBotCorrection } from "@/lib/bot/botCorrection";
 import { drawCard } from "@/lib/cards";
 import { decideBotHorsePurchase } from "@/lib/bot/botDecision";
 import { DEFAULT_ECONOMY } from "@/lib/types/game";
@@ -164,15 +166,34 @@ export async function executeBotTurnAction(
   const roll = Math.ceil(Math.random() * 6);
   const fieldCount = FIELDS.length;
   const oldPosition = botPlayer.position;
-  const newPosition = (oldPosition + roll) % fieldCount;
-  const passedStart = newPosition !== 0 && (oldPosition + roll) >= fieldCount;
+
+  // Agresivní korekce tahu — bot zváží ±1 pokud může vyvolat duel
+  const correctionAdj = chooseBotCorrection({
+    botPlayer,
+    players,
+    fields: FIELDS,
+    rolledSteps: roll,
+    basePosition: oldPosition,
+    aggressionMode: "normal",
+  });
+  const finalRoll = roll + correctionAdj;
+
+  const newPosition = (oldPosition + finalRoll) % fieldCount;
+  const passedStart = newPosition !== 0 && (oldPosition + finalRoll) >= fieldCount;
 
   const newTurnCount = state.turn_count + 1;
   const logEntries: string[] = Array.isArray(state.log) ? (state.log as string[]) : [];
 
-  let movedPlayer: Player = { ...botPlayer, position: newPosition };
+  let movedPlayer: Player = {
+    ...botPlayer,
+    position: newPosition,
+    coins: correctionAdj !== 0 ? botPlayer.coins - ROLL_CORRECTION_COST : botPlayer.coins,
+  };
 
   const extraLog: string[] = [];
+  if (correctionAdj !== 0) {
+    extraLog.push(`🤖 Bot upravil tah o ${correctionAdj > 0 ? "+" : ""}${correctionAdj} (taktický manévr −${ROLL_CORRECTION_COST} 💰)`);
+  }
 
   // START crossing — shodné s lidským rollDice flow v GameBoard.tsx
   if (passedStart || newPosition === 0) {
@@ -209,7 +230,7 @@ export async function executeBotTurnAction(
     if (alreadyOwned) {
       // Bot přijel na vlastní pole — bez efektu
       const log = [`${botPlayer.name} přijel ke své vlastní stáji: ${field.racer.emoji} ${field.racer.name}`, ...extraLog, ...logEntries];
-      await botFinishTurn(gameId, botPlayer, movedPlayer, updatedPlayers, { nextIndex, turnCount: newTurnCount, log, lastRoll: roll, revealedFields: fogReveal(newPosition) });
+      await botFinishTurn(gameId, botPlayer, movedPlayer, updatedPlayers, { nextIndex, turnCount: newTurnCount, log, lastRoll: finalRoll, revealedFields: fogReveal(newPosition) });
     } else if (ownerPlayer) {
       if (movedPlayer.horses.length > 0 && ownerPlayer.horses.length > 0) {
         // ── PvBot Stable Duel: lidský hráč (ownerPlayer) = challenger, bot = defender ──
@@ -250,7 +271,7 @@ export async function executeBotTurnAction(
         p.id === botPlayer.id ? paidBot : p.id === ownerPlayer.id ? paidOwner : p
       );
       const nextIdx2 = getNextActiveIndex(state.current_player_index, updatedForNext);
-      await botFinishTurn(gameId, botPlayer, paidBot, updatedForNext, { nextIndex: nextIdx2, turnCount: newTurnCount, log, lastRoll: roll, revealedFields: fogReveal(newPosition) });
+      await botFinishTurn(gameId, botPlayer, paidBot, updatedForNext, { nextIndex: nextIdx2, turnCount: newTurnCount, log, lastRoll: finalRoll, revealedFields: fogReveal(newPosition) });
     } else {
       // Nikdo nevlastní — horse_pending=true, bot koupí/přeskočí v executeBotHorseDecisionAction
       const log = [`${botPlayer.name} přijel na pole závodníka: ${field.racer.emoji} ${field.racer.name}`, ...extraLog, ...logEntries];
@@ -423,7 +444,7 @@ export async function executeBotTurnAction(
       nextIndex: nextIdx3,
       turnCount: newTurnCount,
       log,
-      lastRoll: roll,
+      lastRoll: finalRoll,
       revealedFields: fogReveal(finalPlayer.position),
       ...(effect.kind === "give_racer" ? { updatedHorses: finalPlayer.horses } : {}),
     });
@@ -440,13 +461,13 @@ export async function executeBotTurnAction(
     const log = [result.log, ...extraLog, ...logEntries].filter(Boolean) as string[];
     const updatedForNext3 = updatedPlayers.map(p => p.id === botPlayer.id ? finalPlayer : p);
     const nextIdx4 = getNextActiveIndex(state.current_player_index, updatedForNext3);
-    await botFinishTurn(gameId, botPlayer, finalPlayer, updatedForNext3, { nextIndex: nextIdx4, turnCount: newTurnCount, log, lastRoll: roll, revealedFields: fogReveal(newPosition) });
+    await botFinishTurn(gameId, botPlayer, finalPlayer, updatedForNext3, { nextIndex: nextIdx4, turnCount: newTurnCount, log, lastRoll: finalRoll, revealedFields: fogReveal(newPosition) });
     return { ok: true };
   }
 
   // Fallback — neutral pole bez action
-  const log = [`${botPlayer.name} hodil ${roll} a stál na ${field.label ?? field.type}`, ...extraLog, ...logEntries];
-  await botFinishTurn(gameId, botPlayer, movedPlayer, updatedPlayers, { nextIndex, turnCount: newTurnCount, log, lastRoll: roll, revealedFields: fogReveal(newPosition) });
+  const log = [`${botPlayer.name} hodil ${finalRoll} a stál na ${field.label ?? field.type}`, ...extraLog, ...logEntries];
+  await botFinishTurn(gameId, botPlayer, movedPlayer, updatedPlayers, { nextIndex, turnCount: newTurnCount, log, lastRoll: finalRoll, revealedFields: fogReveal(newPosition) });
   return { ok: true };
 }
 

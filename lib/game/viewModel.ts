@@ -2,6 +2,7 @@ import type { GameCard } from "@/lib/cards";
 import type { Player, Horse, RerollOffer } from "@/lib/types/game";
 import type { CenterEvent } from "@/lib/types/events";
 import type { Field } from "@/lib/engine";
+import { ROLL_CORRECTION_COST } from "@/lib/engine";
 
 /**
  * Mapuje herní stav na CenterEvent view model pro CenterEventModal.
@@ -60,13 +61,13 @@ export function buildRollDecisionOptions(
 }> {
   return ([-1, 0, 1] as Array<-1 | 0 | 1>).map((adjustment) => {
     const finalRoll = decision.baseRoll + adjustment;
-    const isAffordable = adjustment === 0 || playerCoins >= 600;
+    const isAffordable = adjustment === 0 || playerCoins >= ROLL_CORRECTION_COST;
     const isValid = finalRoll >= 1;
     const targetField = isValid ? fields[(decision.basePosition + finalRoll) % fields.length] : null;
     return {
       adjustment,
       finalRoll,
-      cost: adjustment === 0 ? 0 : 600,
+      cost: adjustment === 0 ? 0 : ROLL_CORRECTION_COST,
       isDisabled: !isValid || !isAffordable,
       targetField,
     };

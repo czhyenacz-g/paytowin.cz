@@ -22,6 +22,8 @@ import type { BoardConfig } from "./board";
 
 export const REROLL_COST = 1000;
 export const REROLL_CHANCE = 0.10;
+/** Cena za korekci tahu o ±1 krok. Sdíleno mezi human UI (viewModel) a bot flow. */
+export const ROLL_CORRECTION_COST = 600;
 
 // ─── Typy polí ────────────────────────────────────────────────────────────────
 
