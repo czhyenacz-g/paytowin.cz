@@ -2,6 +2,7 @@ import type { MinigameResult } from "./types";
 
 export const STABLE_DUEL_WIN_REWARD_MIN      = 200;
 export const STABLE_DUEL_WIN_REWARD_MAX      = 3000;
+export const STABLE_DUEL_MAFIA_BONUS_MAX     = 500;
 export const STABLE_DUEL_BASE_STAMINA_COST   = 20;
 export const STABLE_DUEL_NITRO_STAMINA_COST  = 30;
 export const STABLE_DUEL_CRASH_STAMINA_COST  = 15;
@@ -33,8 +34,8 @@ function calcPlayer(
   return { coinsDelta, stamina: { base, nitro, crash, total: base + nitro + crash } };
 }
 
-/** Výše odměny/penalizace závisí pouze na cenách koní. Pure, deterministic. */
-export function computeDuelReward(p1HorsePrice?: number, p2HorsePrice?: number): number {
+/** Základní odměna závisí pouze na cenách koní. Pure, deterministic. */
+export function computeBaseDuelReward(p1HorsePrice?: number, p2HorsePrice?: number): number {
   return Math.min(
     STABLE_DUEL_WIN_REWARD_MAX,
     Math.max(
@@ -44,13 +45,19 @@ export function computeDuelReward(p1HorsePrice?: number, p2HorsePrice?: number):
   );
 }
 
+/** Celková odměna = base + mafiaBonus (max 500). Pure, deterministic. */
+export function computeDuelReward(p1HorsePrice?: number, p2HorsePrice?: number, mafiaBonus?: number): number {
+  return computeBaseDuelReward(p1HorsePrice, p2HorsePrice) + Math.min(mafiaBonus ?? 0, STABLE_DUEL_MAFIA_BONUS_MAX);
+}
+
 /** Pure helper — žádné DB. Volej z ResultPhase (display) i z GameBoard (zápis). */
 export function computeMinigameSettlement(
   result: MinigameResult,
   p1HorsePrice?: number,
   p2HorsePrice?: number,
+  mafiaBonus?: number,
 ): MinigameSettlement {
-  const r = computeDuelReward(p1HorsePrice, p2HorsePrice);
+  const r = computeDuelReward(p1HorsePrice, p2HorsePrice, mafiaBonus);
   const p1Coins = result.winner === 1 ? r : result.winner === 2 ? -r : 0;
   const p2Coins = result.winner === 2 ? r : result.winner === 1 ? -r : 0;
   return {

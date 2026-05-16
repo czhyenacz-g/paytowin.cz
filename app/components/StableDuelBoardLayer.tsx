@@ -22,7 +22,7 @@ import type { Horse } from "@/lib/types/game";
 import { getRopeDuelSpeedLabel } from "@/lib/duel/helpers";
 import { selectStableMinigame, type StableMinigameType } from "@/lib/minigames/selectStableMinigame";
 import type { MinigameResult } from "@/lib/minigames/types";
-import { computeMinigameSettlement, computeDuelReward, type MinigameSettlement } from "@/lib/minigames/settlement";
+import { computeMinigameSettlement, computeDuelReward, computeBaseDuelReward, type MinigameSettlement } from "@/lib/minigames/settlement";
 import type { SoundId } from "@/lib/audio/sfx";
 import { supabase } from "@/lib/supabase";
 import type { StableDuelInputEvent, StableDuelSnapshotEvent } from "@/lib/duel/broadcastTypes";
@@ -53,6 +53,8 @@ interface Props {
   useSharedCountdown?: boolean;
   sharedCountdownEndsAt?: number;
   disableManualStart?: boolean;
+  /** Snapshot 10 % START daně v momentu vytvoření duelu — zobrazí se jako „🎲 Mafie sází +X 💰". */
+  mafiaBonus?: number;
 }
 
 type Phase = "prestart" | "arena" | "result" | "waiting_result";
@@ -185,6 +187,7 @@ function PlayerCard({ contestant, label }: { contestant: DuelContestant; label: 
 
 function DuelStakesPreview({
   reward,
+  mafiaBonus,
   challengerName,
   challengerColor,
   challengerCoins,
@@ -194,6 +197,7 @@ function DuelStakesPreview({
   minigameType,
 }: {
   reward: number;
+  mafiaBonus?: number;
   challengerName: string;
   challengerColor: string;
   challengerCoins?: number;
@@ -203,8 +207,10 @@ function DuelStakesPreview({
   minigameType: StableMinigameType;
 }) {
   const meta = MINIGAME_META[minigameType];
-  const cBankrupt = challengerCoins !== undefined && challengerCoins - reward < 0;
-  const dBankrupt = defenderCoins !== undefined && defenderCoins - reward < 0;
+  const bonus = mafiaBonus ?? 0;
+  const total = reward + bonus;
+  const cBankrupt = challengerCoins !== undefined && challengerCoins - total < 0;
+  const dBankrupt = defenderCoins !== undefined && defenderCoins - total < 0;
 
   return (
     <div
@@ -232,6 +238,23 @@ function DuelStakesPreview({
         </span>
       </div>
       <div className="text-[11px] uppercase tracking-widest text-slate-600 mt-0.5">při výhře / prohře</div>
+
+      {/* Mafia bonus — zobrazí se jen pokud bonus > 0 */}
+      {bonus > 0 && (
+        <div className="mt-2">
+          <div
+            className="text-[12px] font-semibold italic"
+            style={{ color: "#fbbf24", textShadow: "0 0 10px rgba(251,191,36,0.4)" }}
+          >
+            🎲 Mafie sází +{bonus} 💰
+          </div>
+          <div className="mt-1 border-t border-slate-700/60 pt-1">
+            <span className="text-[11px] text-slate-400">
+              Celkem: <span style={{ color: "#4ade80" }}>+{total}</span> / <span style={{ color: "#f87171" }}>−{total}</span> 💰
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Bankruptcy risk */}
       {(cBankrupt || dBankrupt) && (
@@ -277,6 +300,7 @@ function PreStartPhase({
   duelRole,
   p2IsLegendary,
   disableManualStart,
+  mafiaBonus,
   onClick,
 }: {
   challenger: DuelContestant;
@@ -287,6 +311,7 @@ function PreStartPhase({
   duelRole?: "challenger_authority" | "defender_remote";
   p2IsLegendary?: boolean;
   disableManualStart?: boolean;
+  mafiaBonus?: number;
   onClick: () => void;
 }) {
   const meta = MINIGAME_META[minigameType];
@@ -326,7 +351,8 @@ function PreStartPhase({
 
       {/* ── Stakes preview ───────────────────────────────────────────────────── */}
       <DuelStakesPreview
-        reward={computeDuelReward(challenger.horse?.price, defender.horse?.price)}
+        reward={computeBaseDuelReward(challenger.horse?.price, defender.horse?.price)}
+        mafiaBonus={mafiaBonus}
         challengerName={challenger.name}
         challengerColor={challengerColor}
         challengerCoins={challenger.coins}
@@ -624,6 +650,7 @@ export default function StableDuelBoardLayer({
   sharedCountdownEndsAt,
   disableManualStart = false,
   playSfx,
+  mafiaBonus,
 }: Props) {
   const [phase, setPhase]         = React.useState<Phase>("prestart");
   const [countdown, setCountdown] = React.useState(() => {
@@ -893,6 +920,7 @@ export default function StableDuelBoardLayer({
           duelRole={duelRole}
           p2IsLegendary={p2IsLegendary}
           disableManualStart={disableManualStart}
+          mafiaBonus={mafiaBonus}
           onClick={handleSkip}
         />
       )}
@@ -916,7 +944,7 @@ export default function StableDuelBoardLayer({
           challenger={challenger}
           defender={defender}
           result={duelResult}
-          settlement={computeMinigameSettlement(duelResult, challenger.horse?.price, defender.horse?.price)}
+          settlement={computeMinigameSettlement(duelResult, challenger.horse?.price, defender.horse?.price, mafiaBonus)}
           isDev={isDev}
           onContinue={() => onFinish(duelResult)}
         />

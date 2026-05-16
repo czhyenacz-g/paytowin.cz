@@ -262,7 +262,7 @@ export default function GameBoard({ gameCode }: Props) {
   const [flipBoardAnim, setFlipBoardAnim] = React.useState<"idle" | "out" | "back-in">("idle");
   const flipTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   // Stájový souboj — board overlay (game flow)
-  const [stableDuelCtx, setStableDuelCtx] = React.useState<{ challenger: DuelContestant; defender: DuelContestant; isPreview: boolean; challengerId?: string; defenderId?: string; duelRole?: "challenger_authority" | "defender_remote"; duelId?: string; sharedCountdownEndsAt?: number } | null>(null);
+  const [stableDuelCtx, setStableDuelCtx] = React.useState<{ challenger: DuelContestant; defender: DuelContestant; isPreview: boolean; challengerId?: string; defenderId?: string; duelRole?: "challenger_authority" | "defender_remote"; duelId?: string; sharedCountdownEndsAt?: number; mafiaBonus?: number } | null>(null);
   const stableDuelProceedRef = React.useRef<((resultLog?: string[], updatedCurrentPlayerHorses?: import("@/lib/types/game").Horse[]) => Promise<void>) | null>(null);
   const boardSurfaceRef = React.useRef<HTMLDivElement>(null);
   // Idempotency refs pro countdown a overlay — klíčovány identitou duelu
@@ -800,7 +800,7 @@ export default function GameBoard({ gameCode }: Props) {
    * Idempotentní: stejný duelKey otevře overlay jen jednou (ref guard).
    */
   const openStableDuelOverlay = React.useCallback((
-    ctx: { challenger: DuelContestant; defender: DuelContestant; isPreview: boolean; challengerId?: string; defenderId?: string; duelRole?: "challenger_authority" | "defender_remote"; duelId?: string; sharedCountdownEndsAt?: number },
+    ctx: { challenger: DuelContestant; defender: DuelContestant; isPreview: boolean; challengerId?: string; defenderId?: string; duelRole?: "challenger_authority" | "defender_remote"; duelId?: string; sharedCountdownEndsAt?: number; mafiaBonus?: number },
     duelKey: string,
   ) => {
     if (overlayOpenedRef.current === duelKey) return;
@@ -1029,6 +1029,8 @@ export default function GameBoard({ gameCode }: Props) {
           };
           boardSurfaceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
           const duelCreatedAt = Date.now();
+          const rawMafiaBonus = Math.round(getStartTax(currentPlayer.laps ?? 0, economy) * 0.10);
+          const duelMafiaBonus = rawMafiaBonus > 0 ? Math.min(rawMafiaBonus, 500) : undefined;
           const shouldAutoUseOnline1v1 =
             gameMode === "online" &&
             currentPlayer.id !== ownerPlayer.id &&
@@ -1043,7 +1045,7 @@ export default function GameBoard({ gameCode }: Props) {
           // pvbot_awareness: otevři StableDuelBoardLayer ihned (scroll+rAF); online_1v1: čekej na handshake
           if (effectiveMode !== "online_1v1") {
             openStableDuelOverlay(
-              { challenger, defender, isPreview: false, challengerId: currentPlayer.id, defenderId: ownerPlayer.id },
+              { challenger, defender, isPreview: false, challengerId: currentPlayer.id, defenderId: ownerPlayer.id, mafiaBonus: duelMafiaBonus },
               `pvbot_${currentPlayer.id}_${ownerPlayer.id}_${duelCreatedAt}`,
             );
           }
@@ -1061,6 +1063,7 @@ export default function GameBoard({ gameCode }: Props) {
               minigameType: selectStableMinigame({ themeId, challengerHorse: challenger.horse, defenderHorse: defender.horse }),
               createdAt: duelCreatedAt,
               ...(effectiveMode === "online_1v1" ? { challengerReady: true, defenderReady: false } : {}),
+              ...(duelMafiaBonus !== undefined ? { mafiaBonus: duelMafiaBonus } : {}),
             };
             console.log("[stable-duel-trigger]", {
               stableDuelMode,
@@ -2197,6 +2200,7 @@ export default function GameBoard({ gameCode }: Props) {
           result,
           ctx.challenger.horse?.price,
           ctx.defender.horse?.price,
+          ctx.mafiaBonus,
         );
 
         const newCCoins = Math.max(0, challenger.coins + s.p1.coinsDelta);
@@ -2350,6 +2354,7 @@ export default function GameBoard({ gameCode }: Props) {
         isPreview: false,
         challengerId: sdPending.challengerId,
         defenderId: sdPending.defenderId,
+        mafiaBonus: sdPending.mafiaBonus,
       },
       `fallback_${sdPending.challengerId}_${sdPending.createdAt}`,
     );
@@ -2422,6 +2427,7 @@ export default function GameBoard({ gameCode }: Props) {
         defenderId: dId,
         duelId,
         sharedCountdownEndsAt: startsAt,
+        mafiaBonus: sdPending.mafiaBonus,
       };
       if (isChallenger) {
         openStableDuelOverlay({ ...ctxBase, duelRole: "challenger_authority" }, duelKey);
@@ -2514,7 +2520,7 @@ export default function GameBoard({ gameCode }: Props) {
     };
 
     openStableDuelOverlay(
-      { challenger, defender, isPreview: false, challengerId: sdPending.challengerId, defenderId: sdPending.defenderId },
+      { challenger, defender, isPreview: false, challengerId: sdPending.challengerId, defenderId: sdPending.defenderId, mafiaBonus: sdPending.mafiaBonus },
       `pvbot_bot_${sdPending.challengerId}_${sdPending.defenderId}_${sdPending.createdAt}`,
     );
   // eslint-disable-next-line react-hooks/exhaustive-deps

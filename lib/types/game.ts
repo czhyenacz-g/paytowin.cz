@@ -209,6 +209,8 @@ export interface StableDuelPendingOffer {
   challengerReady?: boolean;
   defenderReady?: boolean;
   readyUpdatedAt?: number;
+  /** Dynamický bonus od Mafie — snapshot 10 % START daně při vytvoření duelu. Optional pro backward compat. */
+  mafiaBonus?: number;
   /** Stav po skončení duelu — zapíše challenger, čtou defender/spectators. */
   finishedAt?: number;
   winnerId?: string;

@@ -104,6 +104,7 @@ interface Props {
     duelRole?: "challenger_authority" | "defender_remote";
     duelId?: string;
     sharedCountdownEndsAt?: number;
+    mafiaBonus?: number;
   } | null;
   handleStableDuelFinish: (result: StableMinigameResult) => void;
   devRaceBoardLayer: boolean;
@@ -558,6 +559,7 @@ export default function GamePanel({
               useSharedCountdown={!!stableDuelCtx.duelRole}
               sharedCountdownEndsAt={stableDuelCtx.sharedCountdownEndsAt}
               disableManualStart={!!stableDuelCtx.duelRole}
+              mafiaBonus={stableDuelCtx.mafiaBonus}
             />
           )}
 

@@ -237,6 +237,8 @@ export async function executeBotTurnAction(
         const duelCreatedAt = Date.now();
         const challengerHorse = getPreferredHorse(ownerPlayer.horses);
         const defenderHorse   = getPreferredHorse(movedPlayer.horses);
+        const rawMafiaBonus = Math.round(getStartTax(botPlayer.laps ?? 0, economy) * 0.10);
+        const mafiaBonus = rawMafiaBonus > 0 ? Math.min(rawMafiaBonus, 500) : undefined;
         const duelPending: StableDuelPendingOffer = {
           type:           "stable_duel_pending",
           phase:          "pending",
@@ -248,6 +250,7 @@ export async function executeBotTurnAction(
           fieldIndex:     field.index,
           minigameType:   selectStableMinigame({ themeId: game.theme_id, challengerHorse, defenderHorse }),
           createdAt:      duelCreatedAt,
+          ...(mafiaBonus !== undefined ? { mafiaBonus } : {}),
         };
         const log = [`⚔️ ${botPlayer.name} přistál na stáji ${ownerPlayer.name} (${field.racer.emoji} ${field.racer.name}) — stájový souboj!`, ...extraLog, ...logEntries];
         await supabase.from("game_state").update({
