@@ -156,9 +156,16 @@ export default function PlayerList({
                                 <span className="whitespace-nowrap rounded-[2px] bg-white/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
                                   ⚡ {h.speed}
                                 </span>
-                                <span className="whitespace-nowrap rounded-[2px] bg-white/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
-                                  {UI_TEXT.board.staminaLabel} {h.stamina ?? h.maxStamina ?? 100}%
-                                </span>
+                                {(() => {
+                                  const cur = h.stamina ?? h.maxStamina ?? 100;
+                                  const cap = h.maxStamina ?? 100;
+                                  const low = cur / cap < 0.30;
+                                  return (
+                                    <span className={`whitespace-nowrap rounded-[2px] px-1.5 py-0.5 text-[10px] ${low ? "bg-red-600 font-bold text-white" : "bg-white/80 font-medium text-slate-500"}`}>
+                                      {UI_TEXT.board.staminaLabel} {cur}%
+                                    </span>
+                                  );
+                                })()}
                                 {isOwn ? (
                                   <span className="inline-flex items-center gap-1 whitespace-nowrap">
                                     {h.isPreferred && (
