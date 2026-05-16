@@ -200,7 +200,7 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
 
             {/* ── ZAMKNUTO overlay ── */}
             {isLocked && (
-              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-1.5 bg-black/55 pointer-events-none select-none">
+              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-1.5 bg-black/30 pointer-events-none select-none">
                 <span style={{ fontSize: "22px", lineHeight: 1 }}>🔒</span>
                 <span
                   className="text-[10px] font-black tracking-[0.18em] uppercase text-white/90"
