@@ -13,7 +13,8 @@ export const horseDayScenario: ScenarioDefinition = {
   publicObjectiveTitle: "Cíl hry",
   publicObjectiveText:
     "Banka ti půjčila {startingMoney} 💰. Ne proto, že ti věří — protože někdo udělal chybu.\n\n" +
-    "Kupuj racery dřív než ostatní, vybírej poplatky a nenech soupeře vydělat na tobě.\n" +
+    "Vyzývej soupeře k závodům, rozšiřuj stáj a odkrývej, co závodiště skrývá.\n" +
+    "Každé nové pole může být šance, past nebo účet, který zaplatíš ty.\n\n" +
     "Banka už v tobě má peníze. Teď potřebuje, aby z její chyby vznikl titulní příběh.\n\n" +
     "Pozor: na titulní stranu se dostane jen jeden z vás.",
   winConditionSummary: "Základní výhra: poslední hráč ve hře.",
@@ -33,6 +34,14 @@ export const horseDayScenario: ScenarioDefinition = {
   ],
   personalObjectives: [
     {
+      id: "stable-collector",
+      title: "Sběratel stáje",
+      story: "V Connecticutu se nevyhrává jedním koněm. Vyhrává se stájí.",
+      task: "Vlastni v jednu chvíli alespoň 3 racery.",
+      rewardLabel: "Bonusový cíl: výsledek se ukáže po hře.",
+      condition: { type: "owns_at_least_racers", count: 3 },
+    },
+    {
       id: "mafia-debt",
       title: "Dluh u mafie",
       story:
@@ -46,14 +55,6 @@ export const horseDayScenario: ScenarioDefinition = {
       story: "Nikdo si tě nevšímá. Přesně tak to chceš.",
       task: "Vyhraj alespoň jeden závod a nezbankrotuj.",
       rewardLabel: "Bonusový cíl: výsledek se ukáže po hře.",
-    },
-    {
-      id: "stable-collector",
-      title: "Sběratel stáje",
-      story: "V Connecticutu se nevyhrává jedním koněm. Vyhrává se stájí.",
-      task: "Vlastni v jednu chvíli alespoň 3 racery.",
-      rewardLabel: "Bonusový cíl: výsledek se ukáže po hře.",
-      condition: { type: "owns_at_least_racers", count: 3 },
     },
     {
       id: "last-dollar",
