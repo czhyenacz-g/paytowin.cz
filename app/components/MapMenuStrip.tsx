@@ -153,7 +153,7 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
               isLocked ? "cursor-not-allowed" : (isNavigable ? "cursor-pointer" : "cursor-default"),
             ].join(" ")}
             style={{
-              flex: isHovered && isNavigable ? 4 : 1,
+              flex: isHovered && isNavigable ? (isLocked ? 2 : 4) : 1,
               // Dual-line bevel separátor: bílá 1px highlight + tmavá 3px stín
               // Čitelné na světlém i tmavém obrázku
               boxShadow: !isLast
@@ -193,21 +193,21 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
               className="absolute inset-0 transition-opacity duration-300 bg-black"
               style={{
                 opacity: isHovered
-                  ? 0.10
+                  ? (isLocked ? 0.25 : 0.10)
                   : (isAvailable ? (panel.idleOverlayOpacity ?? 0.38) : 0.58),
               }}
             />
 
             {/* ── ZAMKNUTO overlay ── */}
             {isLocked && (
-              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-1.5 bg-black/30 pointer-events-none select-none">
+              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-1.5 bg-black/30 pb-[20%] pointer-events-none select-none">
                 <span style={{ fontSize: "22px", lineHeight: 1 }}>🔒</span>
                 <span
                   className="text-[10px] font-black tracking-[0.18em] uppercase text-white/90"
                 >
                   Zamknuto
                 </span>
-                <span className="text-[8px] tracking-wide text-white/45 text-center leading-tight px-1">
+                <span className="text-[8px] tracking-wide text-white/30 text-center leading-tight px-1">
                   Vyžaduje odemknutí
                 </span>
               </div>
