@@ -208,7 +208,7 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
                   Zamknuto
                 </span>
                 <span className="text-[8px] tracking-wide text-white/45 text-center leading-tight px-1">
-                  Odemkneš później
+                  Vyžaduje odemknutí
                 </span>
               </div>
             )}
