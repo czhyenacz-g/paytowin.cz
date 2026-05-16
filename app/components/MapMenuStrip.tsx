@@ -9,6 +9,7 @@ import React from "react";
  *   - accentColor: barevný identifikační proužek nahoře (CSS color string)
  *   - index: číslo slotu "01"–"07"
  *   - Hover: flex 1→4, overlay zesvětlí, accent se rozzáří
+ *   - requiredAccess: access key — panel je zamčený pokud hráč nemá tento klíč v LIVE_UNLOCKED_ACCESS
  *
  * Jak přidat reálný obrázek: doplň `bgImage` do panelu a nastav backgroundImage ve style.
  * Jak aktivovat panel: nastav available: true.
@@ -28,6 +29,8 @@ interface Panel {
   idleOverlayOpacity?: number;
   bgPosition?: string;
   href?:       string;
+  /** Access klíč — pokud je uveden a hráč ho nemá, panel se zobrazí jako ZAMKNUTO. */
+  requiredAccess?: string;
 }
 
 interface MapMenuStripProps {
@@ -35,19 +38,41 @@ interface MapMenuStripProps {
   onPanelClick?: (panelId: string) => void;
 }
 
+// TODO: replace mock access with persisted user unlocks/settings.
+// V live/production jsou odemčené pouze tyto sekce.
+const LIVE_UNLOCKED_ACCESS: string[] = [
+  "theme_horse_day",
+  "profile",
+];
+
+function hasMenuAccess(
+  requiredAccess: string | undefined,
+  unlockedAccess: string[],
+  isDev: boolean,
+): boolean {
+  if (isDev) return true;
+  if (!requiredAccess) return true;
+  return unlockedAccess.includes(requiredAccess);
+}
+
 const PANELS: Panel[] = [
-  { id: "mapa-1",  label: "Denní závody", emoji: "🏇", desc: "Lehká denní atmosféra", index: "01", bgFrom: "from-slate-700",   bgTo: "to-slate-950",   bgImage: "/bg_horse_day.webp",    accentColor: "#f59e0b", available: true  },
-  { id: "mapa-2",  label: "Klasické závody", emoji: "🏇", desc: "Tradiční dostihový styl", index: "02", bgFrom: "from-blue-900",    bgTo: "to-blue-950",    bgImage: "/bg_horse_classic.webp", accentColor: "#60a5fa", available: true  },
-  { id: "mapa-3",  label: "Noční závody", emoji: "🌙", desc: "Noční dostihová atmosféra", index: "03", bgFrom: "from-emerald-900", bgTo: "to-emerald-950", bgImage: "/bg_horse_night.webp",  accentColor: "#34d399", available: true  },
-  { id: "mapa-4",  label: "Pouštní sprint", emoji: "🏎️", desc: "Denní auto theme", index: "04", bgFrom: "from-red-900",     bgTo: "to-red-950",     bgImage: "/bg_car_day.webp",      accentColor: "#f87171", available: true  },
-  { id: "mapa-5",  label: "Noční ulice", emoji: "🌃", desc: "Noční auto theme", index: "05", bgFrom: "from-violet-900",  bgTo: "to-violet-950",  bgImage: "/bg_car_night.webp",    accentColor: "#a78bfa", available: true  },
-  { id: "ostatni", label: "Komunitní mapy", emoji: "📦", desc: "Další veřejné mapy", index: "06", bgFrom: "from-teal-800",    bgTo: "to-teal-950",    bgImage: "/bg_other_maps.webp",   accentColor: "#2dd4bf", available: true  },
-  { id: "editor",  label: "Editor",       emoji: "🛠️", desc: "Tvorba a editace map", index: "07", bgFrom: "from-orange-900",  bgTo: "to-orange-950",  bgImage: "/bg_builder_yard.webp", accentColor: "#fb923c", available: true  },
-  { id: "profil",  label: "Tvůj profil",  emoji: "🛡️", desc: "Účet, profil a achievementy", index: "08", bgFrom: "from-slate-500", bgTo: "to-slate-800", bgImage: "/bg_dark_racer.webp", accentColor: "#f8fafc", available: true, idleOverlayOpacity: 0.22, bgPosition: "42% 18%" },
+  { id: "mapa-1",  label: "Denní závody",    emoji: "🏇",  desc: "Lehká denní atmosféra",          index: "01", bgFrom: "from-slate-700",   bgTo: "to-slate-950",   bgImage: "/bg_horse_day.webp",    accentColor: "#f59e0b", available: true,  requiredAccess: "theme_horse_day"     },
+  { id: "mapa-2",  label: "Klasické závody", emoji: "🏇",  desc: "Tradiční dostihový styl",         index: "02", bgFrom: "from-blue-900",    bgTo: "to-blue-950",    bgImage: "/bg_horse_classic.webp", accentColor: "#60a5fa", available: true,  requiredAccess: "theme_horse_classic" },
+  { id: "mapa-3",  label: "Noční závody",    emoji: "🌙",  desc: "Noční dostihová atmosféra",       index: "03", bgFrom: "from-emerald-900", bgTo: "to-emerald-950", bgImage: "/bg_horse_night.webp",   accentColor: "#34d399", available: true,  requiredAccess: "theme_horse_night"   },
+  { id: "mapa-4",  label: "Pouštní sprint",  emoji: "🏎️", desc: "Denní auto theme",                index: "04", bgFrom: "from-red-900",     bgTo: "to-red-950",     bgImage: "/bg_car_day.webp",       accentColor: "#f87171", available: true,  requiredAccess: "theme_car_day"       },
+  { id: "mapa-5",  label: "Noční ulice",     emoji: "🌃",  desc: "Noční auto theme",                index: "05", bgFrom: "from-violet-900",  bgTo: "to-violet-950",  bgImage: "/bg_car_night.webp",     accentColor: "#a78bfa", available: true,  requiredAccess: "theme_car_night"     },
+  { id: "ostatni", label: "Komunitní mapy",  emoji: "📦",  desc: "Další veřejné mapy",              index: "06", bgFrom: "from-teal-800",    bgTo: "to-teal-950",    bgImage: "/bg_other_maps.webp",    accentColor: "#2dd4bf", available: true,  requiredAccess: "community_maps"      },
+  { id: "editor",  label: "Editor",          emoji: "🛠️", desc: "Tvorba a editace map",            index: "07", bgFrom: "from-orange-900",  bgTo: "to-orange-950",  bgImage: "/bg_builder_yard.webp",  accentColor: "#fb923c", available: true,  requiredAccess: "editor"              },
+  { id: "profil",  label: "Tvůj profil",     emoji: "🛡️", desc: "Účet, profil a achievementy",     index: "08", bgFrom: "from-slate-500",   bgTo: "to-slate-800",   bgImage: "/bg_dark_racer.webp",    accentColor: "#f8fafc", available: true,  requiredAccess: "profile", idleOverlayOpacity: 0.22, bgPosition: "42% 18%" },
 ];
 
 export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
   const [hovered, setHovered] = React.useState<number | null>(null);
+  const [isDev, setIsDev] = React.useState(process.env.NODE_ENV === "development");
+  React.useEffect(() => {
+    const h = window.location.hostname;
+    if (h === "localhost" || h === "127.0.0.1") setIsDev(true);
+  }, []);
 
   // ── Hover zvuk ────────────────────────────────────────────────────────────────
   const audioCtxRef     = React.useRef<AudioContext | null>(null);
@@ -104,12 +129,14 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
       {PANELS.map((panel, idx) => {
         const isHovered = hovered === idx;
         const isLast = idx === PANELS.length - 1;
+        const isLocked = !hasMenuAccess(panel.requiredAccess, LIVE_UNLOCKED_ACCESS, isDev);
         // isNavigable = má kam jít (otevře setup view nebo href)
         const isNavigable = !!onPanelClick || !!panel.href;
         // isAvailable = panel je plně funkční
         const isAvailable = panel.available;
 
         const handleClick = () => {
+          if (isLocked) return;
           if (!isNavigable) return;
           if (onPanelClick) { onPanelClick(panel.id); return; }
           if (panel.href) { window.location.href = panel.href; }
@@ -123,7 +150,7 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
               "group relative overflow-hidden bg-gradient-to-b flex-shrink-0",
               panel.bgFrom, panel.bgTo,
               "transition-[flex] duration-300 ease-in-out",
-              isNavigable ? "cursor-pointer" : "cursor-default",
+              isLocked ? "cursor-not-allowed" : (isNavigable ? "cursor-pointer" : "cursor-default"),
             ].join(" ")}
             style={{
               flex: isHovered && isNavigable ? 4 : 1,
@@ -170,6 +197,21 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
                   : (isAvailable ? (panel.idleOverlayOpacity ?? 0.38) : 0.58),
               }}
             />
+
+            {/* ── ZAMKNUTO overlay ── */}
+            {isLocked && (
+              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-1.5 bg-black/55 pointer-events-none select-none">
+                <span style={{ fontSize: "22px", lineHeight: 1 }}>🔒</span>
+                <span
+                  className="text-[10px] font-black tracking-[0.18em] uppercase text-white/90"
+                >
+                  Zamknuto
+                </span>
+                <span className="text-[8px] tracking-wide text-white/45 text-center leading-tight px-1">
+                  Odemkneš później
+                </span>
+              </div>
+            )}
 
 {/* ── Číslo slotu (top-left) ── */}
             <div
