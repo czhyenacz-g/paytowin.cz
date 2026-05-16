@@ -1029,6 +1029,8 @@ export default function GameBoard({ gameCode }: Props) {
           };
           boardSurfaceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
           const duelCreatedAt = Date.now();
+          // Guard: zabrání pvbot useEffectu znovu otevřít overlay po dokončení duelu (stejný pattern jako bot-triggered cesta)
+          botDuelHandledRef.current = duelCreatedAt;
           const rawMafiaBonus = Math.round(getStartTax(currentPlayer.laps ?? 0, economy) * 0.10);
           const duelMafiaBonus = rawMafiaBonus > 0 ? Math.min(rawMafiaBonus, 500) : undefined;
           const shouldAutoUseOnline1v1 =
@@ -2236,6 +2238,13 @@ export default function GameBoard({ gameCode }: Props) {
           supabase.from("players").update({ coins: newDCoins, horses: updatedDHorses }).eq("id", defender.id),
         ]);
 
+        // Snapshot pro game over check — closure `players` je stale (před-settlement coiny)
+        const postDuelPlayers = players.map(p => {
+          if (p.id === challenger.id) return { ...p, coins: newCCoins };
+          if (p.id === defender.id)   return { ...p, coins: newDCoins };
+          return p;
+        });
+
         const r = Math.abs(s.p1.coinsDelta);
         let resultLog: string[];
         if (result.winner === 1) {
@@ -2287,6 +2296,7 @@ export default function GameBoard({ gameCode }: Props) {
                 if (proceed) {
                   console.log("[stable-duel-cleanup] calling proceed");
                   await proceed(resultLog, updatedCHorses);
+                  await checkAndFinishGame(postDuelPlayers);
                   console.log("[stable-duel-cleanup] success");
                 } else {
                   console.warn("[stable-duel-cleanup] skipped — proceed is null");
@@ -2302,6 +2312,7 @@ export default function GameBoard({ gameCode }: Props) {
         }
 
         if (proceed) await proceed(resultLog, updatedCHorses);
+        await checkAndFinishGame(postDuelPlayers);
         return;
       }
     }
