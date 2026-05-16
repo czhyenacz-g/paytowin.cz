@@ -210,35 +210,35 @@ function DuelStakesPreview({
     <div
       className="shrink-0 mx-3 rounded-xl px-4 py-2.5 text-center"
       style={{
-        background: "rgba(8,12,28,0.88)",
-        border: "1px solid rgba(255,255,255,0.07)",
+        background: "rgba(15,20,45,0.92)",
+        border: "1px solid rgba(255,255,255,0.15)",
         boxShadow: "0 0 32px rgba(0,0,0,0.5), inset 0 0 12px rgba(0,0,0,0.3)",
       }}
     >
       {/* Stakes */}
       <div className="flex items-center justify-center gap-3">
         <span
-          className="text-xl font-black tabular-nums"
+          className="text-3xl font-black tabular-nums"
           style={{ color: "#4ade80", textShadow: "0 0 14px #4ade8088" }}
         >
           +{reward} 💰
         </span>
         <span className="text-[10px] font-bold uppercase tracking-widest text-slate-600">vs</span>
         <span
-          className="text-xl font-black tabular-nums"
+          className="text-3xl font-black tabular-nums"
           style={{ color: "#f87171", textShadow: "0 0 14px #f8717188" }}
         >
           −{reward} 💰
         </span>
       </div>
-      <div className="text-[9px] uppercase tracking-widest text-slate-600 mt-0.5">při výhře / prohře</div>
+      <div className="text-[11px] uppercase tracking-widest text-slate-600 mt-0.5">při výhře / prohře</div>
 
       {/* Bankruptcy risk */}
       {(cBankrupt || dBankrupt) && (
         <div className="mt-2 flex flex-col gap-0.5">
           {cBankrupt && (
             <div
-              className="text-[10px] font-bold"
+              className="text-[11px] font-bold"
               style={{ color: "#fb923c", textShadow: "0 0 8px rgba(251,146,60,0.45)" }}
             >
               💀 Riziko bankrotu:{" "}
@@ -247,7 +247,7 @@ function DuelStakesPreview({
           )}
           {dBankrupt && (
             <div
-              className="text-[10px] font-bold"
+              className="text-[11px] font-bold"
               style={{ color: "#fb923c", textShadow: "0 0 8px rgba(251,146,60,0.45)" }}
             >
               💀 Riziko bankrotu:{" "}
@@ -259,7 +259,7 @@ function DuelStakesPreview({
 
       {/* Minigame type */}
       <div
-        className="mt-1.5 text-[9px] font-mono font-bold uppercase tracking-[0.18em]"
+        className="mt-1.5 text-[11px] font-mono font-bold uppercase tracking-[0.18em]"
         style={{ color: meta.color, textShadow: `0 0 8px rgba(${meta.glowRgb},0.4)` }}
       >
         {meta.title}
