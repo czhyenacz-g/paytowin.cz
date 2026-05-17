@@ -16,7 +16,8 @@ export const horseDayTheme: Theme = {
     centerBackground:   "bg-transparent",
     centerBorder:       "border-[#dddddd]/0",
     centerTitle:        "text-stone-800",
-    centerSubtitle:     "text-stone-600",
+    centerSubtitle:          "text-stone-600",
+    centerDescriptionPill:   "inline-block rounded-md px-2 py-0.5 bg-white/70 border border-stone-300/50 text-stone-700",
     fieldStyles: {
       start:      "h-20 w-20 border-red-400 bg-red-500 text-white",
       coins_gain: "h-[72px] w-[72px] border-emerald-400 bg-emerald-100 text-emerald-800",

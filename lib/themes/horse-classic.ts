@@ -15,7 +15,8 @@ export const horseClassicTheme: Theme = {
     centerBackground:   "bg-transparent",
     centerBorder:       "border-green-600/0",
     centerTitle:        "text-stone-900",
-    centerSubtitle:     "text-stone-700",
+    centerSubtitle:          "text-stone-700",
+    centerDescriptionPill:   "inline-block rounded-md px-2 py-0.5 bg-amber-50/80 border border-stone-400/40 text-stone-800",
     fieldStyles: {
       start:      "h-20 w-20 border-emerald-900 bg-emerald-800 text-amber-200",
       coins_gain: "h-[72px] w-[72px] border-green-600 bg-amber-100 text-green-900",

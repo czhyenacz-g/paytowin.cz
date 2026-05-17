@@ -8,8 +8,7 @@ export const horseDayScenario: ScenarioDefinition = {
   year: 1921,
   subtitle: "Dostihová sezóna začíná.",
   introText:
-    "Závodiště je plné dluhů, sázek a slibů, které nikdo nemyslel vážně. " +
-    "Každý hráč dostal poslední šanci vydělat dost na to, aby přežil další den.",
+    "Závodiště je plné dluhů, sázek a slibů, které nikdo nemyslel vážně.",
   publicObjectiveTitle: "Cíl hry",
   publicObjectiveText:
     "Banka ti půjčila {startingMoney} 💰. Ne proto, že ti věří — protože někdo udělal chybu.\n\n" +

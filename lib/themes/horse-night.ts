@@ -15,7 +15,8 @@ export const horseNightTheme: Theme = {
     centerBackground:   "bg-transparent",
     centerBorder:       "border-green-800/0",
     centerTitle:        "text-slate-200",
-    centerSubtitle:     "text-slate-400",
+    centerSubtitle:          "text-slate-400",
+    centerDescriptionPill:   "inline-block rounded-md px-2 py-0.5 bg-slate-900/60 border border-white/15 text-slate-100",
     fieldStyles: {
       start:      "h-20 w-20 border-red-500 bg-red-800 text-white",
       coins_gain: "h-[72px] w-[72px] border-emerald-500 bg-emerald-900 text-emerald-300",

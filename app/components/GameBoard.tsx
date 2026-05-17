@@ -3338,7 +3338,7 @@ export default function GameBoard({ gameCode }: Props) {
                     <div className="relative z-10 max-w-[180px] text-center">
                       <div className="text-3xl">🌫️</div>
                       <div className={`mt-2 text-sm font-semibold ${theme.colors.centerTitle}`}>Zakryté mlhou</div>
-                      <div className={`mt-1 text-xs ${theme.colors.centerSubtitle}`}>Sem ještě nikdo nedošel</div>
+                      <div className={`mt-1 text-xs ${theme.colors.centerDescriptionPill ?? theme.colors.centerSubtitle}`}>Sem ještě nikdo nedošel</div>
                     </div>
                   ) : hoveredField ? (
                     <div className="relative z-10 max-w-[180px]">
@@ -3464,15 +3464,10 @@ export default function GameBoard({ gameCode }: Props) {
                     <div className="relative z-10">
                       <div className="text-4xl">{theme.labels.racingEmoji}</div>
                       <div className={`mt-1 text-sm font-semibold ${theme.colors.centerTitle}`}>{theme.labels.centerTitle}</div>
-                      <div className={`mt-1 text-xs font-medium ${theme.colors.centerSubtitle}`}>{theme.labels.centerSubtitle}</div>
+                      <div className={`mt-1 text-xs font-medium ${theme.colors.centerDescriptionPill ?? theme.colors.centerSubtitle}`}>{theme.labels.centerSubtitle}</div>
                       <div className={`mt-2 text-[11px] font-semibold tabular-nums ${theme.colors.centerSubtitle}`}>
-                        {gameYear}
+                        {currentYearEvent ? `${gameYear} — ${currentYearEvent.title}` : gameYear}
                       </div>
-                      {currentYearEvent && (
-                        <div className={`mt-1 text-[10px] font-bold leading-tight ${theme.colors.centerSubtitle}`}>
-                          {currentYearEvent.title}
-                        </div>
-                      )}
                     </div>
                   )}
                 </div>

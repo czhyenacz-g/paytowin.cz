@@ -114,6 +114,12 @@ export interface ThemeColors {
   centerBorder: string;
   centerTitle: string;
   centerSubtitle: string;
+  /**
+   * Pill styl pro description/subtitle řádky v centrálním panelu boardu.
+   * Určen pro malé popisy jako „Sem ještě nikdo nedošel" nebo theme subtitle.
+   * Volitelný — fallback na centerSubtitle pokud není definován.
+   */
+  centerDescriptionPill?: string;
   /** Tailwind class string pro každý typ pole. Musí obsahovat "racer" i "horse" (legacy). */
   fieldStyles: Record<FieldStyleKey, string>;
   activePlayerBadge: string;

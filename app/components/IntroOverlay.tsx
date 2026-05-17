@@ -85,11 +85,14 @@ export default function IntroOverlay({
               </div>
             )}
             {publicObjectiveTitle && publicObjectiveText && (
-              <div className="mt-3 rounded-xl border border-white/15 bg-white/8 px-4 py-3 max-w-xs mx-auto text-left">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
+              <div
+                className="mt-3 rounded-lg border border-stone-300/70 px-4 py-3 max-w-xs mx-auto text-left shadow-md"
+                style={{ background: "#f4efe4" }}
+              >
+                <div className="text-[10px] font-bold uppercase tracking-widest text-stone-500 mb-1.5">
                   {publicObjectiveTitle}
                 </div>
-                <div className="text-sm text-slate-200 leading-snug whitespace-pre-line">
+                <div className="text-sm text-stone-800 leading-snug whitespace-pre-line">
                   {publicObjectiveText}
                 </div>
               </div>
