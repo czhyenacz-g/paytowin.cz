@@ -39,6 +39,11 @@ import {
   getPreferredHorse,
   normalizeFavoriteHorse,
   computeRent,
+  applyRentPayment,
+  computeRaceScore,
+  applyStartPassage,
+  applyStaminaDebuff,
+  resolveGiveRacer,
   REROLL_COST,
   REROLL_CHANCE,
 } from "@/lib/engine";
@@ -941,21 +946,12 @@ export default function GameBoard({ gameCode }: Props) {
       extraLog.push(`${currentPlayer.name} upravil hod o ${signed} krok za ${adjustmentCost} 💰`);
     }
 
-    if (passedStart) {
-      movedPlayer = { ...movedPlayer, coins: movedPlayer.coins + economy.stateSubsidy };
-      extraLog.push(`${currentPlayer.name} prošel STARTem — +${economy.stateSubsidy} 💰`);
-    }
-
     // Daň za průchod/přistání na STARTu — roste s počtem průchodů (laps-based).
     // laps před tímto průchodem: 0 = první průchod = bez daně, 1 = druhý = baseTax, atd.
     if (passedStart || newPosition === 0) {
-      const currentLaps = currentPlayer.laps ?? 0;
-      const startTax = getStartTax(currentLaps, economy);
-      movedPlayer = { ...movedPlayer, laps: currentLaps + 1 };
-      if (startTax > 0) {
-        movedPlayer = { ...movedPlayer, coins: movedPlayer.coins - startTax };
-        extraLog.push(`${currentPlayer.name}: Výpalné (daně) za průchod STARTem — -${startTax} 💰`);
-      }
+      const { player: afterStart, logLines: startLog } = applyStartPassage(movedPlayer, passedStart, economy);
+      movedPlayer = afterStart;
+      extraLog.push(...startLog);
       // Roční event — vyhodnotí se jednou při průchodu STARTem pro nový rok
       const yearStart = theme.mapMeta?.yearStart ?? 1921;
       const campaignOffset = movedPlayer.laps ?? 0; // po inkrementu
@@ -1083,8 +1079,7 @@ export default function GameBoard({ gameCode }: Props) {
         } else {
           // ── Rent fallback: jeden nebo oba hráči nemají závodníka ──────────────
           const rent = computeRent(field.racer.price);
-          const rentedPlayer = { ...movedPlayer, coins: movedPlayer.coins - rent };
-          const paidOwner = { ...ownerPlayer, coins: ownerPlayer.coins + rent };
+          const { payer: rentedPlayer, owner: paidOwner } = applyRentPayment(movedPlayer, ownerPlayer, rent);
 
           console.log(`[racer-rent] ${currentPlayer.name} (id=${currentPlayer.id}) landed on "${field.racer.name}" (racer.id=${field.racer.id ?? "none"}) owned by ${ownerPlayer.name} (id=${ownerPlayer.id}) → rent=${rent}`);
           console.log(`[racer-rent] transfer: ${currentPlayer.name} ${movedPlayer.coins}→${rentedPlayer.coins}, ${ownerPlayer.name} ${ownerPlayer.coins}→${paidOwner.coins}`);
@@ -1467,17 +1462,9 @@ export default function GameBoard({ gameCode }: Props) {
       // START crossing — forward card move that wraps past field 0
       const passedStartCard = card.effect.value > 0 && newPos < oldPos;
       if (passedStartCard || newPos === 0) {
-        if (passedStartCard) {
-          updatedPlayer = { ...updatedPlayer, coins: updatedPlayer.coins + economy.stateSubsidy };
-          logLines.push(`${player.name} prošel STARTem — +${economy.stateSubsidy} 💰`);
-        }
-        const currentLaps = updatedPlayer.laps ?? 0;
-        const startTax = getStartTax(currentLaps, economy);
-        updatedPlayer = { ...updatedPlayer, laps: currentLaps + 1 };
-        if (startTax > 0) {
-          updatedPlayer = { ...updatedPlayer, coins: updatedPlayer.coins - startTax };
-          logLines.push(`${player.name}: Výpalné (daně) za průchod STARTem — -${startTax} 💰`);
-        }
+        const { player: afterStart, logLines: startLog } = applyStartPassage(updatedPlayer, passedStartCard, economy);
+        updatedPlayer = afterStart;
+        logLines.push(...startLog);
         const yearStart = theme.mapMeta?.yearStart ?? 1921;
         const campaignOffset = updatedPlayer.laps ?? 0;
         const displayYear = yearStart + campaignOffset;
@@ -1525,66 +1512,27 @@ export default function GameBoard({ gameCode }: Props) {
       // skip_next_turn uložíme do DB — bude přeskočen při příštím tahu
       logLines.push(`${player.name}: ${card.text} (vynechá příští tah)`);
     } else if (card.effect.kind === "give_racer") {
-      // Všichni volní raceři — na boardu, nevlastněni žádným hráčem
-      const racerFields = fieldsRef.current.filter(f => (f.type === "racer" || f.type === "horse") && f.racer);
-      const ownedKeys = new Set(players.flatMap(p => p.horses.map(h => racerOwnershipKey(h))));
-      const freeRacers = racerFields.map(f => f.racer!).filter(r => !ownedKeys.has(racerOwnershipKey(r)));
-
-      // Priorita 1: konkrétní racer dle racerId
-      //   1a. Hledej na boardových polích (běžný případ)
-      //   1b. Hledej přímo v theme rosterech — podporuje legendární racery, kteří
-      //       nemají vlastní pole na boardu (off-board raceři, více racer slotů než
-      //       theme.racers). Pokud ho hráč ještě nevlastní, je považován za volného.
-      // Priorita 2: náhodný volný racer z boardu (fallback pokud named není dostupný)
-      // Priorita 3: nic — zaloguj skip
-      let chosen: typeof freeRacers[number] | undefined;
-      let usedFallback = false;
-      if (card.effect.racerId) {
-        chosen = freeRacers.find(r => r.id === card.effect.racerId);
-        if (!chosen) {
-          // Off-board legendary lookup: racer je v theme rosterech, ale ne na boardovém poli
-          const themeRacer = getThemeRacers(theme).find(rc => rc.id === card.effect.racerId);
-          if (themeRacer && !ownedKeys.has(racerOwnershipKey(themeRacer))) {
-            chosen = {
-              id:          themeRacer.id,
-              name:        themeRacer.name,
-              speed:       themeRacer.speed,
-              price:       themeRacer.price,
-              emoji:       themeRacer.emoji,
-              image:       themeRacer.image,
-              maxStamina:  themeRacer.maxStamina ?? themeRacer.stamina,
-              stamina:     themeRacer.maxStamina ?? themeRacer.stamina,
-              isLegendary: themeRacer.isLegendary,
-            };
-            console.log(`[give_racer] off-board legendary found in theme roster: "${themeRacer.name}" (id=${themeRacer.id})`);
-          } else {
-            chosen = freeRacers[Math.floor(Math.random() * freeRacers.length)];
-            usedFallback = true;
-            console.log(`[give_racer] named racer "${card.effect.racerId}" not available (owned or missing) → random fallback`);
-          }
-        }
-      } else {
-        chosen = freeRacers[Math.floor(Math.random() * freeRacers.length)];
-      }
-
-      if (chosen) {
-        const newHorse: Horse = { ...chosen, stamina: chosen.maxStamina ?? chosen.stamina ?? 100 };
-        updatedPlayer = { ...updatedPlayer, horses: [...updatedPlayer.horses, newHorse] };
-        if (usedFallback) {
-          logLines.push(`${player.name}: ${card.text} — požadovaný závodník nebyl dostupný, získal ${chosen.emoji} ${chosen.name}!`);
-        } else {
-          logLines.push(`${player.name}: ${card.text} — získal ${chosen.emoji} ${chosen.name}!`);
-        }
+      const result = resolveGiveRacer({
+        racerId: card.effect.racerId,
+        fields: fieldsRef.current,
+        players,
+        themeRacers: getThemeRacers(theme),
+        randomIndex: Math.random(),
+      });
+      if (result) {
+        const { horse, usedFallback } = result;
+        updatedPlayer = { ...updatedPlayer, horses: [...updatedPlayer.horses, horse] };
+        logLines.push(usedFallback
+          ? `${player.name}: ${card.text} — požadovaný závodník nebyl dostupný, získal ${horse.emoji} ${horse.name}!`
+          : `${player.name}: ${card.text} — získal ${horse.emoji} ${horse.name}!`
+        );
       } else {
         logLines.push(`${player.name}: ${card.text} — žádný volný závodník není k dispozici.`);
       }
     } else if (card.effect.kind === "stamina_debuff") {
       const factor = card.effect.factor ?? 0.5;
       const duration = card.effect.duration ?? 2;
-      // No stacking: filter out any existing stamina_debuff and replace (refresh duration).
-      const existing = (updatedPlayer.active_effects ?? []).filter(e => e.kind !== "stamina_debuff");
-      const newEffect: ActiveEffect = { kind: "stamina_debuff", factor, turnsLeft: duration };
-      updatedPlayer = { ...updatedPlayer, active_effects: [...existing, newEffect] };
+      updatedPlayer = applyStaminaDebuff(updatedPlayer, factor, duration);
       logLines.push(`${player.name}: ${card.text} (stamina závodníků ×${factor} na ${duration} kola)`);
     }
 
@@ -1917,8 +1865,8 @@ export default function GameBoard({ gameCode }: Props) {
       const debuffFactor = (player?.active_effects ?? [])
         .filter(e => e.kind === "stamina_debuff")
         .reduce((acc, e) => acc * e.factor, 1);
-      const staminaMultiplier = horse?.isLegendary ? 1 : (finalStamina / maxStamina) * debuffFactor;
-      return { player, horse, horseKey, rawScore, effectiveScore: rawScore * staminaMultiplier, speed: horse?.speed ?? 0, finalStamina, maxStamina };
+      const effectiveScore = computeRaceScore({ rawScore, finalStamina, maxStamina, debuffFactor, isLegendary: horse?.isLegendary });
+      return { player, horse, horseKey, rawScore, effectiveScore, speed: horse?.speed ?? 0, finalStamina, maxStamina };
     });
     const winnerEntry = [...raceEntries].sort((a, b) => b.effectiveScore - a.effectiveScore || b.speed - a.speed)[0];
 
@@ -2653,8 +2601,7 @@ export default function GameBoard({ gameCode }: Props) {
         const debuffFactor = (player?.active_effects ?? [])
           .filter(e => e.kind === "stamina_debuff")
           .reduce((acc, e) => acc * e.factor, 1);
-        const staminaMultiplier = horse?.isLegendary ? 1 : (finalStamina / maxStamina) * debuffFactor;
-        const effectiveScore = score * staminaMultiplier;
+        const effectiveScore = computeRaceScore({ rawScore: score, finalStamina, maxStamina, debuffFactor, isLegendary: horse?.isLegendary });
         return { player, horse, speed: horse?.speed ?? 0, score, effectiveScore, finalStamina };
       }).sort((a, b) => b.effectiveScore - a.effectiveScore || b.speed - a.speed)
     : null;

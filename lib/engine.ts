@@ -12,7 +12,7 @@
  * - "horse" v FieldType je @deprecated; buildFields generuje type "racer"
  */
 
-import type { Player, Horse, GameState, OfferPending, EconomyConfig } from "./types/game";
+import type { Player, Horse, GameState, OfferPending, EconomyConfig, ActiveEffect } from "./types/game";
 import { DEFAULT_ECONOMY } from "./types/game";
 import type { RacerConfig } from "./themes";
 import type { GameCard } from "./cards";
@@ -158,6 +158,156 @@ export function normalizeFavoriteHorse(horses: Horse[]): Horse[] {
 /** Nájem za přistání na cizím závodníkovi (20 % ceny). */
 export function computeRent(racerPrice: number): number {
   return Math.round(racerPrice * 0.2);
+}
+
+/**
+ * applyRentPayment — aplikuje převod rentu mezi dvěma hráči.
+ *
+ * Pure funkce: žádný side-effect, žádný React, žádný Supabase.
+ * Vrátí nové kopie obou hráčů s aktualizovanými coins.
+ *
+ * Výpočet výše rentu zůstává v computeRent(). Tato funkce jen přenáší částku.
+ * Budoucí rozšíření: computeRent(racer, upgradeLevel) → applyRentPayment se nemění.
+ */
+export function applyRentPayment(
+  payer: Player,
+  owner: Player,
+  rentAmount: number,
+): { payer: Player; owner: Player } {
+  return {
+    payer: { ...payer, coins: payer.coins - rentAmount },
+    owner: { ...owner, coins: owner.coins + rentAmount },
+  };
+}
+
+/**
+ * applyStaminaDebuff — aplikuje stamina_debuff efekt na hráče.
+ *
+ * No-stacking: předchozí stamina_debuff se nahradí novým (refresh duration).
+ * Ostatní active_effects zůstávají beze změny.
+ *
+ * Pure funkce: žádný React, žádný Supabase.
+ */
+export function applyStaminaDebuff(
+  player: Player,
+  factor: number,
+  duration: number,
+): Player {
+  const existing = (player.active_effects ?? []).filter(e => e.kind !== "stamina_debuff");
+  const newEffect: ActiveEffect = { kind: "stamina_debuff", factor, turnsLeft: duration };
+  return { ...player, active_effects: [...existing, newEffect] };
+}
+
+/**
+ * applyStartPassage — aplikuje průchod nebo přistání na STARTu.
+ *
+ * Pravidla:
+ * - passedOver=true (přeskočení pole 0): subsidy + laps++ + tax
+ * - passedOver=false (přistání přímo na START): laps++ + tax (subsidy se nepřidává)
+ * - tax = getStartTax(player.laps, economy) — roste s počtem kol; první průchod = 0
+ *
+ * Pure funkce: žádný React, žádný Supabase.
+ * Year event a fog reset zůstávají v calleru — vyžadují UI kontext.
+ */
+export function applyStartPassage(
+  player: Player,
+  passedOver: boolean,
+  economy: Partial<EconomyConfig>,
+): { player: Player; logLines: string[] } {
+  const logLines: string[] = [];
+  let p = player;
+
+  if (passedOver) {
+    const subsidy = economy.stateSubsidy ?? DEFAULT_ECONOMY.stateSubsidy;
+    p = { ...p, coins: p.coins + subsidy };
+    logLines.push(`${p.name} prošel STARTem — +${subsidy} 💰`);
+  }
+
+  const currentLaps = p.laps ?? 0;
+  const startTax = getStartTax(currentLaps, economy);
+  p = { ...p, laps: currentLaps + 1 };
+  if (startTax > 0) {
+    p = { ...p, coins: p.coins - startTax };
+    logLines.push(`${p.name}: Výpalné (daně) za průchod STARTem — -${startTax} 💰`);
+  }
+
+  return { player: p, logLines };
+}
+
+/**
+ * computeRaceScore — výsledné skóre závodníka s ohledem na stavu staminy a debuffů.
+ *
+ * Vzorec: effectiveScore = rawScore × staminaMultiplier
+ * - Legendární závodník: multiplier = 1.0 (stamina ho nezpomaluje)
+ * - Ostatní: multiplier = (finalStamina / maxStamina) × debuffFactor
+ *
+ * Jediná definice scoringové logiky — volat z closeRaceResult i z render sekce,
+ * aby byl zobrazený výsledek vždy identický s výsledkem uloženým do DB.
+ */
+export function computeRaceScore(args: {
+  rawScore: number;
+  finalStamina: number;
+  maxStamina: number;
+  debuffFactor: number;
+  isLegendary?: boolean;
+}): number {
+  const multiplier = args.isLegendary
+    ? 1
+    : (args.finalStamina / args.maxStamina) * args.debuffFactor;
+  return args.rawScore * multiplier;
+}
+
+/**
+ * resolveGiveRacer — vybere racera pro give_racer card effect.
+ *
+ * Priorita výběru:
+ *   1a. Konkrétní racer dle racerId na boardových polích (volný, nevlastněný)
+ *   1b. Konkrétní racer dle racerId v themeRacers — off-board legendary
+ *       (pokud není vlastněný žádným hráčem)
+ *   2.  Náhodný volný racer z boardu (fallback pokud named racer není dostupný)
+ *   3.  null — žádný volný racer k dispozici
+ *
+ * Stamina vraceného koně je vždy resetována na max (maxStamina ?? stamina ?? 100).
+ * Off-board racer je sestaven přes normalizeRacer() — maxStamina ?? stamina.
+ *
+ * Pure funkce: žádný React, žádný Supabase.
+ * Math.random() volá caller a předá výsledek jako randomIndex — čistota + testovatelnost.
+ */
+export function resolveGiveRacer(args: {
+  racerId?: string;
+  fields: Field[];
+  players: Player[];
+  themeRacers: RacerConfig[];
+  randomIndex: number;  // [0, 1) — caller předá Math.random()
+}): { horse: Horse; usedFallback: boolean } | null {
+  const ownedKeys = new Set(args.players.flatMap(p => p.horses.map(h => racerOwnershipKey(h))));
+  const freeRacers = args.fields
+    .filter(f => (f.type === "racer" || f.type === "horse") && f.racer)
+    .map(f => f.racer!)
+    .filter(r => !ownedKeys.has(racerOwnershipKey(r)));
+
+  let resolved: Horse | undefined;
+  let usedFallback = false;
+
+  if (args.racerId) {
+    resolved = freeRacers.find(r => r.id === args.racerId);
+    if (!resolved) {
+      const themeRacer = args.themeRacers.find(rc => rc.id === args.racerId);
+      if (themeRacer && !ownedKeys.has(racerOwnershipKey(themeRacer))) {
+        resolved = normalizeRacer(themeRacer);
+      } else {
+        resolved = freeRacers[Math.floor(args.randomIndex * freeRacers.length)];
+        usedFallback = true;
+      }
+    }
+  } else {
+    resolved = freeRacers[Math.floor(args.randomIndex * freeRacers.length)];
+  }
+
+  if (!resolved) return null;
+
+  const horse: Horse = { ...resolved, stamina: resolved.maxStamina ?? resolved.stamina ?? 100 };
+  return { horse, usedFallback };
 }
 
 /** Vrátí index dalšího aktivního (neozkrachovalého) hráče. */

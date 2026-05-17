@@ -14,6 +14,9 @@ import {
   racerOwnershipKey,
   computeRent,
   getPreferredHorse,
+  applyStartPassage,
+  applyStaminaDebuff,
+  resolveGiveRacer,
   ROLL_CORRECTION_COST,
 } from "@/lib/engine";
 import { chooseBotCorrection } from "@/lib/bot/botCorrection";
@@ -197,17 +200,9 @@ export async function executeBotTurnAction(
 
   // START crossing — shodné s lidským rollDice flow v GameBoard.tsx
   if (passedStart || newPosition === 0) {
-    const currentLaps = movedPlayer.laps ?? 0;
-    const startTax    = getStartTax(currentLaps, economy);
-    if (passedStart) {
-      movedPlayer = { ...movedPlayer, coins: movedPlayer.coins + economy.stateSubsidy };
-      extraLog.push(`${botPlayer.name} prošel STARTem — +${economy.stateSubsidy} 💰`);
-    }
-    movedPlayer = { ...movedPlayer, laps: currentLaps + 1 };
-    if (startTax > 0) {
-      movedPlayer = { ...movedPlayer, coins: movedPlayer.coins - startTax };
-      extraLog.push(`${botPlayer.name}: Výpalné (daně) za průchod STARTem — -${startTax} 💰`);
-    }
+    const { player: afterStart, logLines: startLog } = applyStartPassage(movedPlayer, passedStart, economy);
+    movedPlayer = afterStart;
+    extraLog.push(...startLog);
   }
 
   const field = FIELDS[newPosition];
@@ -306,10 +301,7 @@ export async function executeBotTurnAction(
       finalPlayer = { ...finalPlayer, skip_next_turn: true };
       cardLog.push(`${botPlayer.name}: přeskočí příští tah`);
     } else if (effect.kind === "stamina_debuff" && effect.factor !== undefined && effect.duration !== undefined) {
-      // no-stacking: replace existing debuff
-      const existing = (finalPlayer.active_effects ?? []).filter(e => e.kind !== "stamina_debuff");
-      const newEffect: ActiveEffect = { kind: "stamina_debuff", factor: effect.factor, turnsLeft: effect.duration };
-      finalPlayer = { ...finalPlayer, active_effects: [...existing, newEffect] };
+      finalPlayer = applyStaminaDebuff(finalPlayer, effect.factor, effect.duration);
     } else if (effect.kind === "move" && effect.value !== undefined) {
       const fc = FIELDS.length;
       const oldPos = finalPlayer.position;
@@ -320,17 +312,9 @@ export async function executeBotTurnAction(
       // START crossing (pouze dopředný přesun přes pole 0)
       const passedStartCard = effect.value > 0 && newPos < oldPos;
       if (passedStartCard || newPos === 0) {
-        if (passedStartCard) {
-          finalPlayer = { ...finalPlayer, coins: finalPlayer.coins + economy.stateSubsidy };
-          cardLog.push(`${botPlayer.name} prošel STARTem — +${economy.stateSubsidy} 💰`);
-        }
-        const currentLaps = finalPlayer.laps ?? 0;
-        const startTax = getStartTax(currentLaps, economy);
-        finalPlayer = { ...finalPlayer, laps: currentLaps + 1 };
-        if (startTax > 0) {
-          finalPlayer = { ...finalPlayer, coins: finalPlayer.coins - startTax };
-          cardLog.push(`Výpalné za průchod STARTem — -${startTax} 💰`);
-        }
+        const { player: afterStart, logLines: startLog } = applyStartPassage(finalPlayer, passedStartCard, economy);
+        finalPlayer = afterStart;
+        cardLog.push(...startLog);
       }
 
       // Efekty přistávacího pole (chain guard depth=1: karty se nevylosují, rent skip)
@@ -353,46 +337,19 @@ export async function executeBotTurnAction(
         }
       }
     } else if (effect.kind === "give_racer") {
-      const ownedKeys = new Set(players.flatMap(p => p.horses.map(h => racerOwnershipKey(h))));
-      const freeRacers = FIELDS
-        .filter(f => (f.type === "racer" || f.type === "horse") && f.racer)
-        .map(f => f.racer!)
-        .filter(r => !ownedKeys.has(racerOwnershipKey(r)));
-
-      let chosen: Horse | undefined;
-      let usedFallback = false;
-      if (effect.racerId) {
-        chosen = freeRacers.find(r => r.id === effect.racerId);
-        if (!chosen) {
-          // Off-board legendary lookup in theme racers
-          const themeRacer = racers.find(rc => rc.id === effect.racerId);
-          if (themeRacer && !ownedKeys.has(racerOwnershipKey(themeRacer))) {
-            chosen = {
-              id:          themeRacer.id,
-              name:        themeRacer.name,
-              speed:       themeRacer.speed,
-              price:       themeRacer.price,
-              emoji:       themeRacer.emoji,
-              image:       themeRacer.image,
-              maxStamina:  themeRacer.maxStamina ?? 100,
-              stamina:     themeRacer.maxStamina ?? 100,
-              isLegendary: themeRacer.isLegendary,
-            };
-          } else {
-            chosen = freeRacers[Math.floor(Math.random() * freeRacers.length)];
-            usedFallback = true;
-          }
-        }
-      } else {
-        chosen = freeRacers[Math.floor(Math.random() * freeRacers.length)];
-      }
-
-      if (chosen) {
-        const newHorse: Horse = { ...chosen, stamina: chosen.maxStamina ?? chosen.stamina ?? 100 };
-        finalPlayer = { ...finalPlayer, horses: [...finalPlayer.horses, newHorse] };
+      const result = resolveGiveRacer({
+        racerId: effect.racerId,
+        fields: FIELDS,
+        players,
+        themeRacers: racers,
+        randomIndex: Math.random(),
+      });
+      if (result) {
+        const { horse, usedFallback } = result;
+        finalPlayer = { ...finalPlayer, horses: [...finalPlayer.horses, horse] };
         cardLog.push(usedFallback
-          ? `${botPlayer.name}: ${card.text} — požadovaný závodník nebyl dostupný, získal ${chosen.emoji} ${chosen.name}!`
-          : `${botPlayer.name}: ${card.text} — získal ${chosen.emoji} ${chosen.name}!`
+          ? `${botPlayer.name}: ${card.text} — požadovaný závodník nebyl dostupný, získal ${horse.emoji} ${horse.name}!`
+          : `${botPlayer.name}: ${card.text} — získal ${horse.emoji} ${horse.name}!`
         );
       } else {
         cardLog.push(`${botPlayer.name}: ${card.text} — žádný volný závodník není k dispozici.`);
