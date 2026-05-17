@@ -95,7 +95,7 @@ import StableDuelStatusBanners from "./board/StableDuelStatusBanners";
 import GameFinishedScreen from "./board/GameFinishedScreen";
 import IntroOverlay from "./IntroOverlay";
 import StartFlowOverlay from "./start-flow/StartFlowOverlay";
-import { getScenarioForTheme } from "@/lib/scenarios";
+import { getScenarioForTheme, evaluateScenarioWinCondition } from "@/lib/scenarios";
 import ScoreTable from "./ScoreTable";
 import BrandLogo from "./BrandLogo";
 import { useBgMusic } from "@/lib/audio/music";
@@ -2085,17 +2085,26 @@ export default function GameBoard({ gameCode }: Props) {
   };
 
   // Zkontroluj podmínky konce hry a nastav status na "finished".
-  // Dvě pravidla:
-  //   Multiplayer výhra: >=2 hráčů celkem, přesně 1 aktivní zbývá.
-  //   Solo prohra:        1 hráč celkem,  0 aktivních (zbankrotoval).
+  // Pravidla v prioritě:
+  //   1. Scenario win condition (např. collect_all_available_racers pro horse-night).
+  //   2. Multiplayer výhra: >=2 hráčů celkem, přesně 1 aktivní zbývá.
+  //   3. Solo prohra:        1 hráč celkem,  0 aktivních (zbankrotoval).
   const checkAndFinishGame = async (updatedPlayers: Player[]) => {
     if (!gameId) return;
     const activePlayers = updatedPlayers.filter(p => !isBankrupt(p));
     const multiplayerWin = updatedPlayers.length >= 2 && activePlayers.length === 1;
     const soloLoss = updatedPlayers.length === 1 && activePlayers.length === 0;
-    if (multiplayerWin || soloLoss) {
+    const scenarioWin = evaluateScenarioWinCondition({
+      scenario,
+      players: updatedPlayers,
+      fields: fieldsRef.current,
+    });
+    if (multiplayerWin || soloLoss || scenarioWin.winnerId) {
       await supabase.from("games").update({ status: "finished" }).eq("id", gameId);
-      const winner = multiplayerWin ? (activePlayers[0]?.name ?? "") : "nobody";
+      const winner = scenarioWin.winnerId
+        ? (updatedPlayers.find(p => p.id === scenarioWin.winnerId)?.name ?? "")
+        : multiplayerWin ? (activePlayers[0]?.name ?? "")
+        : "nobody";
       if (gameCode) logEvent({ name: "game_finish", game_code: gameCode, winner });
       // Okamžitý lokální update — stejný vzor jako cancelGame.
       // Realtime propaguje ostatním klientům, ale tento klient nečeká.

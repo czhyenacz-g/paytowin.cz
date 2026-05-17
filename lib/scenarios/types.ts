@@ -3,6 +3,13 @@ export type ObjectiveCondition = {
   count: number;
 };
 
+export type ScenarioWinConditionType = "last_player_standing" | "collect_all_available_racers";
+
+export interface ScenarioWinCondition {
+  type: ScenarioWinConditionType;
+  label?: string;
+}
+
 export interface ObjectiveEvaluationResult {
   objectiveId: string;
   playerId: string;
@@ -45,4 +52,5 @@ export interface ScenarioDefinition {
   winConditionSummary: string;
   personalObjectives?: PersonalObjectiveDefinition[];
   sharedObjectives?: SharedObjectiveDefinition[];
+  winCondition?: ScenarioWinCondition;
 }
