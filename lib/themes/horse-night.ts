@@ -159,7 +159,7 @@ export const horseNightTheme: Theme = {
     centerBgImage: "/plaketa-dark-rectangle.webp",
   },
   mapMeta: {
-    yearStart: 1921,
+    yearStart: 1925,
     place: "New Orleans",
     subtitle: "Oficiálně klid. Neoficiálně se dnes sází ve velkém.",
   },
