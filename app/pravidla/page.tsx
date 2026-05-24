@@ -1,3 +1,8 @@
+export const metadata = {
+  title: "Pravidla hry | PayToWin.cz",
+  description: "Zjisti, jak se hraje PayToWin.cz: raceři, peníze, závody, riziko, výhry a druhé šance.",
+};
+
 export default function PravidlaPage() {
   return (
     <div className="min-h-screen bg-slate-100">

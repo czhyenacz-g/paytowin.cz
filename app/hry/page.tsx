@@ -1,5 +1,10 @@
 import GamesList from "@/app/components/GamesList";
 
+export const metadata = {
+  title: "Hry a mapy | PayToWin.cz",
+  description: "Vyber si herní mapu PayToWin.cz a pusť se do české online závodní deskovky v prohlížeči.",
+};
+
 export default function HryPage() {
   return (
     <div className="min-h-screen bg-slate-100">

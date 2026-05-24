@@ -793,6 +793,7 @@ export default function LandingPage() {
             <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-6 py-8">
 
               <div className="mb-6 text-center">
+                <h1 className="sr-only">PayToWin.cz — česká multiplayer závodní deskovka v prohlížeči</h1>
                 <BrandLogo
                   variant="hero"
                   className="mx-auto"
@@ -802,6 +803,9 @@ export default function LandingPage() {
                   Multiplayer závodní deskovka
                 </p>
                 <p className="mt-1.5 text-slate-400">Závody, sázky a finanční chaos.</p>
+                <p className="mt-2 text-xs text-slate-500 mx-auto max-w-sm leading-relaxed">
+                  Kupuj racery, riskuj v závodech, sbírej výhry a přežij deskovou hru, kde i špatné rozhodnutí může koupit druhou šanci.
+                </p>
               </div>
 
               <MapMenuStrip onPanelClick={(id) => {

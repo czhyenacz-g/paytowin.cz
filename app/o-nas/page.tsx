@@ -1,3 +1,8 @@
+export const metadata = {
+  title: "O projektu | PayToWin.cz",
+  description: "PayToWin.cz je česká online desková hra v prohlížeči, která si hraje s pojmem pay-to-win a mění ho v závodní chaos.",
+};
+
 export default function ONasPage() {
   return (
     <div className="min-h-screen bg-slate-100">

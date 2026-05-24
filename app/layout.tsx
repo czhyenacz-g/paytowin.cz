@@ -5,20 +5,23 @@ import Script from "next/script";
 import { GOATCOUNTER_CODE } from "./config/analytics";
 
 export const metadata: Metadata = {
-  title: "PayToWin.cz — Závody, sázky a finanční chaos",
-  description: "Multiplayerová desková hra v prohlížeči. Závoď, sázej a přežij finanční chaos.",
+  metadataBase: new URL("https://paytowin.cz"),
+  title: "PayToWin.cz – česká multiplayer závodní deskovka",
+  description: "Multiplayerová desková hra v prohlížeči. Kupuj závodníky, riskuj v závodech a přežij finanční chaos. Hraj online s přáteli.",
   openGraph: {
-    title: "PayToWin.cz — Závody, sázky a finanční chaos",
-    description: "Multiplayerová desková hra v prohlížeči. Závoď, sázej a přežij finanční chaos.",
+    title: "PayToWin.cz – česká multiplayer závodní deskovka",
+    description: "Multiplayerová desková hra v prohlížeči. Kupuj závodníky, riskuj v závodech a přežij finanční chaos.",
     url: "https://paytowin.cz",
     siteName: "PayToWin.cz",
     locale: "cs_CZ",
     type: "website",
+    images: [{ url: "/api/og?title=PayToWin.cz&sub=Multiplayer+závodní+deskovka", width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "PayToWin.cz — Závody, sázky a finanční chaos",
-    description: "Multiplayerová desková hra v prohlížeči. Závoď, sázej a přežij finanční chaos.",
+    title: "PayToWin.cz – česká multiplayer závodní deskovka",
+    description: "Multiplayerová desková hra v prohlížeči. Kupuj závodníky, riskuj v závodech a přežij finanční chaos.",
+    images: ["/api/og?title=PayToWin.cz&sub=Multiplayer+závodní+deskovka"],
   },
 };
 
