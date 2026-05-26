@@ -149,17 +149,17 @@ export default function SpeedDevShell({ onExit, themeSkin }: Props) {
                   <span className="text-cyan-400 font-bold">A D</span> — zatočit
                 </div>
                 <div>Rychlost roste automaticky. Narážení při vysoké rychlosti = crash.</div>
-                <div><span className="text-yellow-400 font-bold">SPACE = nitro</span>{" (−20 stamina, 1× za hru)"}</div>
+                <div><span className="text-yellow-400 font-bold">S = nitro</span>{" (−20 stamina, 1× za hru)"}</div>
               </>
             ) : (
               <>
                 <div>
-                  <span className="text-cyan-400 font-bold">P1: ← →</span> zatočit ·{" "}
-                  <span className="text-yellow-400 font-bold">SPACE</span> nitro
+                  <span className="text-cyan-400 font-bold">P1: A D</span> zatočit ·{" "}
+                  <span className="text-yellow-400 font-bold">S</span> nitro
                 </div>
                 <div>
-                  <span className="text-purple-400 font-bold">P2: A D</span> zatočit ·{" "}
-                  <span className="text-yellow-400 font-bold">S</span> nitro
+                  <span className="text-purple-400 font-bold">P2: ← →</span> zatočit ·{" "}
+                  <span className="text-yellow-400 font-bold">SPACE</span> nitro
                 </div>
                 <div className="text-slate-600 mt-0.5">Vítěz podle score. Crash = méně bodů.</div>
               </>
@@ -220,9 +220,9 @@ export default function SpeedDevShell({ onExit, themeSkin }: Props) {
               <span><span className="text-cyan-400 font-bold">← →</span> nebo <span className="text-cyan-400 font-bold">A D</span> — zatočit</span>
             ) : (
               <>
-                <span><span className="text-cyan-400 font-bold">P1 ← →</span> SPACE</span>
+                <span><span className="text-cyan-400 font-bold">P1 A D</span> S</span>
                 <span className="text-slate-700">·</span>
-                <span><span className="text-purple-400 font-bold">P2 A D</span> S</span>
+                <span><span className="text-purple-400 font-bold">P2 ← →</span> SPACE</span>
               </>
             )}
             <span className="text-slate-700">·</span>

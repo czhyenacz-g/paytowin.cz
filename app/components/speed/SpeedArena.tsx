@@ -157,9 +157,9 @@ export default function SpeedArena({ config, showDebug = false, backgroundUrl, o
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
       keysRef.current.add(e.code);
-      if (["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space"].includes(e.code))
+      if (["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space","KeyS"].includes(e.code))
         e.preventDefault();
-      if (e.code === "Space" && !nitroUsedRef.current)
+      if (e.code === "KeyS" && !nitroUsedRef.current)
         nitroActivateRef.current = true;
     };
     const up = (e: KeyboardEvent) => keysRef.current.delete(e.code);
@@ -352,11 +352,11 @@ export default function SpeedArena({ config, showDebug = false, backgroundUrl, o
         <div className="flex items-center gap-2 text-[10px] font-mono">
           <span className="text-slate-600 w-14 shrink-0">NITRO</span>
           {state.status === "idle" ? (
-            <span className="text-slate-600">SPACE (1× za hru, −20 stamina)</span>
+            <span className="text-slate-600">S (1× za hru, −20 stamina)</span>
           ) : nitroUsed ? (
             <span className="text-slate-500">✓ použito</span>
           ) : (
-            <span className="text-amber-300 font-bold">⚡ ready — SPACE</span>
+            <span className="text-amber-300 font-bold">⚡ ready — S</span>
           )}
         </div>
 

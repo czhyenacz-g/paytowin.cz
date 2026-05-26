@@ -180,10 +180,10 @@ export default function SpeedArenaPvp({
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
       keysRef.current.add(e.code);
-      if (["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space","KeyS"].includes(e.code))
+      if (["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space","KeyS","KeyA","KeyD"].includes(e.code))
         e.preventDefault();
-      if (e.code === "Space") p1NitroActivateRef.current = true;
-      if (e.code === "KeyS")  p2NitroActivateRef.current = true;
+      if (e.code === "KeyS")   p1NitroActivateRef.current = true;
+      if (e.code === "Space")  p2NitroActivateRef.current = true;
     };
     const up = (e: KeyboardEvent) => keysRef.current.delete(e.code);
     window.addEventListener("keydown", down);
@@ -207,8 +207,8 @@ export default function SpeedArenaPvp({
       p2NitroActivateRef.current = false;
 
       const keys    = keysRef.current;
-      const p1Input: SpeedInput = keys.has("ArrowLeft")  ? "left" : keys.has("ArrowRight") ? "right" : "none";
-      const p2Input: SpeedInput = keys.has("KeyA") ? "left" : keys.has("KeyD") ? "right" : "none";
+      const p1Input: SpeedInput = keys.has("KeyA")       ? "left" : keys.has("KeyD")       ? "right" : "none";
+      const p2Input: SpeedInput = keys.has("ArrowLeft")  ? "left" : keys.has("ArrowRight") ? "right" : "none";
       setLastInputs({ p1: p1Input, p2: p2Input });
 
       const next = applyPvpTick(cur, p1Input, p2Input, config, p1Activate, p2Activate);
@@ -341,11 +341,11 @@ export default function SpeedArenaPvp({
                 <div className="flex flex-col items-center gap-0.5 mt-1 text-[10px] text-center">
                   <div>
                     <span className="font-bold" style={{ color: P1_COLOR }}>P1:</span>
-                    {" "}← → zatočit · <span className="text-amber-300 font-bold">SPACE</span> nitro
+                    {" "}A D zatočit · <span className="text-amber-300 font-bold">S</span> nitro
                   </div>
                   <div>
                     <span className="font-bold" style={{ color: P2_COLOR }}>P2:</span>
-                    {" "}A D zatočit · <span className="text-amber-300 font-bold">S</span> nitro
+                    {" "}← → zatočit · <span className="text-amber-300 font-bold">SPACE</span> nitro
                   </div>
                 </div>
                 <button
@@ -426,11 +426,11 @@ export default function SpeedArenaPvp({
         <div className="flex items-center gap-2 text-[10px] font-mono">
           <span className="w-6 shrink-0" style={{ color: P1_COLOR }}>P1</span>
           {pvpState.overallStatus === "idle" ? (
-            <span className="text-slate-600">SPACE (1× za hru, −20 stamina)</span>
+            <span className="text-slate-600">S (1× za hru, −20 stamina)</span>
           ) : pvpState.p1NitroUsed ? (
             <span className="text-slate-500">⚡ použito</span>
           ) : (
-            <span className="text-amber-300 font-bold">⚡ ready — SPACE</span>
+            <span className="text-amber-300 font-bold">⚡ ready — S</span>
           )}
         </div>
         <PvpSpeedGauge velocity={p1.player.velocity} maxVelocity={maxVelocity} label="SPEED" color={P1_COLOR} />
@@ -439,11 +439,11 @@ export default function SpeedArenaPvp({
         <div className="flex items-center gap-2 text-[10px] font-mono">
           <span className="w-6 shrink-0" style={{ color: P2_COLOR }}>P2</span>
           {pvpState.overallStatus === "idle" ? (
-            <span className="text-slate-600">S (1× za hru, −20 stamina)</span>
+            <span className="text-slate-600">SPACE (1× za hru, −20 stamina)</span>
           ) : pvpState.p2NitroUsed ? (
             <span className="text-slate-500">⚡ použito</span>
           ) : (
-            <span className="text-amber-300 font-bold">⚡ ready — S</span>
+            <span className="text-amber-300 font-bold">⚡ ready — SPACE</span>
           )}
         </div>
         <PvpSpeedGauge velocity={p2.player.velocity} maxVelocity={maxVelocity} label="SPEED" color={P2_COLOR} />

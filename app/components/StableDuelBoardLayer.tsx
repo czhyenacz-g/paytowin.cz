@@ -420,7 +420,7 @@ function PreStartPhase({
                 <span className="text-sm text-slate-300 ml-2">zatáčet</span>
               </div>
               <div className="flex items-center gap-1">
-                <NeonKeyCap label="SPACE" color={challengerColor} />
+                <NeonKeyCap label="S" color={challengerColor} />
                 <span className="text-sm text-slate-300 ml-2">{p1IsLegendary ? "legendary boost" : "nitro"}</span>
               </div>
             </div>
@@ -435,7 +435,7 @@ function PreStartPhase({
                 <span className="text-sm text-slate-300 ml-2">zatáčet</span>
               </div>
               <div className="flex items-center gap-1">
-                <NeonKeyCap label="S" color={defenderColor} />
+                <NeonKeyCap label="SPACE" color={defenderColor} />
                 <span className="text-sm text-slate-300 ml-2">{p2IsLegendary ? "legendary boost" : "nitro"}</span>
               </div>
             </div>
@@ -850,10 +850,10 @@ export default function StableDuelBoardLayer({
       } else if (e.code === "ArrowRight" && currentDir !== "right") {
         currentDir = "right";
         sendInput({ action: "turn", pressed: true, direction: "right" });
-      } else if (e.code === "KeyS") {
+      } else if (e.code === "Space") {
         sendInput(p2IsLegendary ? { action: "legendary", pressed: true } : { action: "nitro", pressed: true });
       }
-      if (["ArrowLeft", "ArrowRight"].includes(e.code)) e.preventDefault();
+      if (["ArrowLeft", "ArrowRight", "Space"].includes(e.code)) e.preventDefault();
     };
 
     const up = (e: KeyboardEvent) => {

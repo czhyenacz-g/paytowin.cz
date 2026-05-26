@@ -105,8 +105,8 @@ function LegendaryBadge({ display, flash, side }: { display: LegDisplay; side: "
       }}
     >
       {side === "left"
-        ? `⭐ ${ready ? "LEGENDARY · SPACE" : `${display}s`} · P1`
-        : `P2 · ${ready ? "LEGENDARY · S" : `${display}s`} ⭐`
+        ? `⭐ ${ready ? "LEGENDARY · S" : `${display}s`} · P1`
+        : `P2 · ${ready ? "LEGENDARY · SPACE" : `${display}s`} ⭐`
       }
     </span>
   );
@@ -218,16 +218,16 @@ export default function DuelArena({
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
       keysRef.current.add(e.code);
-      if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Space"].includes(e.code)) {
+      if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Space", "KeyS"].includes(e.code)) {
         e.preventDefault();
       }
       // P1: legendary OR nitro depending on racer type
-      if (e.code === "Space") {
+      if (e.code === "KeyS") {
         if (p1IsLegendary) p1LegActivateRef.current = true;
         else               p1BoostActivateRef.current = true;
       }
       // P2: legendary OR nitro depending on racer type
-      if (e.code === "KeyS") {
+      if (e.code === "Space") {
         if (p2IsLegendary) p2LegActivateRef.current = true;
         else               p2BoostActivateRef.current = true;
       }
@@ -416,13 +416,13 @@ export default function DuelArena({
           {p1IsLegendary
             ? <LegendaryBadge display={p1LegDisplay} flash={p1LegFlash} side="left" />
             : <span style={{ color: nitroColor(state.p1.nitroUsed, state.p1.nitroTicksRemaining, P1_COLOR) }}>
-                {nitroLabel(state.p1.nitroUsed, state.p1.nitroTicksRemaining, "SPACE")} P1
+                {nitroLabel(state.p1.nitroUsed, state.p1.nitroTicksRemaining, "S")} P1
               </span>
           }
           {mode === "pvp" && (p2IsLegendary
             ? <LegendaryBadge display={p2LegDisplay} flash={p2LegFlash} side="right" />
             : <span style={{ color: nitroColor(state.p2.nitroUsed, state.p2.nitroTicksRemaining, P2_COLOR) }}>
-                P2 {nitroLabel(state.p2.nitroUsed, state.p2.nitroTicksRemaining, "S")}
+                P2 {nitroLabel(state.p2.nitroUsed, state.p2.nitroTicksRemaining, "SPACE")}
               </span>
           )}
         </div>
@@ -467,8 +467,8 @@ export default function DuelArena({
                 </div>
                 {(p1IsLegendary || p2IsLegendary) && (
                   <div className="text-[10px] font-mono text-center leading-snug" style={{ color: LEGENDARY_COLOR }}>
-                    {p1IsLegendary && <div>⭐ P1 legendary ability → SPACE (cooldown {LEGENDARY_COOLDOWN_MS / 1000}s)</div>}
-                    {p2IsLegendary && mode === "pvp" && <div>⭐ P2 legendary ability → S (cooldown {LEGENDARY_COOLDOWN_MS / 1000}s)</div>}
+                    {p1IsLegendary && <div>⭐ P1 legendary ability → S (cooldown {LEGENDARY_COOLDOWN_MS / 1000}s)</div>}
+                    {p2IsLegendary && mode === "pvp" && <div>⭐ P2 legendary ability → SPACE (cooldown {LEGENDARY_COOLDOWN_MS / 1000}s)</div>}
                   </div>
                 )}
                 <button

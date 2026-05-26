@@ -121,7 +121,7 @@ export default function LegendaryHorseRaceArena({
       const cur = stateRef.current;
       if (cur.status !== "running") { setRunning(false); clearInterval(id); return; }
       const keys  = keysRef.current;
-      const input: LegendaryInput = { p1Jump: keys.has("Space"), p2Jump: keys.has("KeyS") };
+      const input: LegendaryInput = { p1Jump: keys.has("KeyS"), p2Jump: keys.has("Space") };
       const next  = applyTick(cur, input, config);
       stateRef.current = next;
 
