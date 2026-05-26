@@ -2141,8 +2141,9 @@ export default function GameBoard({ gameCode }: Props) {
     const proceed = stableDuelProceedRef.current;
     stableDuelProceedRef.current = null;
 
-    // Challenger-only guard — defender/spectator nesmí volat settlement ani finishTurn
-    if (!ctx?.isPreview && ctx?.challengerId && myPlayerId !== ctx.challengerId) {
+    // Challenger-only guard — defender/spectator nesmí volat settlement ani finishTurn.
+    // V lokální hře (hot-seat) přeskočíme: jeden klient hraje za oba, žádné riziko duplicity.
+    if (gameMode !== "local" && !ctx?.isPreview && ctx?.challengerId && myPlayerId !== ctx.challengerId) {
       setStableDuelCtx(null);
       stableDuelProceedRef.current = null;
       return;
@@ -2277,7 +2278,7 @@ export default function GameBoard({ gameCode }: Props) {
     }
 
     if (proceed) await proceed();
-  }, [stableDuelCtx, players, myPlayerId, gameId, gameState?.offer_pending]);
+  }, [stableDuelCtx, players, myPlayerId, gameId, gameState?.offer_pending, gameMode]);
 
   /** Defender potvrdí připravenost pro online_1v1 — jen klient s myPlayerId === defenderId. */
   const handleDefenderReady = React.useCallback(async () => {
