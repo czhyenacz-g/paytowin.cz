@@ -6,6 +6,7 @@ import type { AbsDir, Dir, DuelConfig, DuelState } from "@/lib/duel/types";
 import { getRopeDuelStartDelayTicks } from "@/lib/duel/helpers";
 import { nitroStaminaPreview } from "@/lib/minigame-nitro";
 import type { MinigameResult } from "@/lib/minigames/types";
+import TouchBtn from "../ui/TouchBtn";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -506,6 +507,42 @@ export default function DuelArena({
           </div>
         )}
       </div>
+
+      {/* Touch controls (mobile/tablet) */}
+      {state.status === "running" && (
+        <div className="flex items-center justify-center gap-4 select-none">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[9px] font-mono" style={{ color: P1_COLOR }}>P1</span>
+            <TouchBtn label="A" color={P1_COLOR} ariaLabel="P1 doleva"
+              onPressStart={() => keysRef.current.add("KeyA")}
+              onPressEnd={() => keysRef.current.delete("KeyA")}
+            />
+            <TouchBtn label="D" color={P1_COLOR} ariaLabel="P1 doprava"
+              onPressStart={() => keysRef.current.add("KeyD")}
+              onPressEnd={() => keysRef.current.delete("KeyD")}
+            />
+            <TouchBtn label="S" color={P1_COLOR} ariaLabel="P1 akce"
+              onPressStart={() => { if (p1IsLegendary) p1LegActivateRef.current = true; else p1BoostActivateRef.current = true; }}
+            />
+          </div>
+          {mode === "pvp" && !remoteP2Ref && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-[9px] font-mono" style={{ color: P2_COLOR }}>P2</span>
+              <TouchBtn label="←" color={P2_COLOR} ariaLabel="P2 doleva"
+                onPressStart={() => keysRef.current.add("ArrowLeft")}
+                onPressEnd={() => keysRef.current.delete("ArrowLeft")}
+              />
+              <TouchBtn label="→" color={P2_COLOR} ariaLabel="P2 doprava"
+                onPressStart={() => keysRef.current.add("ArrowRight")}
+                onPressEnd={() => keysRef.current.delete("ArrowRight")}
+              />
+              <TouchBtn label="SPACE" color={P2_COLOR} ariaLabel="P2 akce"
+                onPressStart={() => { if (p2IsLegendary) p2LegActivateRef.current = true; else p2BoostActivateRef.current = true; }}
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Controls bar */}
       <div className="flex items-center gap-2">

@@ -3,6 +3,7 @@
 import React from "react";
 import { applyTick, createInitialState, getJumpHeight } from "@/lib/legendary/simulate";
 import type { LegendaryConfig, LegendaryInput, LegendaryState } from "@/lib/legendary/types";
+import TouchBtn from "../ui/TouchBtn";
 
 // ── Visual constants ──────────────────────────────────────────────────────────
 
@@ -344,7 +345,7 @@ export default function LegendaryHorseRaceArena({
                   </text>
                   <text x={AW / 2} y={AH / 2 + 14} textAnchor="middle" fontSize={11}
                     fill="#94a3b8" fontFamily="monospace">
-                    P1: SPACE · P2: S — skok
+                    P1: S · P2: SPACE — skok
                   </text>
                 </>
               )}
@@ -373,6 +374,26 @@ export default function LegendaryHorseRaceArena({
           )}
         </svg>
       </div>
+
+      {/* Touch controls (mobile/tablet) */}
+      {state.status === "running" && (
+        <div className="flex items-center justify-center gap-8 select-none">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[9px] font-mono" style={{ color: P1_COLOR }}>P1</span>
+            <TouchBtn label="S" color={P1_COLOR} ariaLabel="P1 skok"
+              onPressStart={() => keysRef.current.add("KeyS")}
+              onPressEnd={() => keysRef.current.delete("KeyS")}
+            />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <TouchBtn label="SPACE" color={P2_COLOR} ariaLabel="P2 skok"
+              onPressStart={() => keysRef.current.add("Space")}
+              onPressEnd={() => keysRef.current.delete("Space")}
+            />
+            <span className="text-[9px] font-mono" style={{ color: P2_COLOR }}>P2</span>
+          </div>
+        </div>
+      )}
 
       {/* Controls */}
       <div className="flex items-center gap-2">

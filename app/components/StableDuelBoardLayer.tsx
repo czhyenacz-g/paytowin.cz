@@ -15,6 +15,7 @@
 import React from "react";
 import DuelArena from "./duel/DuelArena";
 import SpeedArenaPvp from "./speed/SpeedArenaPvp";
+import TouchBtn from "./ui/TouchBtn";
 import type { DuelConfig } from "@/lib/duel/types";
 import type { Dir } from "@/lib/duel/types";
 import type { SpeedConfig } from "@/lib/speed/types";
@@ -693,11 +694,13 @@ export default function StableDuelBoardLayer({
   const channelRef = React.useRef<ReturnType<typeof supabase.channel> | null>(null);
   const receivedSeqsRef = React.useRef<Set<number>>(new Set());
   const inputSeqRef = React.useRef(0);
+  const sendInputRef = React.useRef<((input: StableDuelInputEvent["input"]) => void) | null>(null);
 
   const p1Speed = challenger.horse?.speed ?? 5;
   const p2Speed = defender.horse?.speed ?? 5;
   const p1IsLegendary = !!(challenger.horse?.isLegendary);
   const p2IsLegendary = !!(defender.horse?.isLegendary);
+  const defenderTouchColor = defender.color || "#a855f7";
   const minigameType = selectStableMinigame({
     themeId,
     challengerHorse: challenger.horse,
@@ -842,6 +845,7 @@ export default function StableDuelBoardLayer({
         } satisfies StableDuelInputEvent,
       });
     };
+    sendInputRef.current = sendInput;
 
     const down = (e: KeyboardEvent) => {
       if (e.code === "ArrowLeft" && currentDir !== "left") {
@@ -870,6 +874,7 @@ export default function StableDuelBoardLayer({
     window.addEventListener("keyup", up);
 
     return () => {
+      sendInputRef.current = null;
       ch.unsubscribe();
       channelRef.current = null;
       window.removeEventListener("keydown", down);
@@ -925,19 +930,36 @@ export default function StableDuelBoardLayer({
         />
       )}
       {phase === "arena" && (
-        <ArenaPhase
-          key={duelKey}
-          backgroundUrl={backgroundUrl}
-          p1Speed={p1Speed}
-          p2Speed={p2Speed}
-          minigameType={minigameType}
-          onResult={handleDuelResult}
-          onStateSnapshot={(s) => { lastLocalStateRef.current = s; }}
-          remoteP2Ref={duelRole === "challenger_authority" ? remoteP2Ref : undefined}
-          p1IsLegendary={p1IsLegendary}
-          p2IsLegendary={p2IsLegendary}
-          duelRole={duelRole}
-        />
+        <>
+          <ArenaPhase
+            key={duelKey}
+            backgroundUrl={backgroundUrl}
+            p1Speed={p1Speed}
+            p2Speed={p2Speed}
+            minigameType={minigameType}
+            onResult={handleDuelResult}
+            onStateSnapshot={(s) => { lastLocalStateRef.current = s; }}
+            remoteP2Ref={duelRole === "challenger_authority" ? remoteP2Ref : undefined}
+            p1IsLegendary={p1IsLegendary}
+            p2IsLegendary={p2IsLegendary}
+            duelRole={duelRole}
+          />
+          {duelRole === "defender_remote" && (
+            <div className="shrink-0 flex items-center justify-center gap-2 px-4 py-3 select-none">
+              <TouchBtn label="←" color={defenderTouchColor} ariaLabel="doleva"
+                onPressStart={() => sendInputRef.current?.({ action: "turn", pressed: true, direction: "left" })}
+                onPressEnd={() => sendInputRef.current?.({ action: "turn", pressed: false })}
+              />
+              <TouchBtn label="→" color={defenderTouchColor} ariaLabel="doprava"
+                onPressStart={() => sendInputRef.current?.({ action: "turn", pressed: true, direction: "right" })}
+                onPressEnd={() => sendInputRef.current?.({ action: "turn", pressed: false })}
+              />
+              <TouchBtn label="SPACE" color={defenderTouchColor} ariaLabel="akce"
+                onPressStart={() => sendInputRef.current?.(p2IsLegendary ? { action: "legendary", pressed: true } : { action: "nitro", pressed: true })}
+              />
+            </div>
+          )}
+        </>
       )}
       {phase === "result" && duelResult && (
         <ResultPhase

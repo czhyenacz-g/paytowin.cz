@@ -5,6 +5,7 @@ import { applyPvpTick, createPvpInitialState } from "@/lib/speed/simulate";
 import type { SpeedConfig, SpeedInput, SpeedObject, SpeedPvpState } from "@/lib/speed/types";
 import { nitroStaminaPreview } from "@/lib/minigame-nitro";
 import type { MinigameResult } from "@/lib/minigames/types";
+import TouchBtn from "../ui/TouchBtn";
 
 // ── Visual constants ──────────────────────────────────────────────────────────
 
@@ -456,6 +457,40 @@ export default function SpeedArenaPvp({
           />
         </div>
       </div>
+
+      {/* Touch controls (mobile/tablet) */}
+      {pvpState.overallStatus === "running" && (
+        <div className="flex items-center justify-center gap-4 select-none">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[9px] font-mono" style={{ color: P1_COLOR }}>P1</span>
+            <TouchBtn label="A" color={P1_COLOR} ariaLabel="P1 doleva"
+              onPressStart={() => keysRef.current.add("KeyA")}
+              onPressEnd={() => keysRef.current.delete("KeyA")}
+            />
+            <TouchBtn label="D" color={P1_COLOR} ariaLabel="P1 doprava"
+              onPressStart={() => keysRef.current.add("KeyD")}
+              onPressEnd={() => keysRef.current.delete("KeyD")}
+            />
+            <TouchBtn label="S" color={P1_COLOR} ariaLabel="P1 nitro"
+              onPressStart={() => { p1NitroActivateRef.current = true; }}
+            />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[9px] font-mono" style={{ color: P2_COLOR }}>P2</span>
+            <TouchBtn label="←" color={P2_COLOR} ariaLabel="P2 doleva"
+              onPressStart={() => keysRef.current.add("ArrowLeft")}
+              onPressEnd={() => keysRef.current.delete("ArrowLeft")}
+            />
+            <TouchBtn label="→" color={P2_COLOR} ariaLabel="P2 doprava"
+              onPressStart={() => keysRef.current.add("ArrowRight")}
+              onPressEnd={() => keysRef.current.delete("ArrowRight")}
+            />
+            <TouchBtn label="SPACE" color={P2_COLOR} ariaLabel="P2 nitro"
+              onPressStart={() => { p2NitroActivateRef.current = true; }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* ── Controls ── */}
       <div className="flex items-center gap-2">

@@ -4,6 +4,7 @@ import React from "react";
 import { applyTick, createInitialState, NITRO_SPEED_BOOST } from "@/lib/speed/simulate";
 import type { SpeedConfig, SpeedInput, SpeedState } from "@/lib/speed/types";
 import { nitroStaminaPreview } from "@/lib/minigame-nitro";
+import TouchBtn from "../ui/TouchBtn";
 
 // ── Visual constants ──────────────────────────────────────────────────────────
 
@@ -371,6 +372,24 @@ export default function SpeedArena({ config, showDebug = false, backgroundUrl, o
           />
         </div>
       </div>
+
+      {/* Touch controls (mobile/tablet) */}
+      {state.status === "running" && (
+        <div className="flex items-center justify-center gap-2 select-none">
+          <TouchBtn label="A" color={PLAYER_COLOR_SLOW} ariaLabel="doleva"
+            onPressStart={() => keysRef.current.add("KeyA")}
+            onPressEnd={() => keysRef.current.delete("KeyA")}
+          />
+          <TouchBtn label="D" color={PLAYER_COLOR_SLOW} ariaLabel="doprava"
+            onPressStart={() => keysRef.current.add("KeyD")}
+            onPressEnd={() => keysRef.current.delete("KeyD")}
+          />
+          <span className="w-2" />
+          <TouchBtn label="S" color={PLAYER_COLOR_MID} ariaLabel="nitro"
+            onPressStart={() => { if (!nitroUsedRef.current) nitroActivateRef.current = true; }}
+          />
+        </div>
+      )}
 
       {/* ── Controls ── */}
       <div className="flex items-center gap-2">
