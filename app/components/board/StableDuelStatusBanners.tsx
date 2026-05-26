@@ -113,7 +113,7 @@ export default function StableDuelStatusBanners({
           <div className="text-[10px] text-slate-400 mt-1">
             {isChallenger
               ? <span>Tvoje ovládání: <span className="font-mono text-indigo-300">A / D</span> zatáčet · <span className="font-mono text-indigo-300">SPACE</span> boost</span>
-              : <span>Tvoje ovládání: <span className="font-mono text-violet-300">← / →</span> zatáčet · <span className="font-mono text-violet-300">S</span> boost</span>
+              : <span>Tvoje ovládání: <span className="font-mono text-violet-300">← / →</span> zatáčet · <span className="font-mono text-violet-300">SPACE</span> boost</span>
             }
           </div>
         </div>
@@ -127,7 +127,7 @@ export default function StableDuelStatusBanners({
       return (
         <div className="fixed bottom-4 left-1/2 z-[44] -translate-x-1/2 rounded-lg border border-violet-700/50 bg-slate-950/80 px-4 py-2 text-[12px] text-violet-200 flex items-center gap-2 backdrop-blur-sm">
           <span>⚔️</span>
-          <span>Souboj začal — aktivní hraní soupeře bude přidáno v dalším kroku.</span>
+          <span>Souboj probíhá — otvírám herní rozhraní…</span>
         </div>
       );
     }
@@ -199,7 +199,7 @@ export default function StableDuelStatusBanners({
                 <div className="text-[11px] text-slate-500 font-mono">
                   {isChallenger
                     ? <span><span className="text-indigo-400">Tvoje ovládání:</span> A / D zatáčet · SPACE boost</span>
-                    : <span><span className="text-violet-400">Tvoje ovládání:</span> ← / → zatáčet · S boost</span>
+                    : <span><span className="text-violet-400">Tvoje ovládání:</span> ← / → zatáčet · SPACE boost</span>
                   }
                 </div>
 
