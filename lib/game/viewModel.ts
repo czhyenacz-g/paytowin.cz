@@ -1,5 +1,5 @@
 import type { GameCard } from "@/lib/cards";
-import type { Player, Horse, RerollOffer } from "@/lib/types/game";
+import type { Player, Horse, RerollOffer, OfferPending } from "@/lib/types/game";
 import type { CenterEvent } from "@/lib/types/events";
 import type { Field } from "@/lib/engine";
 import { ROLL_CORRECTION_COST } from "@/lib/engine";
@@ -72,6 +72,29 @@ export function buildRollDecisionOptions(
       targetField,
     };
   });
+}
+
+/**
+ * Vrátí důvod, proč hráč nemůže hodit kostkou, nebo null pokud může.
+ * Pokryje pouze offer_pending-based blokátory — ostatní stavy (pendingCard, isRolling…)
+ * mají vlastní UI, které kostku nahradí nebo zakryje.
+ */
+export function getRollBlockedReason(
+  offerPending: OfferPending | null | undefined,
+): string | null {
+  if (!offerPending) return null;
+  switch (offerPending.type) {
+    case "stable_duel_pending":
+      return offerPending.phase !== "finished" ? "Probíhá stájový souboj" : null;
+    case "race":
+      return "Probíhá dostih";
+    case "bankrupt_announcement":
+      return "Pokračujeme za chvíli…";
+    case "race_pending":
+      return "Připravuje se dostih";
+    default:
+      return null;
+  }
 }
 
 /**

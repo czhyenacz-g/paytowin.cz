@@ -6,6 +6,7 @@ import type { Player, Horse, GameState } from "@/lib/types/game";
 import type { GameCard } from "@/lib/cards";
 import type { Theme } from "@/lib/themes";
 import { UI_TEXT } from "@/lib/ui-text";
+import { getRollBlockedReason } from "@/lib/game/viewModel";
 import type { SoundId } from "@/lib/audio/sfx";
 import type { MinigameResult as StableMinigameResult } from "@/lib/minigames/types";
 import DevRaceBoardLayer from "../DevRaceBoardLayer";
@@ -500,13 +501,23 @@ export default function GamePanel({
                   {UI_TEXT.board.freeRerollNotice}
                 </div>
               )}
-              <button
-                onClick={rollDice}
-                disabled={!gameState || players.length === 0}
-                className={`w-full rounded-[4px] px-4 py-4 text-lg font-semibold text-white shadow transition disabled:cursor-not-allowed disabled:bg-slate-400 ${canReroll ? "bg-amber-500 hover:bg-amber-600" : "bg-slate-900 hover:bg-slate-800"}`}
-              >
-                {canReroll ? UI_TEXT.board.rerollButton : UI_TEXT.board.rollButton}
-              </button>
+              {(() => {
+                const rollBlockedReason = getRollBlockedReason(gameState?.offer_pending ?? null);
+                return (
+                  <>
+                    <button
+                      onClick={rollDice}
+                      disabled={!gameState || players.length === 0 || !!rollBlockedReason}
+                      className={`w-full rounded-[4px] px-4 py-4 text-lg font-semibold text-white shadow transition disabled:cursor-not-allowed disabled:bg-slate-400 ${canReroll ? "bg-amber-500 hover:bg-amber-600" : "bg-slate-900 hover:bg-slate-800"}`}
+                    >
+                      {canReroll ? UI_TEXT.board.rerollButton : UI_TEXT.board.rollButton}
+                    </button>
+                    {rollBlockedReason && (
+                      <p className="text-center text-[11px] text-slate-400">{rollBlockedReason}</p>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           ) : (
             <div className="w-full rounded-[4px] bg-slate-100 px-4 py-4 text-center text-slate-500">
