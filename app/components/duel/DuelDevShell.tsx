@@ -128,14 +128,14 @@ export default function DuelDevShell({ onExit, themeSkin }: Props) {
           <div className="flex flex-col items-center gap-0.5 mt-1 text-[10px] text-slate-400 text-center leading-snug">
             {mode === "pvp" ? (
               <div>
-                <span className="text-emerald-400 font-bold">P1 A / D</span>
+                <span className="text-emerald-400 font-bold">P1 WASD</span>
                 {" · "}
                 <span className="text-purple-400 font-bold">P2 ← / →</span>
                 {" — zatočit"}
               </div>
             ) : (
               <div>
-                <span className="text-emerald-400 font-bold">A / D</span>
+                <span className="text-emerald-400 font-bold">WASD</span>
                 {" — zatočit · "}
                 <span className="text-purple-400 font-bold">Bot</span>
                 {" hraje automaticky"}
@@ -144,7 +144,7 @@ export default function DuelDevShell({ onExit, themeSkin }: Props) {
             <div>Nenarážej do zdí ani do světelného provazu.</div>
             <div>
               <span className="text-yellow-400 font-bold">
-                {mode === "pvp" ? "SPACE = nitro P1 · S = nitro P2" : "SPACE = nitro"}
+                {mode === "pvp" ? "Q = boost P1 · SPACE = boost P2" : "Q = boost P1"}
               </span>
               {" (−20 stamina, 1× za hru)"}
             </div>
@@ -195,12 +195,12 @@ export default function DuelDevShell({ onExit, themeSkin }: Props) {
           <div className="mt-4 flex items-center gap-6 text-[11px] text-slate-600">
             {mode === "pvp" ? (
               <>
-                <span><span className="text-emerald-500 font-bold">P1</span> A / D — zatočit</span>
+                <span><span className="text-emerald-500 font-bold">P1</span> WASD — zatočit</span>
                 <span><span className="text-purple-400 font-bold">P2</span> ← / → — zatočit</span>
               </>
             ) : (
               <>
-                <span><span className="text-emerald-500 font-bold">P1</span> A / D — zatočit</span>
+                <span><span className="text-emerald-500 font-bold">P1</span> WASD — zatočit</span>
                 <span><span className="text-purple-400 font-bold">Bot</span> automaticky</span>
               </>
             )}
