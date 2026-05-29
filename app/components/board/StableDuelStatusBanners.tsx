@@ -112,7 +112,7 @@ export default function StableDuelStatusBanners({
           <div className="text-[10px] text-indigo-400">Po odpočtu se hra spustí automaticky</div>
           <div className="text-[10px] text-slate-400 mt-1">
             {isChallenger
-              ? <span>Tvoje ovládání: <span className="font-mono text-indigo-300">A / D</span> zatáčet · <span className="font-mono text-indigo-300">SPACE</span> boost</span>
+              ? <span>Tvoje ovládání: <span className="font-mono text-indigo-300">WASD</span> zatáčet · <span className="font-mono text-indigo-300">Q</span> boost</span>
               : <span>Tvoje ovládání: <span className="font-mono text-violet-300">← / →</span> zatáčet · <span className="font-mono text-violet-300">SPACE</span> boost</span>
             }
           </div>
@@ -198,7 +198,7 @@ export default function StableDuelStatusBanners({
                 <div className="text-sm text-slate-500 italic">Vyhni se soupeři i jeho lanu.</div>
                 <div className="text-[11px] text-slate-500 font-mono">
                   {isChallenger
-                    ? <span><span className="text-indigo-400">Tvoje ovládání:</span> A / D zatáčet · SPACE boost</span>
+                    ? <span><span className="text-indigo-400">Tvoje ovládání:</span> WASD zatáčet · Q boost</span>
                     : <span><span className="text-violet-400">Tvoje ovládání:</span> ← / → zatáčet · SPACE boost</span>
                   }
                 </div>

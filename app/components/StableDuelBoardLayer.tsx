@@ -415,15 +415,14 @@ function PreStartPhase({
             <div className="flex flex-col items-center gap-1.5">
               <div className="text-[8px] uppercase tracking-widest" style={{ color: `${challengerColor}bb` }}>Challenger</div>
               <div className="flex items-center gap-1">
-                <NeonKeyCap label="A" color={challengerColor} />
-                <span className="text-slate-600 text-[10px] mx-0.5">/</span>
-                <NeonKeyCap label="D" color={challengerColor} />
+                <NeonKeyCap label="WASD" color={challengerColor} />
                 <span className="text-sm text-slate-300 ml-2">zatáčet</span>
               </div>
               <div className="flex items-center gap-1">
-                <NeonKeyCap label="S" color={challengerColor} />
-                <span className="text-sm text-slate-300 ml-2">{p1IsLegendary ? "legendary boost" : "nitro"}</span>
+                <NeonKeyCap label="Q" color={challengerColor} />
+                <span className="text-sm text-slate-300 ml-2">{p1IsLegendary ? "legendary" : "boost"}</span>
               </div>
+              <div className="text-[9px] text-slate-600">nebo 2× dopředu</div>
             </div>
           )}
           {duelRole !== "challenger_authority" && (
@@ -495,7 +494,7 @@ function ArenaPhase({
       <DuelArena
         config={BOARD_DUEL_CONFIG}
         mode={duelRole ? "pvp" : "pvbot"}
-        autoStart={duelRole === "challenger_authority" || duelRole === "defender_remote"}
+        autoStart
         backgroundUrl={backgroundUrl}
         overlayOpacity={0.20}
         p1Speed={p1Speed}
