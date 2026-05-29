@@ -3,6 +3,7 @@
 import React from "react";
 import { applyTick, createInitialState, getBotInput } from "@/lib/duel/simulate";
 import type { AbsDir, Dir, DuelConfig, DuelState } from "@/lib/duel/types";
+import { resolveRelativeDir, dirFromHeldKeys } from "@/lib/duel/steeringInput";
 import { getRopeDuelStartDelayTicks } from "@/lib/duel/helpers";
 import { nitroStaminaPreview } from "@/lib/minigame-nitro";
 import type { MinigameResult } from "@/lib/minigames/types";
@@ -20,6 +21,7 @@ const LEGENDARY_COLOR = "#fbbf24";
 
 const CELL_PX = 20;
 const LEGENDARY_COOLDOWN_MS = 2000;
+const DOUBLE_TAP_MS = 250;
 
 // ── SVG neon glow filter ──────────────────────────────────────────────────────
 
@@ -165,6 +167,10 @@ export default function DuelArena({
   const p1LegActivateRef = React.useRef(false);
   const p2LegActivateRef = React.useRef(false);
 
+  // Double-tap straight-key boost tracking
+  const p1LastStraightTapRef = React.useRef<{ keyCode: string; time: number } | null>(null);
+  const p2LastStraightTapRef = React.useRef<{ keyCode: string; time: number } | null>(null);
+
   // Legendary cooldown tracking (real-time ms)
   const p1LegCooldownUntilRef = React.useRef<number | null>(null);
   const p2LegCooldownUntilRef = React.useRef<number | null>(null);
@@ -197,6 +203,8 @@ export default function DuelArena({
     setP2LegDisplay("ready");
     setP1LegFlash(false);
     setP2LegFlash(false);
+    p1LastStraightTapRef.current = null;
+    p2LastStraightTapRef.current = null;
   }, [config, mode, p1Speed, p2Speed, autoStart]);
 
   // onResult — fired once when game ends
@@ -219,18 +227,57 @@ export default function DuelArena({
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
       keysRef.current.add(e.code);
+
+      // Prevent browser scroll/shortcuts for game keys
       if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Space", "KeyQ"].includes(e.code)) {
         e.preventDefault();
       }
-      // P1: legendary OR nitro depending on racer type
+
+      // P1 explicit boost key (Q)
       if (e.code === "KeyQ") {
         if (p1IsLegendary) p1LegActivateRef.current = true;
         else               p1BoostActivateRef.current = true;
       }
-      // P2: legendary OR nitro depending on racer type
+      // P2 explicit boost key (Space)
       if (e.code === "Space") {
         if (p2IsLegendary) p2LegActivateRef.current = true;
         else               p2BoostActivateRef.current = true;
+      }
+
+      // Double-tap straight-key boost — only on fresh press, only when running
+      if (!e.repeat && runningRef.current) {
+        const now = Date.now();
+
+        // P1 double-tap (WASD)
+        if (["KeyW", "KeyA", "KeyS", "KeyD"].includes(e.code)) {
+          const rel = resolveRelativeDir(e.code, stateRef.current.p1.dir, "wasd");
+          if (rel === "straight") {
+            const last = p1LastStraightTapRef.current;
+            if (last && last.keyCode === e.code && now - last.time <= DOUBLE_TAP_MS) {
+              if (p1IsLegendary) p1LegActivateRef.current = true;
+              else               p1BoostActivateRef.current = true;
+              p1LastStraightTapRef.current = null;
+            } else {
+              p1LastStraightTapRef.current = { keyCode: e.code, time: now };
+            }
+          }
+        }
+
+        // P2 double-tap (arrows) — local pvp only (not pvbot, not remote)
+        if (mode !== "pvbot" && !remoteP2Ref &&
+            ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.code)) {
+          const rel = resolveRelativeDir(e.code, stateRef.current.p2.dir, "arrows");
+          if (rel === "straight") {
+            const last = p2LastStraightTapRef.current;
+            if (last && last.keyCode === e.code && now - last.time <= DOUBLE_TAP_MS) {
+              if (p2IsLegendary) p2LegActivateRef.current = true;
+              else               p2BoostActivateRef.current = true;
+              p2LastStraightTapRef.current = null;
+            } else {
+              p2LastStraightTapRef.current = { keyCode: e.code, time: now };
+            }
+          }
+        }
       }
     };
     const up = (e: KeyboardEvent) => keysRef.current.delete(e.code);
@@ -240,7 +287,7 @@ export default function DuelArena({
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
     };
-  }, [p1IsLegendary, p2IsLegendary]);
+  }, [p1IsLegendary, p2IsLegendary, mode, remoteP2Ref]);
 
   // Tick loop
   React.useEffect(() => {
@@ -266,12 +313,12 @@ export default function DuelArena({
 
       // ── P2 direction (remote or keyboard or bot) ─────────────────────────────
       const remoteP2 = remoteP2Ref?.current ?? null;
-      const p1: Dir = keys.has("KeyA") ? "left" : keys.has("KeyD") ? "right" : "straight";
+      const p1: Dir = dirFromHeldKeys(keys, cur.p1.dir, "wasd");
       const p2: Dir = mode === "pvbot"
         ? getBotInput(cur, 2, config)
         : remoteP2 !== null
           ? remoteP2.dir
-          : keys.has("ArrowLeft") ? "left" : keys.has("ArrowRight") ? "right" : "straight";
+          : dirFromHeldKeys(keys, cur.p2.dir, "arrows");
 
       const effectiveP2Activate = mode === "pvp"
         ? (remoteP2Ref ? (remoteP2?.nitroActivate ?? false) : p2Activate)
@@ -391,6 +438,8 @@ export default function DuelArena({
     setP2LegDisplay("ready");
     setP1LegFlash(false);
     setP2LegFlash(false);
+    p1LastStraightTapRef.current = null;
+    p2LastStraightTapRef.current = null;
   };
 
   const w = config.gridW * CELL_PX;
@@ -462,9 +511,12 @@ export default function DuelArena({
                 <div className="text-2xl font-black text-white tracking-tight">NEON ROPE DUEL</div>
                 <div className="text-[11px] text-slate-400 text-center leading-relaxed">
                   {mode === "pvp"
-                    ? <>P1: <span style={{ color: P1_COLOR }}>A / D</span> &nbsp;·&nbsp; P2: <span style={{ color: P2_COLOR }}>← / →</span></>
-                    : <>P1: <span style={{ color: P1_COLOR }}>A / D</span> &nbsp;·&nbsp; <span style={{ color: P2_COLOR }}>Bot</span></>
+                    ? <>P1: <span style={{ color: P1_COLOR }}>WASD</span> &nbsp;·&nbsp; P2: <span style={{ color: P2_COLOR }}>← ↑ ↓ →</span></>
+                    : <>P1: <span style={{ color: P1_COLOR }}>WASD</span> &nbsp;·&nbsp; <span style={{ color: P2_COLOR }}>Bot</span></>
                   }
+                </div>
+                <div className="text-[10px] text-slate-500 text-center">
+                  double-tap straight key = boost
                 </div>
                 {(p1IsLegendary || p2IsLegendary) && (
                   <div className="text-[10px] font-mono text-center leading-snug" style={{ color: LEGENDARY_COLOR }}>
