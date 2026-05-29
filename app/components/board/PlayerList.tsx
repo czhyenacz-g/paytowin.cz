@@ -70,7 +70,7 @@ export default function PlayerList({
                 key={player.id}
                 onMouseEnter={() => !bankrupt && setHoveredPlayerId(player.id)}
                 onMouseLeave={() => setHoveredPlayerId(null)}
-                className={`rounded-[4px] border-2 p-3 transition-all cursor-default ${
+                className={`relative overflow-hidden rounded-[4px] border-2 p-3 transition-all cursor-default ${
                   bankrupt
                     ? "border-red-200 bg-red-50/50 opacity-35"
                     : hoveredPlayerId === player.id
@@ -80,6 +80,17 @@ export default function PlayerList({
                     : theme.colors.playerCardNormal
                 }`}
               >
+                {player.skip_next_turn && !bankrupt && (
+                  <div className="absolute inset-0 pointer-events-none rounded-[4px] overflow-hidden z-10">
+                    <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                      <line x1="0" y1="0" x2="100%" y2="100%" stroke="rgba(100,116,139,0.45)" strokeWidth="2" />
+                      <line x1="100%" y1="0" x2="0" y2="100%" stroke="rgba(100,116,139,0.45)" strokeWidth="2" />
+                    </svg>
+                    <span className="absolute bottom-1 right-1.5 text-[9px] font-bold uppercase tracking-widest text-slate-400/80 bg-white/70 px-1 rounded">
+                      stojí
+                    </span>
+                  </div>
+                )}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">

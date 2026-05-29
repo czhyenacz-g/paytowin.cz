@@ -310,6 +310,7 @@ export default function GameBoard({ gameCode }: Props) {
   const coinsFeedbackTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const opponentMoneyEvent = useOpponentMoneyFeedback(players, myPlayerId);
   const [scorePopupOpen, setScorePopupOpen] = React.useState(false);
+  const [topPanelVisible, setTopPanelVisible] = React.useState(true);
   const flashActiveRef = React.useRef(false);
   const deferredOfferRef = React.useRef<RerollOffer | null>(null);
 
@@ -2940,6 +2941,14 @@ export default function GameBoard({ gameCode }: Props) {
           {/* Herní plocha */}
           <div className="flex flex-col gap-3 lg:pl-36">
             {/* HUD + legenda — vlastní panel s pozadím */}
+            {!topPanelVisible ? (
+              <button
+                onClick={() => setTopPanelVisible(true)}
+                className={`w-full rounded-[4px] py-1.5 text-[11px] font-medium text-center ring-1 ring-black/[0.06] ${theme.colors.cardBackground} ${theme.colors.textMuted} hover:opacity-80 transition`}
+              >
+                ↓ Zobrazit panel
+              </button>
+            ) : (
             <div className={`rounded-[4px] px-4 py-3 shadow-md ring-1 ring-black/[0.06] ${theme.colors.cardBackground}`}>
             {/* HUD — 3 zóny: brand | stav hry | akce */}
             <div className="mb-3 flex items-center gap-2">
@@ -3045,6 +3054,15 @@ export default function GameBoard({ gameCode }: Props) {
                   </button>
                 </div>
               )}
+              {/* Skrýt panel — vždy na pravém okraji */}
+              <button
+                onClick={() => setTopPanelVisible(false)}
+                className="shrink-0 ml-1 rounded-[3px] px-1.5 py-1 text-[11px] text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
+                title="Skrýt panel"
+                aria-label="Skrýt panel"
+              >
+                ↑
+              </button>
             </div>
 
             {/* DEV-only: Race Mode experiments — vlastní řádek pod HUD */}
@@ -3081,7 +3099,8 @@ export default function GameBoard({ gameCode }: Props) {
               <span className="rounded-[3px] bg-violet-100 px-2 py-1 text-violet-800">🟣 {theme.labels.legend.gamble}</span>
               <span className="rounded-[3px] bg-amber-100 px-2 py-1 text-amber-800">🟠 {theme.labels.legend.racer}</span>
             </div>
-            </div>{/* konec HUD+legenda panelu */}
+            </div>
+            )}{/* konec topPanelVisible podmínky */}
 
             {!stableDuelCtx && (
               <StableDuelStatusBanners

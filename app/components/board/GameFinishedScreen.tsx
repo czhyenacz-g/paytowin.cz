@@ -167,14 +167,19 @@ export default function GameFinishedScreen({
                 </div>
               ) : (
                 /* Local / spectator — obecný newspaper styl */
-                <div className="px-6 py-5 border-b border-stone-500">
-                  <div className="text-[9px] font-bold uppercase tracking-[0.22em] text-stone-500">Vítěz sezóny</div>
-                  <h2 className="mt-1 font-serif text-[28px] font-black leading-tight text-stone-900">
+                <div className="px-6 py-5 border-b border-stone-500 bg-amber-50/40">
+                  <div className="text-[9px] font-bold uppercase tracking-[0.22em] text-amber-700">🏆 Vítěz sezóny</div>
+                  <h2 className="mt-1 font-serif text-[30px] font-black leading-tight text-stone-900">
                     {winner?.name ?? "—"}
                   </h2>
                   <p className="mt-1.5 text-xs italic text-stone-500">
-                    Poslední závodník, který opustil závod bez dluhů.
+                    Poslední závodník bez dluhů.
                   </p>
+                  {winner && (
+                    <p className="mt-2 text-sm font-bold text-amber-700">
+                      💰 {winner.coins.toLocaleString("cs-CZ")} zůstatek
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -268,8 +273,8 @@ export default function GameFinishedScreen({
             </>
           )}
 
-          <div className="px-6 py-4">
-            <a href="/" className="block bg-stone-900 px-4 py-3 text-center text-sm font-semibold text-[#f4efe4] hover:bg-stone-700 transition">
+          <div className="px-6 py-5">
+            <a href="/" className="block bg-stone-900 px-4 py-3.5 text-center text-sm font-bold tracking-wide text-[#f4efe4] hover:bg-stone-700 active:scale-[0.98] transition">
               ← Nová hra
             </a>
           </div>
