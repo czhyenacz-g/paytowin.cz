@@ -45,6 +45,7 @@ import {
   resolveGiveRacer,
   REROLL_COST,
   REROLL_CHANCE,
+  ROLL_CORRECTION_COST,
 } from "@/lib/engine";
 
 const RACE_WINNER_REWARD = 500; // fixní odměna za 1. místo v mass_race
@@ -489,7 +490,7 @@ export default function GameBoard({ gameCode }: Props) {
   // Countdown 3→0 pro korekci tahu — zobrazí se jen aktivnímu hráči
   React.useEffect(() => {
     if (!pendingRollDecision) { setRollDecisionCountdown(null); return; }
-    setRollDecisionCountdown(3);
+    setRollDecisionCountdown(4);
     const interval = setInterval(() => {
       setRollDecisionCountdown((n) => (n !== null && n > 0 ? n - 1 : n));
     }, 1000);
@@ -888,11 +889,11 @@ export default function GameBoard({ gameCode }: Props) {
     });
 
     const adjustmentAllowed = selectedAdjustment !== 0 &&
-      currentPlayer.coins >= 600 &&
+      currentPlayer.coins >= ROLL_CORRECTION_COST &&
       (roll + selectedAdjustment) >= 1;
     const finalAdjustment = adjustmentAllowed ? selectedAdjustment : 0;
     const finalRoll = roll + finalAdjustment;
-    const adjustmentCost = finalAdjustment === 0 ? 0 : 600;
+    const adjustmentCost = finalAdjustment === 0 ? 0 : ROLL_CORRECTION_COST;
 
     // ── 2. Animace pohybu pole po poli ────────────────────────────────────────
     const oldPosition = currentPlayer.position;
