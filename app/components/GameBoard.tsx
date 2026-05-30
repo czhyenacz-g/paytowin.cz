@@ -884,7 +884,7 @@ export default function GameBoard({ gameCode }: Props) {
       clearRollDecisionTimer();
       rollDecisionTimerRef.current = setTimeout(() => {
         resolveRollDecision(0);
-      }, 3000);
+      }, 3500);
     });
 
     const adjustmentAllowed = selectedAdjustment !== 0 &&
