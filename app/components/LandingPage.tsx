@@ -686,13 +686,14 @@ export default function LandingPage() {
     // ── Přímý join (require_approval === false) ───────────────────────────────
     const turnOrder = existingPlayers?.length ?? 0;
     const color = PLAYER_COLORS[turnOrder % PLAYER_COLORS.length];
+    const joinCoins = (game.economy as { startingCoins?: number } | null)?.startingCoins ?? DEFAULT_STARTING_COINS;
 
     const { data: newPlayer, error: joinPlayerErr } = await supabase.from("players").insert({
       game_id: game.id,
       name: name.trim(),
       color,
       position: 0,
-      coins: STARTING_COINS,
+      coins: joinCoins,
       horses: [],
       turn_order: turnOrder,
       discord_id: discordUser?.id ?? null,

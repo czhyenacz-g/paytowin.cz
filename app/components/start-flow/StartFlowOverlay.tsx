@@ -9,7 +9,7 @@ import {
   getPersonalObjectiveForPlayer,
   getSharedObjectiveForGame,
 } from "@/lib/scenarios/objectives";
-import { STARTING_COINS } from "@/lib/scenarios/constants";
+import { DEFAULT_STARTING_COINS } from "@/lib/game-constants";
 
 /**
  * StartFlowOverlay — orchestruje startovní overlay sekvenci mimo GameBoard.tsx.
@@ -41,6 +41,8 @@ interface Props {
   subtitle: string;
   /** Hráč přihlášený v aktuálním prohlížeči; null = pozorovatel nebo nepřihlášený. */
   player: { id: string; turn_order?: number | null } | null;
+  /** Počáteční coins hry — pro zobrazení v scenario textu místo fixní konstanty. */
+  startingCoins?: number;
   /** Zavolá se po dokončení celé sekvence (všechny fáze hotovy). */
   onFlowDone?: () => void;
 }
@@ -53,6 +55,7 @@ export default function StartFlowOverlay({
   place,
   subtitle,
   player,
+  startingCoins,
   onFlowDone,
 }: Props) {
   const [phase, setPhase] = React.useState<Phase>("idle");
@@ -92,7 +95,7 @@ export default function StartFlowOverlay({
   if (phase === "idle" || phase === "done") return null;
 
   if (phase === "intro") {
-    const startingMoneyFormatted = STARTING_COINS.toLocaleString("cs-CZ");
+    const startingMoneyFormatted = (startingCoins ?? DEFAULT_STARTING_COINS).toLocaleString("cs-CZ");
     const resolvedPublicObjectiveText = scenario?.publicObjectiveText?.replace(
       "{startingMoney}",
       startingMoneyFormatted,

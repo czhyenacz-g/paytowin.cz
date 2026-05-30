@@ -102,7 +102,7 @@ import { useBgMusic } from "@/lib/audio/music";
 import { sfxPlay, type SoundId } from "@/lib/audio/sfx";
 import { useOpponentMoneyFeedback } from "@/app/hooks/useOpponentMoneyFeedback";
 import BoardCenterPanel from "./center-panel/BoardCenterPanel";
-import { COINS_FEEDBACK_DURATION_MS } from "@/lib/game-constants";
+import { COINS_FEEDBACK_DURATION_MS, DEFAULT_STARTING_COINS } from "@/lib/game-constants";
 
 // Styly polí jsou součástí theme systému (lib/themes/*)
 // Přistupuj přes: theme.colors.fieldStyles[field.type]
@@ -3379,6 +3379,7 @@ export default function GameBoard({ gameCode }: Props) {
         place={theme.mapMeta?.place ?? "místní okruh"}
         subtitle={theme.mapMeta?.subtitle ?? "Každá mapa má svoje pravidla."}
         player={myPlayer}
+        startingCoins={economy.startingCoins ?? DEFAULT_STARTING_COINS}
       />
       <BuildInfoBar theme={theme} boardId={boardId} />
       <ThemeAssetInspector themeId={themeId} theme={theme} />
