@@ -95,6 +95,15 @@ export function useGameBoardAudio(params: UseGameBoardAudioParams): UseGameBoard
     soundEnabledRef.current = enabled;
   }, []);
 
+  // ── Cleanup timers on unmount ──────────────────────────────────────────
+  React.useEffect(() => {
+    return () => {
+      if (coinsFeedbackTimerRef.current) clearTimeout(coinsFeedbackTimerRef.current);
+      if (telegramTimerRef.current) clearTimeout(telegramTimerRef.current);
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    };
+  }, []);
+
   // ── Toggle sound and persist ────────────────────────────────────────
   const toggleSound = () => {
     const next = !soundEnabled;
