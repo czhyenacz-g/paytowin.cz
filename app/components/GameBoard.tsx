@@ -105,6 +105,7 @@ import { useOpponentMoneyFeedback } from "@/app/hooks/useOpponentMoneyFeedback";
 import BoardCenterPanel from "./center-panel/BoardCenterPanel";
 import BankruptAnnouncementModal from "./modals/BankruptAnnouncementModal";
 import { AmbientBackground } from "./ui/AmbientBackground";
+import { BoardAnimationLayer } from "./board/BoardAnimationLayer";
 import { COINS_FEEDBACK_DURATION_MS, DEFAULT_STARTING_COINS } from "@/lib/game-constants";
 
 // Styly polí jsou součástí theme systému (lib/themes/*)
@@ -3139,53 +3140,13 @@ export default function GameBoard({ gameCode }: Props) {
                   );
                 })}
 
-                {/* ── Trail dots — stopa za pohybující se figurkou ─────────────────── */}
-                {animatingPlayerIdx !== null && trailFields.length > 0 && (() => {
-                  const n = trailFields.length;
-                  const trailColor = players[animatingPlayerIdx]?.color ?? "bg-amber-400";
-                  return trailFields.map((fieldIdx, i) => {
-                    const pos = board.shape === "stadium"
-                      ? FIGURINE_POSITIONS_STADIUM[fieldIdx]
-                      : FIGURINE_POSITIONS[fieldIdx];
-                    if (!pos) return null;
-                    const progress = n === 1 ? 1 : i / (n - 1);
-                    const opacity = 0.10 + progress * 0.38;
-                    const size = 4 + progress * 14;
-                    return (
-                      <div
-                        key={`trail-${fieldIdx}-${i}`}
-                        className="absolute pointer-events-none"
-                        style={{ left: pos.left, top: pos.top, transform: "translate(-50%, -50%)", zIndex: 11, width: `${size}px`, height: `${size}px` }}
-                      >
-                        <div className={`rounded-full ${trailColor}`} style={{ width: "100%", height: "100%", opacity }} />
-                      </div>
-                    );
-                  });
-                })()}
-
-                {/* ── Smooth floating figurine — plynulý pohyb s CSS transition ─── */}
-                {animatingPlayerIdx !== null && animPosition !== null && (() => {
-                  const animPlayer = players[animatingPlayerIdx];
-                  if (!animPlayer) return null;
-                  const pos = board.shape === "stadium"
-                    ? FIGURINE_POSITIONS_STADIUM[animPosition]
-                    : FIGURINE_POSITIONS[animPosition];
-                  if (!pos) return null;
-                  return (
-                    <div
-                      className="absolute pointer-events-none"
-                      style={{ left: pos.left, top: pos.top, transform: "translate(-50%, -50%)", zIndex: 15, transition: "left 140ms ease-out, top 140ms ease-out" }}
-                    >
-                      <div
-                        className={`flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-black text-black ring-2 ring-black/20 scale-125 animate-bounce ${animPlayer.color}`}
-                        style={{ boxShadow: "0 3px 0 rgba(0,0,0,0.35), 0 4px 6px rgba(0,0,0,0.25)" }}
-                        title={animPlayer.name}
-                      >
-                        {animPlayer.name.charAt(0).toUpperCase()}
-                      </div>
-                    </div>
-                  );
-                })()}
+                <BoardAnimationLayer
+                  animatingPlayerIdx={animatingPlayerIdx}
+                  animPosition={animPosition}
+                  trailFields={trailFields}
+                  players={players}
+                  boardShape={board.shape}
+                />
 
                 {/* ── Info blok Startu — pod kartou (pole 0 je rotovaná -90°, zabírá levou hranu)  */}
                 {(() => {
