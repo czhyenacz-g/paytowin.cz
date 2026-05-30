@@ -102,6 +102,7 @@ import { useBgMusic } from "@/lib/audio/music";
 import { sfxPlay, type SoundId } from "@/lib/audio/sfx";
 import { useOpponentMoneyFeedback } from "@/app/hooks/useOpponentMoneyFeedback";
 import BoardCenterPanel from "./center-panel/BoardCenterPanel";
+import { COINS_FEEDBACK_DURATION_MS } from "@/lib/game-constants";
 
 // Styly polí jsou součástí theme systému (lib/themes/*)
 // Přistupuj přes: theme.colors.fieldStyles[field.type]
@@ -765,7 +766,7 @@ export default function GameBoard({ gameCode }: Props) {
   const showCoinsFeedback = React.useCallback((amount: number, kind: "gain" | "lose", playerName: string, fieldLabel: string) => {
     if (coinsFeedbackTimerRef.current) clearTimeout(coinsFeedbackTimerRef.current);
     setCoinsFeedback({ amount, kind, playerName, fieldLabel });
-    coinsFeedbackTimerRef.current = setTimeout(() => setCoinsFeedback(null), 3000);
+    coinsFeedbackTimerRef.current = setTimeout(() => setCoinsFeedback(null), COINS_FEEDBACK_DURATION_MS);
     playSfx(kind === "gain" ? "coin_gain" : "coin_loss");
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -2,6 +2,7 @@
 
 import React from "react";
 import type { Player } from "@/lib/types/game";
+import { COINS_FEEDBACK_DURATION_MS } from "@/lib/game-constants";
 
 export interface OpponentMoneyEvent {
   playerId: string;
@@ -39,7 +40,7 @@ export function useOpponentMoneyFeedback(
       if (!isOpponent) continue;
       if (timerRef.current) clearTimeout(timerRef.current);
       setEvent({ playerId: p.id, playerName: p.name, amount: Math.abs(delta), kind: delta > 0 ? "gain" : "loss" });
-      timerRef.current = setTimeout(() => setEvent(null), 3000);
+      timerRef.current = setTimeout(() => setEvent(null), COINS_FEEDBACK_DURATION_MS);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [players, myPlayerId]);
