@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import type { Field } from "@/lib/engine";
 import { isBankrupt, getStartTax } from "@/lib/engine";

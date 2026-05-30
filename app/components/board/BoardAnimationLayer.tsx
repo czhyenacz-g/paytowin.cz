@@ -1,3 +1,5 @@
+"use client";
+
 import type { Player } from "@/lib/types/game";
 import { FIGURINE_POSITIONS, FIGURINE_POSITIONS_STADIUM } from "@/lib/board/layout";
 
