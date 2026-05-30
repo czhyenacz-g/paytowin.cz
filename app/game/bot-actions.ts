@@ -476,7 +476,13 @@ export async function executeBotHorseDecisionAction(
   const gameYear = yearStart + leadLaps;
 
   const logEntries: string[] = Array.isArray(state.log) ? (state.log as string[]) : [];
-  const alreadyBoughtThisYear = logEntries.some(entry => entry.includes(`${botPlayer.name} koupil`));
+  // Check if bot already bought a racer this year
+  // Note: log is limited to 20 recent entries, so old purchases may be evicted.
+  // If all of bot's racers are accounted for in the log, the last purchase was recent (this year).
+  // If some purchases have been evicted, we conservatively assume no purchases in THIS year.
+  const botRacersInLog = logEntries.filter(e => e.includes(`${botPlayer.name} koupil`)).length;
+  const botRacersOwned = botPlayer.horses.length;
+  const alreadyBoughtThisYear = botRacersOwned > 0 && botRacersInLog >= botRacersOwned;
 
   const decisionResult = decideBotHorsePurchase({
     player: botPlayer,
