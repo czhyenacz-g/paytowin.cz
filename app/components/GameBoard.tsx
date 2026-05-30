@@ -100,8 +100,10 @@ import ScoreTable from "./ScoreTable";
 import BrandLogo from "./BrandLogo";
 import { useBgMusic } from "@/lib/audio/music";
 import { sfxPlay, type SoundId } from "@/lib/audio/sfx";
+import { scheduleMorseAudio } from "@/lib/audio/morse";
 import { useOpponentMoneyFeedback } from "@/app/hooks/useOpponentMoneyFeedback";
 import BoardCenterPanel from "./center-panel/BoardCenterPanel";
+import BankruptAnnouncementModal from "./modals/BankruptAnnouncementModal";
 import { COINS_FEEDBACK_DURATION_MS, DEFAULT_STARTING_COINS } from "@/lib/game-constants";
 
 // Styly polí jsou součástí theme systému (lib/themes/*)
@@ -111,52 +113,6 @@ import { COINS_FEEDBACK_DURATION_MS, DEFAULT_STARTING_COINS } from "@/lib/game-c
 // Úhel pole i: α = 180° − i × (360°/21), kde 0° = vpravo, 90° = nahoru (CSS y je inverzní).
 // Vzorec: left = 50 + 42·cos(α), top = 50 − 42·sin(α).
 // Mezera mezi sousedními poli ≈ 24 px (na boardu max-w 760 px) — rovnoměrná po celém okruhu.
-
-// ─── Pole: detail text pro hover stav ────────────────────────────────────────
-
-/**
- * scheduleMorseAudio — naplánuje přehrání morseovky na WebAudio timeline.
- *
- * Timing (UNIT = 35 ms):
- *   dit = 1 UNIT, dah = 3 UNIT, inter-element gap = 1 UNIT,
- *   inter-letter gap = 3 UNIT, inter-word gap = 7 UNIT.
- */
-function scheduleMorseAudio(ctx: AudioContext, morse: string): void {
-  const UNIT = 0.035; // 35 ms
-  const FREQ = 660;
-  const VOL  = 0.22;
-  let t = ctx.currentTime + 0.05;
-
-  function beep(dur: number) {
-    const osc  = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = "sine";
-    osc.frequency.value = FREQ;
-    gain.gain.setValueAtTime(0, t);
-    gain.gain.linearRampToValueAtTime(VOL, t + 0.004);
-    gain.gain.setValueAtTime(VOL, t + dur - 0.004);
-    gain.gain.linearRampToValueAtTime(0, t + dur);
-    osc.start(t);
-    osc.stop(t + dur + 0.01);
-    t += dur + UNIT; // symbol + inter-element gap
-  }
-
-  const words = morse.split("  /  ");
-  for (let wi = 0; wi < words.length; wi++) {
-    const letters = words[wi].split(" ");
-    for (let li = 0; li < letters.length; li++) {
-      for (const sym of letters[li]) {
-        if (sym === "·") beep(UNIT);
-        else if (sym === "−") beep(3 * UNIT);
-      }
-      if (li < letters.length - 1) t += 2 * UNIT; // inter-letter = 3 UNIT total
-    }
-    if (wi < words.length - 1) t += 6 * UNIT; // inter-word = 7 UNIT total
-  }
-}
-
 
 // ─── Komponenta ───────────────────────────────────────────────────────────────
 
@@ -2885,16 +2841,7 @@ export default function GameBoard({ gameCode }: Props) {
       )}
 
       {/* ── Bankrot announcement ─────────────────────────────────────────── */}
-      {bankruptAnn && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-sm rounded-[4px] bg-white p-8 shadow-2xl text-center space-y-4">
-            <div className="text-6xl">💀</div>
-            <h2 className="text-2xl font-bold text-slate-800">{bankruptAnn.playerName} zkrachoval!</h2>
-            <p className="text-sm text-slate-500">Hra pokračuje bez tohoto hráče.</p>
-            <div className="animate-pulse text-xs text-slate-400">Pokračujeme za chvíli…</div>
-          </div>
-        </div>
-      )}
+      {bankruptAnn && <BankruptAnnouncementModal playerName={bankruptAnn.playerName} />}
 
       {/* ── Race flow: výběr → countdown → závod → výsledky ────────────────── */}
       {racePendingEvt && racePendingEvt.playerIds?.length > 0 && (
