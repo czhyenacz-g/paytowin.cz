@@ -316,6 +316,7 @@ export default function GameBoard({ gameCode }: Props) {
     offerPendingType: gameState?.offer_pending?.type,
     gameStatus,
     viewerRole,
+    fieldCount: FIELDS.length,
     setPendingOffer,
     seenGameOverRef,
     lateJoinRef,

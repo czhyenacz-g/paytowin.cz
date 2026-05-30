@@ -27,6 +27,7 @@ interface UseGameBoardAudioParams {
   offerPendingType: string | undefined;
   gameStatus: string;
   viewerRole: string;
+  fieldCount: number;
   setPendingOffer: (offer: RerollOffer | null) => void;
   seenGameOverRef: React.MutableRefObject<boolean>;
   lateJoinRef: React.MutableRefObject<boolean>;
@@ -61,6 +62,7 @@ export function useGameBoardAudio(params: UseGameBoardAudioParams): UseGameBoard
     offerPendingType,
     gameStatus,
     viewerRole,
+    fieldCount,
     setPendingOffer,
     seenGameOverRef,
     lateJoinRef,
@@ -170,19 +172,18 @@ export function useGameBoardAudio(params: UseGameBoardAudioParams): UseGameBoard
     prevPlayersRef.current = players;
     if (gameMode === "local") return; // rollDice obstarává zvuky pro všechny v lokální hře
     if (prev.length === 0) return;
-    const fc = players.length > 0 ? Math.max(...players.map((p, i) => i)) + 1 : 0;
     players.forEach(p => {
       if (p.id === myPlayerId) return; // vlastní pohyb hraje rollDice
       const old = prev.find(op => op.id === p.id);
       if (!old || p.position === old.position) return;
-      const steps = (p.position - old.position + fc) % fc;
+      const steps = (p.position - old.position + fieldCount) % fieldCount;
       if (steps < 1 || steps > 6) return;
       for (let i = 0; i < steps; i++) {
         setTimeout(() => playStepSound(), i * 160);
       }
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [players, gameMode, myPlayerId]);
+  }, [players, gameMode, myPlayerId, fieldCount]);
 
   // ── Show coins feedback (3s auto-dismiss) ───────────────────────────
   const showCoinsFeedback = React.useCallback((amount: number, kind: "gain" | "lose", playerName: string, fieldLabel: string) => {
