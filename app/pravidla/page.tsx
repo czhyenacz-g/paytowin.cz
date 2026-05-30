@@ -20,6 +20,9 @@ export default function PravidlaPage() {
               Přežij co nejdéle a nezbankrotuj.<br />
               Poslední hráč ve hře vyhrává.
             </p>
+            <p className="mt-2 text-sm text-slate-500">
+              Počáteční peníze závisí na nastavení hry: Hard — 6 000, Normál — 8 000 (výchozí), Bohatý — 10 000.
+            </p>
           </section>
 
           <section>
@@ -34,11 +37,11 @@ export default function PravidlaPage() {
 
           <section>
             <h2 className="text-lg font-bold text-slate-800">➕ Úprava hodu</h2>
-            <p className="mt-2">Po hodu můžeš:</p>
+            <p className="mt-2">Po hodu máš 4 sekundy na rozhodnutí:</p>
             <ul className="mt-2 space-y-1 list-disc list-inside">
-              <li>+1 krok za 100 coins</li>
-              <li>−1 krok za 100 coins</li>
-              <li>nebo nic</li>
+              <li>+1 krok za 600 coins</li>
+              <li>−1 krok za 600 coins</li>
+              <li>nebo nic (automaticky pokud nereaguješ)</li>
             </ul>
           </section>
 
@@ -48,6 +51,7 @@ export default function PravidlaPage() {
               <li>Můžeš je kupovat</li>
               <li>Ostatní ti platí, když na ně vstoupí</li>
               <li>Můžeš je prodat (80 % ceny)</li>
+              <li>Když závodník vyčerpá staminu, vrátí se do nabídky — může ho koupit jiný hráč</li>
             </ul>
           </section>
 
@@ -59,13 +63,16 @@ export default function PravidlaPage() {
               <li>Spustí se odpočet</li>
               <li>Následuje minihra</li>
             </ol>
+            <p className="mt-2 text-sm text-slate-500">
+              Některé efekty a karty mohou hráče přeskočit na další kolo — v seznamu hráčů je označen jako „stojí".
+            </p>
           </section>
 
           <section>
-            <h2 className="text-lg font-bold text-slate-800">🎮 Ovládání</h2>
+            <h2 className="text-lg font-bold text-slate-800">🎮 Ovládání miniher</h2>
             <ul className="mt-2 space-y-1 list-disc list-inside font-mono text-sm">
-              <li>P1: A / D + SPACE (boost)</li>
-              <li>P2: ← / → + S (boost)</li>
+              <li>P1: WASD (relativní dle směru jízdy) · Q nebo 2× dopředu = boost</li>
+              <li>P2: ← ↑ ↓ → · Space nebo 2× dopředu = boost</li>
             </ul>
             <p className="mt-2 text-sm text-slate-500">Boost = krátké zrychlení za cenu staminy</p>
           </section>
