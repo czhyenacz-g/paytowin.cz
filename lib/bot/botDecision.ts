@@ -1,18 +1,43 @@
 import type { Player } from "@/lib/types/game";
 import type { RacerConfig } from "@/lib/themes";
+import {
+  decideBotHorsePurchaseStrategy,
+  type BotPurchaseParams,
+  type BotPurchaseDecision,
+} from "./botPurchaseStrategy";
 
 /**
- * decideBotHorsePurchase — rozhodne, zda bot koupí závodníka.
+ * decideBotHorsePurchase — wrapper pokud pro zpětnou kompatibilitu.
  *
- * MVP pravidla:
- *  - Bot nemá žádného závodníka → kup pokud má dost coinů.
- *  - Bot má závodníka → přeskočit (nezahlcuj stáj).
+ * Pozor: bez gameYear a alreadyBoughtThisYear vrací konzervativní rozhodnutí.
+ * Pro produkční kód použij decideBotHorsePurchaseStrategy s úplnými parametry.
  */
 export function decideBotHorsePurchase(
   player: Player,
   racer: RacerConfig,
-): "buy" | "skip" {
-  if (player.horses.length > 0) return "skip";
-  if (player.coins < racer.price) return "skip";
-  return "buy";
+): "buy" | "skip";
+export function decideBotHorsePurchase(
+  params: BotPurchaseParams,
+): BotPurchaseDecision;
+export function decideBotHorsePurchase(
+  playerOrParams: Player | BotPurchaseParams,
+  racer?: RacerConfig,
+): "buy" | "skip" | BotPurchaseDecision {
+  // Detect overload: if second arg exists, use old API
+  if (racer) {
+    const player = playerOrParams as Player;
+    // Legacy: no game year context, so use safe default
+    const result = decideBotHorsePurchaseStrategy({
+      player,
+      racer,
+      gameYear: 1921,
+      alreadyBoughtThisYear: player.horses.length > 0,
+      difficulty: "normal",
+    });
+    return result.decision;
+  }
+
+  // New API: return full decision object
+  const params = playerOrParams as BotPurchaseParams;
+  return decideBotHorsePurchaseStrategy(params);
 }

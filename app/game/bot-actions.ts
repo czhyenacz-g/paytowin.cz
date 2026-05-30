@@ -442,7 +442,7 @@ export async function executeBotHorseDecisionAction(
   const ctx = await fetchBotContext(gameId);
   if (!ctx) return { ok: false, reason: "context fetch failed" };
 
-  const { game, state, players, FIELDS, racers } = ctx;
+  const { game, state, players, FIELDS, racers, theme } = ctx;
 
   // Fog of War: racer pole jsou vždy viditelné, takže fogReveal je no-op, ale zajišťuje konzistenci
   const currentRevealed: number[] = Array.isArray(state.revealed_fields) ? (state.revealed_fields as number[]) : [];
@@ -470,10 +470,24 @@ export async function executeBotHorseDecisionAction(
   const racerCfg = racers.find(r => r.id === field.racer!.id) ??
     (field.racer as unknown as RacerConfig);
 
-  const decision = decideBotHorsePurchase(botPlayer, racerCfg);
+  // Compute gameYear and check if already bought this year
+  const leadLaps = Math.max(...players.map(p => p.laps ?? 0), 0);
+  const yearStart = theme.mapMeta?.yearStart ?? 1921;
+  const gameYear = yearStart + leadLaps;
+
+  const logEntries: string[] = Array.isArray(state.log) ? (state.log as string[]) : [];
+  const alreadyBoughtThisYear = logEntries.some(entry => entry.includes(`${botPlayer.name} koupil`));
+
+  const decisionResult = decideBotHorsePurchase({
+    player: botPlayer,
+    racer: racerCfg,
+    gameYear,
+    alreadyBoughtThisYear,
+    difficulty: "normal",
+  });
+  const decision = decisionResult.decision;
   const newTurnCount = state.turn_count + 1;
   const nextIndex = getNextActiveIndex(state.current_player_index, players);
-  const logEntries: string[] = Array.isArray(state.log) ? (state.log as string[]) : [];
 
   if (decision === "buy") {
     const hKey = racerOwnershipKey(field.racer);
