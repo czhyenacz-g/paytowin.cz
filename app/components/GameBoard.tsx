@@ -106,6 +106,7 @@ import BoardCenterPanel from "./center-panel/BoardCenterPanel";
 import BankruptAnnouncementModal from "./modals/BankruptAnnouncementModal";
 import { AmbientBackground } from "./ui/AmbientBackground";
 import { BoardAnimationLayer } from "./board/BoardAnimationLayer";
+import { BoardSurface } from "./board/BoardSurface";
 import { COINS_FEEDBACK_DURATION_MS, DEFAULT_STARTING_COINS } from "@/lib/game-constants";
 
 // Styly polí jsou součástí theme systému (lib/themes/*)
@@ -3029,163 +3030,38 @@ export default function GameBoard({ gameCode }: Props) {
               />
             )}
 
-            {/* aspect-[20/18] musí odpovídat STADIUM_ASPECT v lib/board/constants.ts */}
-            <div ref={boardSurfaceRef} className={`relative mx-auto w-full overflow-visible ${board.shape === "stadium" ? "aspect-[20/18]" : "aspect-square max-w-[760px]"}`}>
-              <div
-                className={`absolute inset-0 overflow-hidden rounded-[4px] border-2 ${theme.colors.boardSurfaceBorder} ${theme.colors.boardSurface}`}
-                style={{
-                  boxShadow: "inset 0 2px 24px rgba(0,0,0,0.09), 0 4px 32px rgba(0,0,0,0.10)",
-                  transition: flipBoardAnim !== "idle" ? "transform 0.3s ease-in-out" : "none",
-                  transform: (devFlipOpen && flipBoardAnim !== "back-in") || flipBoardAnim === "out"
-                    ? "perspective(900px) rotateY(-90deg)"
-                    : "perspective(900px) rotateY(0deg)",
-                }}
-              >
-                {boardBgUrl && (
-                  <div
-                    className="pointer-events-none absolute inset-0"
-                    style={{ backgroundImage: `url(${boardBgUrl})`, backgroundSize: "cover", backgroundPosition: "center", opacity: 0.5 }}
-                  />
-                )}
-
-                {/* ── SVG traťový pás ── */}
-                <svg
-                  className="pointer-events-none absolute inset-0 h-full w-full"
-                  viewBox="0 0 100 100"
-                  style={{ zIndex: 0 }}
-                >
-                  {board.shape === "stadium" ? (<>
-                    {/* Stadium: zaoblený obdélník, r=22, rovné strany hw=18 */}
-                    <path d="M 32 28 L 68 28 A 22 22 0 0 1 68 72 L 32 72 A 22 22 0 0 1 32 28 Z"
-                      fill="none" stroke="rgba(0,0,0,0.07)" strokeWidth="11" />
-                    <path d="M 32 28 L 68 28 A 22 22 0 0 1 68 72 L 32 72 A 22 22 0 0 1 32 28 Z"
-                      fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="11" />
-                  </>) : (<>
-                    <ellipse cx="50" cy="50" rx="42" ry="42"
-                      fill="none" stroke="rgba(0,0,0,0.07)" strokeWidth="11" />
-                    <ellipse cx="50" cy="50" rx="42" ry="42"
-                      fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="11" />
-                  </>)}
-                </svg>
-              </div>
-
-              <div className="absolute inset-0 overflow-visible">
-                <FieldCardList
-                  fields={FIELDS}
-                  boardShape={board.shape}
-                  trailFields={trailFields}
-                  hoveredPlayerId={hoveredPlayerId}
-                  displayPlayers={displayPlayers}
-                  racerOwnership={racerOwnership}
-                  hoveredFieldIdx={hoveredFieldIdx}
-                  ghostMoveTarget={ghostMoveTarget}
-                  themeId={themeId}
-                  themeManifest={themeManifest}
-                  fieldStyles={theme.colors.fieldStyles}
-                  flippingFields={flippingFields}
-                  showingHiddenRef={showingHiddenRef}
-                  isFieldVisible={isFieldVisible}
-                  onHoverField={setHoveredFieldIdx}
-                />
-
-                {/* Ghost marker pro původní cíl hodu — zobrazen na pozici figurky (blíže středu) */}
-                {ghostMoveTarget !== null && (() => {
-                  const pos = board.shape === "stadium"
-                    ? FIGURINE_POSITIONS_STADIUM[ghostMoveTarget]
-                    : FIGURINE_POSITIONS[ghostMoveTarget];
-                  if (!pos) return null;
-                  return (
-                    <div
-                      key="ghost-move-target"
-                      className="absolute z-10 pointer-events-none flex items-center justify-center"
-                      style={{ ...pos, width: "32px", height: "32px" }}
-                    >
-                      <div
-                        className="h-5 w-5 rounded-full bg-yellow-400/80 border-2 border-white/60 shadow-[0_0_15px_#fbbf24,0_0_30px_#fbbf24] animate-pulse"
-                        title="Původní cíl hodu"
-                      />
-                    </div>
-                  );
-                })()}
-
-                {/* Figurky hráčů — mimo čtverce polí, posunuté ke středu */}
-                {FIELDS.map((field) => {
-                  const playersHere = fieldPlayers(field.index);
-                  if (playersHere.length === 0) return null;
-                  return (
-                    <div
-                      key={`fig-${field.index}`}
-                      className="absolute flex items-center justify-center gap-0.5"
-                      style={{
-                        ...(board.shape === "stadium"
-                          ? FIGURINE_POSITIONS_STADIUM[field.index]
-                          : FIGURINE_POSITIONS[field.index]),
-                        zIndex: 10,
-                      }}
-                    >
-                      {playersHere.map((player) => {
-                        const isAnimatingThis = player.id === animatingPlayerId;
-                        return (
-                          <div
-                            key={player.id}
-                            className={`flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-black text-black ring-2 ring-black/20 ${player.color} ${isAnimatingThis ? "scale-125 animate-bounce" : "animate-figurine-bob"}`}
-                            style={{ boxShadow: "0 3px 0 rgba(0,0,0,0.35), 0 4px 6px rgba(0,0,0,0.25)", animationDelay: isAnimatingThis ? "0s" : `${(player.turn_order % 4) * 0.28}s` }}
-                            title={player.name}
-                          >
-                            {player.name.charAt(0).toUpperCase()}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })}
-
-                <BoardAnimationLayer
-                  animatingPlayerIdx={animatingPlayerIdx}
-                  animPosition={animPosition}
-                  trailFields={trailFields}
-                  players={players}
-                  boardShape={board.shape}
-                />
-
-                {/* ── Info blok Startu — pod kartou (pole 0 je rotovaná -90°, zabírá levou hranu)  */}
-                {(() => {
-                  const startBonus = economy.stateSubsidy;
-                  const myLaps = (myPlayer?.laps ?? 0);
-                  const myNextTax = getStartTax(myLaps, economy);
-                  return (
-                    <div
-                      className="absolute pointer-events-none select-none"
-                      style={{ top: "50%", left: 0, transform: "translate(-108%, -50%)", zIndex: 3 }}
-                    >
-                      <div className="rounded-lg bg-black/40 px-2 py-1.5 backdrop-blur-sm space-y-0.5">
-                        <div className="text-[9px] font-semibold text-green-400 whitespace-nowrap">
-                          Příspěvek: +{startBonus} 💰
-                        </div>
-                        {myNextTax > 0 && (
-                          <div className="text-[9px] font-semibold text-red-400 whitespace-nowrap">
-                            Výpalné (daně): −{myNextTax} 💰
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                <BoardCenterPanel
-                  theme={theme}
-                  themeId={themeId}
-                  boardShape={board.shape}
-                  hoveredField={hoveredField}
-                  isFieldVisible={isFieldVisible}
-                  coinsFeedback={coinsFeedback}
-                  opponentMoneyEvent={opponentMoneyEvent}
-                  currentYearEvent={currentYearEvent}
-                  gameYear={gameYear}
-                  racerOwnership={racerOwnership}
-                />
-              </div>
-            </div>
+            <BoardSurface
+              surfaceRef={boardSurfaceRef}
+              board={board}
+              boardBgUrl={boardBgUrl}
+              flipBoardAnim={flipBoardAnim}
+              devFlipOpen={devFlipOpen}
+              theme={theme}
+              themeId={themeId}
+              themeManifest={themeManifest}
+              FIELDS={FIELDS}
+              trailFields={trailFields}
+              hoveredPlayerId={hoveredPlayerId}
+              displayPlayers={displayPlayers}
+              racerOwnership={racerOwnership}
+              hoveredFieldIdx={hoveredFieldIdx}
+              hoveredField={hoveredField}
+              ghostMoveTarget={ghostMoveTarget}
+              flippingFields={flippingFields}
+              showingHiddenRef={showingHiddenRef}
+              isFieldVisible={isFieldVisible}
+              animatingPlayerIdx={animatingPlayerIdx}
+              animPosition={animPosition}
+              animatingPlayerId={animatingPlayerId}
+              players={players}
+              economy={economy}
+              myPlayer={myPlayer}
+              coinsFeedback={coinsFeedback}
+              opponentMoneyEvent={opponentMoneyEvent}
+              currentYearEvent={currentYearEvent}
+              gameYear={gameYear}
+              onHoverField={setHoveredFieldIdx}
+            />
           </div>
 
           {/* Pravý panel */}
