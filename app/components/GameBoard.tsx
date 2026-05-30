@@ -21,7 +21,6 @@ import { logEvent } from "@/lib/analytics";
 import { buildFogReveal as libBuildFogReveal } from "@/lib/fog";
 import { UI_TEXT } from "@/lib/ui-text";
 import { applyBoardShuffle } from "@/lib/board/shuffle";
-import { textToMorse, extractCapsSegment } from "@/lib/morse";
 import TelegramStrip from "./TelegramStrip";
 import type { TelegramMessage } from "./TelegramStrip";
 import type { Field } from "@/lib/engine";
@@ -72,6 +71,7 @@ import { resolveYearEvent } from "@/lib/year-events";
 import type { CenterEvent, FlashEvent } from "@/lib/types/events";
 import { mapToCenterEvent, buildRollDecisionOptions } from "@/lib/game/viewModel";
 import { buildRacerOwnership, getDisplayPlayers, computeRaceResultsView } from "@/lib/game/gameBoardViewModel";
+import { useGameBoardAudio } from "@/app/components/board/hooks/useGameBoardAudio";
 import CenterEventModal from "./modals/CenterEventModal";
 import FlashToast from "./modals/FlashToast";
 import RacerLostModal, { type RacerCategory } from "./modals/RacerLostModal";
@@ -99,16 +99,13 @@ import StartFlowOverlay from "./start-flow/StartFlowOverlay";
 import { getScenarioForTheme, evaluateScenarioWinCondition } from "@/lib/scenarios";
 import ScoreTable from "./ScoreTable";
 import BrandLogo from "./BrandLogo";
-import { useBgMusic } from "@/lib/audio/music";
-import { sfxPlay, type SoundId } from "@/lib/audio/sfx";
-import { scheduleMorseAudio } from "@/lib/audio/morse";
 import { useOpponentMoneyFeedback } from "@/app/hooks/useOpponentMoneyFeedback";
 import BoardCenterPanel from "./center-panel/BoardCenterPanel";
 import BankruptAnnouncementModal from "./modals/BankruptAnnouncementModal";
 import { AmbientBackground } from "./ui/AmbientBackground";
 import { BoardAnimationLayer } from "./board/BoardAnimationLayer";
 import { BoardSurface } from "./board/BoardSurface";
-import { COINS_FEEDBACK_DURATION_MS, DEFAULT_STARTING_COINS } from "@/lib/game-constants";
+import { DEFAULT_STARTING_COINS } from "@/lib/game-constants";
 
 // Styly polí jsou součástí theme systému (lib/themes/*)
 // Přistupuj přes: theme.colors.fieldStyles[field.type]
@@ -175,7 +172,6 @@ export default function GameBoard({ gameCode }: Props) {
   const [trailFields, setTrailFields] = React.useState<number[]>([]);
   const [hoveredPlayerId, setHoveredPlayerId] = React.useState<string | null>(null);
   const [hoveredFieldIdx, setHoveredFieldIdx] = React.useState<number | null>(null);
-  const [soundEnabled, setSoundEnabled] = React.useState(true);
   const [racerGuideDismissed, setRacerGuideDismissed] = React.useState(false);
   const [staminaGuideDismissed, setStaminaGuideDismissed] = React.useState(false);
   const [preferredGuideDismissed, setPreferredGuideDismissed] = React.useState(false);
@@ -213,8 +209,6 @@ export default function GameBoard({ gameCode }: Props) {
     }
     return "pvbot_awareness";
   });
-  const audioCtxRef = React.useRef<AudioContext | null>(null);
-  const soundEnabledRef = React.useRef(true);
   const rollDecisionTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const rollDecisionResolvedRef = React.useRef(false);
   const pendingRollResolverRef = React.useRef<((adjustment: RollAdjustment) => void) | null>(null);
@@ -228,18 +222,10 @@ export default function GameBoard({ gameCode }: Props) {
   const [minigameBgUrl, setMinigameBgUrl] = React.useState<string>("");
   /** Závodníci načtení z globální registry (racerRefs flow). Null = použij inline theme racers. */
   const [resolvedRacers, setResolvedRacers] = React.useState<RacerConfig[] | null>(null);
-  const [flashEvent, setFlashEvent] = React.useState<FlashEvent | null>(null);
   const [racerLostModal, setRacerLostModal] = React.useState<{ horse: import("@/lib/types/game").Horse; playerName: string; racerCategory: RacerCategory } | null>(null);
-  const flashTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [telegramMessage, setTelegramMessage] = React.useState<TelegramMessage | null>(null);
-  const telegramTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [coinsFeedback, setCoinsFeedback] = React.useState<{ amount: number; kind: "gain" | "lose"; playerName: string; fieldLabel: string } | null>(null);
-  const coinsFeedbackTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const opponentMoneyEvent = useOpponentMoneyFeedback(players, myPlayerId);
   const [scorePopupOpen, setScorePopupOpen] = React.useState(false);
   const [topPanelVisible, setTopPanelVisible] = React.useState(true);
-  const flashActiveRef = React.useRef(false);
-  const deferredOfferRef = React.useRef<RerollOffer | null>(null);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -270,9 +256,6 @@ export default function GameBoard({ gameCode }: Props) {
   // Theme + FIELDS — odvozeno ze stavu themeId/boardId, aktualizuje se při každém renderu
   const theme = getThemeById(themeId);
   const themeManifest = themeToManifest(theme);
-
-  // Background music — no-op pokud theme.music není definováno
-  useBgMusic(theme.music, soundEnabled);
   const board = theme.board ?? getBoardById(boardId);
   const shuffledBoard = applyBoardShuffle(board, gameId);
   // resolvedRacers: závodníci z globální registry (racerRefs flow); null = inline fallback
@@ -308,10 +291,36 @@ export default function GameBoard({ gameCode }: Props) {
   const seenYearEventTurnRef = React.useRef<number>(0);
   // Guard: GAME OVER telegram — true = already shown or game was already finished on load
   const seenGameOverRef = React.useRef<boolean>(false);
-  // Join telegram: null = not yet initialized (skip first run), Set = known player IDs
-  const knownPlayerIdsRef = React.useRef<Set<string> | null>(null);
   // Late-join spectator telegram: true = sessionStorage flag byl přečten, telegram čeká na render
   const lateJoinRef = React.useRef<boolean>(false);
+
+  // ── Audio & UX feedback hook ──────────────────────────────────────────
+  const {
+    soundEnabled,
+    flashEvent,
+    telegramMessage,
+    coinsFeedback,
+    toggleSound,
+    playSfx,
+    playStepSound,
+    showCoinsFeedback,
+    showTelegram,
+    showFlash,
+    flashActiveRef,
+    deferredOfferRef,
+  } = useGameBoardAudio({
+    themeMusic: theme.music,
+    players,
+    gameMode,
+    myPlayerId,
+    offerPendingType: gameState?.offer_pending?.type,
+    gameStatus,
+    viewerRole,
+    setPendingOffer,
+    seenGameOverRef,
+    lateJoinRef,
+  });
+
   // flippingFields: pole právě animující flip
   const [flippingFields, setFlippingFields] = React.useState<Set<number>>(new Set());
   // showingHiddenRef: pole v první půlce flipu — stále zobrazují hidden card
@@ -346,14 +355,6 @@ export default function GameBoard({ gameCode }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [revealedFields.join(","), fogOfWar]);
 
-  // Načti preference zvuku z localStorage
-  React.useEffect(() => {
-    const stored = localStorage.getItem("paytowin_sound");
-    const enabled = stored !== "off";
-    setSoundEnabled(enabled);
-    soundEnabledRef.current = enabled;
-  }, []);
-
   React.useEffect(() => {
     return () => {
       if (rollDecisionTimerRef.current) clearTimeout(rollDecisionTimerRef.current);
@@ -366,13 +367,6 @@ export default function GameBoard({ gameCode }: Props) {
     setStaminaGuideDismissed(localStorage.getItem(`paytowin_guide_stamina_${scope}`) === "dismissed");
     setPreferredGuideDismissed(localStorage.getItem(`paytowin_guide_preferred_${scope}`) === "dismissed");
   }, [gameCode]);
-
-  const toggleSound = () => {
-    const next = !soundEnabled;
-    setSoundEnabled(next);
-    soundEnabledRef.current = next;
-    localStorage.setItem("paytowin_sound", next ? "on" : "off");
-  };
 
   const dismissRacerGuide = React.useCallback(() => {
     const guideKey = `paytowin_guide_racer_${gameCode ?? "local"}`;
@@ -423,77 +417,6 @@ export default function GameBoard({ gameCode }: Props) {
     return () => clearInterval(interval);
   }, [pendingRollDecision]);
 
-  const playStepSound = React.useCallback(() => {
-    if (!soundEnabledRef.current) return;
-    try {
-      if (!audioCtxRef.current) audioCtxRef.current = new AudioContext();
-      const ctx = audioCtxRef.current;
-      // Krátký perkusivní klik — filtrovaný šum
-      const bufferSize = Math.floor(ctx.sampleRate * 0.04);
-      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 5);
-      }
-      const source = ctx.createBufferSource();
-      source.buffer = buffer;
-      const filter = ctx.createBiquadFilter();
-      filter.type = "bandpass";
-      filter.frequency.value = 1400;
-      filter.Q.value = 0.6;
-      const gain = ctx.createGain();
-      gain.gain.value = 0.35;
-      source.connect(filter);
-      filter.connect(gain);
-      gain.connect(ctx.destination);
-      source.start();
-    } catch {
-      // AudioContext nedostupný (SSR, blokovaný prohlížečem)
-    }
-  }, []);
-
-  const playSfx = React.useCallback((id: SoundId) => {
-    if (!soundEnabledRef.current) return;
-    try {
-      if (!audioCtxRef.current) audioCtxRef.current = new AudioContext();
-      const ctx = audioCtxRef.current;
-      if (ctx.state === "suspended") {
-        ctx.resume().then(() => sfxPlay(id, ctx)).catch(() => {});
-      } else {
-        sfxPlay(id, ctx);
-      }
-    } catch { /* AudioContext nedostupný */ }
-  }, []);
-
-  // Race sound — přehraje při startu závodu (přechod null → RaceOffer)
-  const pendingRaceRef = React.useRef<boolean>(false);
-  React.useEffect(() => {
-    const isRaceNow = gameState?.offer_pending?.type === "race";
-    if (isRaceNow && !pendingRaceRef.current) playSfx("race");
-    pendingRaceRef.current = !!isRaceNow;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameState?.offer_pending?.type]);
-
-  // Zvuky kroků pro pohyb soupeřů a botů (online mód)
-  React.useEffect(() => {
-    const prev = prevPlayersRef.current;
-    prevPlayersRef.current = players;
-    if (gameMode === "local") return; // rollDice obstarává zvuky pro všechny v lokální hře
-    if (prev.length === 0) return;
-    const fc = fieldsRef.current.length;
-    players.forEach(p => {
-      if (p.id === myPlayerId) return; // vlastní pohyb hraje rollDice
-      const old = prev.find(op => op.id === p.id);
-      if (!old || p.position === old.position) return;
-      const steps = (p.position - old.position + fc) % fc;
-      if (steps < 1 || steps > 6) return;
-      for (let i = 0; i < steps; i++) {
-        setTimeout(() => playStepSound(), i * 160);
-      }
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [players, gameMode, myPlayerId]);
-
   // Year event telegram — globální broadcast pro všechny klienty a pozorovatele.
   // seenYearEventTurnRef brání dvojímu zobrazení na aktivním hráčovi (který už zavolal
   // showTelegram lokálně a ref nastavil před zápisem do DB).
@@ -525,27 +448,6 @@ export default function GameBoard({ gameCode }: Props) {
     showTelegram("ZÁVOD BĚŽÍ — Připojil ses jako pozorovatel.");
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewerRole]);
-
-  // Join telegram — lokální detekce nového hráče; jen pro aktivní hráče, ne spectatory.
-  // knownPlayerIdsRef = null znamená "ještě neinicializováno" — první běh nastaví ref bez telegramu.
-  React.useEffect(() => {
-    const currentIds = new Set(players.map(p => p.id));
-    if (knownPlayerIdsRef.current === null) {
-      // První run: jen ulož známá ID, nic nezobrazuj
-      knownPlayerIdsRef.current = currentIds;
-      return;
-    }
-    // Zobraz telegram jen aktivním hráčům; ne spectatorům, ne po konci hry
-    if (viewerRole !== "player") { knownPlayerIdsRef.current = currentIds; return; }
-    if (gameStatus === "finished" || gameStatus === "cancelled") { knownPlayerIdsRef.current = currentIds; return; }
-    // Najdi nové hráče (INSERT)
-    const newPlayers = players.filter(p => !knownPlayerIdsRef.current!.has(p.id));
-    knownPlayerIdsRef.current = currentIds;
-    if (newPlayers.length === 0) return;
-    // Zobraz telegram pro prvního nového (edge case: simultánní join)
-    showTelegram(`JOIN — ${newPlayers[0].name} vstoupil do závodu.`);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [players]);
 
   // ── Načtení hry ze Supabase ──────────────────────────────────────────────────
   React.useEffect(() => {
@@ -690,46 +592,6 @@ export default function GameBoard({ gameCode }: Props) {
   // ── Herní akce ────────────────────────────────────────────────────────────────
 
   /** Zobrazí dočasný center feedback pro coins_gain / coins_lose — auto-hide po 3 s. */
-  const showCoinsFeedback = React.useCallback((amount: number, kind: "gain" | "lose", playerName: string, fieldLabel: string) => {
-    if (coinsFeedbackTimerRef.current) clearTimeout(coinsFeedbackTimerRef.current);
-    setCoinsFeedback({ amount, kind, playerName, fieldLabel });
-    coinsFeedbackTimerRef.current = setTimeout(() => setCoinsFeedback(null), COINS_FEEDBACK_DURATION_MS);
-    playSfx(kind === "gain" ? "coin_gain" : "coin_loss");
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  /** Zobrazí telegramový proužek + přehraje morse cue prvního CAPS segmentu. */
-  const showTelegram = React.useCallback((text: string) => {
-    if (telegramTimerRef.current) clearTimeout(telegramTimerRef.current);
-    setTelegramMessage({ text, morse: textToMorse(text) });
-    if (soundEnabledRef.current) {
-      const capsSegment = extractCapsSegment(text);
-      if (capsSegment) {
-        try {
-          if (!audioCtxRef.current) audioCtxRef.current = new AudioContext();
-          scheduleMorseAudio(audioCtxRef.current, textToMorse(capsSegment));
-        } catch { /* AudioContext nedostupný */ }
-      }
-    }
-    telegramTimerRef.current = setTimeout(() => setTelegramMessage(null), 4000);
-  }, []);
-
-  /** Zobrazí krátký centrální spotlight — auto-dismiss po dané době. */
-  const showFlash = React.useCallback((event: FlashEvent) => {
-    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
-    flashActiveRef.current = true;
-    setFlashEvent(event);
-    const ms = event.type === "legendary_gone" ? 3000 : 2000;
-    flashTimerRef.current = setTimeout(() => {
-      setFlashEvent(null);
-      flashActiveRef.current = false;
-      if (deferredOfferRef.current) {
-        setPendingOffer(deferredOfferRef.current);
-        deferredOfferRef.current = null;
-      }
-    }, ms);
-  }, []);
-
   /**
    * Scroll-before-overlay helper — scrollne k boardu, pak v rAF otevře StableDuelBoardLayer.
    * Idempotentní: stejný duelKey otevře overlay jen jednou (ref guard).
