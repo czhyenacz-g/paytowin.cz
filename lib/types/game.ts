@@ -262,3 +262,6 @@ export interface GameState {
   /** Guard: pole turnCount hodnot závodů, kde byly hvězdy uděleny. Optional pro zpětnou kompatibilitu. */
   race_stars_awarded?: number[];
 }
+
+/** Korekce hodu kostkou: −1, 0 nebo +1 krok. */
+export type RollAdjustment = -1 | 0 | 1;

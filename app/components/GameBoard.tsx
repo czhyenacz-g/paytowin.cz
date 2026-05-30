@@ -66,7 +66,7 @@ function canTriggerRivalsRace(p1: Player, p2: Player): boolean {
 
 import { drawCard } from "@/lib/cards";
 import type { GameCard } from "@/lib/cards";
-import type { Player, Horse, ActiveEffect, GameState, OfferPending, RerollOffer, RaceOffer, BankruptAnnouncement, RacePendingEvent, StableDuelPendingOffer, PostTurnEvent, RaceType, EconomyConfig } from "@/lib/types/game";
+import type { Player, Horse, ActiveEffect, GameState, OfferPending, RerollOffer, RaceOffer, BankruptAnnouncement, RacePendingEvent, StableDuelPendingOffer, PostTurnEvent, RaceType, EconomyConfig, RollAdjustment } from "@/lib/types/game";
 import { DEFAULT_ECONOMY } from "@/lib/types/game";
 import { resolveYearEvent } from "@/lib/year-events";
 import type { CenterEvent, FlashEvent } from "@/lib/types/events";
@@ -162,8 +162,6 @@ function scheduleMorseAudio(ctx: AudioContext, morse: string): void {
 interface Props {
   gameCode?: string;
 }
-
-type RollAdjustment = -1 | 0 | 1;
 
 interface PendingRollDecision {
   playerId: string;
