@@ -71,6 +71,7 @@ async function botFinishTurn(
     lastRoll?: number;
     updatedHorses?: Horse[];
     revealedFields?: number[];
+    botPurchaseYears?: Record<string, number>;
   },
 ) {
   const updatedPlayers = allPlayers.map(p =>
@@ -99,6 +100,7 @@ async function botFinishTurn(
   };
   if (params.lastRoll !== undefined) stateUpdate.last_roll = params.lastRoll;
   if (params.revealedFields !== undefined) stateUpdate.revealed_fields = params.revealedFields;
+  if (params.botPurchaseYears !== undefined) stateUpdate.bot_purchase_years = params.botPurchaseYears;
 
   const playerUpdate: Record<string, unknown> = {};
   if (regenHorses.length > 0) playerUpdate.horses = regenHorses;
@@ -476,13 +478,12 @@ export async function executeBotHorseDecisionAction(
   const gameYear = yearStart + leadLaps;
 
   const logEntries: string[] = Array.isArray(state.log) ? (state.log as string[]) : [];
-  // Check if bot already bought a racer this year
-  // Note: log is limited to 20 recent entries, so old purchases may be evicted.
-  // If all of bot's racers are accounted for in the log, the last purchase was recent (this year).
-  // If some purchases have been evicted, we conservatively assume no purchases in THIS year.
-  const botRacersInLog = logEntries.filter(e => e.includes(`${botPlayer.name} koupil`)).length;
-  const botRacersOwned = botPlayer.horses.length;
-  const alreadyBoughtThisYear = botRacersOwned > 0 && botRacersInLog >= botRacersOwned;
+
+  // Check if bot already bought a racer this year using structured metadata
+  // bot_purchase_years tracks the year of each bot's last purchase
+  const botPurchaseYears = state.bot_purchase_years ?? {};
+  const botLastPurchaseYear = botPurchaseYears[botPlayer.id];
+  const alreadyBoughtThisYear = botLastPurchaseYear === gameYear;
 
   const decisionResult = decideBotHorsePurchase({
     player: botPlayer,
@@ -518,8 +519,15 @@ export async function executeBotHorseDecisionAction(
 
     const log = [`${botPlayer.name} koupil závodníka ${field.racer.emoji} ${field.racer.name} (${hKey})`, ...logEntries];
     const updatedPlayers = players.map(p => p.id === botPlayer.id ? paidBot : p);
+
+    // Track bot purchase year for max-1-per-year rule
+    const updatedBotPurchaseYears = {
+      ...botPurchaseYears,
+      [botPlayer.id]: gameYear,
+    };
+
     await botFinishTurn(gameId, botPlayer, paidBot, updatedPlayers, {
-      nextIndex, turnCount: newTurnCount, log, updatedHorses, revealedFields: fogReveal(botPlayer.position),
+      nextIndex, turnCount: newTurnCount, log, updatedHorses, botPurchaseYears: updatedBotPurchaseYears, revealedFields: fogReveal(botPlayer.position),
     });
   } else {
     const log = [`${botPlayer.name} odmítl koupit závodníka ${field.racer.emoji} ${field.racer.name}`, ...logEntries];

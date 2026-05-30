@@ -263,6 +263,12 @@ export interface GameState {
   year_event_telegram?: { text: string; turn: number } | null;
   /** Guard: pole turnCount hodnot závodů, kde byly hvězdy uděleny. Optional pro zpětnou kompatibilitu. */
   race_stars_awarded?: number[];
+  /** Tracking poslední koupi racera pro každého bota (k vynucení max 1 per game year).
+   *  Key: botPlayer.id, Value: gameYear koupi.
+   *  Optional pro backward kompatibilitu se starými hrami bez tohoto pole.
+   *  Např: { "bot-uuid-1": 1922, "bot-uuid-2": 1921 }
+   */
+  bot_purchase_years?: Record<string, number>;
 }
 
 /** Korekce hodu kostkou: −1, 0 nebo +1 krok. */
