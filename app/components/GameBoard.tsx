@@ -71,6 +71,7 @@ import { DEFAULT_ECONOMY } from "@/lib/types/game";
 import { resolveYearEvent } from "@/lib/year-events";
 import type { CenterEvent, FlashEvent } from "@/lib/types/events";
 import { mapToCenterEvent, buildRollDecisionOptions } from "@/lib/game/viewModel";
+import { buildRacerOwnership, getDisplayPlayers, computeRaceResultsView } from "@/lib/game/gameBoardViewModel";
 import CenterEventModal from "./modals/CenterEventModal";
 import FlashToast from "./modals/FlashToast";
 import RacerLostModal, { type RacerCategory } from "./modals/RacerLostModal";
@@ -2495,9 +2496,7 @@ export default function GameBoard({ gameCode }: Props) {
   const scenario = getScenarioForTheme(themeId);
 
   // Pro render desky: animující hráč se zobrazuje na animPosition, ne na DB pozici
-  const displayPlayers = players.map((p, i) =>
-    i === animatingPlayerIdx && animPosition !== null ? { ...p, position: animPosition } : p
-  );
+  const displayPlayers = getDisplayPlayers(players, animatingPlayerIdx, animPosition);
   const animatingPlayerId = animatingPlayerIdx !== null ? players[animatingPlayerIdx]?.id : null;
 
   // Bankrotáři nejsou vidět na desce
@@ -2529,21 +2528,7 @@ export default function GameBoard({ gameCode }: Props) {
   // Výsledky závodu: effective score = raw tapy × staminaMultiplier, tiebreak speed
   // Legendární kůň: multiplier=1.0. Ostatní: finalStamina/maxStamina.
   // Řazení odpovídá winner logice v closeRaceResult
-  const raceResults = racePendingEvt?.phase === "results"
-    ? (racePendingEvt.playerIds ?? []).map(pid => {
-        const player = players.find(p => p.id === pid);
-        const horseKey = racePendingEvt.selections?.[pid];
-        const horse = player?.horses.find(h => racerOwnershipKey(h) === horseKey);
-        const score = racePendingEvt.scores?.[pid] ?? 0;
-        const finalStamina = racePendingEvt.finalStaminas?.[pid] ?? horse?.stamina ?? 100;
-        const maxStamina = horse?.maxStamina ?? 100;
-        const debuffFactor = (player?.active_effects ?? [])
-          .filter(e => e.kind === "stamina_debuff")
-          .reduce((acc, e) => acc * e.factor, 1);
-        const effectiveScore = computeRaceScore({ rawScore: score, finalStamina, maxStamina, debuffFactor, isLegendary: horse?.isLegendary });
-        return { player, horse, speed: horse?.speed ?? 0, score, effectiveScore, finalStamina };
-      }).sort((a, b) => b.effectiveScore - a.effectiveScore || b.speed - a.speed)
-    : null;
+  const raceResults = computeRaceResultsView(racePendingEvt, players);
   const isMyRaceTurn = !!(pendingRace?.phase === "racing" && (
     isLocalGame ? true : myPlayerId === pendingRace?.playerIds[pendingRace?.currentRacerIndex ?? -1]
   ));
@@ -2594,8 +2579,7 @@ export default function GameBoard({ gameCode }: Props) {
     : [];
 
   // Mapa (racer.id ?? racer.name) → vlastník — id-first, name fallback pro stará data
-  const racerOwnership: Record<string, Player> = {};
-  players.forEach(p => p.horses.forEach(h => { racerOwnership[racerOwnershipKey(h)] = p; }));
+  const racerOwnership = buildRacerOwnership(players);
 
   // Auto-posuň countdown → racing (po 3,5 s) a inicializuj racing stav.
   // Jen triggerer (host / local). Racing → results řídí submitPendingRaceScore.
