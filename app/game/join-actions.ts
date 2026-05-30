@@ -2,7 +2,7 @@
 
 import { supabase } from "@/lib/supabase";
 import { PLAYER_COLORS } from "@/lib/game";
-import { STARTING_COINS } from "@/lib/game-constants";
+import { DEFAULT_STARTING_COINS } from "@/lib/game-constants";
 
 // ─── Typy ────────────────────────────────────────────────────────────────────
 
@@ -138,7 +138,7 @@ export async function approveJoinRequestAction(
 
   const { data: game, error: gameErr } = await supabase
     .from("games")
-    .select("id, status, owner_discord_id, max_players, code")
+    .select("id, status, owner_discord_id, max_players, code, economy")
     .eq("id", req.game_id)
     .single();
 
@@ -176,6 +176,8 @@ export async function approveJoinRequestAction(
 
   const turnOrder = playerCount;
   const color = PLAYER_COLORS[turnOrder % PLAYER_COLORS.length];
+  const gameEconomy = game.economy as { startingCoins?: number } | null;
+  const joinStartingCoins = gameEconomy?.startingCoins ?? DEFAULT_STARTING_COINS;
 
   // Insert hráče
   const { data: newPlayer, error: playerErr } = await supabase
@@ -185,7 +187,7 @@ export async function approveJoinRequestAction(
       name:               req.name,
       color,
       position:           0,
-      coins:              STARTING_COINS,
+      coins:              joinStartingCoins,
       horses:             [],
       turn_order:         turnOrder,
       discord_id:         req.discord_id ?? null,

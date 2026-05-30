@@ -4,7 +4,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { generateGameCode, PLAYER_COLORS } from "@/lib/game";
-import { STARTING_COINS } from "@/lib/game-constants";
+import { DEFAULT_STARTING_COINS, STARTING_COINS_HARD, STARTING_COINS_NORMAL, STARTING_COINS_RICH } from "@/lib/game-constants";
 import { THEMES } from "@/lib/themes";
 import { BOARD_PRESETS } from "@/lib/board";
 
@@ -34,6 +34,7 @@ export default function LocalNewPage() {
   const [baseTax, setBaseTax] = React.useState(500);
   const [lapTaxCoefficient, setLapTaxCoefficient] = React.useState(1);
   const [maxTax, setMaxTax] = React.useState(5000);
+  const [startingCoins, setStartingCoins] = React.useState(DEFAULT_STARTING_COINS);
   const [economyOpen, setEconomyOpen] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
@@ -101,7 +102,7 @@ export default function LocalNewPage() {
         game_mode: "local",
         owner_discord_id: discordId || null,
         max_players: playerCount,
-        economy: { stateSubsidy, baseTax, lapTaxCoefficient, maxTax },
+        economy: { stateSubsidy, baseTax, lapTaxCoefficient, maxTax, startingCoins },
         fog_of_war: fogOfWar,
       })
       .select()
@@ -124,7 +125,7 @@ export default function LocalNewPage() {
           name,
           color: PLAYER_COLORS[i % PLAYER_COLORS.length],
           position: 0,
-          coins: STARTING_COINS,
+          coins: startingCoins,
           horses: [],
           turn_order: i,
         }))
@@ -337,6 +338,31 @@ export default function LocalNewPage() {
               </button>
               {economyOpen && (
                 <div className="border-t border-slate-200 px-4 pb-4 pt-3 space-y-3">
+                  <div>
+                    <div className="text-xs font-medium text-slate-600 mb-1.5">Počáteční peníze</div>
+                    <div className="flex gap-2">
+                      {([
+                        { value: STARTING_COINS_HARD,   label: "Hard",   sub: "6 000" },
+                        { value: STARTING_COINS_NORMAL, label: "Normál", sub: "8 000" },
+                        { value: STARTING_COINS_RICH,   label: "Bohatý", sub: "10 000" },
+                      ] as const).map((p) => (
+                        <button
+                          key={p.value}
+                          type="button"
+                          onClick={() => setStartingCoins(p.value)}
+                          className={`flex-1 rounded-lg border-2 py-2 text-center text-xs font-semibold transition ${
+                            startingCoins === p.value
+                              ? "border-slate-900 bg-slate-900 text-white"
+                              : "border-slate-200 bg-white text-slate-700 hover:border-slate-400"
+                          }`}
+                        >
+                          <div>{p.label}</div>
+                          <div className={`mt-0.5 text-[10px] font-normal ${startingCoins === p.value ? "text-slate-300" : "text-slate-400"}`}>{p.sub} 💰</div>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="mt-1.5 text-[10px] text-slate-400">Nižší start víc trestá špatné nákupy. Vyšší start je mírnější pro nové hráče.</div>
+                  </div>
                   <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
                     <input
                       type="checkbox"

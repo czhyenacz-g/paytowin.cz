@@ -19,6 +19,8 @@ export interface EconomyConfig {
   lapTaxCoefficient: number;
   /** Stropní hodnota daně. */
   maxTax: number;
+  /** Počáteční coins hráčů — zvoleno při vytvoření hry. Fallback: DEFAULT_STARTING_COINS. */
+  startingCoins?: number;
 }
 
 export const DEFAULT_ECONOMY: EconomyConfig = {
