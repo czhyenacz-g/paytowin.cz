@@ -101,7 +101,7 @@ export default function GameFinishedScreen({
     <div className={`min-h-screen ${pageBackground} flex items-center justify-center p-6`}>
       <div
         className="relative w-full max-w-md border-2 border-stone-500 shadow-2xl overflow-hidden"
-        style={{ backgroundImage: "url('/gazete.webp')", backgroundSize: "cover", backgroundPosition: "top center" }}
+        style={{ backgroundImage: "url('/new_end_backgroud.webp')", backgroundSize: "cover", backgroundPosition: "top center" }}
       >
         {/* Aged-paper overlay pro čitelnost */}
         <div className="absolute inset-0 bg-[#f4efe4]/82 z-0" />
