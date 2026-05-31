@@ -25,6 +25,8 @@ interface GameFinishedScreenProps {
   myPlayerId?: string | null;
   gameMode?: "online" | "local";
   scenario?: ScenarioDefinition | null;
+  /** XP odměna za tuto hru — zobrazí se u řádku XP za výhru/účast, pokud je k dispozici. */
+  xpReward?: number;
 }
 
 export default function GameFinishedScreen({
@@ -34,6 +36,7 @@ export default function GameFinishedScreen({
   myPlayerId = null,
   gameMode = "local",
   scenario = null,
+  xpReward,
 }: GameFinishedScreenProps) {
   const winner = players.find(p => !isBankrupt(p));
   const losers = players.filter(p => isBankrupt(p));
@@ -105,11 +108,11 @@ export default function GameFinishedScreen({
 
         <div className="relative z-10">
 
-          {/* ── Novinový masthead — poloprůhledný, splývá s texturou ── */}
-          <div className="px-6 pt-4 pb-3 border-b-[3px] border-stone-500 text-center">
-            <div className="text-[8px] font-bold uppercase tracking-[0.32em] text-stone-600 opacity-40">— Mimořádné vydání —</div>
-            <div className="mt-0.5 font-serif text-[22px] font-black uppercase tracking-[0.12em] text-stone-800 opacity-35 leading-none">Pay to Win Gazette</div>
-            <div className="mt-0.5 text-[8px] uppercase tracking-[0.22em] text-stone-600 opacity-35">Nezávislé noviny ze světa dostihů · Archiv výsledků</div>
+          {/* ── Novinový masthead — dekorativní jednořádkový proužek ── */}
+          <div className="px-6 py-3 border-b-[3px] border-stone-500 text-center">
+            <div className="text-[9px] font-bold uppercase tracking-[0.35em] text-stone-600 opacity-30">
+              Pay to Win Gazette · Mimořádné vydání
+            </div>
           </div>
 
           {isSoloLoss ? (
@@ -190,6 +193,9 @@ export default function GameFinishedScreen({
                     <>
                       <div className="flex items-center justify-between text-xs font-medium text-stone-700">
                         <span className="flex items-center gap-1.5"><span className="text-amber-500">⚡</span> XP za výhru</span>
+                        {xpReward !== undefined && (
+                          <span className="font-bold text-amber-600">+{xpReward} XP</span>
+                        )}
                       </div>
                       {isWinStarEligible ? (
                         <div className="flex items-center justify-between">
@@ -212,8 +218,11 @@ export default function GameFinishedScreen({
                     </>
                   ) : (
                     <>
-                      <div className="flex items-center gap-1.5 text-xs font-medium text-stone-600">
-                        <span className="text-amber-500">⚡</span> XP za účast
+                      <div className="flex items-center justify-between text-xs font-medium text-stone-600">
+                        <span className="flex items-center gap-1.5"><span className="text-amber-500">⚡</span> XP za účast</span>
+                        {xpReward !== undefined && (
+                          <span className="font-bold text-stone-500">+{xpReward} XP</span>
+                        )}
                       </div>
                       {!isWinStarEligible && (
                         <div className="flex items-center gap-1.5 text-xs text-stone-400 italic">
@@ -277,8 +286,8 @@ export default function GameFinishedScreen({
             </>
           )}
 
-          <div className="px-6 py-4">
-            <a href="/" className="block border-2 border-stone-800 px-4 py-2.5 text-center text-sm font-bold tracking-wide text-stone-800 hover:bg-stone-100 active:scale-[0.98] transition">
+          <div className="px-6 py-4 flex justify-center">
+            <a href="/" className="border-2 border-stone-800 px-8 py-2.5 text-center text-sm font-bold tracking-wide text-stone-800 hover:bg-stone-100 active:scale-[0.98] transition">
               ← Nová hra
             </a>
           </div>

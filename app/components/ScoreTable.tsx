@@ -64,7 +64,7 @@ export default function ScoreTable({ players, bustOrder, className = "", titles 
                 </div>
               )}
             </td>
-            <td className="py-1.5 text-right tabular-nums whitespace-nowrap align-top">
+            <td className="py-1.5 pl-3 text-right tabular-nums whitespace-nowrap align-top">
               {entry.isBankrupt ? (
                 <span className="text-xs text-red-400 font-medium">zkrachoval</span>
               ) : (

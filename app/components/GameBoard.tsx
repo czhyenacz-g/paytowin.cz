@@ -3042,6 +3042,7 @@ export default function GameBoard({ gameCode }: Props) {
             myPlayerId="p1"
             gameMode="online"
             scenario={null}
+            xpReward={100}
           />
         </div>
       )}
