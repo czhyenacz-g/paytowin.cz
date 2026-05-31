@@ -2763,7 +2763,7 @@ export default function GameBoard({ gameCode }: Props) {
                       <div className="fixed inset-0 z-50 flex items-center justify-center p-6 pointer-events-none">
                         <div
                           className="relative w-full max-w-xl border-2 border-[#6b7257] shadow-2xl overflow-hidden pointer-events-auto"
-                          style={{ backgroundImage: "url('/gazete.webp')", backgroundSize: "cover", backgroundPosition: "top center" }}
+                          style={{ backgroundImage: "url('/new_end_backgroud.webp')", backgroundSize: "cover", backgroundPosition: "top center" }}
                         >
                           <div className="absolute inset-0 bg-[#f4efe4]/82 z-0" />
                           <div className="relative z-10">
