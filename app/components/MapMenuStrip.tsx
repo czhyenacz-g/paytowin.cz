@@ -119,9 +119,8 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
 
   return (
     <div
-      className="flex w-full overflow-hidden shadow-2xl"
+      className="flex flex-col sm:flex-row w-full overflow-hidden shadow-2xl sm:h-[clamp(280px,44vh,520px)]"
       style={{
-        height: "clamp(280px, 44vh, 520px)",
         borderTop: "4px solid rgba(0,0,0,0.75)",
         borderBottom: "4px solid rgba(0,0,0,0.75)",
       }}
@@ -147,7 +146,7 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
             key={panel.id}
             role={isNavigable ? "button" : undefined}
             className={[
-              "group relative overflow-hidden bg-gradient-to-b flex-shrink-0",
+              "group relative overflow-hidden bg-gradient-to-b flex-shrink-0 min-h-[64px] sm:min-h-0",
               panel.bgFrom, panel.bgTo,
               "transition-[flex] duration-300 ease-in-out",
               isLocked ? "cursor-not-allowed" : (isNavigable ? "cursor-pointer" : "cursor-default"),
@@ -242,7 +241,7 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
             )}
 
             {/* ── Bottom: label + CTA / Brzy ── */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 via-black/55 to-transparent px-3 pt-10 pb-4 z-10">
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 via-black/55 to-transparent px-3 pt-2 sm:pt-10 pb-4 z-10">
 
               {/* Label */}
               <div
