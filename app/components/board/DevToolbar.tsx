@@ -8,6 +8,7 @@ interface DevToolbarProps {
   onOpenSpeed: () => void;
   onOpenLegendary: () => void;
   onOpenStableDuel: () => void;
+  onOpenFinale: () => void;
   stableDuelMode: "pvbot_awareness" | "online_1v1";
   onToggleStableDuelMode: () => void;
 }
@@ -20,6 +21,7 @@ export default function DevToolbar({
   onOpenSpeed,
   onOpenLegendary,
   onOpenStableDuel,
+  onOpenFinale,
   stableDuelMode,
   onToggleStableDuelMode,
 }: DevToolbarProps) {
@@ -73,6 +75,13 @@ export default function DevToolbar({
         title="DEV: Stájový souboj — board overlay preview"
       >
         🐴 Stable
+      </button>
+      <button
+        onClick={onOpenFinale}
+        className="rounded-[3px] border border-stone-400 bg-stone-50 px-2.5 py-1 text-[11px] font-semibold text-stone-700 hover:bg-stone-100 transition"
+        title="DEV: Konečná obrazovka — preview s mock daty"
+      >
+        🏁 Finále
       </button>
       <button
         onClick={onToggleStableDuelMode}

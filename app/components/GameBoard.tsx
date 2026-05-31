@@ -188,6 +188,8 @@ export default function GameBoard({ gameCode }: Props) {
   const [devLegendaryOpen, setDevLegendaryOpen] = React.useState(false);
   // dev-only: Race Board Flip layer (flip animace boardu)
   const [devFlipOpen, setDevFlipOpen] = React.useState(false);
+  // dev-only: GameFinishedScreen preview s mock daty
+  const [devFinaleOpen, setDevFinaleOpen] = React.useState(false);
   const [flipBoardAnim, setFlipBoardAnim] = React.useState<"idle" | "out" | "back-in">("idle");
   const flipTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   // Stájový souboj — board overlay (game flow)
@@ -2838,6 +2840,7 @@ export default function GameBoard({ gameCode }: Props) {
                 onOpenDuel={() => setDevDuelOpen(true)}
                 onOpenSpeed={() => setDevSpeedOpen(true)}
                 onOpenLegendary={() => setDevLegendaryOpen(true)}
+                onOpenFinale={() => setDevFinaleOpen(true)}
                 onOpenStableDuel={() => {
                   const p0 = players[0];
                   const p1 = players[1] ?? players[0];
@@ -3019,6 +3022,28 @@ export default function GameBoard({ gameCode }: Props) {
       {/* DEV: Legendary Horse Race — izolovaný lokální harness, žádný game state */}
       {process.env.NODE_ENV === "development" && devLegendaryOpen && (
         <LegendaryRaceDevShell onExit={() => setDevLegendaryOpen(false)} />
+      )}
+      {process.env.NODE_ENV === "development" && devFinaleOpen && (
+        <div className="fixed inset-0 z-[70] overflow-auto">
+          <button
+            onClick={() => setDevFinaleOpen(false)}
+            className="fixed top-4 right-4 z-[71] rounded-full bg-black/70 px-3 py-1.5 text-sm text-white hover:bg-black"
+          >
+            ✕ Zavřít preview
+          </button>
+          <GameFinishedScreen
+            players={[
+              { id: "p1", game_id: "dev", name: "Vítěz Šampion Zdeněk Novotný III.", position: 12, color: "bg-blue-500", coins: 4250, horses: [], turn_order: 0, skip_next_turn: false, discord_id: "disc1", is_bot: false },
+              { id: "p2", game_id: "dev", name: "Poražená Kristýna Schwarzenbergová-Hohenlohe", position: 8, color: "bg-purple-500", coins: 0, horses: [], turn_order: 1, skip_next_turn: false, discord_id: "disc2", is_bot: false },
+              { id: "p3", game_id: "dev", name: "Bot Automatický", position: 3, color: "bg-slate-400", coins: 0, horses: [], turn_order: 2, skip_next_turn: false, is_bot: true },
+            ]}
+            bustOrder={["p3", "p2"]}
+            pageBackground={theme.colors.pageBackground}
+            myPlayerId="p1"
+            gameMode="online"
+            scenario={null}
+          />
+        </div>
       )}
       <div className="py-2 flex items-center justify-center gap-4 text-xs text-slate-400">
         <a href="/pravidla" className="hover:text-slate-600 underline">Pravidla hry</a>
