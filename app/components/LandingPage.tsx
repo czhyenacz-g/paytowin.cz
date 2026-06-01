@@ -907,28 +907,28 @@ export default function LandingPage() {
                           className="h-9 min-w-0 rounded-lg border border-amber-800/20 bg-amber-50/50 px-3 text-sm text-stone-800 outline-none placeholder:text-stone-500 focus:border-amber-600 focus:bg-amber-50/80"
                         />
                       )}
-                      <div className="flex gap-2">
+                      <div className="flex flex-col gap-2 sm:flex-row">
                         <input
                           type="text"
                           value={joinCode}
                           onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                           placeholder="Kód hry"
                           maxLength={5}
-                          className="h-9 min-w-0 flex-1 rounded-lg border border-amber-800/20 bg-amber-50/50 px-3 text-sm uppercase tracking-[0.2em] text-stone-800 outline-none placeholder:tracking-normal placeholder:text-stone-500 focus:border-amber-600 focus:bg-amber-50/80"
+                          className="h-9 min-w-0 flex-1 rounded-lg border border-amber-800/20 bg-amber-50/50 px-3 text-sm uppercase tracking-[0.2em] text-stone-800 outline-none placeholder:tracking-normal placeholder:text-stone-500 focus:border-amber-600 focus:bg-amber-50/80 sm:min-w-[9.5rem]"
                         />
                         <button
                           onClick={() => joinGame()}
-                        disabled={loading || joinApprovalStatus === "pending" || (!isDiscordConnected && !name.trim()) || !joinCode.trim()}
-                        className="h-9 shrink-0 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:bg-stone-300 disabled:text-stone-400"
-                      >
-                        Připojit
+                          disabled={loading || joinApprovalStatus === "pending" || (!isDiscordConnected && !name.trim()) || !joinCode.trim()}
+                          className="h-9 w-full shrink-0 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:border disabled:border-amber-900/15 disabled:bg-stone-200 disabled:text-stone-600 sm:w-[7.25rem]"
+                        >
+                          Připojit
                         </button>
                       </div>
                     </div>
 
                     {/* Pravá sekce: sledovat hry */}
                     <div className="flex flex-col gap-1.5">
-                      <div className="text-[9px] font-black uppercase tracking-[0.3em] text-amber-900/50 select-none hidden lg:block">
+                      <div className="text-[9px] font-black uppercase tracking-[0.3em] text-amber-900/70 select-none hidden lg:block">
                         Aktivní hry
                       </div>
                       <a
