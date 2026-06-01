@@ -718,7 +718,7 @@ export default function LandingPage() {
   };
 
   const utilityDiscordBlock = discordUser ? (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-800/20 bg-amber-50/50 px-3 py-2">
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-800/15 bg-amber-50/35 px-3 py-2">
       <div className="flex min-w-0 items-center gap-3">
         {discordUser.avatar ? (
           <img src={discordUser.avatar} alt="" className="h-8 w-8 rounded-full" />
@@ -739,7 +739,7 @@ export default function LandingPage() {
   ) : (
     <button
       onClick={loginWithDiscord}
-      className="w-full rounded-lg border border-amber-800/20 bg-amber-50/50 px-4 py-2 text-sm font-semibold text-amber-900 transition hover:bg-amber-50/80"
+      className="w-full rounded-lg border border-amber-800/15 bg-amber-50/40 px-4 py-2 text-sm font-semibold text-amber-900 transition hover:bg-amber-50/70"
     >
       🎮 Přihlásit přes Discord
     </button>
@@ -910,7 +910,7 @@ export default function LandingPage() {
                           value={name}
                           onChange={(e) => setName(e.target.value)}
                           placeholder="Tvoje jméno"
-                          className="h-9 min-w-0 rounded-lg border border-amber-800/15 bg-amber-50/40 px-3 text-sm text-stone-800 outline-none placeholder:text-stone-500 focus:border-amber-600 focus:bg-amber-50/70"
+                          className="h-9 min-w-0 rounded-lg border border-amber-800/15 bg-amber-50/35 px-3 text-sm text-stone-800 outline-none placeholder:text-stone-500 focus:border-amber-600 focus:bg-amber-50/65"
                         />
                       )}
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
@@ -920,12 +920,12 @@ export default function LandingPage() {
                           onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                           placeholder="Kód hry"
                           maxLength={5}
-                          className="h-9 min-w-0 flex-1 rounded-lg border border-amber-800/15 bg-amber-50/45 px-3 text-sm uppercase tracking-[0.2em] text-stone-800 outline-none placeholder:tracking-normal placeholder:text-stone-500 focus:border-amber-600 focus:bg-amber-50/70 sm:min-w-[7.25rem] lg:max-w-[8.25rem]"
+                          className="h-9 min-w-0 flex-1 rounded-lg border border-amber-800/15 bg-amber-50/40 px-3 text-sm uppercase tracking-[0.2em] text-stone-800 outline-none placeholder:tracking-normal placeholder:text-stone-500 focus:border-amber-600 focus:bg-amber-50/65 sm:min-w-[7.25rem] lg:max-w-[8.25rem]"
                         />
                         <button
                           onClick={() => joinGame()}
                           disabled={loading || joinApprovalStatus === "pending" || (!isDiscordConnected && !name.trim()) || !joinCode.trim()}
-                          className="h-9 w-full shrink-0 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:border disabled:border-amber-900/15 disabled:bg-stone-200 disabled:text-stone-600 sm:w-[7.5rem] lg:w-[7.25rem]"
+                          className="h-9 w-full shrink-0 rounded-lg border border-amber-700/45 bg-amber-950 px-4 text-sm font-semibold text-amber-50 shadow-[0_1px_0_rgba(120,53,15,0.28)] transition hover:bg-amber-900 hover:border-amber-700/55 disabled:border disabled:border-stone-400/40 disabled:bg-stone-200/70 disabled:text-stone-500 sm:w-[7.5rem] lg:w-[7.25rem]"
                         >
                           Připojit
                         </button>
@@ -940,7 +940,7 @@ export default function LandingPage() {
                       <div className="h-px w-full bg-gradient-to-r from-amber-900/0 via-amber-900/25 to-amber-900/0" />
                       <a
                         href="/hry"
-                        className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg border border-amber-800/20 bg-amber-100/55 px-4 text-sm font-semibold text-stone-800 transition hover:bg-amber-100/75 lg:self-center lg:w-full"
+                        className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg border border-amber-700/45 bg-amber-950 px-4 text-sm font-semibold text-amber-50 shadow-[0_1px_0_rgba(120,53,15,0.28)] transition hover:bg-amber-900 hover:border-amber-700/55 lg:self-center lg:w-full"
                       >
                         👀 Sledovat aktivní hry
                       </a>
