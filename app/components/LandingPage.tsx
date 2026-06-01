@@ -904,73 +904,83 @@ export default function LandingPage() {
                 >
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-2.5 lg:items-center">
                     {/* Levá sekce: Discord stav / login */}
-                    <div className="min-w-0 space-y-1.5 sm:space-y-2 w-full lg:max-w-[14rem]">
+                    <div className="min-w-0 space-y-1.5 sm:space-y-2 w-full lg:max-w-[14rem] lg:justify-self-center lg:flex lg:flex-col lg:items-center">
                       <div className={ticketSectionHeadingClass}>
                         Vstupenka do hry
                       </div>
                       <div className={ticketSectionDividerClass} />
-                      {utilityDiscordBlock}
+                      <div className="w-full lg:flex lg:justify-center">
+                        <div className="w-full lg:max-w-[13.25rem]">
+                          {utilityDiscordBlock}
+                        </div>
+                      </div>
                     </div>
 
                     {/* Střední sekce: jméno (jen guest) + kód hry + Připojit */}
-                    <div className="min-w-0 flex flex-col gap-1.5 sm:gap-2 w-full lg:mx-auto lg:max-w-[13.5rem]">
+                    <div className="min-w-0 flex flex-col gap-1.5 sm:gap-2 w-full lg:mx-auto lg:max-w-[13.5rem] lg:items-center">
                       <div className={ticketSectionHeadingClass}>
                         Kód hry
                       </div>
                       <div className={ticketSectionDividerClass} />
-                      {!isDiscordConnected && (
-                        <input
-                          ref={playerNameInputRef}
-                          type="text"
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          placeholder="Tvoje jméno"
-                          className="h-[34px] sm:h-9 min-w-0 rounded-lg border border-amber-800/15 bg-amber-50/35 px-3 text-sm text-stone-800 outline-none placeholder:text-stone-500 focus:border-amber-600 focus:bg-amber-50/65"
-                        />
-                      )}
-                      <div className="flex flex-col gap-1.5 sm:flex-row sm:items-stretch sm:gap-2">
-                        <input
-                          type="text"
-                          value={joinCode}
-                          onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                          placeholder="Kód hry"
-                          maxLength={5}
-                          className="h-[34px] sm:h-9 min-w-0 flex-1 rounded-lg border border-amber-800/15 bg-amber-50/40 px-3 text-sm uppercase tracking-[0.18em] sm:tracking-[0.2em] text-stone-800 outline-none placeholder:tracking-normal placeholder:text-stone-500 focus:border-amber-600 focus:bg-amber-50/65 sm:min-w-[7.25rem] lg:max-w-[8.25rem]"
-                        />
-                        <div
-                          className="relative w-full shrink-0 sm:w-[7.5rem] lg:w-[7.25rem]"
-                          onMouseEnter={() => joinButtonDisabled && setShowJoinDisabledHint(true)}
-                          onMouseLeave={() => setShowJoinDisabledHint(false)}
-                          onClick={handleJoinButtonClick}
-                        >
-                          <button
-                            type="button"
-                            disabled={joinButtonDisabled}
-                            className="h-[34px] sm:h-9 w-full rounded-lg bg-emerald-700 px-4 text-[13px] sm:text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:border disabled:border-amber-900/15 disabled:bg-stone-200 disabled:text-stone-600"
-                          >
-                            Připojit
-                          </button>
-                          {joinButtonDisabled && showJoinDisabledHint && (
-                            <div className="pointer-events-none absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[11px] text-white shadow-sm">
-                              <span aria-hidden="true">⊘</span>
-                            </div>
+                      <div className="w-full lg:flex lg:justify-center">
+                        <div className="w-full lg:max-w-[13.5rem]">
+                          {!isDiscordConnected && (
+                            <input
+                              ref={playerNameInputRef}
+                              type="text"
+                              value={name}
+                              onChange={(e) => setName(e.target.value)}
+                              placeholder="Tvoje jméno"
+                              className="h-[34px] sm:h-9 min-w-0 rounded-lg border border-amber-800/15 bg-amber-50/35 px-3 text-sm text-stone-800 outline-none placeholder:text-stone-500 focus:border-amber-600 focus:bg-amber-50/65"
+                            />
                           )}
+                          <div className="flex flex-col gap-1.5 sm:flex-row sm:items-stretch sm:gap-2">
+                            <input
+                              type="text"
+                              value={joinCode}
+                              onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                              placeholder="Kód hry"
+                              maxLength={5}
+                              className="h-[34px] sm:h-9 min-w-0 flex-1 rounded-lg border border-amber-800/15 bg-amber-50/40 px-3 text-sm uppercase tracking-[0.18em] sm:tracking-[0.2em] text-stone-800 outline-none placeholder:tracking-normal placeholder:text-stone-500 focus:border-amber-600 focus:bg-amber-50/65 sm:min-w-[7.25rem] lg:max-w-[8.25rem]"
+                            />
+                            <div
+                              className="relative w-full shrink-0 sm:w-[7.5rem] lg:w-[7.25rem]"
+                              onMouseEnter={() => joinButtonDisabled && setShowJoinDisabledHint(true)}
+                              onMouseLeave={() => setShowJoinDisabledHint(false)}
+                              onClick={handleJoinButtonClick}
+                            >
+                              <button
+                                type="button"
+                                disabled={joinButtonDisabled}
+                                className="h-[34px] sm:h-9 w-full rounded-lg bg-emerald-700 px-4 text-[13px] sm:text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:border disabled:border-amber-900/15 disabled:bg-stone-200 disabled:text-stone-600"
+                              >
+                                Připojit
+                              </button>
+                              {joinButtonDisabled && showJoinDisabledHint && (
+                                <div className="pointer-events-none absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[11px] text-white shadow-sm">
+                                  <span aria-hidden="true">⊘</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
 
                     {/* Pravá sekce: sledovat hry */}
-                    <div className="min-w-0 flex flex-col gap-1.5 sm:gap-2 w-full lg:mx-auto lg:max-w-[13.75rem]">
+                    <div className="min-w-0 flex flex-col gap-1.5 sm:gap-2 w-full lg:mx-auto lg:max-w-[13.75rem] lg:items-center">
                       <div className={ticketSectionHeadingClass}>
                         Aktivní hry
                       </div>
                       <div className={ticketSectionDividerClass} />
+                      <div className="w-full lg:flex lg:justify-center">
                       <a
                         href="/hry"
                         className="inline-flex h-[34px] sm:h-9 items-center justify-center whitespace-nowrap rounded-lg border border-amber-800/20 bg-amber-100/55 px-4 text-[13px] sm:text-sm font-semibold text-stone-800 transition hover:bg-amber-100/75 lg:self-center lg:w-full lg:ml-[5px]"
                       >
                         👀 Sledovat aktivní hry
                       </a>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1072,7 +1082,7 @@ export default function LandingPage() {
                   <span>·</span>
                   <a href="mailto:info@paytowin.cz" className="hover:text-slate-200 underline">info@paytowin.cz</a>
                   <span>·</span>
-                  <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-400 tracking-wide">Beta v0.7.2-seno</span>
+                  <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-400 tracking-wide">Beta v0.7.3-seno</span>
                 </div>
               </div>
             </div>
