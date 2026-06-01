@@ -216,12 +216,14 @@ export default function MapMenuStrip({ onPanelClick, currentXp, isLoggedIn = fal
                 "group relative overflow-hidden bg-gradient-to-b flex-shrink-0",
                 panel.bgFrom, panel.bgTo,
                 "transition-[flex] duration-300 ease-in-out",
-                isLocked ? "cursor-not-allowed" : (isNavigable ? "cursor-pointer" : "cursor-default"),
+                isLocked
+                  ? "cursor-not-allowed"
+                  : (isNavigable ? "cursor-pointer ring-1 ring-inset ring-amber-300/0 hover:ring-amber-200/30 hover:shadow-[inset_0_0_0_1px_rgba(253,224,71,0.18),0_0_24px_rgba(245,158,11,0.12)]" : "cursor-default"),
               ].join(" ")}
               style={{
                 flex: isHovered && isNavigable ? (isLocked ? 2 : 4) : 1,
                 boxShadow: !isLast
-                  ? "inset -1px 0 0 rgba(255,255,255,0.28), inset -4px 0 0 rgba(0,0,0,0.80)"
+                  ? "inset -1px 0 0 rgba(255,255,255,0.22), inset -4px 0 0 rgba(0,0,0,0.80)"
                   : "none",
                 ...(panel.bgImage ? {
                   backgroundImage: `url(${panel.bgImage})`,
@@ -236,7 +238,7 @@ export default function MapMenuStrip({ onPanelClick, currentXp, isLoggedIn = fal
               {/* Horní barevný accent proužek */}
               <div
                 className="absolute top-0 left-0 right-0 h-[3px] transition-opacity duration-300 z-10"
-                style={{ background: panel.accentColor, opacity: isHovered ? 1 : (isAvailable ? 0.65 : 0.3) }}
+                style={{ background: panel.accentColor, opacity: isHovered ? 1 : (isAvailable ? 0.8 : 0.32), boxShadow: isAvailable ? "0 0 18px rgba(245,158,11,0.16)" : undefined }}
               />
 
               {/* Diagonální textura */}
@@ -262,8 +264,8 @@ export default function MapMenuStrip({ onPanelClick, currentXp, isLoggedIn = fal
 
               {/* Číslo slotu */}
               <div
-                className="absolute top-3 left-3 text-[10px] font-black tracking-[0.2em] transition-opacity duration-300 select-none z-10"
-                style={{ color: panel.accentColor, opacity: isHovered ? 0.95 : 0.35 }}
+                className="absolute top-3 left-3 text-[10px] font-black tracking-[0.2em] transition-opacity duration-300 select-none z-10 drop-shadow-[0_1px_1px_rgba(0,0,0,0.35)]"
+                style={{ color: panel.accentColor, opacity: isHovered ? 0.98 : 0.48 }}
               >
                 {panel.index}
               </div>
@@ -271,7 +273,7 @@ export default function MapMenuStrip({ onPanelClick, currentXp, isLoggedIn = fal
               {/* Emoji — dekorativní (bez bgImage) */}
               {!panel.bgImage && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none" style={{ paddingBottom: "64px" }}>
-                  <span className="text-7xl transition-opacity duration-300" style={{ opacity: isHovered ? 0.5 : (isAvailable ? 0.18 : 0.07) }}>
+                  <span className="text-7xl transition-opacity duration-300 drop-shadow-[0_8px_24px_rgba(0,0,0,0.22)]" style={{ opacity: isHovered ? 0.52 : (isAvailable ? 0.22 : 0.08) }}>
                     {panel.emoji}
                   </span>
                 </div>
@@ -280,15 +282,15 @@ export default function MapMenuStrip({ onPanelClick, currentXp, isLoggedIn = fal
               {/* Bottom: label + CTA / Brzy */}
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 via-black/55 to-transparent px-3 pt-10 pb-4 z-10">
                 <div
-                  className="text-sm font-bold leading-tight truncate transition-opacity duration-300 tracking-wide"
-                  style={{ color: "#fff", opacity: isHovered ? 1 : (isAvailable ? 0.85 : 0.38) }}
+                  className="text-sm font-bold leading-tight truncate transition-opacity duration-300 tracking-wide text-amber-50 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]"
+                  style={{ opacity: isHovered ? 1 : (isAvailable ? 0.9 : 0.42) }}
                 >
                   {panel.label}
                 </div>
 
                 {isAvailable && panel.desc && (
                   <div
-                    className="text-xs leading-tight truncate mt-0.5 transition-opacity duration-300 text-white/70"
+                    className="text-xs leading-tight truncate mt-0.5 transition-opacity duration-300 text-amber-50/72"
                     style={{ opacity: isHovered ? 1 : 0 }}
                   >
                     {panel.desc}
@@ -298,8 +300,8 @@ export default function MapMenuStrip({ onPanelClick, currentXp, isLoggedIn = fal
                 {isAvailable && (
                   <div className="mt-2 transition-opacity duration-300" style={{ opacity: isHovered ? 1 : 0 }}>
                     <span
-                      className="inline-block rounded px-2 py-0.5 text-[11px] font-black tracking-widest uppercase whitespace-nowrap"
-                      style={{ background: panel.accentColor, color: panel.id === "profil" ? "#0f172a" : "#000" }}
+                      className="inline-block rounded px-2 py-0.5 text-[11px] font-black tracking-widest uppercase whitespace-nowrap shadow-sm"
+                      style={{ background: "linear-gradient(180deg, rgba(253,230,138,0.95), rgba(245,158,11,0.88))", color: "#1f1300" }}
                     >
                       {panel.id === "profil" ? "Otevřít →" : panel.id === "editor" ? "Jít budovat →" : "Hrát →"}
                     </span>
@@ -308,10 +310,10 @@ export default function MapMenuStrip({ onPanelClick, currentXp, isLoggedIn = fal
 
                 {!isAvailable && (
                   <div
-                    className="mt-1.5 inline-block rounded-sm px-1.5 py-0.5 text-[9px] font-black tracking-widest uppercase transition-opacity duration-300"
-                    style={{ border: `1px solid ${panel.accentColor}55`, color: panel.accentColor, opacity: isHovered ? 0.9 : 0.5 }}
+                    className="mt-1.5 inline-block rounded-full px-2 py-0.5 text-[9px] font-black tracking-widest uppercase transition-opacity duration-300 bg-white/5 backdrop-blur-sm"
+                    style={{ border: "1px solid rgba(253,224,71,0.18)", color: "#fde68a", opacity: isHovered ? 0.96 : 0.68 }}
                   >
-                    Brzy
+                    Zamčeno
                   </div>
                 )}
               </div>
