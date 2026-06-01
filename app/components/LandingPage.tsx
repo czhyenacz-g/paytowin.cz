@@ -886,9 +886,9 @@ export default function LandingPage() {
                     backgroundPosition: "center",
                   }}
                 >
-                  <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_1.2fr_1.15fr] gap-3 lg:items-center">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 lg:items-center">
                     {/* Levá sekce: Discord stav / login */}
-                    <div className="space-y-2 w-full lg:max-w-[19rem]">
+                    <div className="min-w-0 space-y-2 w-full lg:max-w-[15rem]">
                       <div className="text-[9px] font-black uppercase tracking-[0.35em] text-amber-900/60 select-none">
                         Sázková kancelář
                       </div>
@@ -899,7 +899,7 @@ export default function LandingPage() {
                     </div>
 
                     {/* Střední sekce: jméno (jen guest) + kód hry + Připojit */}
-                    <div className="flex flex-col gap-2 w-full lg:max-w-[15.5rem]">
+                    <div className="min-w-0 flex flex-col gap-2 w-full lg:mx-auto lg:max-w-[13.5rem]">
                       <div className="text-[9px] font-black uppercase tracking-[0.3em] text-amber-900/60 select-none">
                         Kód hry
                       </div>
@@ -933,7 +933,7 @@ export default function LandingPage() {
                     </div>
 
                     {/* Pravá sekce: sledovat hry */}
-                    <div className="flex flex-col gap-2 w-full lg:max-w-[14rem]">
+                    <div className="min-w-0 flex flex-col gap-2 w-full lg:ml-auto lg:max-w-[14rem]">
                       <div className="text-[9px] font-black uppercase tracking-[0.3em] text-amber-900/65 select-none">
                         Aktivní hry
                       </div>
