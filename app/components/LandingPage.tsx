@@ -767,7 +767,7 @@ export default function LandingPage() {
   const selectedCommunityTheme = communityThemes.find((theme) => theme.id === selectedThemeId);
   const selectedThemeLabel = selectedBuiltinTheme?.name ?? selectedCommunityTheme?.name ?? selectedThemeId;
   const selectedCommunityCountLabel = `${communityThemes.length} map${communityThemes.length === 1 ? "a" : communityThemes.length < 5 ? "y" : ""}`;
-  const ticketSectionHeadingClass = "text-[9px] font-black uppercase tracking-[0.35em] text-amber-900/65 select-none";
+  const ticketSectionHeadingClass = "text-[8px] sm:text-[9px] font-black uppercase tracking-[0.32em] sm:tracking-[0.35em] text-amber-900/65 select-none";
   const ticketSectionDividerClass = "h-px w-full bg-gradient-to-r from-amber-900/0 via-amber-900/25 to-amber-900/0";
 
   if (isDevJoin) {
@@ -893,18 +893,18 @@ export default function LandingPage() {
               }}
               />
 
-              <div className="mx-auto mt-3 sm:mt-5 w-full max-w-4xl lg:max-w-[82%] xl:max-w-[78%] space-y-2 sm:space-y-3">
+              <div className="mx-auto mt-2.5 sm:mt-4 w-full max-w-4xl lg:max-w-[82%] xl:max-w-[78%] space-y-1.5 sm:space-y-2">
               <div
-                  className="px-6 sm:px-10 py-6 sm:py-8 drop-shadow-xl"
+                  className="px-5 sm:px-8 py-[20px] sm:py-[26px] drop-shadow-xl"
                   style={{
                     backgroundImage: "url('/ticket.webp')",
                     backgroundSize: "100% 100%",
                     backgroundPosition: "center",
                   }}
                 >
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 lg:items-center">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-2.5 lg:items-center">
                     {/* Levá sekce: Discord stav / login */}
-                    <div className="min-w-0 space-y-2 w-full lg:max-w-[14rem]">
+                    <div className="min-w-0 space-y-1.5 sm:space-y-2 w-full lg:max-w-[14rem]">
                       <div className={ticketSectionHeadingClass}>
                         Vstupenka do hry
                       </div>
@@ -913,7 +913,7 @@ export default function LandingPage() {
                     </div>
 
                     {/* Střední sekce: jméno (jen guest) + kód hry + Připojit */}
-                    <div className="min-w-0 flex flex-col gap-2 w-full lg:mx-auto lg:max-w-[13.5rem]">
+                    <div className="min-w-0 flex flex-col gap-1.5 sm:gap-2 w-full lg:mx-auto lg:max-w-[13.5rem]">
                       <div className={ticketSectionHeadingClass}>
                         Kód hry
                       </div>
@@ -925,17 +925,17 @@ export default function LandingPage() {
                           value={name}
                           onChange={(e) => setName(e.target.value)}
                           placeholder="Tvoje jméno"
-                          className="h-9 min-w-0 rounded-lg border border-amber-800/15 bg-amber-50/35 px-3 text-sm text-stone-800 outline-none placeholder:text-stone-500 focus:border-amber-600 focus:bg-amber-50/65"
+                          className="h-[34px] sm:h-9 min-w-0 rounded-lg border border-amber-800/15 bg-amber-50/35 px-3 text-sm text-stone-800 outline-none placeholder:text-stone-500 focus:border-amber-600 focus:bg-amber-50/65"
                         />
                       )}
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+                      <div className="flex flex-col gap-1.5 sm:flex-row sm:items-stretch sm:gap-2">
                         <input
                           type="text"
                           value={joinCode}
                           onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                           placeholder="Kód hry"
                           maxLength={5}
-                          className="h-9 min-w-0 flex-1 rounded-lg border border-amber-800/15 bg-amber-50/40 px-3 text-sm uppercase tracking-[0.2em] text-stone-800 outline-none placeholder:tracking-normal placeholder:text-stone-500 focus:border-amber-600 focus:bg-amber-50/65 sm:min-w-[7.25rem] lg:max-w-[8.25rem]"
+                          className="h-[34px] sm:h-9 min-w-0 flex-1 rounded-lg border border-amber-800/15 bg-amber-50/40 px-3 text-sm uppercase tracking-[0.18em] sm:tracking-[0.2em] text-stone-800 outline-none placeholder:tracking-normal placeholder:text-stone-500 focus:border-amber-600 focus:bg-amber-50/65 sm:min-w-[7.25rem] lg:max-w-[8.25rem]"
                         />
                         <div
                           className="relative w-full shrink-0 sm:w-[7.5rem] lg:w-[7.25rem]"
@@ -946,7 +946,7 @@ export default function LandingPage() {
                           <button
                             type="button"
                             disabled={joinButtonDisabled}
-                            className="h-9 w-full rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:border disabled:border-amber-900/15 disabled:bg-stone-200 disabled:text-stone-600"
+                            className="h-[34px] sm:h-9 w-full rounded-lg bg-emerald-700 px-4 text-[13px] sm:text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:border disabled:border-amber-900/15 disabled:bg-stone-200 disabled:text-stone-600"
                           >
                             Připojit
                           </button>
@@ -960,14 +960,14 @@ export default function LandingPage() {
                     </div>
 
                     {/* Pravá sekce: sledovat hry */}
-                    <div className="min-w-0 flex flex-col gap-2 w-full lg:mx-auto lg:max-w-[13.75rem]">
+                    <div className="min-w-0 flex flex-col gap-1.5 sm:gap-2 w-full lg:mx-auto lg:max-w-[13.75rem]">
                       <div className={ticketSectionHeadingClass}>
                         Aktivní hry
                       </div>
                       <div className={ticketSectionDividerClass} />
                       <a
                         href="/hry"
-                        className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg border border-amber-800/20 bg-amber-100/55 px-4 text-sm font-semibold text-stone-800 transition hover:bg-amber-100/75 lg:self-center lg:w-full"
+                        className="inline-flex h-[34px] sm:h-9 items-center justify-center whitespace-nowrap rounded-lg border border-amber-800/20 bg-amber-100/55 px-4 text-[13px] sm:text-sm font-semibold text-stone-800 transition hover:bg-amber-100/75 lg:self-center lg:w-full"
                       >
                         👀 Sledovat aktivní hry
                       </a>
