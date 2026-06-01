@@ -889,9 +889,6 @@ export default function LandingPage() {
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 lg:items-center">
                     {/* Levá sekce: Discord stav / login */}
                     <div className="min-w-0 space-y-2 w-full lg:max-w-[14rem]">
-                      <div className="text-[9px] font-black uppercase tracking-[0.35em] text-amber-900/60 select-none">
-                        Sázková kancelář
-                      </div>
                       <div className="text-[13px] font-black uppercase tracking-[0.28em] text-amber-950/90 leading-none sm:text-[14px] sm:tracking-[0.32em]">
                         Vstupenka do hry
                       </div>
