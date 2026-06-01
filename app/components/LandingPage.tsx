@@ -810,7 +810,15 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="flex flex-col bg-slate-900 overflow-hidden" style={{ height: "100dvh" }}>
+    <div
+      className="flex flex-col bg-slate-900 overflow-hidden"
+      style={{
+        height: "100dvh",
+        backgroundImage: "linear-gradient(rgba(15,23,42,0.72), rgba(15,23,42,0.72)), url('/menu_bckg.webp')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
 
       {/* Sliding container — flex-1 vyplní zbytek viewportu po banneru */}
       <div
