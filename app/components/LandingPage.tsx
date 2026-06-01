@@ -716,28 +716,28 @@ export default function LandingPage() {
   };
 
   const utilityDiscordBlock = discordUser ? (
-    <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-700 bg-slate-800 px-3 py-2.5 shadow-inner">
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-800/20 bg-stone-100/70 px-3 py-2.5">
       <div className="flex min-w-0 items-center gap-3">
         {discordUser.avatar ? (
           <img src={discordUser.avatar} alt="" className="h-8 w-8 rounded-full" />
         ) : (
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-400 text-sm font-bold text-white">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-700 text-sm font-bold text-white">
             {discordUser.name.charAt(0).toUpperCase()}
           </div>
         )}
         <div className="min-w-0">
-          <div className="truncate text-sm font-semibold text-slate-100">{discordUser.name}</div>
-          <div className="text-[11px] text-slate-400">Discord připojen</div>
+          <div className="truncate text-sm font-semibold text-stone-800">{discordUser.name}</div>
+          <div className="text-[11px] text-stone-500">Discord připojen</div>
         </div>
       </div>
-      <button onClick={logoutDiscord} className="shrink-0 text-xs font-medium text-slate-400 transition hover:text-white">
+      <button onClick={logoutDiscord} className="shrink-0 text-xs font-medium text-stone-500 transition hover:text-stone-800">
         Odhlásit
       </button>
     </div>
   ) : (
     <button
       onClick={loginWithDiscord}
-      className="rounded-2xl border border-indigo-500/40 bg-indigo-500/18 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500/28"
+      className="w-full rounded-xl border border-amber-800/30 bg-amber-100/60 px-4 py-2.5 text-sm font-semibold text-amber-900 transition hover:bg-amber-100"
     >
       🎮 Přihlásit přes Discord
     </button>
@@ -876,7 +876,17 @@ export default function LandingPage() {
               />
 
               <div className="mx-auto mt-3 sm:mt-5 w-full max-w-5xl space-y-2 sm:space-y-3">
-                <div className="rounded-[28px] border border-slate-800 bg-slate-900/95 p-3 shadow-2xl">
+                <div
+                  className="rounded-2xl border border-amber-800/25 p-3 shadow-xl overflow-hidden"
+                  style={{
+                    backgroundImage: "linear-gradient(rgba(255,248,229,0.92), rgba(255,248,229,0.92)), url('/ticket.webp')",
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                  }}
+                >
+                  <div className="mb-2 text-[9px] font-black uppercase tracking-[0.35em] text-amber-900/45 select-none">
+                    Sázková kancelář
+                  </div>
                   <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
                     <div className="xl:w-[280px]">
                       {utilityDiscordBlock}
@@ -889,7 +899,7 @@ export default function LandingPage() {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="Tvoje jméno"
-                        className="h-11 min-w-0 rounded-2xl border border-slate-700 bg-slate-800 px-4 text-sm text-slate-100 outline-none placeholder:text-slate-400 focus:border-slate-500"
+                        className="h-11 min-w-0 rounded-xl border border-amber-800/20 bg-stone-50 px-4 text-sm text-stone-800 outline-none placeholder:text-stone-400 focus:border-amber-600"
                       />
 
                       <div className="flex flex-1 gap-2">
@@ -899,12 +909,12 @@ export default function LandingPage() {
                           onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                           placeholder="Kód hry"
                           maxLength={5}
-                          className="h-11 min-w-0 flex-1 rounded-2xl border border-slate-700 bg-slate-800 px-4 text-sm uppercase tracking-[0.2em] text-slate-100 outline-none placeholder:tracking-normal placeholder:text-slate-400 focus:border-slate-500"
+                          className="h-11 min-w-0 flex-1 rounded-xl border border-amber-800/20 bg-stone-50 px-4 text-sm uppercase tracking-[0.2em] text-stone-800 outline-none placeholder:tracking-normal placeholder:text-stone-400 focus:border-amber-600"
                         />
                         <button
                           onClick={() => joinGame()}
                           disabled={loading || joinApprovalStatus === "pending"}
-                          className="h-11 shrink-0 rounded-2xl bg-emerald-500 px-4 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 disabled:bg-slate-600 disabled:text-white/50"
+                          className="h-11 shrink-0 rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:bg-stone-300 disabled:text-stone-400"
                         >
                           Připojit
                         </button>
@@ -913,7 +923,7 @@ export default function LandingPage() {
 
                     <a
                       href="/hry"
-                      className="inline-flex h-11 shrink-0 items-center justify-center rounded-2xl border border-slate-700 bg-slate-800 px-4 text-sm font-semibold text-slate-100 transition hover:bg-slate-700"
+                      className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl border border-amber-800/20 bg-stone-50 px-4 text-sm font-semibold text-stone-700 transition hover:bg-amber-50"
                     >
                       👀 Sledovat aktivní hry
                     </a>
