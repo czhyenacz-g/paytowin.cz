@@ -753,6 +753,8 @@ export default function LandingPage() {
   const selectedCommunityTheme = communityThemes.find((theme) => theme.id === selectedThemeId);
   const selectedThemeLabel = selectedBuiltinTheme?.name ?? selectedCommunityTheme?.name ?? selectedThemeId;
   const selectedCommunityCountLabel = `${communityThemes.length} map${communityThemes.length === 1 ? "a" : communityThemes.length < 5 ? "y" : ""}`;
+  const ticketSectionHeadingClass = "text-[9px] font-black uppercase tracking-[0.35em] text-amber-900/65 select-none";
+  const ticketSectionDividerClass = "h-px w-full bg-gradient-to-r from-amber-900/0 via-amber-900/25 to-amber-900/0";
 
   if (isDevJoin) {
     return (
@@ -889,20 +891,19 @@ export default function LandingPage() {
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 lg:items-center">
                     {/* Levá sekce: Discord stav / login */}
                     <div className="min-w-0 space-y-2 w-full lg:max-w-[14rem]">
-                      <div className="text-[9px] font-black uppercase tracking-[0.35em] text-amber-900/60 select-none">
-                        Startovní listina
-                      </div>
-                      <div className="text-[13px] font-black uppercase tracking-[0.28em] text-amber-950/90 leading-none sm:text-[14px] sm:tracking-[0.32em]">
+                      <div className={ticketSectionHeadingClass}>
                         Vstupenka do hry
                       </div>
+                      <div className={ticketSectionDividerClass} />
                       {utilityDiscordBlock}
                     </div>
 
                     {/* Střední sekce: jméno (jen guest) + kód hry + Připojit */}
                     <div className="min-w-0 flex flex-col gap-2 w-full lg:mx-auto lg:max-w-[13.5rem]">
-                      <div className="text-[9px] font-black uppercase tracking-[0.3em] text-amber-900/60 select-none">
+                      <div className={ticketSectionHeadingClass}>
                         Kód hry
                       </div>
+                      <div className={ticketSectionDividerClass} />
                       {!isDiscordConnected && (
                         <input
                           ref={playerNameInputRef}
@@ -934,10 +935,10 @@ export default function LandingPage() {
 
                     {/* Pravá sekce: sledovat hry */}
                     <div className="min-w-0 flex flex-col gap-2 w-full lg:mx-auto lg:max-w-[13.75rem]">
-                      <div className="text-[9px] font-black uppercase tracking-[0.3em] text-amber-900/70 select-none">
+                      <div className={ticketSectionHeadingClass}>
                         Aktivní hry
                       </div>
-                      <div className="h-px w-full bg-gradient-to-r from-amber-900/0 via-amber-900/25 to-amber-900/0" />
+                      <div className={ticketSectionDividerClass} />
                       <a
                         href="/hry"
                         className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg border border-amber-800/20 bg-amber-100/55 px-4 text-sm font-semibold text-stone-800 transition hover:bg-amber-100/75 lg:self-center lg:w-full"
