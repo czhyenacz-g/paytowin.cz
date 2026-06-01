@@ -743,7 +743,6 @@ export default function LandingPage() {
         )}
         <div className="min-w-0">
           <div className="truncate text-sm font-semibold text-stone-800">{discordUser.name}</div>
-          <div className="text-[11px] text-stone-500">Discord připojen</div>
         </div>
       </div>
       <button onClick={logoutDiscord} className="shrink-0 text-xs font-medium text-stone-500 transition hover:text-stone-800">
@@ -859,14 +858,14 @@ export default function LandingPage() {
                   className="mx-auto"
                   onClick={() => window.open("/", "_blank")}
                 />
-                <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-200/80">
                   Multiplayer závodní deskovka
                 </p>
                 {/* Mobile: kratší popis, desktop: původní dva řádky */}
-                <p className="mt-1 text-xs text-slate-400 sm:hidden">Závodní deskovka o risku, penězích a vítězství.</p>
-                <p className="mt-1.5 text-slate-400 hidden sm:block">Závody, sázky a finanční chaos.</p>
-                <p className="mt-2 text-xs text-slate-500 mx-auto max-w-sm leading-relaxed hidden sm:block md:max-w-[60rem] md:whitespace-nowrap">
-                  Kupuj racery, riskuj v závodech, sbírej výhry a přežij deskovou hru, kde i špatné rozhodnutí může koupit druhou šanci.
+                <p className="mt-1 text-xs text-stone-300 sm:hidden">Závodní deskovka o risku, penězích a vítězství.</p>
+                <p className="mt-1.5 text-amber-100/70 hidden sm:block">Závody, sázky a finanční chaos.</p>
+                <p className="mt-2 text-xs text-amber-100/85 mx-auto max-w-sm leading-relaxed hidden sm:block md:max-w-[60rem] md:whitespace-nowrap font-medium tracking-[0.01em]">
+                  Kup koně, riskuj tahy, uteč bance.
                 </p>
               </div>
 
@@ -1082,7 +1081,7 @@ export default function LandingPage() {
                   <span>·</span>
                   <a href="mailto:info@paytowin.cz" className="hover:text-slate-200 underline">info@paytowin.cz</a>
                   <span>·</span>
-                  <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-400 tracking-wide">Beta v0.7.3-seno</span>
+                  <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-400 tracking-wide">Beta v0.7.4-seno</span>
                 </div>
               </div>
             </div>
