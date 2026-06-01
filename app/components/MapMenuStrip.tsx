@@ -3,16 +3,13 @@
 import React from "react";
 
 /**
- * MapMenuStrip — 8 vertikálních panelů jako game-mode select / hlavní menu landing page.
+ * MapMenuStrip — game-mode select / hlavní menu landing page.
  *
- * Každý panel má:
- *   - accentColor: barevný identifikační proužek nahoře (CSS color string)
- *   - index: číslo slotu "01"–"07"
- *   - Hover: flex 1→4, overlay zesvětlí, accent se rozzáří
- *   - requiredAccess: access key — panel je zamčený pokud hráč nemá tento klíč v LIVE_UNLOCKED_ACCESS
+ * Desktop (≥ sm / 640 px): vodorovný accordion, hover expand flex 1→4.
+ * Mobil (< sm): samostatný vertikální seznam řádků pod sebou.
  *
- * Jak přidat reálný obrázek: doplň `bgImage` do panelu a nastav backgroundImage ve style.
- * Jak aktivovat panel: nastav available: true.
+ * Sdílená data: PANELS[], LIVE_UNLOCKED_ACCESS, hasMenuAccess().
+ * Každý panel má accentColor, requiredAccess, bgImage, available flag.
  */
 
 interface Panel {
@@ -20,26 +17,22 @@ interface Panel {
   label:       string;
   emoji:       string;
   desc:        string;
-  index:       string;       // číslo slotu "01"–"07"
-  bgFrom:      string;       // Tailwind gradient — fallback pokud bgImage chybí
+  index:       string;
+  bgFrom:      string;
   bgTo:        string;
-  bgImage?:    string;       // cesta k obrázku v /public (např. "/bg_horse_sun.webp")
-  accentColor: string;       // CSS color — horní barevný proužek + index text
+  bgImage?:    string;
+  accentColor: string;
   available:   boolean;
   idleOverlayOpacity?: number;
   bgPosition?: string;
   href?:       string;
-  /** Access klíč — pokud je uveden a hráč ho nemá, panel se zobrazí jako ZAMKNUTO. */
   requiredAccess?: string;
 }
 
 interface MapMenuStripProps {
-  /** Callback pro klik na panel — nahradí href navigaci. */
   onPanelClick?: (panelId: string) => void;
 }
 
-// TODO: replace mock access with persisted user unlocks/settings.
-// V live/production jsou odemčené pouze tyto sekce.
 const LIVE_UNLOCKED_ACCESS: string[] = [
   "theme_horse_day",
   "profile",
@@ -60,7 +53,7 @@ const PANELS: Panel[] = [
   { id: "mapa-2",  label: "Noční dostihy",  emoji: "🌙",  desc: "Skutečné peníze neběhají na slunci.",                        index: "02", bgFrom: "from-emerald-900", bgTo: "to-emerald-950", bgImage: "/bg_horse_night.webp",    accentColor: "#34d399", available: true,  requiredAccess: "theme_horse_night"   },
   { id: "mapa-3",  label: "Chuchle 1930",   emoji: "🏇",  desc: "Návrat ke kořenům.",                                         index: "03", bgFrom: "from-blue-900",    bgTo: "to-blue-950",    bgImage: "/bg_horse_classic.webp",  accentColor: "#60a5fa", available: true,  requiredAccess: "theme_horse_classic" },
   { id: "mapa-4",  label: "Denní auta",     emoji: "🏎️", desc: "Od stájí ke garážím. Od ovsa k benzínu.",                   index: "04", bgFrom: "from-red-900",     bgTo: "to-red-950",     bgImage: "/bg_car_day.webp",        accentColor: "#f87171", available: true,  requiredAccess: "theme_car_day"       },
-  { id: "mapa-5",  label: "Noční auta",     emoji: "🌃",  desc: "Město spí. Motory ne.",                    index: "05", bgFrom: "from-violet-900",  bgTo: "to-violet-950",  bgImage: "/bg_car_night.webp",      accentColor: "#a78bfa", available: true,  requiredAccess: "theme_car_night"     },
+  { id: "mapa-5",  label: "Noční auta",     emoji: "🌃",  desc: "Město spí. Motory ne.",                                      index: "05", bgFrom: "from-violet-900",  bgTo: "to-violet-950",  bgImage: "/bg_car_night.webp",      accentColor: "#a78bfa", available: true,  requiredAccess: "theme_car_night"     },
   { id: "ostatni", label: "Komunitní mapy", emoji: "📦",  desc: "Další tratě od komunity",                                    index: "06", bgFrom: "from-teal-800",    bgTo: "to-teal-950",    bgImage: "/bg_other_maps.webp",     accentColor: "#2dd4bf", available: true,  requiredAccess: "community_maps"      },
   { id: "editor",  label: "Editor",         emoji: "🛠️", desc: "Postav vlastní trať",                                        index: "07", bgFrom: "from-orange-900",  bgTo: "to-orange-950",  bgImage: "/bg_builder_yard.webp",   accentColor: "#fb923c", available: true,  requiredAccess: "editor"              },
   { id: "profil",  label: "Tvůj profil",    emoji: "🛡️", desc: "Statistiky, odměny a reputace",                             index: "08", bgFrom: "from-slate-500",   bgTo: "to-slate-800",   bgImage: "/bg_dark_racer.webp",     accentColor: "#f8fafc", available: true,  requiredAccess: "profile", idleOverlayOpacity: 0.22, bgPosition: "42% 18%" },
@@ -69,246 +62,249 @@ const PANELS: Panel[] = [
 export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
   const [hovered, setHovered] = React.useState<number | null>(null);
   const [isDev, setIsDev] = React.useState(process.env.NODE_ENV === "development");
-  // Mobile detection — accordion flex applies only on desktop (sm: ≥ 640px)
-  const [isMobile, setIsMobile] = React.useState(true);
+
   React.useEffect(() => {
     const h = window.location.hostname;
     if (h === "localhost" || h === "127.0.0.1") setIsDev(true);
   }, []);
-  React.useEffect(() => {
-    const mq = window.matchMedia("(min-width: 640px)");
-    const sync = () => setIsMobile(!mq.matches);
-    sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
-  }, []);
 
-  // ── Hover zvuk ────────────────────────────────────────────────────────────────
-  const audioCtxRef     = React.useRef<AudioContext | null>(null);
-  const lastSoundMsRef  = React.useRef<number>(0);
+  // ── Hover zvuk (desktop only) ─────────────────────────────────────────────
+  const audioCtxRef    = React.useRef<AudioContext | null>(null);
+  const lastSoundMsRef = React.useRef<number>(0);
 
   const playHoverSound = React.useCallback(() => {
     const now = Date.now();
-    if (now - lastSoundMsRef.current < 70) return; // cooldown — rychlý přejezd přes všechny panely max ~14 zvuků/s
+    if (now - lastSoundMsRef.current < 70) return;
     lastSoundMsRef.current = now;
-
     try {
       if (!audioCtxRef.current) audioCtxRef.current = new AudioContext();
       const ctx = audioCtxRef.current;
-
       const play = () => {
-        const t   = ctx.currentTime;
+        const t = ctx.currentTime;
         const dur = 0.13;
-        const osc  = ctx.createOscillator();
+        const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-
         osc.type = "sine";
         osc.frequency.setValueAtTime(260, t);
         osc.frequency.exponentialRampToValueAtTime(680, t + dur);
-
         gain.gain.setValueAtTime(0, t);
         gain.gain.linearRampToValueAtTime(0.10, t + 0.018);
         gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
-
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.start(t);
         osc.stop(t + dur);
       };
-
-      if (ctx.state === "suspended") {
-        ctx.resume().then(play).catch(() => {});
-      } else {
-        play();
-      }
-    } catch {
-      // AudioContext nedostupný (SSR, blokovaný prohlížečem) — ticho
-    }
+      if (ctx.state === "suspended") { ctx.resume().then(play).catch(() => {}); } else { play(); }
+    } catch { /* AudioContext nedostupný */ }
   }, []);
 
   return (
-    <div
-      className="flex flex-col sm:flex-row w-full overflow-hidden shadow-2xl sm:h-[clamp(280px,44vh,520px)]"
-      style={{
-        borderTop: "4px solid rgba(0,0,0,0.75)",
-        borderBottom: "4px solid rgba(0,0,0,0.75)",
-      }}
-    >
-      {PANELS.map((panel, idx) => {
-        const isHovered = hovered === idx;
-        const isLast = idx === PANELS.length - 1;
-        const isLocked = !hasMenuAccess(panel.requiredAccess, LIVE_UNLOCKED_ACCESS, isDev);
-        // isNavigable = má kam jít (otevře setup view nebo href)
-        const isNavigable = !!onPanelClick || !!panel.href;
-        // isAvailable = panel je plně funkční
-        const isAvailable = panel.available;
+    <>
+      {/* ════════════════════════════════════════════════════════════════════
+          MOBILE render — zobrazí se jen na < sm (< 640 px)
+          Jednoduchý vertikální seznam karet pod sebou, žádný accordion.
+          ════════════════════════════════════════════════════════════════════ */}
+      <div className="sm:hidden w-full flex flex-col divide-y divide-black/40 shadow-2xl overflow-hidden rounded-sm">
+        {PANELS.map((panel) => {
+          const isLocked = !hasMenuAccess(panel.requiredAccess, LIVE_UNLOCKED_ACCESS, isDev);
+          const isNavigable = !!onPanelClick || !!panel.href;
+          const isAvailable = panel.available;
 
-        const handleClick = () => {
-          if (isLocked) return;
-          if (!isNavigable) return;
-          if (onPanelClick) { onPanelClick(panel.id); return; }
-          if (panel.href) { window.location.href = panel.href; }
-        };
+          const handleClick = () => {
+            if (isLocked || !isNavigable) return;
+            if (onPanelClick) { onPanelClick(panel.id); return; }
+            if (panel.href) window.location.href = panel.href;
+          };
 
-        return (
-          <div
-            key={panel.id}
-            role={isNavigable ? "button" : undefined}
-            className={[
-              "group relative overflow-hidden bg-gradient-to-b flex-shrink-0 min-h-[64px] sm:min-h-0",
-              panel.bgFrom, panel.bgTo,
-              "transition-[flex] duration-300 ease-in-out",
-              isLocked ? "cursor-not-allowed" : (isNavigable ? "cursor-pointer" : "cursor-default"),
-            ].join(" ")}
-            style={{
-              // Accordion flex only on desktop — on mobile flex-col stacks panels naturally
-              flex: isMobile ? undefined : (isHovered && isNavigable ? (isLocked ? 2 : 4) : 1),
-              // Dual-line bevel separátor: bílá 1px highlight + tmavá 3px stín
-              // Čitelné na světlém i tmavém obrázku
-              boxShadow: !isLast
-                ? "inset -1px 0 0 rgba(255,255,255,0.28), inset -4px 0 0 rgba(0,0,0,0.80)"
-                : "none",
-              ...(panel.bgImage ? {
+          return (
+            <div
+              key={panel.id}
+              role={isNavigable ? "button" : undefined}
+              onClick={handleClick}
+              className={[
+                "relative flex items-center gap-3 px-4 min-h-[72px] overflow-hidden",
+                panel.bgFrom, "bg-gradient-to-b", panel.bgTo,
+                isLocked ? "cursor-not-allowed" : (isNavigable ? "cursor-pointer active:brightness-75" : "cursor-default"),
+              ].join(" ")}
+              style={panel.bgImage ? {
                 backgroundImage: `url(${panel.bgImage})`,
                 backgroundSize: "cover",
-                backgroundPosition: panel.bgPosition ?? "center center",
-              } : {}),
-            }}
-            onMouseEnter={() => { setHovered(idx); playHoverSound(); }}
-            onMouseLeave={() => setHovered(null)}
-            onClick={handleClick}
-          >
-            {/* ── Horní barevný accent proužek ── */}
-            <div
-              className="absolute top-0 left-0 right-0 h-[3px] transition-opacity duration-300 z-10"
-              style={{
-                background: panel.accentColor,
-                opacity: isHovered ? 1 : (isAvailable ? 0.65 : 0.3),
-              }}
-            />
-
-            {/* ── Diagonální textura — subtilní racing feel ── */}
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                backgroundImage:
-                  "repeating-linear-gradient(45deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 14px)",
-              }}
-            />
-
-            {/* ── Tmavý overlay — zesvětlí na hover ── */}
-            {/* S bgImage: mírnější idle ztmavení (obrázek musí být vidět) */}
-            <div
-              className="absolute inset-0 transition-opacity duration-300 bg-black"
-              style={{
-                opacity: isHovered
-                  ? (isLocked ? 0.25 : 0.10)
-                  : (isAvailable ? (panel.idleOverlayOpacity ?? 0.38) : 0.58),
-              }}
-            />
-
-            {/* ── ZAMKNUTO overlay ── */}
-            {isLocked && (
-              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-1.5 bg-black/30 pb-[20%] pointer-events-none select-none">
-                <span style={{ fontSize: "22px", lineHeight: 1 }}>🔒</span>
-                <span
-                  className="text-[10px] font-black tracking-[0.18em] uppercase text-white/90"
-                >
-                  Zamknuto
-                </span>
-                <span className="text-[8px] tracking-wide text-white/30 text-center leading-tight px-1">
-                  Vyžaduje odemknutí
-                </span>
-              </div>
-            )}
-
-{/* ── Číslo slotu (top-left) ── */}
-            <div
-              className="absolute top-3 left-3 text-[10px] font-black tracking-[0.2em] transition-opacity duration-300 select-none z-10"
-              style={{
-                color: panel.accentColor,
-                opacity: isHovered ? 0.95 : 0.35,
-              }}
+                backgroundPosition: panel.bgPosition ?? "center",
+              } : undefined}
             >
-              {panel.index}
+              {/* Tmavý overlay */}
+              <div className="absolute inset-0 bg-black/52 pointer-events-none" />
+
+              {/* Levý accent proužek */}
+              <div
+                className="relative z-10 self-stretch w-[3px] shrink-0 my-[14px] rounded-full"
+                style={{ background: panel.accentColor }}
+              />
+
+              {/* Obsah */}
+              <div className="relative z-10 flex-1 min-w-0 py-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-xl leading-none shrink-0">{panel.emoji}</span>
+                  <span className="text-sm font-bold text-white truncate">{panel.label}</span>
+                </div>
+                {isAvailable && panel.desc && (
+                  <p className="mt-0.5 text-[11px] leading-tight text-white/55 truncate">{panel.desc}</p>
+                )}
+                {!isAvailable && (
+                  <p className="mt-0.5 text-[10px] font-black tracking-widest uppercase"
+                    style={{ color: panel.accentColor, opacity: 0.6 }}>Brzy</p>
+                )}
+              </div>
+
+              {/* Zámek / šipka */}
+              {isLocked ? (
+                <span className="relative z-10 shrink-0 text-base select-none">🔒</span>
+              ) : (isNavigable && isAvailable) ? (
+                <span className="relative z-10 shrink-0 text-white/35 text-2xl leading-none font-light">›</span>
+              ) : null}
             </div>
+          );
+        })}
+      </div>
 
-            {/* ── Emoji — dekorativní pozadí (pouze bez bgImage) ── */}
-            {!panel.bgImage && (
+      {/* ════════════════════════════════════════════════════════════════════
+          DESKTOP render — zobrazí se jen na ≥ sm (≥ 640 px)
+          Původní vodorovný accordion s hover expand efektem.
+          ════════════════════════════════════════════════════════════════════ */}
+      <div
+        className="hidden sm:flex w-full overflow-hidden shadow-2xl"
+        style={{
+          height: "clamp(280px, 44vh, 520px)",
+          borderTop: "4px solid rgba(0,0,0,0.75)",
+          borderBottom: "4px solid rgba(0,0,0,0.75)",
+        }}
+      >
+        {PANELS.map((panel, idx) => {
+          const isHovered = hovered === idx;
+          const isLast = idx === PANELS.length - 1;
+          const isLocked = !hasMenuAccess(panel.requiredAccess, LIVE_UNLOCKED_ACCESS, isDev);
+          const isNavigable = !!onPanelClick || !!panel.href;
+          const isAvailable = panel.available;
+
+          const handleClick = () => {
+            if (isLocked) return;
+            if (!isNavigable) return;
+            if (onPanelClick) { onPanelClick(panel.id); return; }
+            if (panel.href) { window.location.href = panel.href; }
+          };
+
+          return (
+            <div
+              key={panel.id}
+              role={isNavigable ? "button" : undefined}
+              className={[
+                "group relative overflow-hidden bg-gradient-to-b flex-shrink-0",
+                panel.bgFrom, panel.bgTo,
+                "transition-[flex] duration-300 ease-in-out",
+                isLocked ? "cursor-not-allowed" : (isNavigable ? "cursor-pointer" : "cursor-default"),
+              ].join(" ")}
+              style={{
+                flex: isHovered && isNavigable ? (isLocked ? 2 : 4) : 1,
+                boxShadow: !isLast
+                  ? "inset -1px 0 0 rgba(255,255,255,0.28), inset -4px 0 0 rgba(0,0,0,0.80)"
+                  : "none",
+                ...(panel.bgImage ? {
+                  backgroundImage: `url(${panel.bgImage})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: panel.bgPosition ?? "center center",
+                } : {}),
+              }}
+              onMouseEnter={() => { setHovered(idx); playHoverSound(); }}
+              onMouseLeave={() => setHovered(null)}
+              onClick={handleClick}
+            >
+              {/* Horní barevný accent proužek */}
               <div
-                className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
-                style={{ paddingBottom: "64px" }}
-              >
-                <span
-                  className="text-7xl transition-opacity duration-300"
-                  style={{
-                    opacity: isHovered ? 0.5 : (isAvailable ? 0.18 : 0.07),
-                  }}
-                >
-                  {panel.emoji}
-                </span>
-              </div>
-            )}
+                className="absolute top-0 left-0 right-0 h-[3px] transition-opacity duration-300 z-10"
+                style={{ background: panel.accentColor, opacity: isHovered ? 1 : (isAvailable ? 0.65 : 0.3) }}
+              />
 
-            {/* ── Bottom: label + CTA / Brzy ── */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 via-black/55 to-transparent px-3 pt-2 sm:pt-10 pb-4 z-10">
-
-              {/* Label */}
+              {/* Diagonální textura */}
               <div
-                className="text-sm font-bold leading-tight truncate transition-opacity duration-300 tracking-wide"
-                style={{
-                  color: "#fff",
-                  opacity: isHovered ? 1 : (isAvailable ? 0.85 : 0.38),
-                }}
-              >
-                {panel.label}
-              </div>
+                className="absolute inset-0 pointer-events-none"
+                style={{ backgroundImage: "repeating-linear-gradient(45deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 14px)" }}
+              />
 
-              {/* Desc — jen na hover pro available */}
-              {isAvailable && panel.desc && (
-                <div
-                  className="text-xs leading-tight truncate mt-0.5 transition-opacity duration-300 text-white/70"
-                  style={{ opacity: isHovered ? 1 : 0 }}
-                >
-                  {panel.desc}
+              {/* Tmavý overlay */}
+              <div
+                className="absolute inset-0 transition-opacity duration-300 bg-black"
+                style={{ opacity: isHovered ? (isLocked ? 0.25 : 0.10) : (isAvailable ? (panel.idleOverlayOpacity ?? 0.38) : 0.58) }}
+              />
+
+              {/* ZAMKNUTO overlay */}
+              {isLocked && (
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-1.5 bg-black/30 pb-[20%] pointer-events-none select-none">
+                  <span style={{ fontSize: "22px", lineHeight: 1 }}>🔒</span>
+                  <span className="text-[10px] font-black tracking-[0.18em] uppercase text-white/90">Zamknuto</span>
+                  <span className="text-[8px] tracking-wide text-white/30 text-center leading-tight px-1">Vyžaduje odemknutí</span>
                 </div>
               )}
 
-              {/* CTA → Otevřít/Hrát — jen pro available, na hover */}
-              {isAvailable && (
-                <div
-                  className="mt-2 transition-opacity duration-300"
-                  style={{ opacity: isHovered ? 1 : 0 }}
-                >
-                  <span
-                    className="inline-block rounded px-2 py-0.5 text-[11px] font-black tracking-widest uppercase whitespace-nowrap"
-                    style={{
-                      background: panel.accentColor,
-                      color: panel.id === "profil" ? "#0f172a" : "#000",
-                    }}
-                  >
-                    {panel.id === "profil" ? "Otevřít →" : panel.id === "editor" ? "Jít budovat →" : "Hrát →"}
+              {/* Číslo slotu */}
+              <div
+                className="absolute top-3 left-3 text-[10px] font-black tracking-[0.2em] transition-opacity duration-300 select-none z-10"
+                style={{ color: panel.accentColor, opacity: isHovered ? 0.95 : 0.35 }}
+              >
+                {panel.index}
+              </div>
+
+              {/* Emoji — dekorativní (bez bgImage) */}
+              {!panel.bgImage && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none" style={{ paddingBottom: "64px" }}>
+                  <span className="text-7xl transition-opacity duration-300" style={{ opacity: isHovered ? 0.5 : (isAvailable ? 0.18 : 0.07) }}>
+                    {panel.emoji}
                   </span>
                 </div>
               )}
 
-              {/* Brzy badge — pro unavailable */}
-              {!isAvailable && (
+              {/* Bottom: label + CTA / Brzy */}
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 via-black/55 to-transparent px-3 pt-10 pb-4 z-10">
                 <div
-                  className="mt-1.5 inline-block rounded-sm px-1.5 py-0.5 text-[9px] font-black tracking-widest uppercase transition-opacity duration-300"
-                  style={{
-                    border: `1px solid ${panel.accentColor}55`,
-                    color: panel.accentColor,
-                    opacity: isHovered ? 0.9 : 0.5,
-                  }}
+                  className="text-sm font-bold leading-tight truncate transition-opacity duration-300 tracking-wide"
+                  style={{ color: "#fff", opacity: isHovered ? 1 : (isAvailable ? 0.85 : 0.38) }}
                 >
-                  Brzy
+                  {panel.label}
                 </div>
-              )}
+
+                {isAvailable && panel.desc && (
+                  <div
+                    className="text-xs leading-tight truncate mt-0.5 transition-opacity duration-300 text-white/70"
+                    style={{ opacity: isHovered ? 1 : 0 }}
+                  >
+                    {panel.desc}
+                  </div>
+                )}
+
+                {isAvailable && (
+                  <div className="mt-2 transition-opacity duration-300" style={{ opacity: isHovered ? 1 : 0 }}>
+                    <span
+                      className="inline-block rounded px-2 py-0.5 text-[11px] font-black tracking-widest uppercase whitespace-nowrap"
+                      style={{ background: panel.accentColor, color: panel.id === "profil" ? "#0f172a" : "#000" }}
+                    >
+                      {panel.id === "profil" ? "Otevřít →" : panel.id === "editor" ? "Jít budovat →" : "Hrát →"}
+                    </span>
+                  </div>
+                )}
+
+                {!isAvailable && (
+                  <div
+                    className="mt-1.5 inline-block rounded-sm px-1.5 py-0.5 text-[9px] font-black tracking-widest uppercase transition-opacity duration-300"
+                    style={{ border: `1px solid ${panel.accentColor}55`, color: panel.accentColor, opacity: isHovered ? 0.9 : 0.5 }}
+                  >
+                    Brzy
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        );
-      })}
-    </div>
+          );
+        })}
+      </div>
+    </>
   );
 }
