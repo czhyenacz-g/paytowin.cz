@@ -821,20 +821,22 @@ export default function LandingPage() {
         {/* ── LEFT: landing view (50% = 100vw) ── */}
         <div style={{ width: "50%" }} className="flex flex-col min-h-0 overflow-x-hidden">
           <div className="flex flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
-            <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-6 py-8">
+            <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-4 sm:px-6 py-4 sm:py-8">
 
-              <div className="mb-6 text-center">
+              <div className="mb-3 sm:mb-6 text-center">
                 <h1 className="sr-only">PayToWin.cz — česká multiplayer závodní deskovka v prohlížeči</h1>
                 <BrandLogo
                   variant="hero"
                   className="mx-auto"
                   onClick={() => window.open("/", "_blank")}
                 />
-                <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
                   Multiplayer závodní deskovka
                 </p>
-                <p className="mt-1.5 text-slate-400">Závody, sázky a finanční chaos.</p>
-                <p className="mt-2 text-xs text-slate-500 mx-auto max-w-sm leading-relaxed">
+                {/* Mobile: kratší popis, desktop: původní dva řádky */}
+                <p className="mt-1 text-xs text-slate-400 sm:hidden">Závodní deskovka o risku, penězích a vítězství.</p>
+                <p className="mt-1.5 text-slate-400 hidden sm:block">Závody, sázky a finanční chaos.</p>
+                <p className="mt-2 text-xs text-slate-500 mx-auto max-w-sm leading-relaxed hidden sm:block">
                   Kupuj racery, riskuj v závodech, sbírej výhry a přežij deskovou hru, kde i špatné rozhodnutí může koupit druhou šanci.
                 </p>
               </div>
@@ -858,7 +860,7 @@ export default function LandingPage() {
                 }
               }} />
 
-              <div className="mx-auto mt-5 w-full max-w-5xl space-y-3">
+              <div className="mx-auto mt-3 sm:mt-5 w-full max-w-5xl space-y-2 sm:space-y-3">
                 <div className="rounded-[28px] border border-slate-800 bg-slate-900/95 p-3 shadow-2xl">
                   <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
                     <div className="xl:w-[280px]">
