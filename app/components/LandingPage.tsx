@@ -1066,8 +1066,8 @@ export default function LandingPage() {
                   <span>·</span>
                   <a href="/racers" className="hover:text-slate-200 underline">Závodníci</a>
                   <span>·</span>
-                  <a href="/bets" className="hover:text-slate-200 underline">Dostihy a sázky 18+</a>
-                  <span>·</span>
+                  {/* <a href="/bets" className="hover:text-slate-200 underline">Dostihy a sázky 18+</a>
+                  <span>·</span> */}
                   <a href="/partners" className="hover:text-slate-200 underline">Partnerství</a>
                   <span>·</span>
                   <a href="mailto:info@paytowin.cz" className="hover:text-slate-200 underline">info@paytowin.cz</a>
