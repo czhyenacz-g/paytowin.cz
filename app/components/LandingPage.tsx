@@ -767,8 +767,8 @@ export default function LandingPage() {
   const selectedCommunityTheme = communityThemes.find((theme) => theme.id === selectedThemeId);
   const selectedThemeLabel = selectedBuiltinTheme?.name ?? selectedCommunityTheme?.name ?? selectedThemeId;
   const selectedCommunityCountLabel = `${communityThemes.length} map${communityThemes.length === 1 ? "a" : communityThemes.length < 5 ? "y" : ""}`;
-  const ticketSectionHeadingClass = "text-[8px] sm:text-[9px] font-black uppercase tracking-[0.32em] sm:tracking-[0.35em] text-amber-900/65 select-none";
-  const ticketSectionDividerClass = "h-px w-full bg-gradient-to-r from-amber-900/0 via-amber-900/25 to-amber-900/0";
+  const ticketSectionHeadingClass = "mx-auto w-fit text-center text-[8px] sm:text-[9px] font-black uppercase tracking-[0.32em] sm:tracking-[0.35em] text-amber-900/65 select-none";
+  const ticketSectionDividerClass = "mx-auto h-px w-16 sm:w-20 bg-gradient-to-r from-amber-900/0 via-amber-900/25 to-amber-900/0";
 
   if (isDevJoin) {
     return (
