@@ -889,6 +889,9 @@ export default function LandingPage() {
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 lg:items-center">
                     {/* Levá sekce: Discord stav / login */}
                     <div className="min-w-0 space-y-2 w-full lg:max-w-[14rem]">
+                      <div className="text-[9px] font-black uppercase tracking-[0.35em] text-amber-900/60 select-none">
+                        Startovní listina
+                      </div>
                       <div className="text-[13px] font-black uppercase tracking-[0.28em] text-amber-950/90 leading-none sm:text-[14px] sm:tracking-[0.32em]">
                         Vstupenka do hry
                       </div>
@@ -907,7 +910,7 @@ export default function LandingPage() {
                           value={name}
                           onChange={(e) => setName(e.target.value)}
                           placeholder="Tvoje jméno"
-                          className="h-9 min-w-0 rounded-lg border border-amber-800/20 bg-amber-50/50 px-3 text-sm text-stone-800 outline-none placeholder:text-stone-500 focus:border-amber-600 focus:bg-amber-50/80"
+                          className="h-9 min-w-0 rounded-lg border border-amber-800/15 bg-amber-50/40 px-3 text-sm text-stone-800 outline-none placeholder:text-stone-500 focus:border-amber-600 focus:bg-amber-50/70"
                         />
                       )}
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
@@ -917,7 +920,7 @@ export default function LandingPage() {
                           onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                           placeholder="Kód hry"
                           maxLength={5}
-                          className="h-9 min-w-0 flex-1 rounded-lg border border-amber-800/20 bg-amber-50/55 px-3 text-sm uppercase tracking-[0.2em] text-stone-800 outline-none placeholder:tracking-normal placeholder:text-stone-500 focus:border-amber-600 focus:bg-amber-50/80 sm:min-w-[7.25rem] lg:max-w-[8.25rem]"
+                          className="h-9 min-w-0 flex-1 rounded-lg border border-amber-800/15 bg-amber-50/45 px-3 text-sm uppercase tracking-[0.2em] text-stone-800 outline-none placeholder:tracking-normal placeholder:text-stone-500 focus:border-amber-600 focus:bg-amber-50/70 sm:min-w-[7.25rem] lg:max-w-[8.25rem]"
                         />
                         <button
                           onClick={() => joinGame()}
@@ -934,9 +937,10 @@ export default function LandingPage() {
                       <div className="text-[9px] font-black uppercase tracking-[0.3em] text-amber-900/70 select-none">
                         Aktivní hry
                       </div>
+                      <div className="h-px w-full bg-gradient-to-r from-amber-900/0 via-amber-900/25 to-amber-900/0" />
                       <a
                         href="/hry"
-                        className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg border border-amber-800/25 bg-amber-100/60 px-4 text-sm font-semibold text-stone-800 transition hover:bg-amber-100/80 lg:self-center lg:w-full"
+                        className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg border border-amber-800/20 bg-amber-100/55 px-4 text-sm font-semibold text-stone-800 transition hover:bg-amber-100/75 lg:self-center lg:w-full"
                       >
                         👀 Sledovat aktivní hry
                       </a>
