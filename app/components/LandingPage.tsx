@@ -879,7 +879,7 @@ export default function LandingPage() {
                 <div
                   className="rounded-xl border border-amber-700/35 px-4 sm:px-6 py-4 shadow-xl"
                   style={{
-                    backgroundImage: "linear-gradient(rgba(255,248,229,0.22), rgba(255,248,229,0.22)), url('/ticket.webp')",
+                    backgroundImage: "url('/ticket.webp')",
                     backgroundSize: "100% 100%",
                     backgroundPosition: "center",
                   }}
