@@ -864,9 +864,6 @@ export default function LandingPage() {
                 {/* Mobile: kratší popis, desktop: původní dva řádky */}
                 <p className="mt-1 text-xs text-stone-300 sm:hidden">Závodní deskovka o risku, penězích a vítězství.</p>
                 <p className="mt-1.5 text-amber-100/70 hidden sm:block">Závody, sázky a finanční chaos.</p>
-                <p className="mt-2 text-xs text-amber-100/85 mx-auto max-w-sm leading-relaxed hidden sm:block md:max-w-[60rem] md:whitespace-nowrap font-medium tracking-[0.01em]">
-                  Kup koně, riskuj tahy, uteč bance.
-                </p>
               </div>
 
               <MapMenuStrip
