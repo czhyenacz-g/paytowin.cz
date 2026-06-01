@@ -888,7 +888,7 @@ export default function LandingPage() {
                 >
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 lg:items-center">
                     {/* Levá sekce: Discord stav / login */}
-                    <div className="min-w-0 space-y-2 w-full lg:max-w-[15rem]">
+                    <div className="min-w-0 space-y-2 w-full lg:max-w-[14rem]">
                       <div className="text-[9px] font-black uppercase tracking-[0.35em] text-amber-900/60 select-none">
                         Sázková kancelář
                       </div>
@@ -933,13 +933,13 @@ export default function LandingPage() {
                     </div>
 
                     {/* Pravá sekce: sledovat hry */}
-                    <div className="min-w-0 flex flex-col gap-2 w-full lg:ml-auto lg:max-w-[14rem]">
-                      <div className="text-[9px] font-black uppercase tracking-[0.3em] text-amber-900/65 select-none">
+                    <div className="min-w-0 flex flex-col gap-2 w-full lg:mx-auto lg:max-w-[13.75rem]">
+                      <div className="text-[9px] font-black uppercase tracking-[0.3em] text-amber-900/70 select-none">
                         Aktivní hry
                       </div>
                       <a
                         href="/hry"
-                        className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg border border-amber-800/20 bg-amber-50/55 px-4 text-sm font-semibold text-stone-700 transition hover:bg-amber-50/75 lg:self-center lg:w-full"
+                        className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg border border-amber-800/25 bg-amber-100/60 px-4 text-sm font-semibold text-stone-800 transition hover:bg-amber-100/80 lg:self-center lg:w-full"
                       >
                         👀 Sledovat aktivní hry
                       </a>
