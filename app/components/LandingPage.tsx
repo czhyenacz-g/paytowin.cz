@@ -879,27 +879,27 @@ export default function LandingPage() {
                 <div
                   className="rounded-xl border border-amber-700/35 px-4 sm:px-6 py-4 shadow-xl"
                   style={{
-                    backgroundImage: "linear-gradient(rgba(255,248,229,0.78), rgba(255,248,229,0.78)), url('/ticket.webp')",
+                    backgroundImage: "linear-gradient(rgba(255,248,229,0.22), rgba(255,248,229,0.22)), url('/ticket.webp')",
                     backgroundSize: "100% 100%",
                     backgroundPosition: "center",
                   }}
                 >
-                  <div className="mb-2 text-[9px] font-black uppercase tracking-[0.35em] text-amber-900/45 select-none">
+                  <div className="mb-2.5 text-[9px] font-black uppercase tracking-[0.35em] text-amber-900/60 select-none">
                     Sázková kancelář
                   </div>
-                  <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
-                    <div className="xl:w-[280px]">
+                  <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1.6fr_1fr] gap-3 lg:items-center">
+                    <div>
                       {utilityDiscordBlock}
                     </div>
 
-                    <div className="flex flex-1 flex-col gap-2 lg:flex-row">
+                    <div className="flex flex-col gap-2 sm:flex-row">
                       <input
                         ref={playerNameInputRef}
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="Tvoje jméno"
-                        className="h-11 min-w-0 rounded-xl border border-amber-800/20 bg-stone-50 px-4 text-sm text-stone-800 outline-none placeholder:text-stone-400 focus:border-amber-600"
+                        className="h-10 min-w-0 rounded-xl border border-amber-800/25 bg-white/55 px-4 text-sm text-stone-800 outline-none placeholder:text-stone-500 focus:border-amber-600 focus:bg-white/80"
                       />
 
                       <div className="flex flex-1 gap-2">
@@ -909,12 +909,12 @@ export default function LandingPage() {
                           onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                           placeholder="Kód hry"
                           maxLength={5}
-                          className="h-11 min-w-0 flex-1 rounded-xl border border-amber-800/20 bg-stone-50 px-4 text-sm uppercase tracking-[0.2em] text-stone-800 outline-none placeholder:tracking-normal placeholder:text-stone-400 focus:border-amber-600"
+                          className="h-10 min-w-0 flex-1 rounded-xl border border-amber-800/25 bg-white/55 px-4 text-sm uppercase tracking-[0.2em] text-stone-800 outline-none placeholder:tracking-normal placeholder:text-stone-500 focus:border-amber-600 focus:bg-white/80"
                         />
                         <button
                           onClick={() => joinGame()}
                           disabled={loading || joinApprovalStatus === "pending"}
-                          className="h-11 shrink-0 rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:bg-stone-300 disabled:text-stone-400"
+                          className="h-10 shrink-0 rounded-xl bg-emerald-700 px-4 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:bg-stone-300 disabled:text-stone-400"
                         >
                           Připojit
                         </button>
@@ -923,7 +923,7 @@ export default function LandingPage() {
 
                     <a
                       href="/hry"
-                      className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl border border-amber-800/20 bg-stone-50 px-4 text-sm font-semibold text-stone-700 transition hover:bg-amber-50"
+                      className="inline-flex h-10 items-center justify-center rounded-xl border border-amber-800/25 bg-white/50 px-4 text-sm font-semibold text-stone-700 transition hover:bg-white/70"
                     >
                       👀 Sledovat aktivní hry
                     </a>
