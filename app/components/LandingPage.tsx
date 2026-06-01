@@ -925,7 +925,7 @@ export default function LandingPage() {
                         <button
                           onClick={() => joinGame()}
                           disabled={loading || joinApprovalStatus === "pending" || (!isDiscordConnected && !name.trim()) || !joinCode.trim()}
-                          className="h-9 w-full shrink-0 rounded-lg border border-amber-700/45 bg-amber-950 px-4 text-sm font-semibold text-amber-50 shadow-[0_1px_0_rgba(120,53,15,0.28)] transition hover:bg-amber-900 hover:border-amber-700/55 disabled:border disabled:border-stone-400/40 disabled:bg-stone-200/70 disabled:text-stone-500 sm:w-[7.5rem] lg:w-[7.25rem]"
+                          className="h-9 w-full shrink-0 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:border disabled:border-amber-900/15 disabled:bg-stone-200 disabled:text-stone-600 sm:w-[7.5rem] lg:w-[7.25rem]"
                         >
                           Připojit
                         </button>
@@ -940,7 +940,7 @@ export default function LandingPage() {
                       <div className="h-px w-full bg-gradient-to-r from-amber-900/0 via-amber-900/25 to-amber-900/0" />
                       <a
                         href="/hry"
-                        className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg border border-amber-700/45 bg-amber-950 px-4 text-sm font-semibold text-amber-50 shadow-[0_1px_0_rgba(120,53,15,0.28)] transition hover:bg-amber-900 hover:border-amber-700/55 lg:self-center lg:w-full"
+                        className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg border border-amber-800/20 bg-amber-100/55 px-4 text-sm font-semibold text-stone-800 transition hover:bg-amber-100/75 lg:self-center lg:w-full"
                       >
                         👀 Sledovat aktivní hry
                       </a>
