@@ -814,7 +814,7 @@ export default function LandingPage() {
       className="flex flex-col bg-slate-900 overflow-hidden"
       style={{
         height: "100dvh",
-        backgroundImage: "linear-gradient(rgba(15,23,42,0.72), rgba(15,23,42,0.72)), url('/menu_bckg.webp')",
+        backgroundImage: "linear-gradient(rgba(15,23,42,0.64), rgba(15,23,42,0.64)), url('/menu_bckg.webp')",
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}
