@@ -69,9 +69,18 @@ const PANELS: Panel[] = [
 export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
   const [hovered, setHovered] = React.useState<number | null>(null);
   const [isDev, setIsDev] = React.useState(process.env.NODE_ENV === "development");
+  // Mobile detection — accordion flex applies only on desktop (sm: ≥ 640px)
+  const [isMobile, setIsMobile] = React.useState(true);
   React.useEffect(() => {
     const h = window.location.hostname;
     if (h === "localhost" || h === "127.0.0.1") setIsDev(true);
+  }, []);
+  React.useEffect(() => {
+    const mq = window.matchMedia("(min-width: 640px)");
+    const sync = () => setIsMobile(!mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
   }, []);
 
   // ── Hover zvuk ────────────────────────────────────────────────────────────────
@@ -152,7 +161,8 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
               isLocked ? "cursor-not-allowed" : (isNavigable ? "cursor-pointer" : "cursor-default"),
             ].join(" ")}
             style={{
-              flex: isHovered && isNavigable ? (isLocked ? 2 : 4) : 1,
+              // Accordion flex only on desktop — on mobile flex-col stacks panels naturally
+              flex: isMobile ? undefined : (isHovered && isNavigable ? (isLocked ? 2 : 4) : 1),
               // Dual-line bevel separátor: bílá 1px highlight + tmavá 3px stín
               // Čitelné na světlém i tmavém obrázku
               boxShadow: !isLast
