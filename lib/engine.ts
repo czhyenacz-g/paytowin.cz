@@ -359,6 +359,10 @@ export function normalizeState(raw: unknown): GameState {
     revealed_fields: Array.isArray(r.revealed_fields) ? (r.revealed_fields as number[]) : [],
     bust_order: Array.isArray(r.bust_order) ? (r.bust_order as string[]) : undefined,
     year_event_telegram: (r.year_event_telegram as { text: string; turn: number } | null) ?? null,
+    objective_rewards_awarded: Array.isArray(r.objective_rewards_awarded) ? (r.objective_rewards_awarded as string[]) : undefined,
+    objective_completed_by: (r.objective_completed_by != null && typeof r.objective_completed_by === "object" && !Array.isArray(r.objective_completed_by))
+      ? (r.objective_completed_by as Record<string, string>)
+      : undefined,
   };
 }
 

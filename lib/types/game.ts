@@ -269,6 +269,18 @@ export interface GameState {
    *  Např: { "bot-uuid-1": 1922, "bot-uuid-2": 1921 }
    */
   bot_purchase_years?: Record<string, number>;
+  /**
+   * Seznam ID sdílených objectives, za které byl v průběhu hry vyplacen herní reward (coins).
+   * Rozšiřitelný list místo boolean — umožňuje přidat více objectives bez migrace.
+   * Optional pro backward kompatibilitu.
+   */
+  objective_rewards_awarded?: string[];
+  /**
+   * Kdo vyhrál daný sdílený objective v průběhu hry (první hráč v čase, ne ze snapshotu).
+   * Key: objectiveId, Value: playerId.
+   * Optional pro backward kompatibilitu.
+   */
+  objective_completed_by?: Record<string, string>;
 }
 
 /** Korekce hodu kostkou: −1, 0 nebo +1 krok. */

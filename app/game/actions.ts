@@ -1,6 +1,7 @@
 "use server";
 
 import { supabase } from "@/lib/supabase";
+import { getObjectiveRewardConfig } from "@/lib/scenarios/objective-rewards";
 
 // XP awards per placement
 const XP_BASE    = 50;
@@ -251,5 +252,75 @@ export async function awardWinStarAction(
     .eq("id", gameId);
   if (markErr) return { ok: false, error: markErr.message };
 
+  return { ok: true };
+}
+
+/**
+ * awardObjectiveXpAction — přidělí profilové XP hráči, který splnil sdílený objective.
+ *
+ * Guard: games.objective_xp_awarded (boolean).
+ * XP se udělí pouze pokud hra měla alespoň 2 hráče s Discord identitou (ochrana proti farmingu).
+ * Volá se na konci hry vedle awardXpAction, awardWinStarAction a awardMoneySpentAction.
+ */
+export async function awardObjectiveXpAction(
+  gameId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!gameId) return { ok: false, error: "gameId chybí" };
+
+  const { data: game, error: gameErr } = await supabase
+    .from("games")
+    .select("id, status, objective_xp_awarded")
+    .eq("id", gameId)
+    .single();
+
+  if (gameErr || !game) return { ok: false, error: gameErr?.message ?? "Hra nenalezena" };
+  if (game.status !== "finished") return { ok: false, error: "Hra ještě neskončila" };
+  if (game.objective_xp_awarded) return { ok: false, error: "Objective XP již uděleno" };
+
+  const [gsRes, playersRes] = await Promise.all([
+    supabase.from("game_state").select("objective_completed_by").eq("game_id", gameId).single(),
+    supabase.from("players").select("id, discord_id, is_bot").eq("game_id", gameId),
+  ]);
+
+  if (gsRes.error) return { ok: false, error: gsRes.error.message };
+  if (playersRes.error) return { ok: false, error: playersRes.error.message };
+
+  const completedBy = (gsRes.data?.objective_completed_by as Record<string, string> | null) ?? {};
+  const players = playersRes.data ?? [];
+
+  // Farming ochrana: XP jen při hře s alespoň 2 Discord hráči (bez botů)
+  const humanPlayers = players.filter(p => !p.is_bot && p.discord_id);
+  const hasHumanOpponent = humanPlayers.length >= 2;
+
+  // Nastav guard vždy — i když XP neudělujeme, aby se action neopakovala
+  const markGuard = async () => {
+    await supabase.from("games").update({ objective_xp_awarded: true }).eq("id", gameId);
+  };
+
+  if (!hasHumanOpponent) {
+    await markGuard();
+    return { ok: false, error: "Nedostatek lidských hráčů pro profilové XP" };
+  }
+
+  if (Object.keys(completedBy).length === 0) {
+    await markGuard();
+    return { ok: false, error: "Žádné splněné objectives k odměně" };
+  }
+
+  for (const [objectiveId, playerId] of Object.entries(completedBy)) {
+    const cfg = getObjectiveRewardConfig(objectiveId);
+    if (!cfg) continue;
+
+    const p = players.find(pl => pl.id === playerId);
+    if (!p?.discord_id) continue;
+
+    const { error: rpcErr } = await supabase.rpc("increment_xp_and_wins", {
+      p_discord_id: p.discord_id,
+      p_xp: cfg.profileXp,
+    });
+    if (rpcErr) return { ok: false, error: `Objective XP upsert selhal: ${rpcErr.message}` };
+  }
+
+  await markGuard();
   return { ok: true };
 }

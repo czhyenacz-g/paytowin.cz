@@ -6,6 +6,10 @@ interface Props {
   reason: string;
   rewardLabel: string;
   winnerName?: string | null;
+  /** Coins udělené hráči během hry (in-game reward). Zobrazí se pokud > 0. */
+  inGameCoinsRewarded?: number;
+  /** Informační text o profilovém XP (např. "+90 XP" nebo "pouze s živými hráči"). */
+  profileXpNote?: string | null;
 }
 
 export default function ObjectiveResultPanel({
@@ -16,6 +20,8 @@ export default function ObjectiveResultPanel({
   reason,
   rewardLabel,
   winnerName,
+  inGameCoinsRewarded,
+  profileXpNote,
 }: Props) {
   const sectionLabel = mode === "personal" ? "Tvůj kontrakt" : "Společný kontrakt";
 
@@ -36,13 +42,29 @@ export default function ObjectiveResultPanel({
         <div className="text-[10px] text-stone-400 leading-snug">{reason}</div>
         {mode === "shared" && completed && winnerName && (
           <div className="text-xs text-stone-600">
-            Nárok na kontrakt podle konečného stavu:{" "}
+            Kontrakt splnil jako první:{" "}
             <span className="font-semibold">{winnerName}</span>
           </div>
         )}
       </div>
 
-      <div className="mt-2 text-[10px] text-stone-500 italic">{rewardLabel}</div>
+      {/* Reward info — zobrazí se jen pokud byl objective splněn */}
+      {completed && (inGameCoinsRewarded || profileXpNote) && (
+        <div className="mt-2 space-y-0.5">
+          {inGameCoinsRewarded ? (
+            <div className="text-[10px] font-semibold text-emerald-700">
+              💰 +{inGameCoinsRewarded.toLocaleString("cs-CZ")} Kč obdrženo během hry
+            </div>
+          ) : null}
+          {profileXpNote ? (
+            <div className="text-[10px] text-stone-500">{profileXpNote}</div>
+          ) : null}
+        </div>
+      )}
+
+      {!inGameCoinsRewarded && !profileXpNote && (
+        <div className="mt-2 text-[10px] text-stone-500 italic">{rewardLabel}</div>
+      )}
     </div>
   );
 }

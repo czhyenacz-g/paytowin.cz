@@ -9,6 +9,7 @@ import {
   evaluateSharedObjectiveForPlayers,
 } from "@/lib/scenarios";
 import ObjectiveResultPanel from "./ObjectiveResultPanel";
+import { getObjectiveRewardConfig, XP_OBJECTIVE } from "@/lib/scenarios/objective-rewards";
 
 const BUST_LINES = [
   "Mafii se dluhy musí splácet. Bohužel jsi neměl už z čeho.",
@@ -27,6 +28,10 @@ interface GameFinishedScreenProps {
   scenario?: ScenarioDefinition | null;
   /** XP odměna za tuto hru — zobrazí se u řádku XP za výhru/účast, pokud je k dispozici. */
   xpReward?: number;
+  /** Které sdílené objectives byly vyplaceny v průběhu hry (in-game coins). */
+  objectiveAwardedIds?: string[];
+  /** Kdo vyhrál daný sdílený objective — key: objectiveId, value: playerId. */
+  objectiveCompletedBy?: Record<string, string>;
 }
 
 export default function GameFinishedScreen({
@@ -37,6 +42,8 @@ export default function GameFinishedScreen({
   gameMode = "local",
   scenario = null,
   xpReward,
+  objectiveAwardedIds,
+  objectiveCompletedBy,
 }: GameFinishedScreenProps) {
   const winner = players.find(p => !isBankrupt(p));
   const losers = players.filter(p => isBankrupt(p));
@@ -70,8 +77,23 @@ export default function GameFinishedScreen({
     ? (players.find((p) => p.id === sharedWinner.playerId)?.name ?? "—")
     : null;
 
+  // Shared objective reward — z game_state (kdo vyhrál in-game reward)
+  const sharedObjId = sharedObjectiveDef?.id ?? null;
+  const sharedObjWasAwarded = sharedObjId ? (objectiveAwardedIds ?? []).includes(sharedObjId) : false;
+  const sharedObjWinnerPlayerId = sharedObjId ? (objectiveCompletedBy?.[sharedObjId] ?? null) : null;
+  const sharedObjWinnerName = sharedObjWinnerPlayerId
+    ? (players.find(p => p.id === sharedObjWinnerPlayerId)?.name ?? null)
+    : sharedWinnerName;
+  const sharedObjRewardCfg = sharedObjId ? getObjectiveRewardConfig(sharedObjId) : null;
+  const sharedObjInGameCoins = sharedObjWasAwarded && sharedObjRewardCfg ? sharedObjRewardCfg.inGameCoins : undefined;
   // Win star eligibility — stejná logika jako awardWinStarAction
   const humanPlayers = players.filter(p => !p.is_bot && p.discord_id);
+
+  const sharedObjXpNote = sharedObjWasAwarded && sharedObjRewardCfg
+    ? (humanPlayers.length >= 2
+        ? `⭐ +${XP_OBJECTIVE} XP do profilu (hráno s živými hráči)`
+        : `⭐ XP do profilu pouze ve hře s živými hráči`)
+    : null;
   const isWinStarEligible = humanPlayers.length >= 2 && !!winner?.discord_id && !winner.is_bot;
 
   // Moje pořadí — řazení identické se ScoreTable
@@ -246,20 +268,22 @@ export default function GameFinishedScreen({
                 />
               )}
 
-              {/* ── Výsledek společného kontraktu (hotseat) ── */}
-              {sharedObjectiveDef && isLocalGame && sharedObjectiveDef.condition && (
+              {/* ── Výsledek společného kontraktu ── */}
+              {sharedObjectiveDef && sharedObjectiveDef.condition && (isLocalGame || sharedObjWasAwarded) && (
                 <ObjectiveResultPanel
                   mode="shared"
                   objectiveTitle={sharedObjectiveDef.title}
                   objectiveTask={sharedObjectiveDef.task}
-                  completed={sharedWinner !== null}
+                  completed={isLocalGame ? (sharedWinner !== null) : sharedObjWasAwarded}
                   reason={
-                    sharedWinner !== null
-                      ? (sharedResults.find((r) => r.completed)?.reason ?? "")
-                      : "Žádný hráč podmínku nesplnil."
+                    isLocalGame
+                      ? (sharedWinner !== null ? (sharedResults.find(r => r.completed)?.reason ?? "") : "Žádný hráč podmínku nesplnil.")
+                      : (sharedObjWasAwarded ? `${sharedObjWinnerName ?? "Hráč"} splnil podmínku jako první v průběhu hry.` : "Podmínka nebyla splněna.")
                   }
                   rewardLabel={sharedObjectiveDef.rewardLabel}
-                  winnerName={sharedWinnerName}
+                  winnerName={sharedObjWasAwarded ? sharedObjWinnerName : sharedWinnerName}
+                  inGameCoinsRewarded={sharedObjInGameCoins}
+                  profileXpNote={sharedObjXpNote}
                 />
               )}
 

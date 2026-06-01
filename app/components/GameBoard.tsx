@@ -8,7 +8,8 @@ import { resolveRacerRefsAction } from "@/app/admin/racers/actions";
 import { themeToManifest } from "@/lib/themes/manifest";
 import { loadThemeManifestAsync } from "@/lib/themes/loader";
 import { getBoardById } from "@/lib/board";
-import { awardXpAction, awardRaceStarAction, awardWinStarAction, awardMoneySpentAction } from "@/app/game/actions";
+import { awardXpAction, awardRaceStarAction, awardWinStarAction, awardMoneySpentAction, awardObjectiveXpAction } from "@/app/game/actions";
+import { checkSharedObjectiveInGameReward } from "@/lib/scenarios/objective-rewards";
 import { STADIUM_ASPECT } from "@/lib/board/constants";
 import {
   FIELD_POSITIONS,
@@ -1067,9 +1068,27 @@ export default function GameBoard({ gameCode }: Props) {
     }
     finalHorses = normalizeFavoriteHorse(finalHorses);
     const wentBankrupt = finalCoins <= 0;
+
+    // Objective reward — zkontroluj sdílený objective ihned po nákupu racera
+    // Bonus se přičte do finalCoins před DB write; guard se zapíše fire-and-forget
+    const alreadyAwardedObjectives = gameState.objective_rewards_awarded ?? [];
+    const objectiveHit = !wentBankrupt && scenario
+      ? checkSharedObjectiveInGameReward(
+          scenario,
+          { ...player, horses: finalHorses, coins: finalCoins },
+          alreadyAwardedObjectives,
+        )
+      : null;
+    if (objectiveHit) {
+      finalCoins += objectiveHit.config.inGameCoins;
+    }
+
     const logLines = [`${player.name} koupil ${racer.emoji} ${racer.name} za ${racer.price} 💰`];
     if (wentBankrupt) { logLines.push(`💀 ${player.name} zkrachoval!`); playSfx("bankrupt"); }
     else if (wouldBankruptBuy) logLines.push(`${player.name} prodal koně a přežil! 💰`);
+    if (objectiveHit) {
+      logLines.push(`🏆 ${player.name} splnil kontrakt! +${objectiveHit.config.inGameCoins} 💰`);
+    }
 
     // Zahrnuje finální koně — race trigger potřebuje vidět aktuální ownership
     const updatedPlayers = players.map((p, i) =>
@@ -1087,6 +1106,18 @@ export default function GameBoard({ gameCode }: Props) {
     }
 
     await supabase.from("players").update({ coins: finalCoins, horses: finalHorses }).eq("id", player.id);
+
+    // Objective guard — fire-and-forget; zapíše kdo vyhrál objective (pro post-game XP award)
+    if (objectiveHit && gameId) {
+      const newAwardedIds = [...alreadyAwardedObjectives, objectiveHit.objectiveId];
+      const prevCompletedBy = gameState.objective_completed_by ?? {};
+      supabase.from("game_state").update({
+        objective_rewards_awarded: newAwardedIds,
+        objective_completed_by: { ...prevCompletedBy, [objectiveHit.objectiveId]: player.id },
+      }).eq("game_id", gameId).then(({ error }) => {
+        if (error) console.warn("[objective] guard write failed", error);
+      });
+    }
 
     // Spend event — jen Discord hráči; chyba nesmí rozbít nákup
     if (player.discord_id && gameId) {
@@ -1904,10 +1935,11 @@ export default function GameBoard({ gameCode }: Props) {
       // Okamžitý lokální update — stejný vzor jako cancelGame.
       // Realtime propaguje ostatním klientům, ale tento klient nečeká.
       setGameStatus("finished");
-      // XP + win stars + spend — fire and forget; duplikaci hlídají guard sloupce
+      // XP + win stars + spend + objective XP — fire and forget; duplikaci hlídají guard sloupce
       awardXpAction(gameId).catch(() => {});
       awardWinStarAction(gameId).catch(() => {});
       awardMoneySpentAction(gameId).catch(() => {});
+      awardObjectiveXpAction(gameId).catch(() => {});
     }
   };
 
@@ -2567,6 +2599,8 @@ export default function GameBoard({ gameCode }: Props) {
         myPlayerId={myPlayerId}
         gameMode={gameMode}
         scenario={scenario}
+        objectiveAwardedIds={gameState?.objective_rewards_awarded}
+        objectiveCompletedBy={gameState?.objective_completed_by}
       />
     );
   }
