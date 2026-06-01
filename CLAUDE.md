@@ -218,6 +218,14 @@ Obsahuje příklady:
 
 - Dělej pouze minimální nutné změny.
 - Nic nerozbít.
+- Beta badge na webu má formát `Beta vMAJOR.MINOR.PATCH-seno`.
+- Aktuální větev je zatím `v0.7.x-seno`.
+- Při každém commitu nebo pushi produkční změny zvyš `PATCH` o 1.
+- `PATCH` je normální číslo, takže po `0.7.9` následuje `0.7.10`, ne `0.8.0`.
+- Suffix `-seno` zatím ponechávej.
+- Na `0.8.x` přecházej pouze po výslovném rozhodnutí uživatele.
+- Pokud jde jen o dokumentaci nebo audit bez dopadu na aplikaci, verzi není nutné navyšovat, pokud uživatel neřekne jinak.
+- Pokud změna mění UI, gameplay, data, unlocky, texty na webu nebo chování aplikace, verzi navyš.
 - Zachovej existující funkcionalitu.
 - Nedělej velký refactor bez explicitního zadání.
 - Nesahej na nesouvisející části kódu.
