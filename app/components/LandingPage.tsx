@@ -716,7 +716,7 @@ export default function LandingPage() {
   };
 
   const utilityDiscordBlock = discordUser ? (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-700/25 bg-white/60 px-3 py-2.5">
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-800/20 bg-amber-50/50 px-3 py-2">
       <div className="flex min-w-0 items-center gap-3">
         {discordUser.avatar ? (
           <img src={discordUser.avatar} alt="" className="h-8 w-8 rounded-full" />
@@ -737,7 +737,7 @@ export default function LandingPage() {
   ) : (
     <button
       onClick={loginWithDiscord}
-      className="w-full rounded-xl border border-amber-700/30 bg-white/60 px-4 py-2.5 text-sm font-semibold text-amber-900 transition hover:bg-amber-50/80"
+      className="w-full rounded-lg border border-amber-800/20 bg-amber-50/50 px-4 py-2 text-sm font-semibold text-amber-900 transition hover:bg-amber-50/80"
     >
       🎮 Přihlásit přes Discord
     </button>
@@ -877,14 +877,14 @@ export default function LandingPage() {
 
               <div className="mx-auto mt-3 sm:mt-5 w-full max-w-5xl space-y-2 sm:space-y-3">
                 <div
-                  className="rounded-xl border border-amber-700/35 px-4 sm:px-6 py-4 shadow-xl"
+                  className="px-6 sm:px-10 py-5 sm:py-6 drop-shadow-xl"
                   style={{
                     backgroundImage: "url('/ticket.webp')",
                     backgroundSize: "100% 100%",
                     backgroundPosition: "center",
                   }}
                 >
-                  <div className="mb-2.5 text-[9px] font-black uppercase tracking-[0.35em] text-amber-900/60 select-none">
+                  <div className="mb-3 text-[9px] font-black uppercase tracking-[0.35em] text-amber-900/55 select-none">
                     Sázková kancelář
                   </div>
                   <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1.6fr_1fr] gap-3 lg:items-center">
@@ -899,7 +899,7 @@ export default function LandingPage() {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="Tvoje jméno"
-                        className="h-10 min-w-0 rounded-xl border border-amber-800/25 bg-white/55 px-4 text-sm text-stone-800 outline-none placeholder:text-stone-500 focus:border-amber-600 focus:bg-white/80"
+                        className="h-9 min-w-0 rounded-lg border border-amber-800/20 bg-amber-50/50 px-3 text-sm text-stone-800 outline-none placeholder:text-stone-500 focus:border-amber-600 focus:bg-amber-50/80"
                       />
 
                       <div className="flex flex-1 gap-2">
@@ -909,12 +909,12 @@ export default function LandingPage() {
                           onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                           placeholder="Kód hry"
                           maxLength={5}
-                          className="h-10 min-w-0 flex-1 rounded-xl border border-amber-800/25 bg-white/55 px-4 text-sm uppercase tracking-[0.2em] text-stone-800 outline-none placeholder:tracking-normal placeholder:text-stone-500 focus:border-amber-600 focus:bg-white/80"
+                          className="h-9 min-w-0 flex-1 rounded-lg border border-amber-800/20 bg-amber-50/50 px-3 text-sm uppercase tracking-[0.2em] text-stone-800 outline-none placeholder:tracking-normal placeholder:text-stone-500 focus:border-amber-600 focus:bg-amber-50/80"
                         />
                         <button
                           onClick={() => joinGame()}
                           disabled={loading || joinApprovalStatus === "pending"}
-                          className="h-10 shrink-0 rounded-xl bg-emerald-700 px-4 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:bg-stone-300 disabled:text-stone-400"
+                          className="h-9 shrink-0 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:bg-stone-300 disabled:text-stone-400"
                         >
                           Připojit
                         </button>
@@ -923,7 +923,7 @@ export default function LandingPage() {
 
                     <a
                       href="/hry"
-                      className="inline-flex h-10 items-center justify-center rounded-xl border border-amber-800/25 bg-white/50 px-4 text-sm font-semibold text-stone-700 transition hover:bg-white/70"
+                      className="inline-flex h-9 items-center justify-center rounded-lg border border-amber-800/20 bg-amber-50/45 px-4 text-sm font-semibold text-stone-700 transition hover:bg-amber-50/70"
                     >
                       👀 Sledovat aktivní hry
                     </a>
