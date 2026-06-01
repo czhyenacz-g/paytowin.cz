@@ -886,9 +886,9 @@ export default function LandingPage() {
                     backgroundPosition: "center",
                   }}
                 >
-                  <div className="grid grid-cols-1 lg:grid-cols-[1.25fr_1.45fr_1fr] gap-3 lg:items-center">
+                  <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_1.2fr_1.15fr] gap-3 lg:items-center">
                     {/* Levá sekce: Discord stav / login */}
-                    <div className="space-y-2">
+                    <div className="space-y-2 w-full lg:max-w-[19rem]">
                       <div className="text-[9px] font-black uppercase tracking-[0.35em] text-amber-900/60 select-none">
                         Sázková kancelář
                       </div>
@@ -899,7 +899,7 @@ export default function LandingPage() {
                     </div>
 
                     {/* Střední sekce: jméno (jen guest) + kód hry + Připojit */}
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2 w-full lg:max-w-[15.5rem]">
                       <div className="text-[9px] font-black uppercase tracking-[0.3em] text-amber-900/60 select-none">
                         Kód hry
                       </div>
@@ -920,12 +920,12 @@ export default function LandingPage() {
                           onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                           placeholder="Kód hry"
                           maxLength={5}
-                          className="h-9 min-w-0 flex-1 rounded-lg border border-amber-800/20 bg-amber-50/55 px-3 text-sm uppercase tracking-[0.2em] text-stone-800 outline-none placeholder:tracking-normal placeholder:text-stone-500 focus:border-amber-600 focus:bg-amber-50/80 sm:min-w-[8.75rem]"
+                          className="h-9 min-w-0 flex-1 rounded-lg border border-amber-800/20 bg-amber-50/55 px-3 text-sm uppercase tracking-[0.2em] text-stone-800 outline-none placeholder:tracking-normal placeholder:text-stone-500 focus:border-amber-600 focus:bg-amber-50/80 sm:min-w-[7.25rem] lg:max-w-[8.25rem]"
                         />
                         <button
                           onClick={() => joinGame()}
                           disabled={loading || joinApprovalStatus === "pending" || (!isDiscordConnected && !name.trim()) || !joinCode.trim()}
-                          className="h-9 w-full shrink-0 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:border disabled:border-amber-900/15 disabled:bg-stone-200 disabled:text-stone-600 sm:w-[7.5rem]"
+                          className="h-9 w-full shrink-0 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:border disabled:border-amber-900/15 disabled:bg-stone-200 disabled:text-stone-600 sm:w-[7.5rem] lg:w-[7.25rem]"
                         >
                           Připojit
                         </button>
@@ -933,13 +933,13 @@ export default function LandingPage() {
                     </div>
 
                     {/* Pravá sekce: sledovat hry */}
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2 w-full lg:max-w-[14rem]">
                       <div className="text-[9px] font-black uppercase tracking-[0.3em] text-amber-900/65 select-none">
                         Aktivní hry
                       </div>
                       <a
                         href="/hry"
-                        className="inline-flex h-9 items-center justify-center rounded-lg border border-amber-800/20 bg-amber-50/55 px-4 text-sm font-semibold text-stone-700 transition hover:bg-amber-50/75 lg:self-center lg:w-[11.5rem]"
+                        className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg border border-amber-800/20 bg-amber-50/55 px-4 text-sm font-semibold text-stone-700 transition hover:bg-amber-50/75 lg:self-center lg:w-full"
                       >
                         👀 Sledovat aktivní hry
                       </a>
