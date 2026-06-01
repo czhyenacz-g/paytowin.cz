@@ -967,7 +967,7 @@ export default function LandingPage() {
                       <div className={ticketSectionDividerClass} />
                       <a
                         href="/hry"
-                        className="inline-flex h-[34px] sm:h-9 items-center justify-center whitespace-nowrap rounded-lg border border-amber-800/20 bg-amber-100/55 px-4 text-[13px] sm:text-sm font-semibold text-stone-800 transition hover:bg-amber-100/75 lg:self-center lg:w-full"
+                        className="inline-flex h-[34px] sm:h-9 items-center justify-center whitespace-nowrap rounded-lg border border-amber-800/20 bg-amber-100/55 px-4 text-[13px] sm:text-sm font-semibold text-stone-800 transition hover:bg-amber-100/75 lg:self-center lg:w-full lg:ml-[5px]"
                       >
                         👀 Sledovat aktivní hry
                       </a>
@@ -1072,7 +1072,7 @@ export default function LandingPage() {
                   <span>·</span>
                   <a href="mailto:info@paytowin.cz" className="hover:text-slate-200 underline">info@paytowin.cz</a>
                   <span>·</span>
-                  <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-400 tracking-wide">Beta v0.7.1-seno</span>
+                  <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-400 tracking-wide">Beta v0.7.2-seno</span>
                 </div>
               </div>
             </div>
