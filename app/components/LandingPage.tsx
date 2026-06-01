@@ -322,17 +322,9 @@ export default function LandingPage() {
     };
   }, []);
 
-  // Načti statistiky profilu při otevření panelu
+  // Načti XP + statistiky hned po přihlášení Discordem (potřeba pro odemykání map)
   React.useEffect(() => {
-    if (activePanel !== "profil" || !discordUser?.id) return;
-    // Odehrané hry = hry kde byl hráč přihlášen (players.discord_id), status finished
-    supabase
-      .from("players")
-      .select("games!inner(status)", { count: "exact", head: true })
-      .eq("discord_id", discordUser.id)
-      .eq("games.status", "finished")
-      .then(({ count }) => setPlayedGamesCount(count ?? 0));
-    // XP + výhry + útrata z user_profiles
+    if (!discordUser?.id) return;
     supabase
       .from("user_profiles")
       .select("xp_total, wins_total, win_stars_total, money_spent_total")
@@ -344,6 +336,17 @@ export default function LandingPage() {
         setWinStarsTotal(data?.win_stars_total ?? 0);
         setMoneySpentTotal(data?.money_spent_total ?? 0);
       });
+  }, [discordUser?.id]);
+
+  // Načti počet odehraných her až při otevření profilu (nákladnější dotaz)
+  React.useEffect(() => {
+    if (activePanel !== "profil" || !discordUser?.id) return;
+    supabase
+      .from("players")
+      .select("games!inner(status)", { count: "exact", head: true })
+      .eq("discord_id", discordUser.id)
+      .eq("games.status", "finished")
+      .then(({ count }) => setPlayedGamesCount(count ?? 0));
   }, [activePanel, discordUser?.id]);
 
   const handleBack = () => {
@@ -841,7 +844,10 @@ export default function LandingPage() {
                 </p>
               </div>
 
-              <MapMenuStrip onPanelClick={(id) => {
+              <MapMenuStrip
+                currentXp={xpTotal}
+                isLoggedIn={!!discordUser}
+                onPanelClick={(id) => {
                 if (id === "editor") {
                   router.push("/admin/themes/dev");
                   return;
@@ -858,7 +864,8 @@ export default function LandingPage() {
                   const firstCommunityTheme = communityThemes[0];
                   if (firstCommunityTheme) setSelectedThemeId(firstCommunityTheme.id);
                 }
-              }} />
+              }}
+              />
 
               <div className="mx-auto mt-3 sm:mt-5 w-full max-w-5xl space-y-2 sm:space-y-3">
                 <div className="rounded-[28px] border border-slate-800 bg-slate-900/95 p-3 shadow-2xl">

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { getRequiredXpForPanel, isUnlockedByXp, formatUnlockMessage } from "@/lib/map-unlocks";
 
 /**
  * MapMenuStrip — game-mode select / hlavní menu landing page.
@@ -30,22 +31,21 @@ interface Panel {
 }
 
 interface MapMenuStripProps {
+  /** Callback pro klik na odemčený panel. */
   onPanelClick?: (panelId: string) => void;
+  /** Aktuální XP hráče — null pokud přihlášen ale ještě se načítá, undefined pokud nepřihlášen. */
+  currentXp?: number | null;
+  /** True pokud je hráč přihlášen přes Discord. */
+  isLoggedIn?: boolean;
 }
 
-const LIVE_UNLOCKED_ACCESS: string[] = [
-  "theme_horse_day",
-  "profile",
-];
-
-function hasMenuAccess(
-  requiredAccess: string | undefined,
-  unlockedAccess: string[],
-  isDev: boolean,
-): boolean {
+/** Vrátí true pokud je panel XP-odemčený (nebo je to dev/bez XP požadavku). */
+function isPanelXpUnlocked(panelId: string, currentXp: number | null | undefined, isDev: boolean): boolean {
   if (isDev) return true;
-  if (!requiredAccess) return true;
-  return unlockedAccess.includes(requiredAccess);
+  const required = getRequiredXpForPanel(panelId);
+  if (required === 0) return true;
+  if (currentXp == null) return false;
+  return isUnlockedByXp(currentXp, required);
 }
 
 const PANELS: Panel[] = [
@@ -59,7 +59,7 @@ const PANELS: Panel[] = [
   { id: "profil",  label: "Tvůj profil",    emoji: "🛡️", desc: "Statistiky, odměny a reputace",                             index: "08", bgFrom: "from-slate-500",   bgTo: "to-slate-800",   bgImage: "/bg_dark_racer.webp",     accentColor: "#f8fafc", available: true,  requiredAccess: "profile", idleOverlayOpacity: 0.22, bgPosition: "42% 18%" },
 ];
 
-export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
+export default function MapMenuStrip({ onPanelClick, currentXp, isLoggedIn = false }: MapMenuStripProps) {
   const [hovered, setHovered] = React.useState<number | null>(null);
   const [isDev, setIsDev] = React.useState(process.env.NODE_ENV === "development");
 
@@ -67,6 +67,9 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
     const h = window.location.hostname;
     if (h === "localhost" || h === "127.0.0.1") setIsDev(true);
   }, []);
+
+  // Zpráva zobrazená po kliknutí na zamčený panel (XP požadavek)
+  const [lockedMessage, setLockedMessage] = React.useState<string | null>(null);
 
   // ── Hover zvuk (desktop only) ─────────────────────────────────────────────
   const audioCtxRef    = React.useRef<AudioContext | null>(null);
@@ -107,12 +110,18 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
           ════════════════════════════════════════════════════════════════════ */}
       <div className="sm:hidden w-full max-w-full flex flex-col divide-y divide-black/40 shadow-2xl overflow-x-hidden rounded-sm">
         {PANELS.map((panel) => {
-          const isLocked = !hasMenuAccess(panel.requiredAccess, LIVE_UNLOCKED_ACCESS, isDev);
+          const isLocked = !isPanelXpUnlocked(panel.id, currentXp, isDev);
           const isNavigable = !!onPanelClick || !!panel.href;
           const isAvailable = panel.available;
 
           const handleClick = () => {
-            if (isLocked || !isNavigable) return;
+            if (isLocked) {
+              const msg = formatUnlockMessage(panel.id, getRequiredXpForPanel(panel.id), currentXp ?? null, isLoggedIn);
+              setLockedMessage(msg);
+              return;
+            }
+            setLockedMessage(null);
+            if (!isNavigable) return;
             if (onPanelClick) { onPanelClick(panel.id); return; }
             if (panel.href) window.location.href = panel.href;
           };
@@ -120,12 +129,12 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
           return (
             <div
               key={panel.id}
-              role={isNavigable ? "button" : undefined}
+              role="button"
               onClick={handleClick}
               className={[
                 "relative flex items-center gap-3 px-4 min-h-[72px] overflow-hidden",
                 panel.bgFrom, "bg-gradient-to-b", panel.bgTo,
-                isLocked ? "cursor-not-allowed" : (isNavigable ? "cursor-pointer active:brightness-75" : "cursor-default"),
+                isLocked ? "cursor-pointer" : (isNavigable ? "cursor-pointer active:brightness-75" : "cursor-default"),
               ].join(" ")}
               style={panel.bgImage ? {
                 backgroundImage: `url(${panel.bgImage})`,
@@ -183,12 +192,17 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
         {PANELS.map((panel, idx) => {
           const isHovered = hovered === idx;
           const isLast = idx === PANELS.length - 1;
-          const isLocked = !hasMenuAccess(panel.requiredAccess, LIVE_UNLOCKED_ACCESS, isDev);
+          const isLocked = !isPanelXpUnlocked(panel.id, currentXp, isDev);
           const isNavigable = !!onPanelClick || !!panel.href;
           const isAvailable = panel.available;
 
           const handleClick = () => {
-            if (isLocked) return;
+            if (isLocked) {
+              const msg = formatUnlockMessage(panel.id, getRequiredXpForPanel(panel.id), currentXp ?? null, isLoggedIn);
+              setLockedMessage(msg);
+              return;
+            }
+            setLockedMessage(null);
             if (!isNavigable) return;
             if (onPanelClick) { onPanelClick(panel.id); return; }
             if (panel.href) { window.location.href = panel.href; }
@@ -305,6 +319,14 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
           );
         })}
       </div>
+
+      {/* Lock message — zobrazí se po kliknutí na zamčenou mapu, platí pro mobil i desktop */}
+      {lockedMessage && (
+        <div className="mt-2 w-full flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200 leading-relaxed">
+          <span className="shrink-0 mt-0.5">🔒</span>
+          <span>{lockedMessage}</span>
+        </div>
+      )}
     </>
   );
 }
