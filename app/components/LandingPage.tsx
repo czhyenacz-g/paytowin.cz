@@ -865,7 +865,7 @@ export default function LandingPage() {
                 {/* Mobile: kratší popis, desktop: původní dva řádky */}
                 <p className="mt-1 text-xs text-slate-400 sm:hidden">Závodní deskovka o risku, penězích a vítězství.</p>
                 <p className="mt-1.5 text-slate-400 hidden sm:block">Závody, sázky a finanční chaos.</p>
-                <p className="mt-2 text-xs text-slate-500 mx-auto max-w-sm leading-relaxed hidden sm:block">
+                <p className="mt-2 text-xs text-slate-500 mx-auto max-w-sm leading-relaxed hidden sm:block md:max-w-[60rem] md:whitespace-nowrap">
                   Kupuj racery, riskuj v závodech, sbírej výhry a přežij deskovou hru, kde i špatné rozhodnutí může koupit druhou šanci.
                 </p>
               </div>
