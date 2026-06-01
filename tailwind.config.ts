@@ -11,5 +11,7 @@ export default {
   theme: {
     extend: {},
   },
+  // Garantuje generování těchto tříd i když jsou poprvé použity jen v MapMenuStrip
+  safelist: ["sm:hidden", "sm:flex"],
   plugins: [],
 } satisfies Config;

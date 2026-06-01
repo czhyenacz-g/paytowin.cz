@@ -819,8 +819,8 @@ export default function LandingPage() {
       >
 
         {/* ── LEFT: landing view (50% = 100vw) ── */}
-        <div style={{ width: "50%" }} className="flex flex-col min-h-0">
-          <div className="flex flex-1 min-h-0 overflow-y-auto">
+        <div style={{ width: "50%" }} className="flex flex-col min-h-0 overflow-x-hidden">
+          <div className="flex flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
             <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-6 py-8">
 
               <div className="mb-6 text-center">

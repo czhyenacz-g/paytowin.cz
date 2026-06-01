@@ -105,7 +105,7 @@ export default function MapMenuStrip({ onPanelClick }: MapMenuStripProps) {
           MOBILE render — zobrazí se jen na < sm (< 640 px)
           Jednoduchý vertikální seznam karet pod sebou, žádný accordion.
           ════════════════════════════════════════════════════════════════════ */}
-      <div className="sm:hidden w-full flex flex-col divide-y divide-black/40 shadow-2xl overflow-hidden rounded-sm">
+      <div className="sm:hidden w-full max-w-full flex flex-col divide-y divide-black/40 shadow-2xl overflow-x-hidden rounded-sm">
         {PANELS.map((panel) => {
           const isLocked = !hasMenuAccess(panel.requiredAccess, LIVE_UNLOCKED_ACCESS, isDev);
           const isNavigable = !!onPanelClick || !!panel.href;
