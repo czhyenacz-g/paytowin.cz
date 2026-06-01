@@ -230,6 +230,7 @@ export default function LandingPage() {
   const [ownerGameRequests, setOwnerGameRequests] = React.useState<OwnerGameRequests[]>([]);
   const [ownerRequestActionError, setOwnerRequestActionError] = React.useState<Record<string, string>>({});
   const isDiscordConnected = Boolean(discordUser?.id);
+  const [showJoinDisabledHint, setShowJoinDisabledHint] = React.useState(false);
   const playerNameInputRef = React.useRef<HTMLInputElement | null>(null);
   // Načti session + předvyplň ?join=KOD z URL
   React.useEffect(() => {
@@ -587,6 +588,19 @@ export default function LandingPage() {
     void joinGame(code);
   };
 
+  const joinButtonDisabled =
+    loading || joinApprovalStatus === "pending" || (!isDiscordConnected && !name.trim()) || !joinCode.trim();
+
+  const handleJoinButtonClick = () => {
+    if (joinButtonDisabled) {
+      if (!joinCode.trim()) {
+        setError("Je nutné nejdříve zadat kod hry");
+      }
+      return;
+    }
+    void joinGame();
+  };
+
   const joinGame = async (overrideCode?: string) => {
     const effectivePlayerName = isDiscordConnected ? (discordUser?.name?.trim() ?? "") : name.trim();
     if (!effectivePlayerName) return setError("Zadej své jméno.");
@@ -923,13 +937,25 @@ export default function LandingPage() {
                           maxLength={5}
                           className="h-9 min-w-0 flex-1 rounded-lg border border-amber-800/15 bg-amber-50/40 px-3 text-sm uppercase tracking-[0.2em] text-stone-800 outline-none placeholder:tracking-normal placeholder:text-stone-500 focus:border-amber-600 focus:bg-amber-50/65 sm:min-w-[7.25rem] lg:max-w-[8.25rem]"
                         />
-                        <button
-                          onClick={() => joinGame()}
-                          disabled={loading || joinApprovalStatus === "pending" || (!isDiscordConnected && !name.trim()) || !joinCode.trim()}
-                          className="h-9 w-full shrink-0 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:border disabled:border-amber-900/15 disabled:bg-stone-200 disabled:text-stone-600 sm:w-[7.5rem] lg:w-[7.25rem]"
+                        <div
+                          className="relative w-full shrink-0 sm:w-[7.5rem] lg:w-[7.25rem]"
+                          onMouseEnter={() => joinButtonDisabled && setShowJoinDisabledHint(true)}
+                          onMouseLeave={() => setShowJoinDisabledHint(false)}
+                          onClick={handleJoinButtonClick}
                         >
-                          Připojit
-                        </button>
+                          <button
+                            type="button"
+                            disabled={joinButtonDisabled}
+                            className="h-9 w-full rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:border disabled:border-amber-900/15 disabled:bg-stone-200 disabled:text-stone-600"
+                          >
+                            Připojit
+                          </button>
+                          {joinButtonDisabled && showJoinDisabledHint && (
+                            <div className="pointer-events-none absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[11px] text-white shadow-sm">
+                              <span aria-hidden="true">⊘</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
 
