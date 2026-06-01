@@ -229,6 +229,7 @@ export default function LandingPage() {
   const [checkingApproval, setCheckingApproval] = React.useState(false);
   const [ownerGameRequests, setOwnerGameRequests] = React.useState<OwnerGameRequests[]>([]);
   const [ownerRequestActionError, setOwnerRequestActionError] = React.useState<Record<string, string>>({});
+  const isDiscordConnected = Boolean(discordUser?.id);
   const playerNameInputRef = React.useRef<HTMLInputElement | null>(null);
   // Načti session + předvyplň ?join=KOD z URL
   React.useEffect(() => {
@@ -578,7 +579,7 @@ export default function LandingPage() {
 
   const handleJoinFromLobby = (code: string) => {
     setJoinCode(code);
-    if (!name.trim()) {
+    if (!isDiscordConnected && !name.trim()) {
       setError(`Nejdřív zadej jméno. Hra ${code} je připravená k připojení.`);
       playerNameInputRef.current?.focus();
       return;
@@ -587,7 +588,8 @@ export default function LandingPage() {
   };
 
   const joinGame = async (overrideCode?: string) => {
-    if (!name.trim()) return setError("Zadej své jméno.");
+    const effectivePlayerName = isDiscordConnected ? (discordUser?.name?.trim() ?? "") : name.trim();
+    if (!effectivePlayerName) return setError("Zadej své jméno.");
     const effectiveCode = (overrideCode ?? joinCode).trim().toUpperCase();
     if (!effectiveCode) return setError("Zadej kód hry.");
     setLoading(true);
@@ -664,7 +666,7 @@ export default function LandingPage() {
       }
       const result = await requestJoinAction({
         gameCode:          game.code,
-        name:              name.trim(),
+        name:              effectivePlayerName,
         discordId:         discordUser?.id ?? null,
         discordAvatarUrl:  discordUser?.avatar ?? null,
       });
@@ -693,7 +695,7 @@ export default function LandingPage() {
 
     const { data: newPlayer, error: joinPlayerErr } = await supabase.from("players").insert({
       game_id: game.id,
-      name: name.trim(),
+      name: effectivePlayerName,
       color,
       position: 0,
       coins: joinCoins,
@@ -884,25 +886,28 @@ export default function LandingPage() {
                     backgroundPosition: "center",
                   }}
                 >
-                  <div className="mb-3 text-[9px] font-black uppercase tracking-[0.35em] text-amber-900/55 select-none">
-                    Sázková kancelář
-                  </div>
                   <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1.6fr_1fr] gap-3 lg:items-center">
+                    {/* Levá sekce: Discord stav / login */}
                     <div>
+                      <div className="mb-1.5 text-[9px] font-black uppercase tracking-[0.35em] text-amber-900/55 select-none">
+                        Sázková kancelář
+                      </div>
                       {utilityDiscordBlock}
                     </div>
 
-                    <div className="flex flex-col gap-2 sm:flex-row">
-                      <input
-                        ref={playerNameInputRef}
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Tvoje jméno"
-                        className="h-9 min-w-0 rounded-lg border border-amber-800/20 bg-amber-50/50 px-3 text-sm text-stone-800 outline-none placeholder:text-stone-500 focus:border-amber-600 focus:bg-amber-50/80"
-                      />
-
-                      <div className="flex flex-1 gap-2">
+                    {/* Střední sekce: jméno (jen guest) + kód hry + Připojit */}
+                    <div className="flex flex-col gap-2">
+                      {!isDiscordConnected && (
+                        <input
+                          ref={playerNameInputRef}
+                          type="text"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          placeholder="Tvoje jméno"
+                          className="h-9 min-w-0 rounded-lg border border-amber-800/20 bg-amber-50/50 px-3 text-sm text-stone-800 outline-none placeholder:text-stone-500 focus:border-amber-600 focus:bg-amber-50/80"
+                        />
+                      )}
+                      <div className="flex gap-2">
                         <input
                           type="text"
                           value={joinCode}
@@ -913,20 +918,26 @@ export default function LandingPage() {
                         />
                         <button
                           onClick={() => joinGame()}
-                          disabled={loading || joinApprovalStatus === "pending"}
-                          className="h-9 shrink-0 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:bg-stone-300 disabled:text-stone-400"
-                        >
-                          Připojit
+                        disabled={loading || joinApprovalStatus === "pending" || (!isDiscordConnected && !name.trim()) || !joinCode.trim()}
+                        className="h-9 shrink-0 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:bg-stone-300 disabled:text-stone-400"
+                      >
+                        Připojit
                         </button>
                       </div>
                     </div>
 
-                    <a
-                      href="/hry"
-                      className="inline-flex h-9 items-center justify-center rounded-lg border border-amber-800/20 bg-amber-50/45 px-4 text-sm font-semibold text-stone-700 transition hover:bg-amber-50/70"
-                    >
-                      👀 Sledovat aktivní hry
-                    </a>
+                    {/* Pravá sekce: sledovat hry */}
+                    <div className="flex flex-col gap-1.5">
+                      <div className="text-[9px] font-black uppercase tracking-[0.3em] text-amber-900/50 select-none hidden lg:block">
+                        Aktivní hry
+                      </div>
+                      <a
+                        href="/hry"
+                        className="inline-flex h-9 items-center justify-center rounded-lg border border-amber-800/20 bg-amber-50/45 px-4 text-sm font-semibold text-stone-700 transition hover:bg-amber-50/70"
+                      >
+                        👀 Sledovat aktivní hry
+                      </a>
+                    </div>
                   </div>
                 </div>
 
