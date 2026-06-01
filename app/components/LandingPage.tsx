@@ -716,7 +716,7 @@ export default function LandingPage() {
   };
 
   const utilityDiscordBlock = discordUser ? (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-800/20 bg-stone-100/70 px-3 py-2.5">
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-700/25 bg-white/60 px-3 py-2.5">
       <div className="flex min-w-0 items-center gap-3">
         {discordUser.avatar ? (
           <img src={discordUser.avatar} alt="" className="h-8 w-8 rounded-full" />
@@ -737,7 +737,7 @@ export default function LandingPage() {
   ) : (
     <button
       onClick={loginWithDiscord}
-      className="w-full rounded-xl border border-amber-800/30 bg-amber-100/60 px-4 py-2.5 text-sm font-semibold text-amber-900 transition hover:bg-amber-100"
+      className="w-full rounded-xl border border-amber-700/30 bg-white/60 px-4 py-2.5 text-sm font-semibold text-amber-900 transition hover:bg-amber-50/80"
     >
       🎮 Přihlásit přes Discord
     </button>
@@ -814,7 +814,7 @@ export default function LandingPage() {
       className="flex flex-col bg-slate-900 overflow-hidden"
       style={{
         height: "100dvh",
-        backgroundImage: "linear-gradient(rgba(15,23,42,0.64), rgba(15,23,42,0.64)), url('/menu_bckg.webp')",
+        backgroundImage: "linear-gradient(rgba(15,23,42,0.60) 0%, rgba(15,23,42,0.38) 48%, rgba(15,23,42,0.62) 100%), url('/menu_bckg.webp')",
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}
@@ -877,10 +877,10 @@ export default function LandingPage() {
 
               <div className="mx-auto mt-3 sm:mt-5 w-full max-w-5xl space-y-2 sm:space-y-3">
                 <div
-                  className="rounded-2xl border border-amber-800/25 p-3 shadow-xl overflow-hidden"
+                  className="rounded-xl border border-amber-700/35 px-4 sm:px-6 py-4 shadow-xl"
                   style={{
-                    backgroundImage: "linear-gradient(rgba(255,248,229,0.92), rgba(255,248,229,0.92)), url('/ticket.webp')",
-                    backgroundSize: "cover",
+                    backgroundImage: "linear-gradient(rgba(255,248,229,0.78), rgba(255,248,229,0.78)), url('/ticket.webp')",
+                    backgroundSize: "100% 100%",
                     backgroundPosition: "center",
                   }}
                 >
