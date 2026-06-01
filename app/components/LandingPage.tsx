@@ -893,7 +893,7 @@ export default function LandingPage() {
               }}
               />
 
-              <div className="mx-auto mt-3 sm:mt-5 w-full max-w-5xl space-y-2 sm:space-y-3">
+              <div className="mx-auto mt-3 sm:mt-5 w-full max-w-4xl lg:max-w-[82%] xl:max-w-[78%] space-y-2 sm:space-y-3">
               <div
                   className="px-6 sm:px-10 py-6 sm:py-8 drop-shadow-xl"
                   style={{
