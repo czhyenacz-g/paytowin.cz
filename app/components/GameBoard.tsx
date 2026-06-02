@@ -578,8 +578,10 @@ export default function GameBoard({ gameCode }: Props) {
           if (freshState.horse_pending) {
             const currentP = freshPlayers[freshState.current_player_index];
             const field = currentP ? fieldsRef.current[currentP.position] : null;
-            if (field?.type === "racer" && field.racer) {
+            if (field?.type === "racer" && field.racer && !currentP?.is_bot) {
               setPendingRacer({ racer: field.racer, playerIndex: freshState.current_player_index, flavorText: field.flavorText });
+            } else {
+              setPendingRacer(null);
             }
           } else {
             setPendingRacer(null);
@@ -2330,8 +2332,10 @@ export default function GameBoard({ gameCode }: Props) {
     if (gameState.horse_pending) {
       const currentP = players[gameState.current_player_index];
       const field = currentP ? fieldsRef.current[currentP.position] : null;
-      if (field?.type === "racer" && field.racer) {
+      if (field?.type === "racer" && field.racer && !currentP?.is_bot) {
         setPendingRacer({ racer: field.racer, playerIndex: gameState.current_player_index, flavorText: field.flavorText });
+      } else {
+        setPendingRacer(null);
       }
     } else {
       setPendingRacer(null);
@@ -3087,7 +3091,7 @@ export default function GameBoard({ gameCode }: Props) {
         <span>·</span>
         <a href="mailto:info@paytowin.cz" className="hover:text-slate-600 underline">info@paytowin.cz</a>
         <span>·</span>
-        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 tracking-wide">Beta v0.7.6-seno</span>
+        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 tracking-wide">Beta v0.7.7-seno</span>
       </div>
     </div>
   );

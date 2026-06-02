@@ -19,7 +19,8 @@ interface Params {
  * jak po Realtime update tak po initial load / page refresh.
  * Stale-closure problém z Realtime handleru odpadá — myPlayerId je přímá dep.
  *
- * Spouští jen owner klient (players[0].id === myPlayerId).
+ * Spouští jakýkoliv aktivní hráčský klient (ne spectator) — bot flow nesmí záviset na
+ * tom, že je přihlášený právě owner klient.
  * turn_count guard v server action zabrání double-execute při rychlých re-renderech.
  */
 export function useOnlineBotTrigger({ gameId, gameState, players, myPlayerId, isLocalGame }: Params) {
@@ -31,9 +32,8 @@ export function useOnlineBotTrigger({ gameId, gameState, players, myPlayerId, is
     const botPlayer = players[gameState.current_player_index];
     if (!botPlayer?.is_bot) return;
 
-    // Executor = owner hráč (players[0] = nejnižší turn_order)
-    const isOwner = !!myPlayerId && players[0]?.id === myPlayerId;
-    if (!isOwner) return;
+    // Trigger jen z klienta skutečného hráče; spectator bez myPlayerId nic nespouští.
+    if (!myPlayerId) return;
 
     // Blokující stavy — počkej až se vyřeší
     if (gameState.offer_pending) return;

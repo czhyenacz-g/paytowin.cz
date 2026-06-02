@@ -25,6 +25,8 @@ import { decideBotHorsePurchase } from "@/lib/bot/botDecision";
 import { DEFAULT_ECONOMY } from "@/lib/types/game";
 import type { Player, Horse, EconomyConfig, ActiveEffect, StableDuelPendingOffer } from "@/lib/types/game";
 import type { RacerConfig } from "@/lib/themes";
+import { getScenarioForTheme } from "@/lib/scenarios";
+import { checkSharedObjectiveInGameReward } from "@/lib/scenarios/objective-rewards";
 import { awardMoneySpentAction } from "@/app/game/actions";
 import { buildFogReveal } from "@/lib/fog";
 import { selectStableMinigame } from "@/lib/minigames/selectStableMinigame";
@@ -138,6 +140,7 @@ export async function executeBotTurnAction(
   if (!ctx) return { ok: false, reason: "context fetch failed" };
 
   const { game, state, players, economy, theme, FIELDS, racers } = ctx;
+  const scenario = getScenarioForTheme(game.theme_id);
 
   // Fog of War: helper pro výpočet revealed_fields po přistání bota na poli
   const currentRevealed: number[] = Array.isArray(state.revealed_fields) ? (state.revealed_fields as number[]) : [];
@@ -445,6 +448,7 @@ export async function executeBotHorseDecisionAction(
   if (!ctx) return { ok: false, reason: "context fetch failed" };
 
   const { game, state, players, FIELDS, racers, theme } = ctx;
+  const scenario = getScenarioForTheme(game.theme_id);
 
   // Fog of War: racer pole jsou vždy viditelné, takže fogReveal je no-op, ale zajišťuje konzistenci
   const currentRevealed: number[] = Array.isArray(state.revealed_fields) ? (state.revealed_fields as number[]) : [];
@@ -511,14 +515,27 @@ export async function executeBotHorseDecisionAction(
     };
     const updatedHorses = [...botPlayer.horses, newHorse];
     const paidBot = { ...botPlayer, coins: botPlayer.coins - field.racer.price, horses: updatedHorses };
+    const alreadyAwardedObjectives = state.objective_rewards_awarded ?? [];
+    const objectiveHit = scenario
+      ? checkSharedObjectiveInGameReward(
+          scenario,
+          { ...paidBot },
+          alreadyAwardedObjectives,
+        )
+      : null;
+    const finalCoins = objectiveHit ? paidBot.coins + objectiveHit.config.inGameCoins : paidBot.coins;
+    const finalBot = objectiveHit ? { ...paidBot, coins: finalCoins } : paidBot;
 
     await supabase.from("players").update({
-      coins:  paidBot.coins,
+      coins:  finalBot.coins,
       horses: updatedHorses,
     }).eq("id", botPlayer.id);
 
     const log = [`${botPlayer.name} koupil závodníka ${field.racer.emoji} ${field.racer.name} (${hKey})`, ...logEntries];
-    const updatedPlayers = players.map(p => p.id === botPlayer.id ? paidBot : p);
+    if (objectiveHit) {
+      log.unshift(`🏆 ${botPlayer.name} splnil kontrakt! +${objectiveHit.config.inGameCoins} 💰`);
+    }
+    const updatedPlayers = players.map(p => p.id === botPlayer.id ? finalBot : p);
 
     // Track bot purchase year for max-1-per-year rule
     const updatedBotPurchaseYears = {
@@ -526,7 +543,18 @@ export async function executeBotHorseDecisionAction(
       [botPlayer.id]: gameYear,
     };
 
-    await botFinishTurn(gameId, botPlayer, paidBot, updatedPlayers, {
+    if (objectiveHit) {
+      const newAwardedIds = [...alreadyAwardedObjectives, objectiveHit.objectiveId];
+      const prevCompletedBy = state.objective_completed_by ?? {};
+      supabase.from("game_state").update({
+        objective_rewards_awarded: newAwardedIds,
+        objective_completed_by: { ...prevCompletedBy, [objectiveHit.objectiveId]: botPlayer.id },
+      }).eq("game_id", gameId).then(({ error }) => {
+        if (error) console.warn("[objective] bot guard write failed", error);
+      });
+    }
+
+    await botFinishTurn(gameId, botPlayer, finalBot, updatedPlayers, {
       nextIndex, turnCount: newTurnCount, log, updatedHorses, botPurchaseYears: updatedBotPurchaseYears, revealedFields: fogReveal(botPlayer.position),
     });
   } else {
