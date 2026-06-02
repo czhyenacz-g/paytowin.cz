@@ -8,6 +8,7 @@ export type AppEvent =
   | { name: "create_game_success"; game_code: string; theme_id: string; board_id: string }
   | { name: "create_game_fail";    reason: string }
   | { name: "join_game_success";   game_code: string }
+  | { name: "join_game_rejoin";    game_code: string }
   | { name: "join_game_fail";      reason: string }
   | { name: "spectator_view";      game_code: string }
   | { name: "game_finish";         game_code: string; winner: string }

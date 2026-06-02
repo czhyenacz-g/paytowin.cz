@@ -199,6 +199,7 @@ export default function LandingPage() {
   const [name, setName] = React.useState("");
   const [joinCode, setJoinCode] = React.useState("");
   const [loading, setLoading] = React.useState(false);
+  const [discordSessionLoading, setDiscordSessionLoading] = React.useState(true);
   const [error, setError] = React.useState("");
   const [shareCode, setShareCode] = React.useState<string | null>(null);
   const [copied, setCopied] = React.useState(false);
@@ -252,11 +253,13 @@ export default function LandingPage() {
         }
         setName(`Dev-${devId.slice(-4).toUpperCase()}`);
         setIsDevJoin(true);
+        setDiscordSessionLoading(false);
         return;
       }
     }
 
     supabase.auth.getUser().then(({ data: { user } }) => {
+      setDiscordSessionLoading(false);
       if (!user) return;
       const discordId = user.user_metadata?.provider_id as string | undefined;
       if (!discordId) return;
@@ -589,7 +592,7 @@ export default function LandingPage() {
   };
 
   const joinButtonDisabled =
-    loading || joinApprovalStatus === "pending" || (!isDiscordConnected && !name.trim()) || !joinCode.trim();
+    loading || discordSessionLoading || joinApprovalStatus === "pending" || (!isDiscordConnected && !name.trim()) || !joinCode.trim();
 
   const handleJoinButtonClick = () => {
     if (joinButtonDisabled) {
@@ -608,6 +611,13 @@ export default function LandingPage() {
     if (!effectiveCode) return setError("Zadej kód hry.");
     setLoading(true);
     setError("");
+
+    // Guard 1: hráč už je v téhle hře (localStorage) — nevytvářej duplicitního hráče
+    const storedPid = localStorage.getItem(`paytowin_player_${effectiveCode}`);
+    if (storedPid) {
+      router.push(`/game/${effectiveCode}`);
+      return;
+    }
 
     const { data: game, error: gameErr } = await supabase
       .from("games")
@@ -652,6 +662,17 @@ export default function LandingPage() {
       supabase.from("players").select().eq("game_id", game.id),
       supabase.from("game_state").select("turn_count").eq("game_id", game.id).single(),
     ]);
+
+    // Guard 2: Discord reclaim — vrátí existujícího hráče i z jiného zařízení/prohlížeče
+    if (discordUser?.id) {
+      const existingPlayer = existingPlayers?.find(p => p.discord_id === discordUser.id);
+      if (existingPlayer) {
+        localStorage.setItem(`paytowin_player_${game.code}`, existingPlayer.id);
+        logEvent({ name: "join_game_rejoin", game_code: game.code });
+        router.push(`/game/${game.code}`);
+        return;
+      }
+    }
 
     const maxP = game.max_players ?? 32;
     if ((existingPlayers?.length ?? 0) >= maxP) {
@@ -951,7 +972,7 @@ export default function LandingPage() {
                                 disabled={joinButtonDisabled}
                                 className="h-[34px] sm:h-9 w-full rounded-lg bg-emerald-700 px-4 text-[13px] sm:text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:border disabled:border-amber-900/15 disabled:bg-stone-200 disabled:text-stone-600"
                               >
-                                Připojit
+                                {discordSessionLoading && joinCode.trim() ? "Načítám…" : "Připojit"}
                               </button>
                               {joinButtonDisabled && showJoinDisabledHint && (
                                 <div className="pointer-events-none absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[11px] text-white shadow-sm">
@@ -1081,7 +1102,7 @@ export default function LandingPage() {
                   <span>·</span>
                   <a href="mailto:info@paytowin.cz" className="hover:text-slate-200 underline">info@paytowin.cz</a>
                   <span>·</span>
-                  <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-400 tracking-wide">Beta v0.7.14-seno</span>
+                  <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-400 tracking-wide">Beta v0.7.15-seno</span>
                 </div>
               </div>
             </div>
