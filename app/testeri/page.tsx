@@ -44,7 +44,7 @@ export default function TesteriPage() {
             ← Zpět na PayToWin.cz
           </Link>
           <span className="rounded-full border border-amber-300/20 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-amber-300">
-            Beta v0.7.8-seno
+            Beta v0.7.9-seno
           </span>
         </div>
 
@@ -104,40 +104,37 @@ export default function TesteriPage() {
           </div>
         </section>
 
-        <div className="mt-5 grid gap-4 lg:grid-cols-3">
+        <div className="mt-5 grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
           <section className={`${paperCard} p-5`}>
-            <div className={sectionTitle}>Co je PayToWin.cz</div>
-            <h2 className="mt-3 text-xl font-bold text-amber-50">Rozpracovaná česká online deskovka</h2>
+            <div className={sectionTitle}>Kdo za tím stojí</div>
+            <h2 className="mt-3 text-xl font-bold text-amber-50">Osobní výzva od autora hry</h2>
             <p className="mt-3 text-sm leading-relaxed text-stone-300">
-              PayToWin.cz je rozpracovaná česká online deskovka o závodech, nákupech koní, riskování tahů a finančním chaosu. Hra je zatím v beta verzi, takže cílem testování není najít dokonalý produkt, ale pomoct odhalit bugy, nejasná pravidla a momenty, které nejsou dost zábavné.
+              Za PayToWin.cz nestojí tým o stovce lidí. Stavím ho já — Hynek „czhyenacz“ Dařbujan — a pár přátel, kteří se nebojí říct mi, že něco nefunguje, nedává smysl nebo prostě není zábavné.
+            </p>
+            <p className="mt-3 text-sm leading-relaxed text-amber-100/80">
+              Právě takovou zpětnou vazbu teď potřebuji víc než pochvalu.
             </p>
           </section>
 
-          <section className={`${paperCard} p-5`}>
-            <div className={sectionTitle}>Koho hledám</div>
-            <h2 className="mt-3 text-xl font-bold text-amber-50">Lidi na beta testování</h2>
-            <p className="mt-3 text-sm leading-relaxed text-stone-300">
-              Hledám testery hry, kteří zvládnou odehrát krátkou demo partii a napsat stručnou zpětnou vazbu. Nemusíš být profesionální tester. Stačí chuť zkusit novou českou online deskovku a říct, kde se hra zasekla, co nedávalo smysl nebo co naopak fungovalo dobře.
-            </p>
-          </section>
-
-          <section className={`${paperCard} p-5`}>
-            <div className={sectionTitle}>Co budeš testovat</div>
-            <h2 className="mt-3 text-xl font-bold text-amber-50">Demo hry, mobil i flow</h2>
+          <section className={`${paperCard} p-5`} id="feedback">
+            <div className={sectionTitle}>Co mi nejvíc pomůže</div>
+            <h2 className="mt-3 text-xl font-bold text-amber-50">Pár upřímných vět po jedné partii</h2>
             <ul className="mt-3 space-y-2 text-sm leading-relaxed text-stone-300">
-              <li>• jestli demo hry dává smysl novému hráči</li>
-              <li>• jestli je hra použitelná na mobilu i desktopu</li>
-              <li>• jestli jsou pravidla pochopitelná</li>
-              <li>• jestli se hra nezasekává při tazích, nákupech nebo závodech</li>
-              <li>• jestli bot působí aspoň trochu rozumně</li>
-              <li>• jestli má výhra dobrý pocit</li>
+              <li>• kde ses ve hře ztratil</li>
+              <li>• co tě bavilo</li>
+              <li>• co bylo moc pomalé, nejasné nebo rozbité</li>
+              <li>• jestli se hra dobře ovládala na mobilu</li>
+              <li>• jestli bys ji zkusil znovu s kamarádem</li>
             </ul>
+            <p className="mt-3 text-sm leading-relaxed text-stone-300">
+              Nemusíš psát dlouhý report. I pár upřímných vět po jedné partii mi pomůže víc než ticho.
+            </p>
           </section>
         </div>
 
-        <section id="feedback" className={`${paperCard} mt-5 p-5 sm:p-6`}>
+        <section className={`${paperCard} mt-5 p-5 sm:p-6`}>
           <div className={sectionTitle}>Jak se zapojit</div>
-          <h2 className="mt-3 text-xl font-bold text-amber-50">Stačí vyzkoušet demo a poslat zpětnou vazbu</h2>
+          <h2 className="mt-3 text-xl font-bold text-amber-50">Stačí vyzkoušet demo a napsat mi</h2>
           <p className="mt-3 max-w-3xl text-sm leading-relaxed text-stone-300">
             Zpětnou vazbu mi zatím pošli přes kontakt, ze kterého jsi dostal odkaz. Ideálně napiš, co bylo nejasné, kde se hra zasekla a co tě naopak bavilo.
           </p>
