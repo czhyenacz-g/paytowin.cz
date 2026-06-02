@@ -414,9 +414,13 @@ function PreStartPhase({
           {duelRole !== "defender_remote" && (
             <div className="flex flex-col items-center gap-1.5">
               <div className="text-[8px] uppercase tracking-widest" style={{ color: `${challengerColor}bb` }}>Challenger</div>
-              <div className="flex items-center gap-1">
-                <NeonKeyCap label="WASD" color={challengerColor} />
+              <div className="hidden sm:flex items-center gap-1">
+                <NeonKeyCap label="W A S D" color={challengerColor} />
                 <span className="text-sm text-slate-300 ml-2">zatáčet</span>
+              </div>
+              <div className="flex sm:hidden items-center gap-1">
+                <NeonKeyCap label="A D Q" color={challengerColor} />
+                <span className="text-sm text-slate-300 ml-2">ovládání</span>
               </div>
               <div className="flex items-center gap-1">
                 <NeonKeyCap label="Q" color={challengerColor} />

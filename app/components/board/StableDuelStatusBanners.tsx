@@ -110,11 +110,26 @@ export default function StableDuelStatusBanners({
           </div>
           <div className="text-[11px] font-semibold text-indigo-200">{sdPending.challengerName ?? "?"} vs {sdPending.defenderName ?? "?"}</div>
           <div className="text-[10px] text-indigo-400">Po odpočtu se hra spustí automaticky</div>
-          <div className="text-[10px] text-slate-400 mt-1">
-            {isChallenger
-              ? <span>Tvoje ovládání: <span className="font-mono text-indigo-300">WASD</span> zatáčet · <span className="font-mono text-indigo-300">Q</span> boost</span>
-              : <span>Tvoje ovládání: <span className="font-mono text-violet-300">← / →</span> zatáčet · <span className="font-mono text-violet-300">SPACE</span> boost</span>
-            }
+          <div className="mt-1 text-[10px] text-slate-400">
+            {isChallenger ? (
+              <>
+                <span className="hidden sm:inline">
+                  Tvoje ovládání:{" "}
+                  <span className="font-mono text-indigo-300">W A S D</span> zatáčet ·{" "}
+                  <span className="font-mono text-indigo-300">Q</span> boost
+                </span>
+                <span className="sm:hidden">
+                  Tvoje ovládání:{" "}
+                  <span className="font-mono text-indigo-300">A D Q</span>
+                </span>
+              </>
+            ) : (
+              <span>
+                Tvoje ovládání:{" "}
+                <span className="font-mono text-violet-300">← / →</span> zatáčet ·{" "}
+                <span className="font-mono text-violet-300">SPACE</span> boost
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -197,10 +212,20 @@ export default function StableDuelStatusBanners({
                 </div>
                 <div className="text-sm text-slate-500 italic">Vyhni se soupeři i jeho lanu.</div>
                 <div className="text-[11px] text-slate-500 font-mono">
-                  {isChallenger
-                    ? <span><span className="text-indigo-400">Tvoje ovládání:</span> WASD zatáčet · Q boost</span>
-                    : <span><span className="text-violet-400">Tvoje ovládání:</span> ← / → zatáčet · SPACE boost</span>
-                  }
+                  {isChallenger ? (
+                    <>
+                      <span className="hidden sm:inline">
+                        <span className="text-indigo-400">Tvoje ovládání:</span>{" "}
+                        W A S D zatáčet · Q boost
+                      </span>
+                      <span className="sm:hidden">
+                        <span className="text-indigo-400">Tvoje ovládání:</span>{" "}
+                        A D Q
+                      </span>
+                    </>
+                  ) : (
+                    <span><span className="text-violet-400">Tvoje ovládání:</span> ← / → zatáčet · SPACE boost</span>
+                  )}
                 </div>
 
                 {isDefender && (

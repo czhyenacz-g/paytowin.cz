@@ -460,8 +460,8 @@ export default function SpeedArenaPvp({
 
       {/* Touch controls (mobile/tablet) */}
       {pvpState.overallStatus === "running" && (
-        <div className="flex items-center justify-center gap-4 select-none">
-          <div className="flex items-center gap-1.5">
+        <div className="flex items-center justify-center gap-6 select-none">
+          <div className="flex items-center gap-3">
             <span className="text-[9px] font-mono" style={{ color: P1_COLOR }}>P1</span>
             <TouchBtn label="A" color={P1_COLOR} ariaLabel="P1 doleva"
               onPressStart={() => keysRef.current.add("KeyA")}
@@ -475,7 +475,7 @@ export default function SpeedArenaPvp({
               onPressStart={() => { p1NitroActivateRef.current = true; }}
             />
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-3">
             <span className="text-[9px] font-mono" style={{ color: P2_COLOR }}>P2</span>
             <TouchBtn label="←" color={P2_COLOR} ariaLabel="P2 doleva"
               onPressStart={() => keysRef.current.add("ArrowLeft")}
