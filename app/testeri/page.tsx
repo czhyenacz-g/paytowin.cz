@@ -148,9 +148,12 @@ export default function TesteriPage() {
             >
               Zpět na PayToWin.cz
             </Link>
-            <span className="inline-flex h-10 items-center rounded-full border border-white/10 px-4 text-sm font-semibold text-stone-300">
-              Zpětnou vazbu mi zatím pošli přes kontakt, ze kterého jsi dostal odkaz.
-            </span>
+            <a
+              href="mailto:info@paytowin.cz"
+              className="inline-flex h-10 items-center rounded-full border border-white/10 px-4 text-sm font-semibold text-stone-300 transition hover:border-amber-300/30 hover:text-amber-100"
+            >
+              info@paytowin.cz
+            </a>
           </div>
         </section>
       </div>
