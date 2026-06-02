@@ -62,14 +62,40 @@ const PANELS: Panel[] = [
 export default function MapMenuStrip({ onPanelClick, currentXp, isLoggedIn = false }: MapMenuStripProps) {
   const [hovered, setHovered] = React.useState<number | null>(null);
   const [isDev, setIsDev] = React.useState(process.env.NODE_ENV === "development");
+  const [lockToastMessage, setLockToastMessage] = React.useState<string | null>(null);
+  const lockToastTimerRef = React.useRef<number | null>(null);
 
   React.useEffect(() => {
     const h = window.location.hostname;
     if (h === "localhost" || h === "127.0.0.1") setIsDev(true);
   }, []);
 
-  // Zpráva zobrazená po kliknutí na zamčený panel (XP požadavek)
-  const [lockedMessage, setLockedMessage] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    return () => {
+      if (lockToastTimerRef.current) {
+        window.clearTimeout(lockToastTimerRef.current);
+      }
+    };
+  }, []);
+
+  const showLockToast = React.useCallback((message: string) => {
+    setLockToastMessage(message);
+    if (lockToastTimerRef.current) {
+      window.clearTimeout(lockToastTimerRef.current);
+    }
+    lockToastTimerRef.current = window.setTimeout(() => {
+      setLockToastMessage(null);
+      lockToastTimerRef.current = null;
+    }, 10000);
+  }, []);
+
+  const dismissLockToast = React.useCallback(() => {
+    if (lockToastTimerRef.current) {
+      window.clearTimeout(lockToastTimerRef.current);
+      lockToastTimerRef.current = null;
+    }
+    setLockToastMessage(null);
+  }, []);
 
   // ── Hover zvuk (desktop only) ─────────────────────────────────────────────
   const audioCtxRef    = React.useRef<AudioContext | null>(null);
@@ -117,10 +143,10 @@ export default function MapMenuStrip({ onPanelClick, currentXp, isLoggedIn = fal
           const handleClick = () => {
             if (isLocked) {
               const msg = formatUnlockMessage(panel.id, getRequiredXpForPanel(panel.id), currentXp ?? null, isLoggedIn);
-              setLockedMessage(msg);
+              showLockToast(msg);
               return;
             }
-            setLockedMessage(null);
+            dismissLockToast();
             if (!isNavigable) return;
             if (onPanelClick) { onPanelClick(panel.id); return; }
             if (panel.href) window.location.href = panel.href;
@@ -199,10 +225,10 @@ export default function MapMenuStrip({ onPanelClick, currentXp, isLoggedIn = fal
           const handleClick = () => {
             if (isLocked) {
               const msg = formatUnlockMessage(panel.id, getRequiredXpForPanel(panel.id), currentXp ?? null, isLoggedIn);
-              setLockedMessage(msg);
+              showLockToast(msg);
               return;
             }
-            setLockedMessage(null);
+            dismissLockToast();
             if (!isNavigable) return;
             if (onPanelClick) { onPanelClick(panel.id); return; }
             if (panel.href) { window.location.href = panel.href; }
@@ -322,11 +348,26 @@ export default function MapMenuStrip({ onPanelClick, currentXp, isLoggedIn = fal
         })}
       </div>
 
-      {/* Lock message — zobrazí se po kliknutí na zamčenou mapu, platí pro mobil i desktop */}
-      {lockedMessage && (
-        <div className="mt-2 w-full flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200 leading-relaxed">
-          <span className="shrink-0 mt-0.5">🔒</span>
-          <span>{lockedMessage}</span>
+      {lockToastMessage && (
+        <div
+          className="fixed left-1/2 top-4 z-[80] w-[calc(100vw-2rem)] max-w-[34rem] -translate-x-1/2 rounded-2xl border border-amber-300/30 bg-slate-950/92 px-4 py-3 text-sm text-amber-100 shadow-[0_18px_40px_rgba(0,0,0,0.35)] backdrop-blur-md sm:left-auto sm:right-4 sm:top-5 sm:translate-x-0"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 shrink-0 text-base">🔒</span>
+            <p className="min-w-0 flex-1 leading-relaxed text-amber-50/95">
+              {lockToastMessage}
+            </p>
+            <button
+              type="button"
+              onClick={dismissLockToast}
+              className="shrink-0 rounded-full px-2 py-0.5 text-base leading-none text-amber-100/70 transition hover:bg-amber-100/10 hover:text-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-300/60"
+              aria-label="Zavřít upozornění"
+            >
+              ×
+            </button>
+          </div>
         </div>
       )}
     </>
