@@ -891,20 +891,21 @@ export default function LandingPage() {
 
               <div className="mx-auto mt-2.5 sm:mt-4 w-full max-w-4xl lg:max-w-[82%] xl:max-w-[78%] space-y-1.5 sm:space-y-2">
               <div
-                  className="px-5 sm:px-8 py-[20px] sm:py-[26px] drop-shadow-xl"
+                  className="relative px-5 sm:px-8 py-[20px] sm:py-[26px] drop-shadow-xl rounded-xl lg:rounded-none overflow-hidden"
                   style={{
                     backgroundImage: "url('/ticket.webp')",
                     backgroundSize: "100% 100%",
                     backgroundPosition: "center",
                   }}
                 >
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-2.5 lg:items-center">
+                  <div className="absolute inset-0 bg-amber-50 rounded-xl lg:hidden" aria-hidden="true" />
+                  <div className="relative grid grid-cols-1 lg:grid-cols-3 gap-2.5 lg:items-center">
                     {/* Levá sekce: Discord stav / login */}
-                    <div className="min-w-0 space-y-1.5 sm:space-y-2 w-full lg:max-w-[14rem] lg:justify-self-center lg:flex lg:flex-col lg:items-center">
-                      <div className={ticketSectionHeadingClass}>
+                    <div className="min-w-0 space-y-1.5 sm:space-y-2 w-full max-w-sm mx-auto lg:max-w-[14rem] lg:justify-self-center lg:flex lg:flex-col lg:items-center">
+                      <div className={`${ticketSectionHeadingClass} hidden lg:block`}>
                         Vstupenka do hry
                       </div>
-                      <div className={ticketSectionDividerClass} />
+                      <div className={`${ticketSectionDividerClass} hidden lg:block`} />
                       <div className="w-full lg:flex lg:justify-center">
                         <div className="w-full lg:max-w-[13.25rem]">
                           {utilityDiscordBlock}
@@ -913,11 +914,11 @@ export default function LandingPage() {
                     </div>
 
                     {/* Střední sekce: jméno (jen guest) + kód hry + Připojit */}
-                    <div className="min-w-0 flex flex-col gap-1.5 sm:gap-2 w-full lg:mx-auto lg:max-w-[13.5rem] lg:items-center">
-                      <div className={ticketSectionHeadingClass}>
+                    <div className="min-w-0 flex flex-col gap-1.5 sm:gap-2 w-full max-w-sm mx-auto lg:max-w-[13.5rem] lg:items-center">
+                      <div className={`${ticketSectionHeadingClass} hidden lg:block`}>
                         Kód hry
                       </div>
-                      <div className={ticketSectionDividerClass} />
+                      <div className={`${ticketSectionDividerClass} hidden lg:block`} />
                       <div className="w-full lg:flex lg:justify-center">
                         <div className="w-full lg:max-w-[13.5rem]">
                           {!isDiscordConnected && (
@@ -927,7 +928,7 @@ export default function LandingPage() {
                               value={name}
                               onChange={(e) => setName(e.target.value)}
                               placeholder="Tvoje jméno"
-                              className="h-[34px] sm:h-9 min-w-0 rounded-lg border border-amber-800/15 bg-amber-50/35 px-3 text-sm text-stone-800 outline-none placeholder:text-stone-500 focus:border-amber-600 focus:bg-amber-50/65"
+                              className="w-full h-[34px] sm:h-9 min-w-0 rounded-lg border border-amber-800/15 bg-amber-50/35 px-3 text-sm text-stone-800 outline-none placeholder:text-stone-500 focus:border-amber-600 focus:bg-amber-50/65"
                             />
                           )}
                           <div className="flex flex-col gap-1.5 sm:flex-row sm:items-stretch sm:gap-2">
@@ -964,15 +965,15 @@ export default function LandingPage() {
                     </div>
 
                     {/* Pravá sekce: sledovat hry */}
-                    <div className="min-w-0 flex flex-col gap-1.5 sm:gap-2 w-full lg:mx-auto lg:max-w-[13.75rem] lg:items-center">
-                      <div className={ticketSectionHeadingClass}>
+                    <div className="min-w-0 flex flex-col gap-1.5 sm:gap-2 w-full max-w-sm mx-auto lg:max-w-[13.75rem] lg:items-center">
+                      <div className={`${ticketSectionHeadingClass} hidden lg:block`}>
                         Aktivní hry
                       </div>
-                      <div className={ticketSectionDividerClass} />
+                      <div className={`${ticketSectionDividerClass} hidden lg:block`} />
                       <div className="w-full lg:flex lg:justify-center">
                       <a
                         href="/hry"
-                        className="inline-flex h-[34px] sm:h-9 items-center justify-center whitespace-nowrap rounded-lg border border-amber-800/20 bg-amber-100/55 px-4 text-[13px] sm:text-sm font-semibold text-stone-800 transition hover:bg-amber-100/75 lg:self-center lg:w-full lg:ml-[5px]"
+                        className="inline-flex h-[34px] sm:h-9 w-full items-center justify-center whitespace-nowrap rounded-lg border border-amber-800/20 bg-amber-100/55 px-4 text-[13px] sm:text-sm font-semibold text-stone-800 transition hover:bg-amber-100/75 lg:self-center lg:ml-[5px]"
                       >
                         👀 Sledovat aktivní hry
                       </a>
@@ -1080,7 +1081,7 @@ export default function LandingPage() {
                   <span>·</span>
                   <a href="mailto:info@paytowin.cz" className="hover:text-slate-200 underline">info@paytowin.cz</a>
                   <span>·</span>
-                  <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-400 tracking-wide">Beta v0.7.13-seno</span>
+                  <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-400 tracking-wide">Beta v0.7.14-seno</span>
                 </div>
               </div>
             </div>
