@@ -456,13 +456,26 @@ export async function executeBotHorseDecisionAction(
     game.fog_of_war ? buildFogReveal(pos, FIELDS, currentRevealed) : undefined;
 
   if (state.turn_count !== expectedTurnCount) return { ok: false, reason: "stale turn_count" };
-  if (!state.horse_pending) return { ok: false, reason: "horse_pending is false" };
+  if (!state.horse_pending) {
+    console.log("[bot-flow] horse decision skipped", { gameId, expectedTurnCount, reason: "horse_pending is false" });
+    return { ok: false, reason: "horse_pending is false" };
+  }
 
   const botPlayer = players[state.current_player_index];
-  if (!botPlayer?.is_bot) return { ok: false, reason: "current player is not a bot" };
+  if (!botPlayer?.is_bot) {
+    console.log("[bot-flow] horse decision skipped", { gameId, expectedTurnCount, reason: "current player is not a bot" });
+    return { ok: false, reason: "current player is not a bot" };
+  }
 
   const field = FIELDS[botPlayer.position];
   if (field.type !== "racer" || !field.racer) {
+    console.log("[bot-flow] horse decision recovery", {
+      gameId,
+      expectedTurnCount,
+      reason: "no racer on field",
+      player: botPlayer.name,
+      position: botPlayer.position,
+    });
     // Stav je nekonzistentní — uklidíme horse_pending
     const nextIndex = getNextActiveIndex(state.current_player_index, players);
     await supabase.from("game_state").update({
@@ -525,6 +538,15 @@ export async function executeBotHorseDecisionAction(
       : null;
     const finalCoins = objectiveHit ? paidBot.coins + objectiveHit.config.inGameCoins : paidBot.coins;
     const finalBot = objectiveHit ? { ...paidBot, coins: finalCoins } : paidBot;
+    console.log("[bot-flow] horse decision buy", {
+      gameId,
+      expectedTurnCount,
+      player: botPlayer.name,
+      racer: field.racer.name,
+      gameYear,
+      alreadyBoughtThisYear,
+      objectiveHit: !!objectiveHit,
+    });
 
     await supabase.from("players").update({
       coins:  finalBot.coins,
@@ -558,6 +580,14 @@ export async function executeBotHorseDecisionAction(
       nextIndex, turnCount: newTurnCount, log, updatedHorses, botPurchaseYears: updatedBotPurchaseYears, revealedFields: fogReveal(botPlayer.position),
     });
   } else {
+    console.log("[bot-flow] horse decision skip", {
+      gameId,
+      expectedTurnCount,
+      player: botPlayer.name,
+      racer: field.racer.name,
+      gameYear,
+      alreadyBoughtThisYear,
+    });
     const log = [`${botPlayer.name} odmítl koupit závodníka ${field.racer.emoji} ${field.racer.name}`, ...logEntries];
     await botFinishTurn(gameId, botPlayer, botPlayer, players, { nextIndex, turnCount: newTurnCount, log, revealedFields: fogReveal(botPlayer.position) });
   }

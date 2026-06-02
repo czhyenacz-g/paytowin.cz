@@ -25,6 +25,7 @@ interface Params {
  */
 export function useOnlineBotTrigger({ gameId, gameState, players, myPlayerId, isLocalGame }: Params) {
   const scheduledRef = React.useRef(false);
+  const currentBotPlayerId = gameState ? players[gameState.current_player_index]?.id ?? null : null;
 
   React.useEffect(() => {
     if (!gameId || !gameState || isLocalGame) return;
@@ -46,8 +47,24 @@ export function useOnlineBotTrigger({ gameId, gameState, players, myPlayerId, is
     const run = async () => {
       try {
         if (gameState.horse_pending) {
+          console.log("[bot-flow] trigger horse decision", {
+            gameId,
+            turnCount: gameState.turn_count,
+            currentPlayerIndex: gameState.current_player_index,
+            botPlayerId: botPlayer.id,
+            botName: botPlayer.name,
+            myPlayerId,
+          });
           await executeBotHorseDecisionAction(gameId, gameState.turn_count);
         } else if (!gameState.card_pending) {
+          console.log("[bot-flow] trigger bot turn", {
+            gameId,
+            turnCount: gameState.turn_count,
+            currentPlayerIndex: gameState.current_player_index,
+            botPlayerId: botPlayer.id,
+            botName: botPlayer.name,
+            myPlayerId,
+          });
           await executeBotTurnAction(gameId, gameState.turn_count);
         }
       } finally {
@@ -69,6 +86,7 @@ export function useOnlineBotTrigger({ gameId, gameState, players, myPlayerId, is
     myPlayerId,
     gameState?.turn_count,
     gameState?.current_player_index,
+    currentBotPlayerId,
     gameState?.horse_pending,
     gameState?.card_pending,
     // eslint-disable-next-line react-hooks/exhaustive-deps
