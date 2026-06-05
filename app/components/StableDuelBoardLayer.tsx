@@ -429,7 +429,7 @@ function PreStartPhase({
               <div className="text-[9px] text-slate-600">nebo 2× dopředu</div>
             </div>
           )}
-          {duelRole !== "challenger_authority" && (
+          {duelRole === "defender_remote" && (
             <div className="flex flex-col items-center gap-1.5">
               <div className="text-[8px] uppercase tracking-widest" style={{ color: `${defenderColor}bb` }}>Defender</div>
               <div className="flex items-center gap-1">
