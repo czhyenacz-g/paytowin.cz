@@ -564,32 +564,30 @@ export default function DuelArena({
       {state.status === "running" && (
         <div className="flex items-center justify-center gap-6 select-none">
           <div className="flex items-center gap-3">
-            <span className="text-[9px] font-mono" style={{ color: P1_COLOR }}>P1</span>
-            <TouchBtn label="A" color={P1_COLOR} ariaLabel="P1 doleva"
+            <TouchBtn label="←" color={P1_COLOR} ariaLabel="P1 doleva"
               onPressStart={() => keysRef.current.add("KeyA")}
               onPressEnd={() => keysRef.current.delete("KeyA")}
             />
-            <TouchBtn label="D" color={P1_COLOR} ariaLabel="P1 doprava"
+            <TouchBtn label="BOOST" color={P1_COLOR} ariaLabel="P1 akce"
+              onPressStart={() => { if (p1IsLegendary) p1LegActivateRef.current = true; else p1BoostActivateRef.current = true; }}
+            />
+            <TouchBtn label="→" color={P1_COLOR} ariaLabel="P1 doprava"
               onPressStart={() => keysRef.current.add("KeyD")}
               onPressEnd={() => keysRef.current.delete("KeyD")}
-            />
-            <TouchBtn label="Q" color={P1_COLOR} ariaLabel="P1 akce"
-              onPressStart={() => { if (p1IsLegendary) p1LegActivateRef.current = true; else p1BoostActivateRef.current = true; }}
             />
           </div>
           {mode === "pvp" && !remoteP2Ref && (
             <div className="flex items-center gap-3">
-              <span className="text-[9px] font-mono" style={{ color: P2_COLOR }}>P2</span>
               <TouchBtn label="←" color={P2_COLOR} ariaLabel="P2 doleva"
                 onPressStart={() => keysRef.current.add("ArrowLeft")}
                 onPressEnd={() => keysRef.current.delete("ArrowLeft")}
               />
+              <TouchBtn label="BOOST" color={P2_COLOR} ariaLabel="P2 akce"
+                onPressStart={() => { if (p2IsLegendary) p2LegActivateRef.current = true; else p2BoostActivateRef.current = true; }}
+              />
               <TouchBtn label="→" color={P2_COLOR} ariaLabel="P2 doprava"
                 onPressStart={() => keysRef.current.add("ArrowRight")}
                 onPressEnd={() => keysRef.current.delete("ArrowRight")}
-              />
-              <TouchBtn label="SPACE" color={P2_COLOR} ariaLabel="P2 akce"
-                onPressStart={() => { if (p2IsLegendary) p2LegActivateRef.current = true; else p2BoostActivateRef.current = true; }}
               />
             </div>
           )}

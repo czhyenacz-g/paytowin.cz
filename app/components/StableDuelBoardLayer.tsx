@@ -418,29 +418,35 @@ function PreStartPhase({
                 <NeonKeyCap label="W A S D" color={challengerColor} />
                 <span className="text-sm text-slate-300 ml-2">zatáčet</span>
               </div>
-              <div className="flex sm:hidden items-center gap-1">
-                <NeonKeyCap label="A D Q" color={challengerColor} />
-                <span className="text-sm text-slate-300 ml-2">ovládání</span>
+              <div className="flex sm:hidden items-center gap-2">
+                <NeonKeyCap label="←" color={challengerColor} />
+                <NeonKeyCap label="BOOST" color={challengerColor} />
+                <NeonKeyCap label="→" color={challengerColor} />
               </div>
-              <div className="flex items-center gap-1">
+              <div className="hidden sm:flex items-center gap-1">
                 <NeonKeyCap label="Q" color={challengerColor} />
                 <span className="text-sm text-slate-300 ml-2">{p1IsLegendary ? "legendary" : "boost"}</span>
               </div>
-              <div className="text-[9px] text-slate-600">nebo 2× dopředu</div>
+              <div className="hidden sm:block text-[9px] text-slate-600">nebo 2× dopředu</div>
             </div>
           )}
           {duelRole === "defender_remote" && (
             <div className="flex flex-col items-center gap-1.5">
               <div className="text-[8px] uppercase tracking-widest" style={{ color: `${defenderColor}bb` }}>Defender</div>
-              <div className="flex items-center gap-1">
+              <div className="hidden sm:flex items-center gap-1">
                 <NeonKeyCap label="←" color={defenderColor} />
                 <span className="text-slate-600 text-[10px] mx-0.5">/</span>
                 <NeonKeyCap label="→" color={defenderColor} />
                 <span className="text-sm text-slate-300 ml-2">zatáčet</span>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="hidden sm:flex items-center gap-1">
                 <NeonKeyCap label="SPACE" color={defenderColor} />
                 <span className="text-sm text-slate-300 ml-2">{p2IsLegendary ? "legendary boost" : "nitro"}</span>
+              </div>
+              <div className="flex sm:hidden items-center gap-2">
+                <NeonKeyCap label="←" color={defenderColor} />
+                <NeonKeyCap label="BOOST" color={defenderColor} />
+                <NeonKeyCap label="→" color={defenderColor} />
               </div>
             </div>
           )}
@@ -953,12 +959,12 @@ export default function StableDuelBoardLayer({
                 onPressStart={() => sendInputRef.current?.({ action: "turn", pressed: true, direction: "left" })}
                 onPressEnd={() => sendInputRef.current?.({ action: "turn", pressed: false })}
               />
+              <TouchBtn label="BOOST" color={defenderTouchColor} ariaLabel="akce"
+                onPressStart={() => sendInputRef.current?.(p2IsLegendary ? { action: "legendary", pressed: true } : { action: "nitro", pressed: true })}
+              />
               <TouchBtn label="→" color={defenderTouchColor} ariaLabel="doprava"
                 onPressStart={() => sendInputRef.current?.({ action: "turn", pressed: true, direction: "right" })}
                 onPressEnd={() => sendInputRef.current?.({ action: "turn", pressed: false })}
-              />
-              <TouchBtn label="SPACE" color={defenderTouchColor} ariaLabel="akce"
-                onPressStart={() => sendInputRef.current?.(p2IsLegendary ? { action: "legendary", pressed: true } : { action: "nitro", pressed: true })}
               />
             </div>
           )}
