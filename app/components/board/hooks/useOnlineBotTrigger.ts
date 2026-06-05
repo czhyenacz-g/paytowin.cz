@@ -34,38 +34,37 @@ export function useOnlineBotTrigger({ gameId, gameState, players, myPlayerId, is
     if (!botPlayer?.is_bot) return;
 
     // Trigger jen z klienta skutečného hráče; spectator bez myPlayerId nic nespouští.
-    if (!myPlayerId) return;
+    if (!myPlayerId) {
+      console.info("[BOT_FLOW] bot_trigger_skipped", { gameId, turnCount: gameState.turn_count, reason: "no_player_id" });
+      return;
+    }
 
     // Blokující stavy — počkej až se vyřeší
-    if (gameState.offer_pending) return;
+    if (gameState.offer_pending) {
+      console.info("[BOT_FLOW] bot_trigger_skipped", { gameId, turnCount: gameState.turn_count, botName: botPlayer.name, reason: "offer_pending" });
+      return;
+    }
 
-    if (scheduledRef.current) return;
+    if (scheduledRef.current) {
+      console.info("[BOT_FLOW] bot_trigger_skipped", { gameId, turnCount: gameState.turn_count, botName: botPlayer.name, reason: "already_scheduled" });
+      return;
+    }
     scheduledRef.current = true;
 
     const delay = 900 + Math.random() * 1100;
+    const pendingType = gameState.horse_pending ? "horse_decision" : gameState.card_pending ? "card_pending_wait" : "bot_turn";
+    console.info("[BOT_FLOW] bot_trigger_scheduled", { gameId, turnCount: gameState.turn_count, botId: botPlayer.id, botName: botPlayer.name, myPlayerId, pendingType, delayMs: Math.round(delay) });
 
     const run = async () => {
       try {
         if (gameState.horse_pending) {
-          console.log("[bot-flow] trigger horse decision", {
-            gameId,
-            turnCount: gameState.turn_count,
-            currentPlayerIndex: gameState.current_player_index,
-            botPlayerId: botPlayer.id,
-            botName: botPlayer.name,
-            myPlayerId,
-          });
+          console.info("[BOT_FLOW] bot_trigger_seen", { gameId, turnCount: gameState.turn_count, currentPlayerIndex: gameState.current_player_index, botId: botPlayer.id, botName: botPlayer.name, myPlayerId, action: "horse_decision" });
           await executeBotHorseDecisionAction(gameId, gameState.turn_count);
         } else if (!gameState.card_pending) {
-          console.log("[bot-flow] trigger bot turn", {
-            gameId,
-            turnCount: gameState.turn_count,
-            currentPlayerIndex: gameState.current_player_index,
-            botPlayerId: botPlayer.id,
-            botName: botPlayer.name,
-            myPlayerId,
-          });
+          console.info("[BOT_FLOW] bot_trigger_seen", { gameId, turnCount: gameState.turn_count, currentPlayerIndex: gameState.current_player_index, botId: botPlayer.id, botName: botPlayer.name, myPlayerId, action: "bot_turn" });
           await executeBotTurnAction(gameId, gameState.turn_count);
+        } else {
+          console.info("[BOT_FLOW] bot_trigger_skipped", { gameId, turnCount: gameState.turn_count, botName: botPlayer.name, reason: "card_pending" });
         }
       } finally {
         scheduledRef.current = false;

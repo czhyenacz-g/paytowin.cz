@@ -33,6 +33,11 @@ import { selectStableMinigame } from "@/lib/minigames/selectStableMinigame";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
+/** Unified structured bot debug logger. Always active in beta. */
+function BOT_LOG(event: string, data: Record<string, unknown>) {
+  console.info("[BOT_FLOW]", event, data);
+}
+
 async function fetchBotContext(gameId: string) {
   const [gameRes, stateRes, playersRes] = await Promise.all([
     supabase.from("games").select("id, economy, theme_id, board_id, fog_of_war").eq("id", gameId).single(),
@@ -111,12 +116,16 @@ async function botFinishTurn(
     playerUpdate.active_effects = updatedEffects;
   }
 
+  BOT_LOG("bot_finish_turn_start", { gameId, botId: botPlayer.id, botName: botPlayer.name, nextIndex: params.nextIndex, turnCount: params.turnCount });
+
   await Promise.all([
     supabase.from("game_state").update(stateUpdate).eq("game_id", gameId),
     ...(Object.keys(playerUpdate).length > 0
       ? [supabase.from("players").update(playerUpdate).eq("id", botPlayer.id)]
       : []),
   ]);
+
+  BOT_LOG("bot_finish_turn_done", { gameId, botId: botPlayer.id, botName: botPlayer.name, nextIndex: params.nextIndex, turnCount: params.turnCount });
 
   // Game over check
   const activePlayers = updatedPlayers.filter(p => !isBankrupt(p));
@@ -148,13 +157,30 @@ export async function executeBotTurnAction(
     game.fog_of_war ? buildFogReveal(pos, FIELDS, currentRevealed) : undefined;
 
   // Guards
-  if (state.turn_count !== expectedTurnCount) return { ok: false, reason: "stale turn_count" };
-  if (state.horse_pending) return { ok: false, reason: "horse_pending active" };
-  if (state.card_pending)  return { ok: false, reason: "card_pending active" };
-  if (state.offer_pending) return { ok: false, reason: "offer_pending active" };
+  if (state.turn_count !== expectedTurnCount) {
+    BOT_LOG("bot_turn_guard_fail", { gameId, expectedTurnCount, actual: state.turn_count, reason: "stale turn_count" });
+    return { ok: false, reason: "stale turn_count" };
+  }
+  if (state.horse_pending) {
+    BOT_LOG("bot_turn_guard_fail", { gameId, expectedTurnCount, reason: "horse_pending active" });
+    return { ok: false, reason: "horse_pending active" };
+  }
+  if (state.card_pending) {
+    BOT_LOG("bot_turn_guard_fail", { gameId, expectedTurnCount, reason: "card_pending active" });
+    return { ok: false, reason: "card_pending active" };
+  }
+  if (state.offer_pending) {
+    BOT_LOG("bot_turn_guard_fail", { gameId, expectedTurnCount, reason: "offer_pending active" });
+    return { ok: false, reason: "offer_pending active" };
+  }
 
   const botPlayer = players[state.current_player_index];
-  if (!botPlayer?.is_bot) return { ok: false, reason: "current player is not a bot" };
+  if (!botPlayer?.is_bot) {
+    BOT_LOG("bot_turn_guard_fail", { gameId, expectedTurnCount, currentIndex: state.current_player_index, reason: "current player is not a bot" });
+    return { ok: false, reason: "current player is not a bot" };
+  }
+
+  BOT_LOG("bot_turn_start", { gameId, turnCount: state.turn_count, botId: botPlayer.id, botName: botPlayer.name, currentIndex: state.current_player_index, coins: botPlayer.coins, horses: botPlayer.horses.map(h => h.name) });
 
   // Auto-skip: GameBoard useEffect se pro bota nevyhodnotí (myPlayerId ≠ bot.id)
   if (botPlayer.skip_next_turn) {
@@ -226,6 +252,7 @@ export async function executeBotTurnAction(
   if (field.type === "racer" && field.racer) {
     const alreadyOwned = playerOwnsRacer(movedPlayer, field.racer);
     const ownerPlayer  = players.find(p => p.id !== botPlayer.id && playerOwnsRacer(p, field.racer!));
+    BOT_LOG("bot_landed_on_racer", { gameId, botId: botPlayer.id, botName: botPlayer.name, racer: field.racer.name, racerId: field.racer.id, alreadyOwned, ownedByOther: ownerPlayer?.name ?? null, position: newPosition });
 
     if (alreadyOwned) {
       // Bot přijel na vlastní pole — bez efektu
@@ -455,27 +482,26 @@ export async function executeBotHorseDecisionAction(
   const fogReveal = (pos: number): number[] | undefined =>
     game.fog_of_war ? buildFogReveal(pos, FIELDS, currentRevealed) : undefined;
 
-  if (state.turn_count !== expectedTurnCount) return { ok: false, reason: "stale turn_count" };
+  if (state.turn_count !== expectedTurnCount) {
+    BOT_LOG("bot_horse_decision_guard_fail", { gameId, expectedTurnCount, actual: state.turn_count, reason: "stale turn_count" });
+    return { ok: false, reason: "stale turn_count" };
+  }
   if (!state.horse_pending) {
-    console.log("[bot-flow] horse decision skipped", { gameId, expectedTurnCount, reason: "horse_pending is false" });
+    BOT_LOG("bot_horse_decision_guard_fail", { gameId, expectedTurnCount, reason: "horse_pending is false" });
     return { ok: false, reason: "horse_pending is false" };
   }
 
   const botPlayer = players[state.current_player_index];
   if (!botPlayer?.is_bot) {
-    console.log("[bot-flow] horse decision skipped", { gameId, expectedTurnCount, reason: "current player is not a bot" });
+    BOT_LOG("bot_horse_decision_guard_fail", { gameId, expectedTurnCount, currentIndex: state.current_player_index, reason: "current player is not a bot" });
     return { ok: false, reason: "current player is not a bot" };
   }
 
+  BOT_LOG("bot_horse_decision_start", { gameId, turnCount: state.turn_count, botId: botPlayer.id, botName: botPlayer.name, position: botPlayer.position, coins: botPlayer.coins, ownedRacers: botPlayer.horses.map(h => h.name) });
+
   const field = FIELDS[botPlayer.position];
   if (field.type !== "racer" || !field.racer) {
-    console.log("[bot-flow] horse decision recovery", {
-      gameId,
-      expectedTurnCount,
-      reason: "no racer on field",
-      player: botPlayer.name,
-      position: botPlayer.position,
-    });
+    BOT_LOG("bot_horse_decision_guard_fail", { gameId, expectedTurnCount, botName: botPlayer.name, position: botPlayer.position, reason: "no racer on field" });
     // Stav je nekonzistentní — uklidíme horse_pending
     const nextIndex = getNextActiveIndex(state.current_player_index, players);
     await supabase.from("game_state").update({
@@ -484,6 +510,27 @@ export async function executeBotHorseDecisionAction(
       turn_count: state.turn_count + 1,
     }).eq("game_id", gameId);
     return { ok: false, reason: "no racer on field" };
+  }
+
+  // Guard: bot might already own this racer (e.g. partial write recovery after reconnect)
+  if (playerOwnsRacer(botPlayer, field.racer)) {
+    BOT_LOG("bot_horse_duplicate_prevented", { gameId, expectedTurnCount, botName: botPlayer.name, racerName: field.racer.name, racerId: field.racer.id, reason: "bot already owns this racer" });
+    const nextIndex = getNextActiveIndex(state.current_player_index, players);
+    const logEntries0: string[] = Array.isArray(state.log) ? (state.log as string[]) : [];
+    const log = [`${botPlayer.name} přijel ke své vlastní stáji: ${field.racer.emoji} ${field.racer.name}`, ...logEntries0];
+    await botFinishTurn(gameId, botPlayer, botPlayer, players, { nextIndex, turnCount: state.turn_count + 1, log, revealedFields: fogReveal(botPlayer.position) });
+    return { ok: true };
+  }
+
+  // Guard: racer already owned by another player (shouldn't happen, but race condition safety)
+  const ownerPlayer = players.find(p => p.id !== botPlayer.id && playerOwnsRacer(p, field.racer!));
+  if (ownerPlayer) {
+    BOT_LOG("bot_horse_already_owned", { gameId, expectedTurnCount, botName: botPlayer.name, racerName: field.racer.name, racerId: field.racer.id, ownedBy: ownerPlayer.name, reason: "racer owned by another player" });
+    const nextIndex = getNextActiveIndex(state.current_player_index, players);
+    const logEntries0: string[] = Array.isArray(state.log) ? (state.log as string[]) : [];
+    const log = [`${botPlayer.name} odmítl koupit závodníka ${field.racer.emoji} ${field.racer.name} (vlastní ${ownerPlayer.name})`, ...logEntries0];
+    await botFinishTurn(gameId, botPlayer, botPlayer, players, { nextIndex, turnCount: state.turn_count + 1, log, revealedFields: fogReveal(botPlayer.position) });
+    return { ok: true };
   }
 
   const racerCfg = racers.find(r => r.id === field.racer!.id) ??
@@ -526,7 +573,11 @@ export async function executeBotHorseDecisionAction(
       stamina:     field.racer.maxStamina ?? 100,
       isLegendary: field.racer.isLegendary,
     };
-    const updatedHorses = [...botPlayer.horses, newHorse];
+    // Deduplicate: filter out any existing entry with same key before adding (idempotent safety)
+    const updatedHorses = [
+      ...botPlayer.horses.filter(h => racerOwnershipKey(h) !== hKey),
+      newHorse,
+    ];
     const paidBot = { ...botPlayer, coins: botPlayer.coins - field.racer.price, horses: updatedHorses };
     const alreadyAwardedObjectives = state.objective_rewards_awarded ?? [];
     const objectiveHit = scenario
@@ -538,15 +589,7 @@ export async function executeBotHorseDecisionAction(
       : null;
     const finalCoins = objectiveHit ? paidBot.coins + objectiveHit.config.inGameCoins : paidBot.coins;
     const finalBot = objectiveHit ? { ...paidBot, coins: finalCoins } : paidBot;
-    console.log("[bot-flow] horse decision buy", {
-      gameId,
-      expectedTurnCount,
-      player: botPlayer.name,
-      racer: field.racer.name,
-      gameYear,
-      alreadyBoughtThisYear,
-      objectiveHit: !!objectiveHit,
-    });
+    BOT_LOG("bot_horse_decision_buy", { gameId, turnCount: expectedTurnCount, botId: botPlayer.id, botName: botPlayer.name, racerName: field.racer.name, racerId: field.racer.id, gameYear, alreadyBoughtThisYear, coinsAfter: finalCoins, objectiveHit: !!objectiveHit });
 
     await supabase.from("players").update({
       coins:  finalBot.coins,
@@ -566,28 +609,21 @@ export async function executeBotHorseDecisionAction(
     };
 
     if (objectiveHit) {
+      BOT_LOG("bot_objective_awarded", { gameId, botId: botPlayer.id, botName: botPlayer.name, objectiveId: objectiveHit.objectiveId, bonusCoins: objectiveHit.config.inGameCoins });
       const newAwardedIds = [...alreadyAwardedObjectives, objectiveHit.objectiveId];
       const prevCompletedBy = state.objective_completed_by ?? {};
-      supabase.from("game_state").update({
+      const { error: objErr } = await supabase.from("game_state").update({
         objective_rewards_awarded: newAwardedIds,
         objective_completed_by: { ...prevCompletedBy, [objectiveHit.objectiveId]: botPlayer.id },
-      }).eq("game_id", gameId).then(({ error }) => {
-        if (error) console.warn("[objective] bot guard write failed", error);
-      });
+      }).eq("game_id", gameId);
+      if (objErr) console.warn("[BOT_FLOW] bot_objective_write_failed", objErr);
     }
 
     await botFinishTurn(gameId, botPlayer, finalBot, updatedPlayers, {
       nextIndex, turnCount: newTurnCount, log, updatedHorses, botPurchaseYears: updatedBotPurchaseYears, revealedFields: fogReveal(botPlayer.position),
     });
   } else {
-    console.log("[bot-flow] horse decision skip", {
-      gameId,
-      expectedTurnCount,
-      player: botPlayer.name,
-      racer: field.racer.name,
-      gameYear,
-      alreadyBoughtThisYear,
-    });
+    BOT_LOG("bot_horse_decision_skip", { gameId, turnCount: expectedTurnCount, botId: botPlayer.id, botName: botPlayer.name, racerName: field.racer.name, racerId: field.racer.id, gameYear, alreadyBoughtThisYear, coins: botPlayer.coins, reason: decisionResult.reason ?? "strategy_skip" });
     const log = [`${botPlayer.name} odmítl koupit závodníka ${field.racer.emoji} ${field.racer.name}`, ...logEntries];
     await botFinishTurn(gameId, botPlayer, botPlayer, players, { nextIndex, turnCount: newTurnCount, log, revealedFields: fogReveal(botPlayer.position) });
   }
