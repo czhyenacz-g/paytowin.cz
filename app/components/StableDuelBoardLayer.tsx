@@ -1004,7 +1004,7 @@ export default function StableDuelBoardLayer({
               <div className="text-[9px] font-black uppercase tracking-widest" style={{ color: challengerTouchColor }}>
                 👤 TY · {challenger.name}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-4">
                 <TouchBtn label="←" color={challengerTouchColor} ariaLabel="doleva" minHoldMs={200}
                   onPressStart={() => {
                     console.info("[DUEL_TOUCH] down", { action: "left", phase: "arena", mode: "pvbot", humanSide: "p1", refWrite: "dir:left" });
