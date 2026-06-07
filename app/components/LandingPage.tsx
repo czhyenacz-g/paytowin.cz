@@ -752,7 +752,7 @@ export default function LandingPage() {
   };
 
   const utilityDiscordBlock = discordUser ? (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-700/30 bg-slate-800/60 px-3 py-2">
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-600/25 bg-white/[0.05] px-3 py-2">
       <div className="flex min-w-0 items-center gap-3">
         {discordUser.avatar ? (
           <img src={discordUser.avatar} alt="" className="h-8 w-8 rounded-full" />
@@ -772,10 +772,10 @@ export default function LandingPage() {
   ) : (
     <button
       onClick={loginWithDiscord}
-      className="w-full rounded-lg border border-amber-700/40 bg-amber-900/20 px-4 py-2.5 text-sm font-semibold text-amber-300 transition hover:bg-amber-900/35 hover:border-amber-600/50"
+      className="w-full rounded-lg border border-amber-600/25 bg-white/[0.05] px-4 py-2.5 text-sm font-semibold text-amber-300 transition hover:bg-white/[0.09] hover:border-amber-500/40"
     >
       <div>🎮 Přihlásit přes Discord</div>
-      <div className="mt-0.5 text-[11px] font-normal text-amber-400/60">Rychle. Bez registrace.</div>
+      <div className="mt-0.5 text-[11px] font-normal text-amber-400/50">Rychle. Bez registrace.</div>
     </button>
   );
 
@@ -923,11 +923,12 @@ export default function LandingPage() {
 
               <div className="mx-auto mt-2.5 sm:mt-4 w-full max-w-4xl lg:max-w-[82%] xl:max-w-[78%] space-y-1.5 sm:space-y-2">
               <div
-                  className="relative px-5 sm:px-8 py-[20px] sm:py-[26px] rounded-xl lg:rounded-none overflow-hidden border border-amber-700/35 bg-slate-900/80 shadow-lg shadow-black/30 backdrop-blur-sm"
+                  className="relative px-5 sm:px-8 py-[20px] sm:py-[26px] rounded-2xl overflow-hidden border border-amber-600/40 bg-slate-950/90 shadow-xl shadow-black/50 backdrop-blur-sm"
                 >
-                  <div className="relative grid grid-cols-1 lg:grid-cols-3 gap-2.5 lg:items-center">
+                  <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-400/25 to-transparent" aria-hidden="true" />
+                  <div className="relative grid grid-cols-1 lg:grid-cols-3 gap-3 lg:gap-0 lg:divide-x lg:divide-amber-700/20 lg:items-center">
                     {/* Levá sekce: Discord stav / login */}
-                    <div className="min-w-0 space-y-1.5 sm:space-y-2 w-full max-w-sm mx-auto lg:max-w-[14rem] lg:justify-self-center lg:flex lg:flex-col lg:items-center">
+                    <div className="min-w-0 space-y-1.5 sm:space-y-2 w-full max-w-sm mx-auto lg:max-w-none lg:justify-self-center lg:flex lg:flex-col lg:items-center lg:px-5">
                       <div className={`${ticketSectionHeadingClass} hidden lg:block`}>
                         Vstupenka do hry
                       </div>
@@ -940,7 +941,7 @@ export default function LandingPage() {
                     </div>
 
                     {/* Střední sekce: jméno (jen guest) + kód hry + Připojit */}
-                    <div className="min-w-0 flex flex-col gap-1.5 sm:gap-2 w-full max-w-sm mx-auto lg:max-w-[13.5rem] lg:items-center">
+                    <div className="min-w-0 flex flex-col gap-1.5 sm:gap-2 w-full max-w-sm mx-auto lg:max-w-none lg:items-center lg:px-5">
                       <div className={`${ticketSectionHeadingClass} hidden lg:block`}>
                         Kód hry
                       </div>
@@ -955,7 +956,7 @@ export default function LandingPage() {
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
                                 placeholder="Tvoje jméno"
-                                className="w-full h-8 min-w-0 rounded-lg border border-slate-700 bg-slate-800/70 px-3 text-sm text-amber-100 outline-none placeholder:text-slate-500 focus:border-amber-600 focus:bg-slate-800/90"
+                                className="w-full h-8 min-w-0 rounded-lg border border-amber-600/25 bg-white/[0.05] px-3 text-sm text-amber-100 outline-none placeholder:text-amber-200/25 focus:border-amber-500/60 focus:bg-white/[0.08]"
                               />
                               <div className="my-1.5 h-px bg-slate-700/50" />
                             </>
@@ -967,7 +968,7 @@ export default function LandingPage() {
                               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                               placeholder="Kód hry"
                               maxLength={5}
-                              className="h-8 min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-800/70 px-3 text-sm uppercase tracking-[0.18em] sm:tracking-[0.2em] text-amber-100 outline-none placeholder:tracking-normal placeholder:text-slate-500 focus:border-amber-600 focus:bg-slate-800/90"
+                              className="h-8 min-w-0 flex-1 rounded-lg border border-amber-600/25 bg-white/[0.05] px-3 text-sm uppercase tracking-[0.18em] sm:tracking-[0.2em] text-amber-100 outline-none placeholder:tracking-normal placeholder:text-amber-200/25 focus:border-amber-500/60 focus:bg-white/[0.08]"
                             />
                             <div
                               className="relative w-full shrink-0 sm:w-[6rem]"
@@ -978,7 +979,7 @@ export default function LandingPage() {
                               <button
                                 type="button"
                                 disabled={joinButtonDisabled}
-                                className="h-8 w-full rounded-lg bg-amber-700 px-4 text-[13px] sm:text-sm font-semibold text-white transition hover:bg-amber-600 disabled:border disabled:border-slate-700 disabled:bg-slate-800/50 disabled:text-slate-500"
+                                className="h-8 w-full rounded-lg bg-amber-600 px-4 text-[13px] sm:text-sm font-semibold text-white transition hover:bg-amber-500 disabled:border disabled:border-amber-600/20 disabled:bg-white/[0.04] disabled:text-amber-200/30"
                               >
                                 {discordSessionLoading && joinCode.trim() ? "Načítám…" : "Připojit"}
                               </button>
@@ -994,7 +995,7 @@ export default function LandingPage() {
                     </div>
 
                     {/* Pravá sekce: sledovat hry */}
-                    <div className="min-w-0 flex flex-col gap-1.5 sm:gap-2 w-full max-w-sm mx-auto lg:max-w-[13.75rem] lg:items-center">
+                    <div className="min-w-0 flex flex-col gap-1.5 sm:gap-2 w-full max-w-sm mx-auto lg:max-w-none lg:items-center lg:px-5">
                       <div className={`${ticketSectionHeadingClass} hidden lg:block`}>
                         Aktivní hry
                       </div>
@@ -1002,7 +1003,7 @@ export default function LandingPage() {
                       <div className="w-full lg:flex lg:justify-center">
                       <a
                         href="/hry"
-                        className="inline-flex h-[34px] sm:h-9 w-full items-center justify-center whitespace-nowrap rounded-lg border border-amber-700/40 bg-amber-900/20 px-4 text-[13px] sm:text-sm font-semibold text-amber-300 transition hover:bg-amber-900/35 hover:border-amber-600/50 lg:self-center lg:ml-[5px]"
+                        className="inline-flex h-8 w-full items-center justify-center whitespace-nowrap rounded-lg border border-amber-600/25 bg-white/[0.05] px-4 text-[13px] sm:text-sm font-semibold text-amber-300 transition hover:bg-white/[0.09] hover:border-amber-500/40 lg:self-center"
                       >
                         👀 Sledovat aktivní hry
                       </a>
