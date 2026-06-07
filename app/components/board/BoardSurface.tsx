@@ -213,12 +213,19 @@ export function BoardSurface({
               style={{ top: "50%", left: 0, transform: "translate(-108%, -50%)", zIndex: 3 }}
             >
               <div className="rounded-lg bg-black/40 px-2 py-1.5 backdrop-blur-sm space-y-0.5">
+                <div className="text-[9px] font-bold text-white/70 whitespace-nowrap tracking-wide">
+                  📅 Roční uzávěrka
+                </div>
                 <div className="text-[9px] font-semibold text-green-400 whitespace-nowrap">
                   Příspěvek: +{startBonus} 💰
                 </div>
-                {myNextTax > 0 && (
+                {myNextTax > 0 ? (
                   <div className="text-[9px] font-semibold text-red-400 whitespace-nowrap">
-                    Výpalné (daně): −{myNextTax} 💰
+                    Daně: −{myNextTax} 💰
+                  </div>
+                ) : (
+                  <div className="text-[9px] text-white/40 whitespace-nowrap">
+                    Bez daní
                   </div>
                 )}
               </div>
