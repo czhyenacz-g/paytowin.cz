@@ -60,7 +60,9 @@ interface Props {
 
 type Phase = "prestart" | "arena" | "result" | "waiting_result";
 
-const BOARD_DUEL_CONFIG: DuelConfig  = { gridW: 34, gridH: 24, maxTicks: 244, tickMs: 156 };
+// DEBUG: slow-motion multiplier for mobile touch testing — revert to 1 for production
+const STABLE_DUEL_TEST_SPEED_MULT = 3;
+const BOARD_DUEL_CONFIG: DuelConfig  = { gridW: 34, gridH: 24, maxTicks: 244, tickMs: Math.round(156 * STABLE_DUEL_TEST_SPEED_MULT) };
 const BOARD_SPEED_CONFIG: SpeedConfig = {
   arenaW: 480, arenaH: 320,
   maxTicks: 120, tickMs: 80,
@@ -718,6 +720,21 @@ export default function StableDuelBoardLayer({
     defenderHorse:   defender.horse,
   });
 
+  // Log human side when pvbot arena starts — helps verify input mapping on mobile
+  React.useEffect(() => {
+    if (phase !== "arena" || duelRole) return;
+    console.info("[DUEL_TOUCH] arena_start_pvbot", {
+      humanSide: "p1_challenger",
+      humanColor: challengerTouchColor,
+      humanName: challenger.name,
+      botName: defender.name,
+      minigameType,
+      tickMs: BOARD_DUEL_CONFIG.tickMs,
+      speedMult: STABLE_DUEL_TEST_SPEED_MULT,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, duelRole]);
+
   const startArena = React.useCallback(() => {
     setPhase("arena");
     setDuelKey(k => k + 1);
@@ -972,36 +989,42 @@ export default function StableDuelBoardLayer({
           )}
           {/* pvbot mode: human challenger controls P1 via synthetic KeyboardEvents → DuelArena keydown handler */}
           {!duelRole && minigameType !== "neon_speedrace" && (
-            <div className="shrink-0 flex items-center justify-center gap-2 px-4 py-3 select-none">
-              <TouchBtn label="←" color={challengerTouchColor} ariaLabel="doleva"
-                onPressStart={() => {
-                  console.info("[DUEL_TOUCH] pointer_down", { mode: "pvbot", duelRole: undefined, label: "←", keyCode: "KeyA" });
-                  window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyA", bubbles: true, cancelable: true }));
-                }}
-                onPressEnd={() => {
-                  console.info("[DUEL_TOUCH] pointer_up", { mode: "pvbot", duelRole: undefined, label: "←", keyCode: "KeyA" });
-                  window.dispatchEvent(new KeyboardEvent("keyup", { code: "KeyA", bubbles: true, cancelable: true }));
-                }}
-              />
-              <TouchBtn label="BOOST" color={challengerTouchColor} ariaLabel="akce"
-                onPressStart={() => {
-                  console.info("[DUEL_TOUCH] pointer_down", { mode: "pvbot", duelRole: undefined, label: "BOOST", keyCode: "KeyQ", isLegendary: p1IsLegendary });
-                  window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyQ", bubbles: true, cancelable: true }));
-                }}
-                onPressEnd={() => {
-                  window.dispatchEvent(new KeyboardEvent("keyup", { code: "KeyQ", bubbles: true, cancelable: true }));
-                }}
-              />
-              <TouchBtn label="→" color={challengerTouchColor} ariaLabel="doprava"
-                onPressStart={() => {
-                  console.info("[DUEL_TOUCH] pointer_down", { mode: "pvbot", duelRole: undefined, label: "→", keyCode: "KeyD" });
-                  window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyD", bubbles: true, cancelable: true }));
-                }}
-                onPressEnd={() => {
-                  console.info("[DUEL_TOUCH] pointer_up", { mode: "pvbot", duelRole: undefined, label: "→", keyCode: "KeyD" });
-                  window.dispatchEvent(new KeyboardEvent("keyup", { code: "KeyD", bubbles: true, cancelable: true }));
-                }}
-              />
+            <div className="shrink-0 flex flex-col items-center gap-1 px-4 py-2 select-none">
+              <div className="text-[9px] font-black uppercase tracking-widest" style={{ color: challengerTouchColor }}>
+                👤 TY · {challenger.name}
+              </div>
+              <div className="flex items-center gap-2">
+                <TouchBtn label="←" color={challengerTouchColor} ariaLabel="doleva"
+                  onPressStart={() => {
+                    console.info("[DUEL_TOUCH] pointer_down", { mode: "pvbot", humanSide: "p1", targetSide: "p1", humanColor: challengerTouchColor, label: "←", keyCode: "KeyA" });
+                    window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyA", bubbles: true, cancelable: true }));
+                  }}
+                  onPressEnd={() => {
+                    console.info("[DUEL_TOUCH] pointer_up", { mode: "pvbot", humanSide: "p1", label: "←", keyCode: "KeyA" });
+                    window.dispatchEvent(new KeyboardEvent("keyup", { code: "KeyA", bubbles: true, cancelable: true }));
+                  }}
+                />
+                <TouchBtn label="BOOST" color={challengerTouchColor} ariaLabel="akce"
+                  onPressStart={() => {
+                    console.info("[DUEL_TOUCH] pointer_down", { mode: "pvbot", humanSide: "p1", targetSide: "p1", humanColor: challengerTouchColor, label: "BOOST", keyCode: "KeyQ", isLegendary: p1IsLegendary });
+                    window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyQ", bubbles: true, cancelable: true }));
+                  }}
+                  onPressEnd={() => {
+                    console.info("[DUEL_TOUCH] pointer_up", { mode: "pvbot", humanSide: "p1", label: "BOOST", keyCode: "KeyQ" });
+                    window.dispatchEvent(new KeyboardEvent("keyup", { code: "KeyQ", bubbles: true, cancelable: true }));
+                  }}
+                />
+                <TouchBtn label="→" color={challengerTouchColor} ariaLabel="doprava"
+                  onPressStart={() => {
+                    console.info("[DUEL_TOUCH] pointer_down", { mode: "pvbot", humanSide: "p1", targetSide: "p1", humanColor: challengerTouchColor, label: "→", keyCode: "KeyD" });
+                    window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyD", bubbles: true, cancelable: true }));
+                  }}
+                  onPressEnd={() => {
+                    console.info("[DUEL_TOUCH] pointer_up", { mode: "pvbot", humanSide: "p1", label: "→", keyCode: "KeyD" });
+                    window.dispatchEvent(new KeyboardEvent("keyup", { code: "KeyD", bubbles: true, cancelable: true }));
+                  }}
+                />
+              </div>
             </div>
           )}
         </>
