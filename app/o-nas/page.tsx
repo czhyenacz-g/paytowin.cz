@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import RotatingBenefitStrip from "@/app/components/RotatingBenefitStrip";
 
 export const metadata: Metadata = {
   title: "O nás | RaceToWin",
@@ -55,6 +56,10 @@ export default function ONasPage() {
             Hraje se v prohlížeči bez instalace — na počítači i mobilu. Můžeš začít u stolu, pokračovat z gauče nebo si odskočit s telefonem v ruce. Hra tě nemá držet na jednom místě.
           </p>
         </section>
+
+        <div className="mt-4">
+          <RotatingBenefitStrip />
+        </div>
 
         <div className="mt-5 grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
           {/* Kdo za tím stojí */}
