@@ -295,13 +295,20 @@ export async function executeBotTurnAction(
       }
       // Rent fallback — jeden nebo oba nemají závodníka
       const rent = computeRent(field.racer.price);
-      const paidBot   = { ...movedPlayer, coins: movedPlayer.coins - rent };
-      const paidOwner = { ...ownerPlayer, coins: ownerPlayer.coins + rent };
       const log = [`${botPlayer.name} zaplatil nájem ${rent} 💰 hráči ${ownerPlayer.name} za ${field.racer.emoji} ${field.racer.name}`, ...extraLog, ...logEntries];
-      await Promise.all([
-        supabase.from("players").update({ coins: paidBot.coins }).eq("id", botPlayer.id),
-        supabase.from("players").update({ coins: paidOwner.coins }).eq("id", ownerPlayer.id),
-      ]);
+      const { data: rentData, error: rentError } = await supabase.rpc("pay_rent_atomic", {
+        p_game_id:  gameId,
+        p_payer_id: botPlayer.id,
+        p_owner_id: ownerPlayer.id,
+        p_amount:   rent,
+      });
+      if (rentError || !rentData?.[0]) {
+        BOT_LOG("bot_rent_payment_failed", { gameId, botId: botPlayer.id, ownerId: ownerPlayer.id, rent, error: rentError?.message ?? "no data" });
+        return { ok: false, reason: `rent payment failed: ${rentError?.message ?? "no data"}` };
+      }
+      BOT_LOG("bot_rent_payment_done", { gameId, botId: botPlayer.id, ownerId: ownerPlayer.id, rent, payerCoins: rentData[0].payer_coins, ownerCoins: rentData[0].owner_coins });
+      const paidBot   = { ...movedPlayer, coins: rentData[0].payer_coins };
+      const paidOwner = { ...ownerPlayer, coins: rentData[0].owner_coins };
       const updatedForNext = updatedPlayers.map(p =>
         p.id === botPlayer.id ? paidBot : p.id === ownerPlayer.id ? paidOwner : p
       );
