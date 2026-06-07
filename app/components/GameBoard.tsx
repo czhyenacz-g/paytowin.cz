@@ -296,6 +296,8 @@ export default function GameBoard({ gameCode }: Props) {
   const seenGameOverRef = React.useRef<boolean>(false);
   // Late-join spectator telegram: true = sessionStorage flag byl přečten, telegram čeká na render
   const lateJoinRef = React.useRef<boolean>(false);
+  // Discord rejoin reclaim: jméno hráče po úspěšném reclaimu — použito pro jednoráz. toast
+  const discordReclaimRef = React.useRef<string | null>(null);
 
   // ── Audio & UX feedback hook ──────────────────────────────────────────
   const {
@@ -453,6 +455,16 @@ export default function GameBoard({ gameCode }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewerRole]);
 
+  // Discord rejoin reclaim toast — zobrazí se jednorázově po automatickém reclaimu na novém zařízení.
+  React.useEffect(() => {
+    if (viewerRole !== "player") return;
+    if (!discordReclaimRef.current) return;
+    const reclaimedName = discordReclaimRef.current;
+    discordReclaimRef.current = null;
+    showTelegram(`Pokračuješ jako ${reclaimedName} 🐎`);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewerRole]);
+
   // ── Načtení hry ze Supabase ──────────────────────────────────────────────────
   React.useEffect(() => {
     if (!gameCode) return;
@@ -482,7 +494,32 @@ export default function GameBoard({ gameCode }: Props) {
       const myAvatarUrl = user?.user_metadata?.avatar_url as string | null ?? null;
       if (myAvatarUrl) setMyDiscordAvatar(myAvatarUrl);
 
-      const pid = localStorage.getItem(`paytowin_player_${gameCode}`);
+      let pid = localStorage.getItem(`paytowin_player_${gameCode}`);
+
+      // Discord rejoin reclaim: hráč přišel z nového zařízení bez localStorage
+      if (!pid && myDiscordId && game.game_mode !== "local") {
+        const { data: reclaimRows, error: reclaimErr } = await supabase
+          .from("players")
+          .select("id, name")
+          .eq("game_id", game.id)
+          .eq("discord_id", myDiscordId)
+          .eq("is_bot", false)
+          .limit(2);
+        if (reclaimErr) {
+          console.warn("[REJOIN] discord_reclaim_query_error", { gameCode, error: reclaimErr.message });
+        } else if (reclaimRows && reclaimRows.length === 1) {
+          const match = reclaimRows[0];
+          localStorage.setItem(`paytowin_player_${gameCode}`, match.id);
+          pid = match.id;
+          discordReclaimRef.current = match.name as string;
+          console.info("[REJOIN] discord_reclaim_success", { gameCode, playerId: match.id, playerName: match.name });
+        } else if (reclaimRows && reclaimRows.length > 1) {
+          console.warn("[REJOIN] discord_reclaim_ambiguous", { gameCode, matchCount: reclaimRows.length });
+        } else {
+          console.info("[REJOIN] discord_reclaim_no_match", { gameCode });
+        }
+      }
+
       setMyPlayerId(pid);
 
       // Urči roli: hráč / pozorovatel / nepřihlášen

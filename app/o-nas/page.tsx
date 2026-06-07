@@ -36,7 +36,7 @@ export default function ONasPage() {
               RaceToWin je engine a aplikace pro českou online deskovku o závodech, risku a špatných rozhodnutích. Každá kampaň na tomhle enginu dostane vlastní svět, pravidla a atmosféru.
             </p>
             <p className="max-w-3xl text-sm leading-relaxed text-stone-400 sm:text-[15px]">
-              <span className="font-semibold text-amber-200/90">PayToWin.cz</span> je první kampaň postavenou na RaceToWin enginu. Původně se celý projekt jmenoval PayToWin — název byl přímočarý, ale příliš silně odkazoval na peníze a odrazoval lidi, kteří chtěli hlavně hrát. Jméno RaceToWin lépe vystihuje, oč jde: závody, souboje, vítězství. PayToWin.cz zůstává jako URL i identita první kampaně — nic se nemění, jen je jasné, kde co sedí.
+              <span className="font-semibold text-amber-200/90">PayToWin</span> je název první kampaně — a záměrná ironie. Odkazuje na hry, kde si hráči reálně kupují výhodu, která rozhoduje o výsledku. My to otočili: ve hře se platí a riskuje v rámci herního světa, ne ve skutečnosti. Žádné mikrotransakce, žádné prémiové výhody. Název je satirický komentář na tenhle model, ne jeho popis.
             </p>
           </div>
         </section>
