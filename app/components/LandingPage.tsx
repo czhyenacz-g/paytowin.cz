@@ -8,6 +8,7 @@ import { THEMES } from "@/lib/themes";
 import { BOARD_PRESETS } from "@/lib/board";
 import MapMenuStrip from "./MapMenuStrip";
 import JoinableGamesList from "./landing/JoinableGamesList";
+import RotatingBenefitStrip from "./RotatingBenefitStrip";
 import { logEvent } from "@/lib/analytics";
 import {
   requestJoinAction,
@@ -1082,6 +1083,9 @@ export default function LandingPage() {
                     ))}
                   </div>
                 )}
+
+                {/* ── Benefit strip ── */}
+                <RotatingBenefitStrip variant="slate" />
 
                 {/* ── Lobby: joinable games ── */}
                 <JoinableGamesList

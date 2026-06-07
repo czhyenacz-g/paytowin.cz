@@ -13,7 +13,12 @@ const BENEFITS = [
 
 const INTERVAL_MS = 5000;
 
-export default function RotatingBenefitStrip() {
+interface Props {
+  /** "amber" = styl /o-nas (výchozí), "slate" = styl titulní strany */
+  variant?: "amber" | "slate";
+}
+
+export default function RotatingBenefitStrip({ variant = "amber" }: Props) {
   const [index, setIndex] = React.useState(0);
   const [visible, setVisible] = React.useState(true);
 
@@ -27,6 +32,22 @@ export default function RotatingBenefitStrip() {
     }, INTERVAL_MS);
     return () => clearInterval(timer);
   }, []);
+
+  if (variant === "slate") {
+    return (
+      <div className="rounded-2xl border border-slate-700/60 bg-slate-800/30 px-3 py-2.5">
+        <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400 mr-2">
+          Proč hrát?
+        </span>
+        <span
+          className="text-xs font-medium text-slate-200 transition-opacity duration-300"
+          style={{ opacity: visible ? 1 : 0 }}
+        >
+          {BENEFITS[index]}
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-[28px] border border-amber-200/15 bg-[#15110e]/92 px-5 py-4 shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-sm">
