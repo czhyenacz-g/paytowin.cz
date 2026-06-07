@@ -752,7 +752,7 @@ export default function LandingPage() {
   };
 
   const utilityDiscordBlock = discordUser ? (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-800/15 bg-amber-50/35 px-3 py-2">
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-700/30 bg-slate-800/60 px-3 py-2">
       <div className="flex min-w-0 items-center gap-3">
         {discordUser.avatar ? (
           <img src={discordUser.avatar} alt="" className="h-8 w-8 rounded-full" />
@@ -762,19 +762,20 @@ export default function LandingPage() {
           </div>
         )}
         <div className="min-w-0">
-          <div className="truncate text-sm font-semibold text-stone-800">{discordUser.name}</div>
+          <div className="truncate text-sm font-semibold text-amber-100">{discordUser.name}</div>
         </div>
       </div>
-      <button onClick={logoutDiscord} className="shrink-0 text-xs font-medium text-stone-500 transition hover:text-stone-800">
+      <button onClick={logoutDiscord} className="shrink-0 text-xs font-medium text-amber-400/70 transition hover:text-amber-300">
         Odhlásit
       </button>
     </div>
   ) : (
     <button
       onClick={loginWithDiscord}
-      className="w-full rounded-lg border border-amber-800/15 bg-amber-50/40 px-4 py-2 text-sm font-semibold text-amber-900 transition hover:bg-amber-50/70"
+      className="w-full rounded-lg border border-amber-700/40 bg-amber-900/20 px-4 py-2.5 text-sm font-semibold text-amber-300 transition hover:bg-amber-900/35 hover:border-amber-600/50"
     >
-      🎮 Přihlásit přes Discord
+      <div>🎮 Přihlásit přes Discord</div>
+      <div className="mt-0.5 text-[11px] font-normal text-amber-400/60">Rychle. Bez registrace.</div>
     </button>
   );
 
@@ -786,8 +787,8 @@ export default function LandingPage() {
   const selectedCommunityTheme = communityThemes.find((theme) => theme.id === selectedThemeId);
   const selectedThemeLabel = selectedBuiltinTheme?.name ?? selectedCommunityTheme?.name ?? selectedThemeId;
   const selectedCommunityCountLabel = `${communityThemes.length} map${communityThemes.length === 1 ? "a" : communityThemes.length < 5 ? "y" : ""}`;
-  const ticketSectionHeadingClass = "mx-auto w-fit text-center text-[8px] sm:text-[9px] font-black uppercase tracking-[0.32em] sm:tracking-[0.35em] text-amber-900/65 select-none";
-  const ticketSectionDividerClass = "mx-auto h-px w-16 sm:w-20 bg-gradient-to-r from-amber-900/0 via-amber-900/25 to-amber-900/0";
+  const ticketSectionHeadingClass = "mx-auto w-fit text-center text-[8px] sm:text-[9px] font-black uppercase tracking-[0.32em] sm:tracking-[0.35em] text-amber-400/80 select-none";
+  const ticketSectionDividerClass = "mx-auto h-px w-16 sm:w-20 bg-gradient-to-r from-amber-600/0 via-amber-600/30 to-amber-600/0";
 
   if (isDevJoin) {
     return (
@@ -922,14 +923,8 @@ export default function LandingPage() {
 
               <div className="mx-auto mt-2.5 sm:mt-4 w-full max-w-4xl lg:max-w-[82%] xl:max-w-[78%] space-y-1.5 sm:space-y-2">
               <div
-                  className="relative px-5 sm:px-8 py-[20px] sm:py-[26px] drop-shadow-xl rounded-xl lg:rounded-none overflow-hidden"
-                  style={{
-                    backgroundImage: "url('/ticket.webp')",
-                    backgroundSize: "100% 100%",
-                    backgroundPosition: "center",
-                  }}
+                  className="relative px-5 sm:px-8 py-[20px] sm:py-[26px] rounded-xl lg:rounded-none overflow-hidden border border-amber-700/35 bg-slate-900/80 shadow-lg shadow-black/30 backdrop-blur-sm"
                 >
-                  <div className="absolute inset-0 bg-amber-50 rounded-xl lg:hidden" aria-hidden="true" />
                   <div className="relative grid grid-cols-1 lg:grid-cols-3 gap-2.5 lg:items-center">
                     {/* Levá sekce: Discord stav / login */}
                     <div className="min-w-0 space-y-1.5 sm:space-y-2 w-full max-w-sm mx-auto lg:max-w-[14rem] lg:justify-self-center lg:flex lg:flex-col lg:items-center">
@@ -959,7 +954,7 @@ export default function LandingPage() {
                               value={name}
                               onChange={(e) => setName(e.target.value)}
                               placeholder="Tvoje jméno"
-                              className="w-full h-[34px] sm:h-9 min-w-0 rounded-lg border border-amber-800/15 bg-amber-50/35 px-3 text-sm text-stone-800 outline-none placeholder:text-stone-500 focus:border-amber-600 focus:bg-amber-50/65"
+                              className="w-full h-[34px] sm:h-9 min-w-0 rounded-lg border border-slate-700 bg-slate-800/70 px-3 text-sm text-amber-100 outline-none placeholder:text-slate-500 focus:border-amber-600 focus:bg-slate-800/90"
                             />
                           )}
                           <div className="flex flex-col gap-1.5 sm:flex-row sm:items-stretch sm:gap-2">
@@ -969,7 +964,7 @@ export default function LandingPage() {
                               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                               placeholder="Kód hry"
                               maxLength={5}
-                              className="h-[34px] sm:h-9 min-w-0 flex-1 rounded-lg border border-amber-800/15 bg-amber-50/40 px-3 text-sm uppercase tracking-[0.18em] sm:tracking-[0.2em] text-stone-800 outline-none placeholder:tracking-normal placeholder:text-stone-500 focus:border-amber-600 focus:bg-amber-50/65 sm:min-w-[7.25rem] lg:max-w-[8.25rem]"
+                              className="h-[34px] sm:h-9 min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-800/70 px-3 text-sm uppercase tracking-[0.18em] sm:tracking-[0.2em] text-amber-100 outline-none placeholder:tracking-normal placeholder:text-slate-500 focus:border-amber-600 focus:bg-slate-800/90 sm:min-w-[7.25rem] lg:max-w-[8.25rem]"
                             />
                             <div
                               className="relative w-full shrink-0 sm:w-[7.5rem] lg:w-[7.25rem]"
@@ -980,7 +975,7 @@ export default function LandingPage() {
                               <button
                                 type="button"
                                 disabled={joinButtonDisabled}
-                                className="h-[34px] sm:h-9 w-full rounded-lg bg-emerald-700 px-4 text-[13px] sm:text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:border disabled:border-amber-900/15 disabled:bg-stone-200 disabled:text-stone-600"
+                                className="h-[34px] sm:h-9 w-full rounded-lg bg-amber-700 px-4 text-[13px] sm:text-sm font-semibold text-white transition hover:bg-amber-600 disabled:border disabled:border-slate-700 disabled:bg-slate-800/50 disabled:text-slate-500"
                               >
                                 {discordSessionLoading && joinCode.trim() ? "Načítám…" : "Připojit"}
                               </button>
@@ -1004,7 +999,7 @@ export default function LandingPage() {
                       <div className="w-full lg:flex lg:justify-center">
                       <a
                         href="/hry"
-                        className="inline-flex h-[34px] sm:h-9 w-full items-center justify-center whitespace-nowrap rounded-lg border border-amber-800/20 bg-amber-100/55 px-4 text-[13px] sm:text-sm font-semibold text-stone-800 transition hover:bg-amber-100/75 lg:self-center lg:ml-[5px]"
+                        className="inline-flex h-[34px] sm:h-9 w-full items-center justify-center whitespace-nowrap rounded-lg border border-amber-700/40 bg-amber-900/20 px-4 text-[13px] sm:text-sm font-semibold text-amber-300 transition hover:bg-amber-900/35 hover:border-amber-600/50 lg:self-center lg:ml-[5px]"
                       >
                         👀 Sledovat aktivní hry
                       </a>
