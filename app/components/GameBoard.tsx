@@ -555,11 +555,36 @@ export default function GameBoard({ gameCode }: Props) {
   // ── Online bot trigger ────────────────────────────────────────────────────────
   // Explicitní refetch po bot akci — realtime doručení není garantované na mobilu.
   // refreshGame je bezpečný k opakovanému volání (idempotentní čtení z DB).
+  // setPendingRacer je stable React setter — bezpečné v deps.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const onBotActionComplete = React.useCallback(async () => {
     if (!gameId) return;
-    await refreshGame(gameId);
-  }, [gameId]); // refreshGame závisí jen na refs a stable setterech — bezpečné
+    console.log("[GAME_REFRESH] refresh_game_start", { gameId });
+    const { players: freshPlayers, state: freshState } = await refreshGame(gameId);
+    console.log("[GAME_REFRESH] refresh_game_done", { gameId });
+    if (freshState) {
+      const currentP = freshPlayers[freshState.current_player_index];
+      console.log("[GAME_REFRESH] refresh_game_state_snapshot", {
+        gameId,
+        turn_count: freshState.turn_count,
+        current_player_index: freshState.current_player_index,
+        horse_pending: freshState.horse_pending,
+        card_pending_exists: !!freshState.card_pending,
+        offer_pending_kind: (freshState.offer_pending as { type?: string } | null)?.type ?? null,
+        pendingRacer_expected_null: !freshState.horse_pending || !!currentP?.is_bot,
+        currentPlayer_name: currentP?.name ?? null,
+        currentPlayer_is_bot: currentP?.is_bot ?? null,
+        players_count: freshPlayers.length,
+      });
+      // Explicitně vyčisti pendingRacer pokud DB říká horse_pending=false.
+      // useEffect [horse_pending] nemusí znovu reagovat, pokud se dep nezměnil (stejná hodnota).
+      // Volání setPendingRacer(null) je idempotentní — bezpečné i když je již null.
+      if (!freshState.horse_pending) {
+        setPendingRacer(null);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameId]); // refreshGame + setPendingRacer závisí jen na refs a stable setterech
 
   useOnlineBotTrigger({ gameId, gameState, players, myPlayerId, isLocalGame: gameMode === "local", onBotActionComplete });
 

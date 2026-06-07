@@ -79,12 +79,12 @@ export function useOnlineBotTrigger({ gameId, gameState, players, myPlayerId, is
         // Explicitní refetch po bot akci — realtime není garantované na mobilu
         const refetch = onBotActionCompleteRef.current;
         if (refetch) {
-          console.info("[BOT_FLOW] bot_action_client_refetch_start", { gameId, turnCount: gameState.turn_count });
+          console.info("[BOT_FLOW] bot_action_complete_callback_start", { gameId, turnCount: gameState.turn_count });
           try {
             await refetch();
-            console.info("[BOT_FLOW] bot_action_client_refetch_done", { gameId });
+            console.info("[BOT_FLOW] bot_action_complete_callback_done", { gameId });
           } catch {
-            console.warn("[BOT_FLOW] bot_action_client_refetch_failed", { gameId });
+            console.warn("[BOT_FLOW] bot_action_complete_callback_failed", { gameId });
           }
         }
       } finally {
