@@ -7,7 +7,6 @@ import { generateGameCode, PLAYER_COLORS } from "@/lib/game";
 import { THEMES } from "@/lib/themes";
 import { BOARD_PRESETS } from "@/lib/board";
 import MapMenuStrip from "./MapMenuStrip";
-import BrandLogo from "./BrandLogo";
 import JoinableGamesList from "./landing/JoinableGamesList";
 import { logEvent } from "@/lib/analytics";
 import {
@@ -873,17 +872,29 @@ export default function LandingPage() {
             <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-4 sm:px-6 py-4 sm:py-8">
 
               <div className="mb-3 sm:mb-6 text-center">
-                <h1 className="sr-only">PayToWin.cz — česká multiplayer závodní deskovka v prohlížeči</h1>
-                <BrandLogo
-                  variant="hero"
-                  className="mx-auto"
-                  onClick={() => window.open("/", "_blank")}
-                />
+                <h1 className="sr-only">RaceToWin — česká multiplayer závodní deskovka v prohlížeči</h1>
+
+                {/* Hlavní herní titul */}
+                <div className="brand-logo brand-logo--hero mx-auto inline-block">
+                  <span className="brand-logo__wordmark">
+                    <span className="brand-logo__pay">Race</span>
+                    <span className="brand-logo__to">To</span>
+                    <span className="brand-logo__win">Win</span>
+                  </span>
+                </div>
+
+                {/* Podtitul */}
                 <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-200/80">
                   Multiplayer závodní deskovka
                 </p>
-                {/* Mobile: kratší popis, desktop: původní dva řádky */}
-                <p className="mt-1 text-xs text-stone-300 sm:hidden">Závodní deskovka o risku, penězích a vítězství.</p>
+
+                {/* Campaign badge */}
+                <p className="mt-2 text-[10px] font-medium tracking-[0.1em] text-amber-500/60">
+                  První oficiální kampaň:{" "}
+                  <span className="font-semibold text-amber-300/80">PayToWin.cz</span>
+                </p>
+
+                <p className="mt-1.5 text-xs text-stone-300 sm:hidden">Závodní deskovka o risku, penězích a vítězství.</p>
                 <p className="mt-1.5 text-amber-100/70 hidden sm:block">Závody, sázky a finanční chaos.</p>
               </div>
 
