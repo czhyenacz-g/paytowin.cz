@@ -960,17 +960,17 @@ export default function LandingPage() {
                               <div className="my-1.5 h-px bg-slate-700/50" />
                             </>
                           )}
-                          <div className="flex flex-col gap-1.5 sm:flex-row sm:items-stretch sm:gap-2">
+                          <div className="w-full flex flex-col gap-1.5 sm:flex-row sm:items-stretch sm:gap-2">
                             <input
                               type="text"
                               value={joinCode}
                               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                               placeholder="Kód hry"
                               maxLength={5}
-                              className="h-8 min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-800/70 px-3 text-sm uppercase tracking-[0.18em] sm:tracking-[0.2em] text-amber-100 outline-none placeholder:tracking-normal placeholder:text-slate-500 focus:border-amber-600 focus:bg-slate-800/90 sm:min-w-[7.25rem] lg:max-w-[8.25rem]"
+                              className="h-8 min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-800/70 px-3 text-sm uppercase tracking-[0.18em] sm:tracking-[0.2em] text-amber-100 outline-none placeholder:tracking-normal placeholder:text-slate-500 focus:border-amber-600 focus:bg-slate-800/90"
                             />
                             <div
-                              className="relative w-full shrink-0 sm:w-[7.5rem] lg:w-[7.25rem]"
+                              className="relative w-full shrink-0 sm:w-[6rem]"
                               onMouseEnter={() => joinButtonDisabled && setShowJoinDisabledHint(true)}
                               onMouseLeave={() => setShowJoinDisabledHint(false)}
                               onClick={handleJoinButtonClick}
