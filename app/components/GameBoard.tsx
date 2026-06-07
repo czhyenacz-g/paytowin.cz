@@ -1179,6 +1179,14 @@ export default function GameBoard({ gameCode }: Props) {
       logLines.push(`🏆 ${player.name} splnil kontrakt! +${objectiveHit.config.inGameCoins} 💰`);
     }
 
+    const objectiveTelegram = objectiveHit
+      ? { text: `🏆 ${player.name} splnil kontrakt! +${objectiveHit.config.inGameCoins} 💰`, turn: newTurnCount }
+      : undefined;
+    if (objectiveTelegram) {
+      seenYearEventTurnRef.current = newTurnCount;
+      showTelegram(objectiveTelegram.text);
+    }
+
     // Zahrnuje finální koně — race trigger potřebuje vidět aktuální ownership
     const updatedPlayers = players.map((p, i) =>
       i === playerIndex ? { ...player, coins: finalCoins, horses: finalHorses } : p
@@ -1230,6 +1238,7 @@ export default function GameBoard({ gameCode }: Props) {
       updatedCurrentPlayerHorses: finalHorses,
       ...(postTurnEvent ? { postTurnEvent } : {}),
       ...(wentBankrupt ? { bustPlayerId: player.id } : {}),
+      ...(objectiveTelegram ? { yearEventTelegram: objectiveTelegram } : {}),
     });
 
     if (wentBankrupt) await checkAndFinishGame(updatedPlayers);
