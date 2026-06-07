@@ -10,6 +10,8 @@ interface Params {
   players: Player[];
   myPlayerId: string | null;
   isLocalGame: boolean;
+  /** Zavolá se po úspěšné bot akci — explicitní refetch, nezávislý na realtime doručení. */
+  onBotActionComplete?: () => Promise<void>;
 }
 
 /**
@@ -22,9 +24,16 @@ interface Params {
  * Spouští jakýkoliv aktivní hráčský klient (ne spectator) — bot flow nesmí záviset na
  * tom, že je přihlášený právě owner klient.
  * turn_count guard v server action zabrání double-execute při rychlých re-renderech.
+ *
+ * Po dokončení bot akce se zavolá onBotActionComplete (explicitní refetch) — realtime
+ * doručení není garantované na mobilu, takže nespoléháme jen na něj.
  */
-export function useOnlineBotTrigger({ gameId, gameState, players, myPlayerId, isLocalGame }: Params) {
+export function useOnlineBotTrigger({ gameId, gameState, players, myPlayerId, isLocalGame, onBotActionComplete }: Params) {
   const scheduledRef = React.useRef(false);
+  // Ref pro callback — nepatří do deps useEffectu, ale musí být vždy aktuální
+  const onBotActionCompleteRef = React.useRef(onBotActionComplete);
+  React.useEffect(() => { onBotActionCompleteRef.current = onBotActionComplete; });
+
   const currentBotPlayerId = gameState ? players[gameState.current_player_index]?.id ?? null : null;
 
   React.useEffect(() => {
@@ -65,6 +74,18 @@ export function useOnlineBotTrigger({ gameId, gameState, players, myPlayerId, is
           await executeBotTurnAction(gameId, gameState.turn_count);
         } else {
           console.info("[BOT_FLOW] bot_trigger_skipped", { gameId, turnCount: gameState.turn_count, botName: botPlayer.name, reason: "card_pending" });
+          return; // žádná akce — přeskočí refetch, finally resetuje scheduledRef
+        }
+        // Explicitní refetch po bot akci — realtime není garantované na mobilu
+        const refetch = onBotActionCompleteRef.current;
+        if (refetch) {
+          console.info("[BOT_FLOW] bot_action_client_refetch_start", { gameId, turnCount: gameState.turn_count });
+          try {
+            await refetch();
+            console.info("[BOT_FLOW] bot_action_client_refetch_done", { gameId });
+          } catch {
+            console.warn("[BOT_FLOW] bot_action_client_refetch_failed", { gameId });
+          }
         }
       } finally {
         scheduledRef.current = false;

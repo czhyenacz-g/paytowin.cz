@@ -553,7 +553,15 @@ export default function GameBoard({ gameCode }: Props) {
   };
 
   // ── Online bot trigger ────────────────────────────────────────────────────────
-  useOnlineBotTrigger({ gameId, gameState, players, myPlayerId, isLocalGame: gameMode === "local" });
+  // Explicitní refetch po bot akci — realtime doručení není garantované na mobilu.
+  // refreshGame je bezpečný k opakovanému volání (idempotentní čtení z DB).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const onBotActionComplete = React.useCallback(async () => {
+    if (!gameId) return;
+    await refreshGame(gameId);
+  }, [gameId]); // refreshGame závisí jen na refs a stable setterech — bezpečné
+
+  useOnlineBotTrigger({ gameId, gameState, players, myPlayerId, isLocalGame: gameMode === "local", onBotActionComplete });
 
   // ── Realtime subscriptions ───────────────────────────────────────────────────
   React.useEffect(() => {
