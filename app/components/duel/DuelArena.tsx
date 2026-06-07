@@ -135,6 +135,8 @@ interface Props {
   }) => void;
   p1Speed?: number;
   p2Speed?: number;
+  /** pvbot: P1 dir/nitro/legendary from external touch ref instead of keyboard. */
+  remoteP1Ref?: React.MutableRefObject<{ dir: Dir; nitroActivate: boolean; legendaryActivate: boolean } | null>;
   /** challenger_authority: P2 dir/nitro/legendary from Broadcast ref instead of keyboard. */
   remoteP2Ref?: React.MutableRefObject<{ dir: Dir; nitroActivate: boolean; legendaryActivate: boolean } | null>;
   /** If true, P1 uses legendary ability (cooldown) instead of one-shot nitro. */
@@ -148,7 +150,7 @@ interface Props {
 export default function DuelArena({
   config, mode, showDebug = false, backgroundUrl, overlayOpacity = 0.20,
   autoStart = false, onResult, onStateSnapshot, p1Speed = 5, p2Speed = 5,
-  remoteP2Ref, p1IsLegendary = false, p2IsLegendary = false,
+  remoteP1Ref, remoteP2Ref, p1IsLegendary = false, p2IsLegendary = false,
   hideTouchControls = false,
 }: Props) {
   const [state, setState] = React.useState<DuelState>(() => {
@@ -290,7 +292,7 @@ export default function DuelArena({
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
     };
-  }, [p1IsLegendary, p2IsLegendary, mode, remoteP2Ref]);
+  }, [p1IsLegendary, p2IsLegendary, mode, remoteP1Ref, remoteP2Ref]);
 
   // Tick loop
   React.useEffect(() => {
@@ -309,14 +311,22 @@ export default function DuelArena({
       const now  = Date.now();
 
       // ── Nitro (regular racers) ───────────────────────────────────────────────
-      const p1Activate = p1BoostActivateRef.current;
+      const remoteP1 = remoteP1Ref?.current ?? null;
+      const p1Activate = remoteP1Ref
+        ? (remoteP1?.nitroActivate ?? false)
+        : p1BoostActivateRef.current;
+      if (remoteP1Ref?.current && remoteP1?.nitroActivate) {
+        remoteP1Ref.current = { ...remoteP1Ref.current, nitroActivate: false };
+      }
       const p2Activate = p2BoostActivateRef.current;
       p1BoostActivateRef.current = false;
       p2BoostActivateRef.current = false;
 
-      // ── P2 direction (remote or keyboard or bot) ─────────────────────────────
+      // ── P1/P2 direction ──────────────────────────────────────────────────────
       const remoteP2 = remoteP2Ref?.current ?? null;
-      const p1: Dir = dirFromHeldKeys(keys, cur.p1.dir, "wasd");
+      const p1: Dir = remoteP1 !== null
+        ? remoteP1.dir
+        : dirFromHeldKeys(keys, cur.p1.dir, "wasd");
       const p2: Dir = mode === "pvbot"
         ? getBotInput(cur, 2, config)
         : remoteP2 !== null
@@ -331,9 +341,17 @@ export default function DuelArena({
       }
 
       // ── Legendary ability ────────────────────────────────────────────────────
-      // P1 legendary: check cooldown, read local flag
+      // P1 legendary: remote ref or local keyboard flag
       let p1LegFire = false;
       if (p1IsLegendary) {
+        const remoteP1LegActivate = remoteP1Ref
+          ? (remoteP1?.legendaryActivate ?? false)
+          : p1LegActivateRef.current;
+        if (remoteP1Ref?.current && remoteP1?.legendaryActivate) {
+          remoteP1Ref.current = { ...remoteP1Ref.current, legendaryActivate: false };
+        }
+        p1LegActivateRef.current = false;
+
         // Check if cooldown expired → restore charge
         const cdu1 = p1LegCooldownUntilRef.current;
         if (cdu1 !== null && now >= cdu1) {
@@ -349,12 +367,11 @@ export default function DuelArena({
           setP1LegDisplay(prev => prev !== sec1 ? sec1 : prev);
         }
         // Attempt activation
-        if (p1LegActivateRef.current && p1LegCooldownUntilRef.current === null) {
+        if (remoteP1LegActivate && p1LegCooldownUntilRef.current === null) {
           p1LegFire = true;
           p1LegCooldownUntilRef.current = now + LEGENDARY_COOLDOWN_MS;
           setP1LegDisplay(2);
         }
-        p1LegActivateRef.current = false;
       }
 
       // P2 legendary: remote or local keyboard
@@ -486,7 +503,7 @@ export default function DuelArena({
         <svg
           width={w}
           height={h}
-          style={{ display: "block", background: backgroundUrl ? "transparent" : BG_COLOR }}
+          style={{ display: "block", background: backgroundUrl ? "transparent" : BG_COLOR, pointerEvents: "none" }}
         >
           <NeonFilters />
           {backgroundUrl && (
@@ -597,17 +614,19 @@ export default function DuelArena({
         </div>
       )}
 
-      {/* Controls bar */}
-      <div className="flex items-center gap-2">
-        {state.status === "running" && (
-          <button onClick={handleStart} className="rounded-lg bg-amber-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-amber-500 transition">
-            ⏸ Pauza
+      {/* Controls bar — hidden when parent manages the overlay (hideTouchControls) */}
+      {!hideTouchControls && (
+        <div className="flex items-center gap-2">
+          {state.status === "running" && (
+            <button onClick={handleStart} className="rounded-lg bg-amber-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-amber-500 transition">
+              ⏸ Pauza
+            </button>
+          )}
+          <button onClick={handleReset} className="rounded-lg bg-slate-700 border border-slate-600 px-4 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-600 transition">
+            ↺ Reset
           </button>
-        )}
-        <button onClick={handleReset} className="rounded-lg bg-slate-700 border border-slate-600 px-4 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-600 transition">
-          ↺ Reset
-        </button>
-      </div>
+        </div>
+      )}
 
       {/* Debug panel */}
       {showDebug && (

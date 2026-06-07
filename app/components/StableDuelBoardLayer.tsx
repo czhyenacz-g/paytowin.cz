@@ -922,7 +922,7 @@ export default function StableDuelBoardLayer({
 
   return (
     <div
-      className="absolute inset-0 z-[55] flex flex-col overflow-hidden"
+      className="fixed inset-0 z-[55] flex flex-col overflow-hidden select-none"
       style={{ background: "rgba(5,8,20,0.92)", backdropFilter: "blur(2px)" }}
     >
       {/* Broadcast error banner */}
