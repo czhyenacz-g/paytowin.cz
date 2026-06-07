@@ -216,7 +216,7 @@ export function BoardSurface({
                 <div className="text-[9px] font-bold text-white/70 whitespace-nowrap tracking-wide">
                   📅 Roční uzávěrka
                 </div>
-                <div className="text-[9px] font-semibold text-green-400 whitespace-nowrap" title="Příspěvek za to, že lezete té správné politické straně (co je právě u moci) doprdele.">
+                <div className="text-[9px] font-semibold text-green-400 whitespace-nowrap" title='Příspěvek za to, že lezete do "přízně" těm, kdo jsou právě u moci.'>
                   Příspěvek: +{startBonus} 💰
                 </div>
                 {myNextTax > 0 ? (
