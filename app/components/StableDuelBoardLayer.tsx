@@ -416,7 +416,8 @@ function PreStartPhase({
               <div className="text-[8px] uppercase tracking-widest" style={{ color: `${challengerColor}bb` }}>Challenger</div>
               <div className="hidden sm:flex items-center gap-1">
                 <NeonKeyCap label="W A S D" color={challengerColor} />
-                <span className="text-sm text-slate-300 ml-2">zatáčet</span>
+                <NeonKeyCap label="Q" color={challengerColor} />
+                <span className="text-sm text-slate-300 ml-2">zatáčet · {p1IsLegendary ? "legendary" : "boost"}</span>
               </div>
               {/* mobile: text-only hint — tlačítka se zobrazí až v herní fázi */}
               <div className="flex sm:hidden items-center gap-2 text-[10px] font-mono pointer-events-none" style={{ color: `${challengerColor}55` }}>
@@ -425,10 +426,6 @@ function PreStartPhase({
                 <span>BOOST</span>
                 <span>·</span>
                 <span>→ zatočit</span>
-              </div>
-              <div className="hidden sm:flex items-center gap-1">
-                <NeonKeyCap label="Q" color={challengerColor} />
-                <span className="text-sm text-slate-300 ml-2">{p1IsLegendary ? "legendary" : "boost"}</span>
               </div>
               <div className="hidden sm:block text-[9px] text-slate-600">nebo 2× dopředu</div>
             </div>

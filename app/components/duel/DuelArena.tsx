@@ -312,8 +312,9 @@ export default function DuelArena({
 
       // ── Nitro (regular racers) ───────────────────────────────────────────────
       const remoteP1 = remoteP1Ref?.current ?? null;
+      // Merge touch ref + keyboard: touch ref = mobile, p1BoostActivateRef = Q / double-tap (PC)
       const p1Activate = remoteP1Ref
-        ? (remoteP1?.nitroActivate ?? false)
+        ? ((remoteP1?.nitroActivate ?? false) || p1BoostActivateRef.current)
         : p1BoostActivateRef.current;
       if (remoteP1Ref?.current && remoteP1?.nitroActivate) {
         remoteP1Ref.current = { ...remoteP1Ref.current, nitroActivate: false };
@@ -345,7 +346,7 @@ export default function DuelArena({
       let p1LegFire = false;
       if (p1IsLegendary) {
         const remoteP1LegActivate = remoteP1Ref
-          ? (remoteP1?.legendaryActivate ?? false)
+          ? ((remoteP1?.legendaryActivate ?? false) || p1LegActivateRef.current)
           : p1LegActivateRef.current;
         if (remoteP1Ref?.current && remoteP1?.legendaryActivate) {
           remoteP1Ref.current = { ...remoteP1Ref.current, legendaryActivate: false };
