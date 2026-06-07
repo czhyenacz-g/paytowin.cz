@@ -565,7 +565,7 @@ function ResultPhase({
         <div className="text-2xl font-black text-slate-300 text-center tracking-wide">REMÍZA</div>
       ) : (
         <div className="text-center shrink-0">
-          <div className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">VÍTĚZ</div>
+          <div className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-300">VÍTĚZ</div>
           <div
             className="text-3xl font-black leading-tight"
             style={{
@@ -591,7 +591,7 @@ function ResultPhase({
                 background: isWinner ? `${contestant.color}1a` : "rgba(10,14,28,0.65)",
                 border: `2px solid ${contestant.color}${isDraw ? "88" : isWinner ? "" : "28"}`,
                 boxShadow: isWinner ? `0 0 24px ${contestant.color}55, 0 0 8px ${contestant.color}33` : "none",
-                opacity: isDraw ? 1 : isWinner ? 1 : 0.45,
+                opacity: isDraw ? 1 : isWinner ? 1 : 0.80,
                 filter: !isDraw && !isWinner ? "grayscale(0.25)" : "none",
                 transition: "opacity 0.2s",
               }}
@@ -611,7 +611,7 @@ function ResultPhase({
               <div className="text-sm font-black text-center leading-tight" style={{ color: contestant.color }}>
                 {contestant.name}
               </div>
-              <div className="text-[9px] text-slate-500 text-center leading-tight">
+              <div className="text-[9px] text-slate-300 text-center leading-tight">
                 {contestant.horse?.emoji ?? "🐎"} {contestant.horse?.name ?? "Bez koně"}
               </div>
 
@@ -633,7 +633,7 @@ function ResultPhase({
 
               {/* Stamina breakdown */}
               <div className="text-[8px] font-mono text-center leading-snug mt-0.5">
-                <div className="text-slate-700">závod −{ps.stamina.base}</div>
+                <div className="text-slate-400">závod −{ps.stamina.base}</div>
                 {pr.usedNitro && <div className="text-amber-500">nitro −{ps.stamina.nitro}</div>}
                 {pr.crashed   && <div className="text-red-600">crash −{ps.stamina.crash}</div>}
               </div>
