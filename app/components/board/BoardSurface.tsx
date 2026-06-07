@@ -220,7 +220,7 @@ export function BoardSurface({
                   Příspěvek: +{startBonus} 💰
                 </div>
                 {myNextTax > 0 ? (
-                  <div className="text-[9px] font-semibold text-red-400 whitespace-nowrap">
+                  <div className="text-[9px] font-semibold text-red-400 whitespace-nowrap pointer-events-auto cursor-help" title="Daně, nebo výpalné... ve výsledku je to asi jedno.">
                     Daně: −{myNextTax} 💰
                   </div>
                 ) : (
