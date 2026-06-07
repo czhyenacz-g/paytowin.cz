@@ -35,8 +35,8 @@ export default function RotatingBenefitStrip({ variant = "amber" }: Props) {
 
   if (variant === "slate") {
     return (
-      <div className="rounded-2xl border border-slate-700/60 bg-slate-800/30 px-3 py-2.5">
-        <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400 mr-2">
+      <div className="flex items-center rounded-2xl border border-slate-700/60 bg-slate-800/30 px-3 py-2">
+        <span className="shrink-0 text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400 mr-2">
           Proč hrát?
         </span>
         <span
