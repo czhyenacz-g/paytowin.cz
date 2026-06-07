@@ -2660,7 +2660,8 @@ export default function GameBoard({ gameCode }: Props) {
       )}
 
       {/* ── Center Event Modal (card + offer) ───────────────────────────── */}
-      {centerEvent && (
+      {/* bankruptWarning má vždy prioritu — pokrývá celý screen z-50 a sidebar by byl nedosažitelný */}
+      {centerEvent && !bankruptWarning && (
         <CenterEventModal
           event={centerEvent}
           onConfirm={acceptOffer}
