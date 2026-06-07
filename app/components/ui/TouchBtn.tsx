@@ -9,52 +9,69 @@ interface Props {
   onPressEnd?: () => void;
   ariaLabel?: string;
   /**
-   * Minimální doba aktivního stavu v ms. Pokud uživatel pustí dříve, onPressEnd
-   * se zpozí tak, aby ref zůstal aktivní aspoň jeden tick (doporučeno 200ms).
+   * Min ms pro vizuální pressed stav (feedback pro uživatele). Default: žádný min.
    */
-  minHoldMs?: number;
+  feedbackMs?: number;
+  /**
+   * Min ms před voláním onPressEnd (jak dlouho je input aktivní).
+   * Pro směrová tlačítka: nastavit < tick period (156ms) aby se zabránilo multi-tick zatočení.
+   * Pro BOOST: může být delší (spolehlivé zachycení).
+   */
+  inputHoldMs?: number;
 }
 
-export default function TouchBtn({ label, color, onPressStart, onPressEnd, ariaLabel, minHoldMs }: Props) {
+export default function TouchBtn({ label, color, onPressStart, onPressEnd, ariaLabel, feedbackMs, inputHoldMs }: Props) {
   const [pressed, setPressed] = React.useState(false);
   const isDownRef = React.useRef(false);
   const pressStartRef = React.useRef(0);
-  const endTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inputEndTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const feedbackEndTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const fireEnd = React.useCallback(() => {
-    endTimerRef.current = null;
-    setPressed(false);
-    onPressEnd?.();
-  }, [onPressEnd]);
+  const clearTimers = () => {
+    if (inputEndTimerRef.current) { clearTimeout(inputEndTimerRef.current); inputEndTimerRef.current = null; }
+    if (feedbackEndTimerRef.current) { clearTimeout(feedbackEndTimerRef.current); feedbackEndTimerRef.current = null; }
+  };
 
   const handleDown = (e: React.PointerEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    if (isDownRef.current) return; // dedup — pointer + touch fallback protection
+    if (isDownRef.current) return;
     isDownRef.current = true;
     pressStartRef.current = Date.now();
-    if (endTimerRef.current) { clearTimeout(endTimerRef.current); endTimerRef.current = null; }
-    // setPointerCapture: keep receiving events even if finger drifts off element
+    clearTimers();
     try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* ignore */ }
     setPressed(true);
     onPressStart?.();
   };
 
   const handleUp = () => {
-    if (!isDownRef.current) return; // dedup
+    if (!isDownRef.current) return;
     isDownRef.current = false;
-    if (minHoldMs) {
-      const elapsed = Date.now() - pressStartRef.current;
-      const remaining = minHoldMs - elapsed;
-      if (remaining > 0) {
-        // tap was shorter than minHoldMs — delay release so tick can catch it
-        endTimerRef.current = setTimeout(fireEnd, remaining);
-        return;
-      }
+    const elapsed = Date.now() - pressStartRef.current;
+
+    // Naplánuj onPressEnd po inputHoldMs (nebo ihned pokud uživatel držel dost dlouho)
+    const inputDelay = Math.max(0, (inputHoldMs ?? 0) - elapsed);
+    if (inputDelay > 0) {
+      inputEndTimerRef.current = setTimeout(() => {
+        inputEndTimerRef.current = null;
+        onPressEnd?.();
+      }, inputDelay);
+    } else {
+      onPressEnd?.();
     }
-    fireEnd();
+
+    // Naplánuj vizuální clear po feedbackMs (nezávislé na inputu)
+    const feedbackDelay = Math.max(0, (feedbackMs ?? 0) - elapsed);
+    if (feedbackDelay > 0) {
+      feedbackEndTimerRef.current = setTimeout(() => {
+        feedbackEndTimerRef.current = null;
+        setPressed(false);
+      }, feedbackDelay);
+    } else {
+      setPressed(false);
+    }
   };
 
-  React.useEffect(() => () => { if (endTimerRef.current) clearTimeout(endTimerRef.current); }, []);
+  React.useEffect(() => () => clearTimers(), []);
 
   return (
     <button

@@ -998,27 +998,31 @@ export default function StableDuelBoardLayer({
               />
             </div>
           )}
-          {/* pvbot mode: human challenger controls P1 via direct ref write — minHoldMs ensures tick catches the tap */}
+          {/* pvbot mode: human challenger controls P1 via direct ref write.
+              inputHoldMs < tickMs (156ms) → max 1 tick per tap, no double-turn.
+              feedbackMs stays longer for visible press feedback. */}
           {!duelRole && minigameType !== "neon_speedrace" && (
             <div className="shrink-0 flex flex-col items-center gap-1 px-4 py-2 select-none">
               <div className="text-[9px] font-black uppercase tracking-widest" style={{ color: challengerTouchColor }}>
                 👤 TY · {challenger.name}
               </div>
               <div className="flex items-center gap-4">
-                <TouchBtn label="←" color={challengerTouchColor} ariaLabel="doleva" minHoldMs={200}
+                <TouchBtn label="←" color={challengerTouchColor} ariaLabel="doleva"
+                  inputHoldMs={130} feedbackMs={250}
                   onPressStart={() => {
-                    console.info("[DUEL_TOUCH] down", { action: "left", phase: "arena", mode: "pvbot", humanSide: "p1", refWrite: "dir:left" });
+                    console.info("[DUEL_TOUCH] down", { action: "left", inputHoldMs: 130, feedbackMs: 250, ignoredByCooldown: false, dirSet: "left" });
                     localP1Ref.current = { dir: "left", nitroActivate: false, legendaryActivate: false };
                   }}
                   onPressEnd={() => {
-                    console.info("[DUEL_TOUCH] up", { action: "left", phase: "arena", mode: "pvbot" });
+                    console.info("[DUEL_TOUCH] up", { action: "left", dirSet: "straight" });
                     if (localP1Ref.current) localP1Ref.current = { ...localP1Ref.current, dir: "straight" };
                   }}
                 />
-                <TouchBtn label="BOOST" color={challengerTouchColor} ariaLabel="akce" minHoldMs={200}
+                <TouchBtn label="BOOST" color={challengerTouchColor} ariaLabel="akce"
+                  inputHoldMs={180} feedbackMs={250}
                   onPressStart={() => {
                     const action = p1IsLegendary ? "legendaryActivate" : "nitroActivate";
-                    console.info("[DUEL_TOUCH] down", { action: "boost", phase: "arena", mode: "pvbot", humanSide: "p1", refWrite: action, isLegendary: p1IsLegendary });
+                    console.info("[DUEL_TOUCH] down", { action: "boost", inputHoldMs: 180, feedbackMs: 250, ignoredByCooldown: false, refWrite: action, isLegendary: p1IsLegendary });
                     if (p1IsLegendary) {
                       localP1Ref.current = { dir: localP1Ref.current?.dir ?? "straight", nitroActivate: false, legendaryActivate: true };
                     } else {
@@ -1026,17 +1030,18 @@ export default function StableDuelBoardLayer({
                     }
                   }}
                   onPressEnd={() => {
-                    console.info("[DUEL_TOUCH] up", { action: "boost", phase: "arena", mode: "pvbot" });
+                    console.info("[DUEL_TOUCH] up", { action: "boost", dirSet: "unchanged" });
                     if (localP1Ref.current) localP1Ref.current = { ...localP1Ref.current, nitroActivate: false, legendaryActivate: false };
                   }}
                 />
-                <TouchBtn label="→" color={challengerTouchColor} ariaLabel="doprava" minHoldMs={200}
+                <TouchBtn label="→" color={challengerTouchColor} ariaLabel="doprava"
+                  inputHoldMs={130} feedbackMs={250}
                   onPressStart={() => {
-                    console.info("[DUEL_TOUCH] down", { action: "right", phase: "arena", mode: "pvbot", humanSide: "p1", refWrite: "dir:right" });
+                    console.info("[DUEL_TOUCH] down", { action: "right", inputHoldMs: 130, feedbackMs: 250, ignoredByCooldown: false, dirSet: "right" });
                     localP1Ref.current = { dir: "right", nitroActivate: false, legendaryActivate: false };
                   }}
                   onPressEnd={() => {
-                    console.info("[DUEL_TOUCH] up", { action: "right", phase: "arena", mode: "pvbot" });
+                    console.info("[DUEL_TOUCH] up", { action: "right", dirSet: "straight" });
                     if (localP1Ref.current) localP1Ref.current = { ...localP1Ref.current, dir: "straight" };
                   }}
                 />
