@@ -894,8 +894,7 @@ export default function LandingPage() {
                   <span className="font-semibold text-amber-300/80">PayToWin.cz</span>
                 </p>
 
-                <p className="mt-1.5 text-xs text-stone-300 sm:hidden">Závodní deskovka o risku, penězích a vítězství.</p>
-                <p className="mt-1.5 text-amber-100/70 hidden sm:block">Závody, sázky a finanční chaos.</p>
+                <p className="mt-1.5 text-xs text-amber-100/70">Závody, sázky a finanční chaos.</p>
               </div>
 
               <MapMenuStrip
