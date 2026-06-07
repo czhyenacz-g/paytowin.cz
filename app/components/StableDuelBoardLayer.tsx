@@ -469,6 +469,7 @@ function ArenaPhase({
   minigameType,
   onResult,
   onStateSnapshot,
+  remoteP1Ref,
   remoteP2Ref,
   p1IsLegendary = false,
   p2IsLegendary = false,
@@ -480,6 +481,7 @@ function ArenaPhase({
   minigameType: StableMinigameType;
   onResult: (result: MinigameResult) => void;
   onStateSnapshot?: (snapshot: any) => void;
+  remoteP1Ref?: React.MutableRefObject<{ dir: Dir; nitroActivate: boolean; legendaryActivate: boolean } | null>;
   remoteP2Ref?: React.MutableRefObject<{ dir: Dir; nitroActivate: boolean; legendaryActivate: boolean } | null>;
   p1IsLegendary?: boolean;
   p2IsLegendary?: boolean;
@@ -513,6 +515,7 @@ function ArenaPhase({
         p2Speed={p2Speed}
         onResult={onResult}
         onStateSnapshot={onStateSnapshot}
+        remoteP1Ref={remoteP1Ref}
         remoteP2Ref={remoteP2Ref}
         p1IsLegendary={p1IsLegendary}
         p2IsLegendary={p2IsLegendary}
@@ -700,6 +703,8 @@ export default function StableDuelBoardLayer({
     prevPhaseRef.current = phase;
   }, [phase, playSfx]);
 
+  // pvbot: ref pro P1 (human challenger) touch inputy — čten tick looopem v DuelArena
+  const localP1Ref = React.useRef<{ dir: Dir; nitroActivate: boolean; legendaryActivate: boolean } | null>(null);
   // challenger_authority: ref pro remote P2 (defender) inputy
   const remoteP2Ref = React.useRef<{ dir: Dir; nitroActivate: boolean; legendaryActivate: boolean } | null>(null);
   // Broadcast channel lifecycle
@@ -968,6 +973,7 @@ export default function StableDuelBoardLayer({
             onResult={handleDuelResult}
             onStateSnapshot={(s) => { lastLocalStateRef.current = s; }}
             remoteP2Ref={duelRole === "challenger_authority" ? remoteP2Ref : undefined}
+            remoteP1Ref={!duelRole ? localP1Ref : undefined}
             p1IsLegendary={p1IsLegendary}
             p2IsLegendary={p2IsLegendary}
             duelRole={duelRole}
@@ -987,7 +993,7 @@ export default function StableDuelBoardLayer({
               />
             </div>
           )}
-          {/* pvbot mode: human challenger controls P1 via synthetic KeyboardEvents → DuelArena keydown handler */}
+          {/* pvbot mode: human challenger controls P1 via direct ref write — read every tick regardless of tap duration */}
           {!duelRole && minigameType !== "neon_speedrace" && (
             <div className="shrink-0 flex flex-col items-center gap-1 px-4 py-2 select-none">
               <div className="text-[9px] font-black uppercase tracking-widest" style={{ color: challengerTouchColor }}>
@@ -996,32 +1002,32 @@ export default function StableDuelBoardLayer({
               <div className="flex items-center gap-2">
                 <TouchBtn label="←" color={challengerTouchColor} ariaLabel="doleva"
                   onPressStart={() => {
-                    console.info("[DUEL_TOUCH] pointer_down", { mode: "pvbot", humanSide: "p1", targetSide: "p1", humanColor: challengerTouchColor, label: "←", keyCode: "KeyA" });
-                    window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyA", bubbles: true, cancelable: true }));
+                    console.info("[DUEL_TOUCH] pointer_down", { mode: "pvbot", humanSide: "p1", label: "←", dir: "left" });
+                    localP1Ref.current = { dir: "left", nitroActivate: false, legendaryActivate: false };
                   }}
                   onPressEnd={() => {
-                    console.info("[DUEL_TOUCH] pointer_up", { mode: "pvbot", humanSide: "p1", label: "←", keyCode: "KeyA" });
-                    window.dispatchEvent(new KeyboardEvent("keyup", { code: "KeyA", bubbles: true, cancelable: true }));
+                    console.info("[DUEL_TOUCH] pointer_up", { mode: "pvbot", humanSide: "p1", label: "←" });
+                    if (localP1Ref.current) localP1Ref.current = { ...localP1Ref.current, dir: "straight" };
                   }}
                 />
                 <TouchBtn label="BOOST" color={challengerTouchColor} ariaLabel="akce"
                   onPressStart={() => {
-                    console.info("[DUEL_TOUCH] pointer_down", { mode: "pvbot", humanSide: "p1", targetSide: "p1", humanColor: challengerTouchColor, label: "BOOST", keyCode: "KeyQ", isLegendary: p1IsLegendary });
-                    window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyQ", bubbles: true, cancelable: true }));
-                  }}
-                  onPressEnd={() => {
-                    console.info("[DUEL_TOUCH] pointer_up", { mode: "pvbot", humanSide: "p1", label: "BOOST", keyCode: "KeyQ" });
-                    window.dispatchEvent(new KeyboardEvent("keyup", { code: "KeyQ", bubbles: true, cancelable: true }));
+                    console.info("[DUEL_TOUCH] pointer_down", { mode: "pvbot", humanSide: "p1", label: "BOOST", isLegendary: p1IsLegendary });
+                    if (p1IsLegendary) {
+                      localP1Ref.current = { dir: localP1Ref.current?.dir ?? "straight", nitroActivate: false, legendaryActivate: true };
+                    } else {
+                      localP1Ref.current = { dir: localP1Ref.current?.dir ?? "straight", nitroActivate: true, legendaryActivate: false };
+                    }
                   }}
                 />
                 <TouchBtn label="→" color={challengerTouchColor} ariaLabel="doprava"
                   onPressStart={() => {
-                    console.info("[DUEL_TOUCH] pointer_down", { mode: "pvbot", humanSide: "p1", targetSide: "p1", humanColor: challengerTouchColor, label: "→", keyCode: "KeyD" });
-                    window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyD", bubbles: true, cancelable: true }));
+                    console.info("[DUEL_TOUCH] pointer_down", { mode: "pvbot", humanSide: "p1", label: "→", dir: "right" });
+                    localP1Ref.current = { dir: "right", nitroActivate: false, legendaryActivate: false };
                   }}
                   onPressEnd={() => {
-                    console.info("[DUEL_TOUCH] pointer_up", { mode: "pvbot", humanSide: "p1", label: "→", keyCode: "KeyD" });
-                    window.dispatchEvent(new KeyboardEvent("keyup", { code: "KeyD", bubbles: true, cancelable: true }));
+                    console.info("[DUEL_TOUCH] pointer_up", { mode: "pvbot", humanSide: "p1", label: "→" });
+                    if (localP1Ref.current) localP1Ref.current = { ...localP1Ref.current, dir: "straight" };
                   }}
                 />
               </div>
