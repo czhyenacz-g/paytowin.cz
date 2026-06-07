@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "O nás | PayToWin.cz",
-  description: "Kdo stojí za PayToWin.cz, českou online deskovkou o závodech, risku, penězích a špatných rozhodnutích.",
+  title: "O nás | RaceToWin",
+  description: "RaceToWin je engine a aplikace pro českou online deskovku. PayToWin.cz je první kampaň postavenou na tomhle enginu. Za projektem stojí Hynek Dařbujan.",
 };
 
 const cardClass = "rounded-[28px] border border-amber-200/15 bg-[#15110e]/92 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-sm";
@@ -24,21 +24,33 @@ export default function ONasPage() {
           ← Zpět na úvod
         </a>
 
+        {/* Hero */}
         <section className={`${cardClass} overflow-hidden`}>
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.16),transparent_40%),radial-gradient(circle_at_bottom_right,rgba(120,53,15,0.28),transparent_45%)]" />
           <div className="relative space-y-5">
-            <div className={sectionTitle}>O nás</div>
+            <div className={sectionTitle}>O projektu</div>
             <h1 className="max-w-3xl font-serif text-4xl font-semibold leading-[0.95] tracking-[-0.04em] text-amber-50 sm:text-5xl lg:text-6xl">
-              O nás
+              RaceToWin
             </h1>
             <p className="max-w-3xl text-base leading-relaxed text-stone-300 sm:text-lg">
-              Za PayToWin.cz stojím hlavně já — Hynek „czhyenacz“ Dařbujan. Vymýšlím pravidla, ladím flow hry, píšu texty, zkouším AI nástroje a postupně z toho skládám českou online deskovku, kterou si chci sám zahrát.
+              RaceToWin je engine a aplikace pro českou online deskovku o závodech, risku a špatných rozhodnutích. Každá kampaň na tomhle enginu dostane vlastní svět, pravidla a atmosféru.
             </p>
             <p className="max-w-3xl text-sm leading-relaxed text-stone-400 sm:text-[15px]">
-              Proč tedy „o nás“? Protože tahle hra nevzniká ve vzduchoprázdnu. Je o nás, které baví deskové hry, prototypování, vymýšlení vlastních pravidel, tvorba obsahu, testování s kamarády, hraní si s AI a někdy i vrtání se ve zdrojovém kódu jen proto, že to jde.
+              <span className="font-semibold text-amber-200/90">PayToWin.cz</span> je první kampaň postavenou na RaceToWin enginu. Původně se celý projekt jmenoval PayToWin — název byl přímočarý, ale příliš silně odkazoval na peníze a odrazoval lidi, kteří chtěli hlavně hrát. Jméno RaceToWin lépe vystihuje, oč jde: závody, souboje, vítězství. PayToWin.cz zůstává jako URL i identita první kampaně — nic se nemění, jen je jasné, kde co sedí.
             </p>
-            <p className="max-w-3xl text-sm leading-relaxed text-stone-300">
-              Moje další projekty a pokusy najdeš na{" "}
+          </div>
+        </section>
+
+        <div className="mt-5 grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
+          {/* Kdo za tím stojí */}
+          <section className={cardClass}>
+            <div className={sectionTitle}>Kdo za tím stojí</div>
+            <h2 className="mt-3 text-xl font-bold text-amber-50">Hynek „czhyenacz" Dařbujan</h2>
+            <p className="mt-3 text-sm leading-relaxed text-stone-300">
+              Vymýšlím pravidla, ladím flow hry, píšu texty, zkouším AI nástroje a postupně z toho skládám věc, kterou si chci sám zahrát.
+            </p>
+            <p className="mt-3 text-sm leading-relaxed text-stone-400">
+              Moje další projekty najdeš na{" "}
               <a
                 href="https://darbujan.com"
                 target="_blank"
@@ -49,38 +61,32 @@ export default function ONasPage() {
               </a>
               .
             </p>
-          </div>
-        </section>
-
-        <div className="mt-5 grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
-          <section className={cardClass}>
-            <div className={sectionTitle}>Co zkouším</div>
-            <h2 className="mt-3 text-xl font-bold text-amber-50">Projekty, deskovky, AI a kód</h2>
-            <ul className="mt-3 space-y-2 text-sm leading-relaxed text-stone-300">
-              <li>• českou online deskovku, která má vlastní atmosféru</li>
-              <li>• hru, kde se potkává náhoda, risk, peníze a špatná rozhodnutí</li>
-              <li>• vývojový proces, kde AI pomáhá s návrhem, texty i kódem</li>
+            <ul className="mt-4 space-y-1.5 text-sm leading-relaxed text-stone-300">
+              <li>• návrh enginu a herní mechaniky</li>
+              <li>• vývojový proces s AI (design, texty, kód)</li>
               <li>• komunitní testování místo dokonalého produktu od prvního dne</li>
             </ul>
           </section>
 
+          {/* Jak se to vyvíjí */}
           <section className={cardClass}>
-            <div className={sectionTitle}>Jak to beru</div>
+            <div className={sectionTitle}>Jak se to vyvíjí</div>
             <h2 className="mt-3 text-xl font-bold text-amber-50">Experiment ve vývoji</h2>
             <p className="mt-3 text-sm leading-relaxed text-stone-300">
-              PayToWin.cz je zatím beta. Něco funguje, něco se rozbije a něco se během testování úplně přepíše. Pokud tě baví sledovat, jak se hra rodí, jsi tu správně.
+              RaceToWin je zatím v beta fázi. Něco funguje, něco se rozbije a něco se během testování přepíše. Kampaň PayToWin.cz slouží jako první živý provoz enginu.
             </p>
             <p className="mt-3 text-sm leading-relaxed text-stone-400">
-              Když budeš chtít napsat, co je divné, co dává smysl nebo co bys změnil, budu rád. Upřímná zpětná vazba je pro tenhle projekt důležitější než uhlazený marketing.
+              Pokud tě baví sledovat, jak se hra rodí, jsi tu správně. Upřímná zpětná vazba je pro tenhle projekt důležitější než uhlazený marketing.
             </p>
           </section>
         </div>
 
+        {/* Kontakt */}
         <section className={`${cardClass} mt-5`}>
           <div className={sectionTitle}>Kontakt</div>
           <h2 className="mt-3 text-xl font-bold text-amber-50">Zpětná vazba</h2>
           <p className="mt-3 text-sm leading-relaxed text-stone-300">
-            Zpětnou vazbu mi zatím pošli přes kontakt, ze kterého jsi dostal odkaz.
+            Zpětnou vazbu mi zatím pošli přes kontakt, ze kterého jsi dostal odkaz, nebo přímo na mail.
           </p>
           <div className="mt-4">
             <a
