@@ -118,12 +118,17 @@ async function botFinishTurn(
 
   BOT_LOG("bot_finish_turn_start", { gameId, botId: botPlayer.id, botName: botPlayer.name, nextIndex: params.nextIndex, turnCount: params.turnCount });
 
-  await Promise.all([
+  const finishResults = await Promise.all([
     supabase.from("game_state").update(stateUpdate).eq("game_id", gameId),
     ...(Object.keys(playerUpdate).length > 0
       ? [supabase.from("players").update(playerUpdate).eq("id", botPlayer.id)]
       : []),
   ]);
+  const stateWriteErr = finishResults[0]?.error;
+  if (stateWriteErr) {
+    console.warn("[BOT_FLOW] bot_finish_turn_write_failed", { gameId, botId: botPlayer.id, botName: botPlayer.name, error: stateWriteErr.message });
+    throw new Error(`bot_finish_turn_write_failed: ${stateWriteErr.message}`);
+  }
 
   BOT_LOG("bot_finish_turn_done", { gameId, botId: botPlayer.id, botName: botPlayer.name, nextIndex: params.nextIndex, turnCount: params.turnCount });
 
@@ -591,10 +596,13 @@ export async function executeBotHorseDecisionAction(
     const finalBot = objectiveHit ? { ...paidBot, coins: finalCoins } : paidBot;
     BOT_LOG("bot_horse_decision_buy", { gameId, turnCount: expectedTurnCount, botId: botPlayer.id, botName: botPlayer.name, racerName: field.racer.name, racerId: field.racer.id, gameYear, alreadyBoughtThisYear, coinsAfter: finalCoins, objectiveHit: !!objectiveHit });
 
-    await supabase.from("players").update({
+    const { error: purchaseErr } = await supabase.from("players").update({
       coins:  finalBot.coins,
       horses: updatedHorses,
     }).eq("id", botPlayer.id);
+    if (purchaseErr) {
+      console.warn("[BOT_FLOW] bot_horse_purchase_write_failed", { gameId, botId: botPlayer.id, botName: botPlayer.name, racerName: field.racer.name, error: purchaseErr.message });
+    }
 
     const log = [`${botPlayer.name} koupil závodníka ${field.racer.emoji} ${field.racer.name} (${hKey})`, ...logEntries];
     if (objectiveHit) {
