@@ -41,6 +41,21 @@ export default function ONasPage() {
           </div>
         </section>
 
+        {/* Proč si to zahrát */}
+        <section className={`${cardClass} mt-5`}>
+          <div className={sectionTitle}>Proč si to zahrát</div>
+          <h2 className="mt-3 text-xl font-bold text-amber-50">Svižná deskovka pro partu</h2>
+          <p className="mt-3 text-sm leading-relaxed text-stone-300">
+            PayToWin je online deskovka pro přátele. Kupuješ závodníky, posíláš je do závodů, riskuješ herní peníze a doufáš, že tě jedna špatná karta nepošle zpátky na zem.
+          </p>
+          <p className="mt-3 text-sm leading-relaxed text-stone-400">
+            Cíl není sedět u stolu celé odpoledne a čekat, až někdo konečně dohraje tah. Partie má být rychlejší, škodolibější a víc o společných momentech: kdo přestřelil nákup, kdo zariskoval v závodě, komu karta otočila hru a kdo se směje naposledy.
+          </p>
+          <p className="mt-3 text-sm leading-relaxed text-stone-400">
+            Hraje se v prohlížeči bez instalace — na počítači i mobilu. Můžeš začít u stolu, pokračovat z gauče nebo si odskočit s telefonem v ruce. Hra tě nemá držet na jednom místě.
+          </p>
+        </section>
+
         <div className="mt-5 grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
           {/* Kdo za tím stojí */}
           <section className={cardClass}>
