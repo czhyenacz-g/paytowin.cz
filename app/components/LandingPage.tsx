@@ -948,14 +948,17 @@ export default function LandingPage() {
                       <div className="w-full lg:flex lg:justify-center">
                         <div className="w-full lg:max-w-[13.5rem]">
                           {!isDiscordConnected && (
-                            <input
-                              ref={playerNameInputRef}
-                              type="text"
-                              value={name}
-                              onChange={(e) => setName(e.target.value)}
-                              placeholder="Tvoje jméno"
-                              className="w-full h-[34px] sm:h-9 min-w-0 rounded-lg border border-slate-700 bg-slate-800/70 px-3 text-sm text-amber-100 outline-none placeholder:text-slate-500 focus:border-amber-600 focus:bg-slate-800/90"
-                            />
+                            <>
+                              <input
+                                ref={playerNameInputRef}
+                                type="text"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                placeholder="Tvoje jméno"
+                                className="w-full h-8 min-w-0 rounded-lg border border-slate-700 bg-slate-800/70 px-3 text-sm text-amber-100 outline-none placeholder:text-slate-500 focus:border-amber-600 focus:bg-slate-800/90"
+                              />
+                              <div className="my-1.5 h-px bg-slate-700/50" />
+                            </>
                           )}
                           <div className="flex flex-col gap-1.5 sm:flex-row sm:items-stretch sm:gap-2">
                             <input
@@ -964,7 +967,7 @@ export default function LandingPage() {
                               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                               placeholder="Kód hry"
                               maxLength={5}
-                              className="h-[34px] sm:h-9 min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-800/70 px-3 text-sm uppercase tracking-[0.18em] sm:tracking-[0.2em] text-amber-100 outline-none placeholder:tracking-normal placeholder:text-slate-500 focus:border-amber-600 focus:bg-slate-800/90 sm:min-w-[7.25rem] lg:max-w-[8.25rem]"
+                              className="h-8 min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-800/70 px-3 text-sm uppercase tracking-[0.18em] sm:tracking-[0.2em] text-amber-100 outline-none placeholder:tracking-normal placeholder:text-slate-500 focus:border-amber-600 focus:bg-slate-800/90 sm:min-w-[7.25rem] lg:max-w-[8.25rem]"
                             />
                             <div
                               className="relative w-full shrink-0 sm:w-[7.5rem] lg:w-[7.25rem]"
@@ -975,7 +978,7 @@ export default function LandingPage() {
                               <button
                                 type="button"
                                 disabled={joinButtonDisabled}
-                                className="h-[34px] sm:h-9 w-full rounded-lg bg-amber-700 px-4 text-[13px] sm:text-sm font-semibold text-white transition hover:bg-amber-600 disabled:border disabled:border-slate-700 disabled:bg-slate-800/50 disabled:text-slate-500"
+                                className="h-8 w-full rounded-lg bg-amber-700 px-4 text-[13px] sm:text-sm font-semibold text-white transition hover:bg-amber-600 disabled:border disabled:border-slate-700 disabled:bg-slate-800/50 disabled:text-slate-500"
                               >
                                 {discordSessionLoading && joinCode.trim() ? "Načítám…" : "Připojit"}
                               </button>
