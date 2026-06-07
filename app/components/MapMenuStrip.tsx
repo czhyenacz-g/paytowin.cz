@@ -28,6 +28,8 @@ interface Panel {
   bgPosition?: string;
   href?:       string;
   requiredAccess?: string;
+  location?:   string;
+  chapterOf?:  string;
 }
 
 interface MapMenuStripProps {
@@ -49,11 +51,11 @@ function isPanelXpUnlocked(panelId: string, currentXp: number | null | undefined
 }
 
 const PANELS: Panel[] = [
-  { id: "mapa-1",  label: "Denní dostihy",  emoji: "🏇",  desc: "Banka udělala chybu. Ty z ní chceš udělat titulní příběh.", index: "01", bgFrom: "from-slate-700",   bgTo: "to-slate-950",   bgImage: "/bg_horse_day.webp",     accentColor: "#f59e0b", available: true,  requiredAccess: "theme_horse_day"     },
-  { id: "mapa-2",  label: "Noční dostihy",  emoji: "🌙",  desc: "Přes den se závodí. V noci se vydělává.",                        index: "02", bgFrom: "from-emerald-900", bgTo: "to-emerald-950", bgImage: "/bg_horse_night.webp",    accentColor: "#34d399", available: true,  requiredAccess: "theme_horse_night"   },
-  { id: "mapa-3",  label: "Chuchle 1930",   emoji: "🏇",  desc: "Návrat ke kořenům.",                                         index: "03", bgFrom: "from-blue-900",    bgTo: "to-blue-950",    bgImage: "/bg_horse_classic.webp",  accentColor: "#60a5fa", available: true,  requiredAccess: "theme_horse_classic" },
-  { id: "mapa-4",  label: "Denní auta",     emoji: "🏎️", desc: "Od stájí ke garážím. Od ovsa k benzínu.",                   index: "04", bgFrom: "from-red-900",     bgTo: "to-red-950",     bgImage: "/bg_car_day.webp",        accentColor: "#f87171", available: true,  requiredAccess: "theme_car_day"       },
-  { id: "mapa-5",  label: "Noční auta",     emoji: "🌃",  desc: "Město spí. Motory ne.",                                      index: "05", bgFrom: "from-violet-900",  bgTo: "to-violet-950",  bgImage: "/bg_car_night.webp",      accentColor: "#a78bfa", available: true,  requiredAccess: "theme_car_night"     },
+  { id: "mapa-1",  label: "Denní dostihy",  emoji: "🏇",  desc: "Banka udělala chybu. Ty z ní chceš udělat titulní příběh.",   index: "01", bgFrom: "from-slate-700",   bgTo: "to-slate-950",   bgImage: "/bg_horse_day.webp",     accentColor: "#f59e0b", available: true,  requiredAccess: "theme_horse_day",     location: "USA · 1921",          chapterOf: "paytowin" },
+  { id: "mapa-2",  label: "Noční dostihy",  emoji: "🌙",  desc: "Přes den se závodí pro slávu. V noci pro přežití.",           index: "02", bgFrom: "from-emerald-900", bgTo: "to-emerald-950", bgImage: "/bg_horse_night.webp",    accentColor: "#34d399", available: true,  requiredAccess: "theme_horse_night",   location: "USA · 1925",          chapterOf: "paytowin" },
+  { id: "mapa-3",  label: "Chuchle 1930",   emoji: "🏇",  desc: "Po krizi začínáš znovu tam, kde mají dostihy české kořeny.", index: "03", bgFrom: "from-blue-900",    bgTo: "to-blue-950",    bgImage: "/bg_horse_classic.webp",  accentColor: "#60a5fa", available: true,  requiredAccess: "theme_horse_classic", location: "Chuchle · 1930",      chapterOf: "paytowin" },
+  { id: "mapa-4",  label: "Denní auta",     emoji: "🏎️", desc: "Koně ustupují. Motory přebírají budoucnost.",                 index: "04", bgFrom: "from-red-900",     bgTo: "to-red-950",     bgImage: "/bg_car_day.webp",        accentColor: "#f87171", available: true,  requiredAccess: "theme_car_day",       location: "Evropa · 1934",       chapterOf: "paytowin" },
+  { id: "mapa-5",  label: "Noční auta",     emoji: "🌃",  desc: "Po setmění už nejde jen o rychlost.",                         index: "05", bgFrom: "from-violet-900",  bgTo: "to-violet-950",  bgImage: "/bg_car_night.webp",      accentColor: "#a78bfa", available: true,  requiredAccess: "theme_car_night",     location: "Noční město · 1936",  chapterOf: "paytowin" },
   { id: "ostatni", label: "Komunitní mapy", emoji: "📦",  desc: "Další tratě od komunity",                                    index: "06", bgFrom: "from-teal-800",    bgTo: "to-teal-950",    bgImage: "/bg_other_maps.webp",     accentColor: "#2dd4bf", available: true,  requiredAccess: "community_maps"      },
   { id: "editor",  label: "Editor",         emoji: "🛠️", desc: "Postav vlastní trať",                                        index: "07", bgFrom: "from-orange-900",  bgTo: "to-orange-950",  bgImage: "/bg_builder_yard.webp",   accentColor: "#fb923c", available: true,  requiredAccess: "editor"              },
   { id: "profil",  label: "Tvůj profil",    emoji: "🛡️", desc: "Statistiky, odměny a reputace",                             index: "08", bgFrom: "from-slate-500",   bgTo: "to-slate-800",   bgImage: "/bg_dark_racer.webp",     accentColor: "#f8fafc", available: true,  requiredAccess: "profile", idleOverlayOpacity: 0.22, bgPosition: "42% 18%" },
@@ -130,6 +132,12 @@ export default function MapMenuStrip({ onPanelClick, currentXp, isLoggedIn = fal
 
   return (
     <>
+      {/* Campaign header */}
+      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 mb-1.5 px-0.5">
+        <span className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-400/85 select-none">PayToWin — první kampaň</span>
+        <span className="text-[9px] text-amber-200/35 tracking-wider select-none">5 kapitol · 1921–1936 · od dostihů ke strojům</span>
+      </div>
+
       {/* ════════════════════════════════════════════════════════════════════
           MOBILE render — zobrazí se jen na < sm (< 640 px)
           Jednoduchý vertikální seznam karet pod sebou, žádný accordion.
@@ -153,21 +161,24 @@ export default function MapMenuStrip({ onPanelClick, currentXp, isLoggedIn = fal
           };
 
           return (
-            <div
-              key={panel.id}
-              role="button"
-              onClick={handleClick}
-              className={[
-                "relative flex items-center gap-3 px-4 min-h-[72px] overflow-hidden",
-                panel.bgFrom, "bg-gradient-to-b", panel.bgTo,
-                isLocked ? "cursor-pointer" : (isNavigable ? "cursor-pointer active:brightness-75" : "cursor-default"),
-              ].join(" ")}
-              style={panel.bgImage ? {
-                backgroundImage: `url(${panel.bgImage})`,
-                backgroundSize: "cover",
-                backgroundPosition: panel.bgPosition ?? "center",
-              } : undefined}
-            >
+            <React.Fragment key={panel.id}>
+              {panel.id === "ostatni" && (
+                <div className="bg-black/50 px-4 py-1 text-[8px] font-black uppercase tracking-[0.25em] text-white/25 select-none pointer-events-none">Ostatní sekce</div>
+              )}
+              <div
+                role="button"
+                onClick={handleClick}
+                className={[
+                  "relative flex items-center gap-3 px-4 min-h-[72px] overflow-hidden",
+                  panel.bgFrom, "bg-gradient-to-b", panel.bgTo,
+                  isLocked ? "cursor-pointer" : (isNavigable ? "cursor-pointer active:brightness-75" : "cursor-default"),
+                ].join(" ")}
+                style={panel.bgImage ? {
+                  backgroundImage: `url(${panel.bgImage})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: panel.bgPosition ?? "center",
+                } : undefined}
+              >
               {/* Tmavý overlay */}
               <div className="absolute inset-0 bg-black/52 pointer-events-none" />
 
@@ -183,6 +194,9 @@ export default function MapMenuStrip({ onPanelClick, currentXp, isLoggedIn = fal
                   <span className="text-xl leading-none shrink-0">{panel.emoji}</span>
                   <span className="text-sm font-bold text-white truncate">{panel.label}</span>
                 </div>
+                {panel.location && (
+                  <p className="mt-0 text-[9px] tracking-wide truncate" style={{ color: panel.accentColor, opacity: 0.65 }}>{panel.location}</p>
+                )}
                 {isAvailable && panel.desc && (
                   <p className="mt-0.5 text-[11px] leading-tight text-white/55 truncate">{panel.desc}</p>
                 )}
@@ -198,7 +212,8 @@ export default function MapMenuStrip({ onPanelClick, currentXp, isLoggedIn = fal
               ) : (isNavigable && isAvailable) ? (
                 <span className="relative z-10 shrink-0 text-white/35 text-2xl leading-none font-light">›</span>
               ) : null}
-            </div>
+              </div>
+            </React.Fragment>
           );
         })}
       </div>
@@ -295,6 +310,15 @@ export default function MapMenuStrip({ onPanelClick, currentXp, isLoggedIn = fal
               >
                 {panel.index}
               </div>
+
+              {panel.location && (
+                <div
+                  className="absolute top-[22px] left-3 text-[7px] tracking-[0.12em] uppercase select-none z-10 drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)]"
+                  style={{ color: "#fde68a", opacity: isHovered ? 0.70 : 0.40 }}
+                >
+                  {panel.location}
+                </div>
+              )}
 
               {/* Emoji — dekorativní (bez bgImage) */}
               {!panel.bgImage && (
