@@ -44,7 +44,7 @@ export default function TesteriPage() {
             ← Zpět na PayToWin.cz
           </Link>
           <span className="rounded-full border border-amber-300/20 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-amber-300">
-            Beta v0.7.9-seno
+            Beta v0.7.32-seno
           </span>
         </div>
 
@@ -131,6 +131,40 @@ export default function TesteriPage() {
             </p>
           </section>
         </div>
+
+        {/* Síň slávy testerů */}
+        <section className={`${paperCard} mt-5 p-5 sm:p-6`}>
+          <div className={sectionTitle}>Síň slávy</div>
+          <h2 className="mt-3 text-xl font-bold text-amber-50">Testeři, kteří šli do toho první</h2>
+          <p className="mt-2 text-sm leading-relaxed text-stone-400">
+            Bez nich by hra ještě dřepěla v garážovém betě. Díky za odvahu.
+          </p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            {[
+              { name: "Seno", note: "první v sedle" },
+              { name: "Petr S.", note: null },
+              { name: "Aleš K.", note: null },
+              { name: "Vojta S.", note: null },
+              { name: "\"Mejtoš\"", note: null },
+            ].map((t, i) => (
+              <div
+                key={t.name}
+                className="flex items-center gap-2.5 rounded-2xl border border-amber-200/15 bg-black/30 px-4 py-3"
+              >
+                <span className="text-lg leading-none" aria-hidden>🐴</span>
+                <div>
+                  <div className="text-sm font-bold text-amber-100">{t.name}</div>
+                  {t.note && (
+                    <div className="text-[11px] text-amber-300/60">{t.note}</div>
+                  )}
+                </div>
+                {i === 0 && (
+                  <span className="ml-1 rounded-full border border-amber-300/30 bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-amber-300">#1</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
 
         <section className={`${paperCard} mt-5 p-5 sm:p-6`}>
           <div className={sectionTitle}>Jak se zapojit</div>
