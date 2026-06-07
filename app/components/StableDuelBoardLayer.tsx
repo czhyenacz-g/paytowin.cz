@@ -60,9 +60,7 @@ interface Props {
 
 type Phase = "prestart" | "arena" | "result" | "waiting_result";
 
-// DEBUG: slow-motion multiplier for mobile touch testing — revert to 1 for production
-const STABLE_DUEL_TEST_SPEED_MULT = 3;
-const BOARD_DUEL_CONFIG: DuelConfig  = { gridW: 34, gridH: 24, maxTicks: 244, tickMs: Math.round(156 * STABLE_DUEL_TEST_SPEED_MULT) };
+const BOARD_DUEL_CONFIG: DuelConfig  = { gridW: 34, gridH: 24, maxTicks: 244, tickMs: 156 };
 const BOARD_SPEED_CONFIG: SpeedConfig = {
   arenaW: 480, arenaH: 320,
   maxTicks: 120, tickMs: 80,
@@ -420,10 +418,13 @@ function PreStartPhase({
                 <NeonKeyCap label="W A S D" color={challengerColor} />
                 <span className="text-sm text-slate-300 ml-2">zatáčet</span>
               </div>
-              <div className="flex sm:hidden items-center gap-2">
-                <NeonKeyCap label="←" color={challengerColor} />
-                <NeonKeyCap label="BOOST" color={challengerColor} />
-                <NeonKeyCap label="→" color={challengerColor} />
+              {/* mobile: text-only hint — tlačítka se zobrazí až v herní fázi */}
+              <div className="flex sm:hidden items-center gap-2 text-[10px] font-mono pointer-events-none" style={{ color: `${challengerColor}55` }}>
+                <span>← zatočit</span>
+                <span>·</span>
+                <span>BOOST</span>
+                <span>·</span>
+                <span>→ zatočit</span>
               </div>
               <div className="hidden sm:flex items-center gap-1">
                 <NeonKeyCap label="Q" color={challengerColor} />
@@ -445,10 +446,13 @@ function PreStartPhase({
                 <NeonKeyCap label="SPACE" color={defenderColor} />
                 <span className="text-sm text-slate-300 ml-2">{p2IsLegendary ? "legendary boost" : "nitro"}</span>
               </div>
-              <div className="flex sm:hidden items-center gap-2">
-                <NeonKeyCap label="←" color={defenderColor} />
-                <NeonKeyCap label="BOOST" color={defenderColor} />
-                <NeonKeyCap label="→" color={defenderColor} />
+              {/* mobile: text-only hint */}
+              <div className="flex sm:hidden items-center gap-2 text-[10px] font-mono pointer-events-none" style={{ color: `${defenderColor}55` }}>
+                <span>← zatočit</span>
+                <span>·</span>
+                <span>BOOST</span>
+                <span>·</span>
+                <span>→ zatočit</span>
               </div>
             </div>
           )}
@@ -728,6 +732,7 @@ export default function StableDuelBoardLayer({
   // Log human side when pvbot arena starts — helps verify input mapping on mobile
   React.useEffect(() => {
     if (phase !== "arena" || duelRole) return;
+    const isIOS = typeof navigator !== "undefined" && /iP(hone|ad|od)/.test(navigator.userAgent);
     console.info("[DUEL_TOUCH] arena_start_pvbot", {
       humanSide: "p1_challenger",
       humanColor: challengerTouchColor,
@@ -735,7 +740,7 @@ export default function StableDuelBoardLayer({
       botName: defender.name,
       minigameType,
       tickMs: BOARD_DUEL_CONFIG.tickMs,
-      speedMult: STABLE_DUEL_TEST_SPEED_MULT,
+      isIOS,
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, duelRole]);
@@ -993,40 +998,45 @@ export default function StableDuelBoardLayer({
               />
             </div>
           )}
-          {/* pvbot mode: human challenger controls P1 via direct ref write — read every tick regardless of tap duration */}
+          {/* pvbot mode: human challenger controls P1 via direct ref write — minHoldMs ensures tick catches the tap */}
           {!duelRole && minigameType !== "neon_speedrace" && (
             <div className="shrink-0 flex flex-col items-center gap-1 px-4 py-2 select-none">
               <div className="text-[9px] font-black uppercase tracking-widest" style={{ color: challengerTouchColor }}>
                 👤 TY · {challenger.name}
               </div>
               <div className="flex items-center gap-2">
-                <TouchBtn label="←" color={challengerTouchColor} ariaLabel="doleva"
+                <TouchBtn label="←" color={challengerTouchColor} ariaLabel="doleva" minHoldMs={200}
                   onPressStart={() => {
-                    console.info("[DUEL_TOUCH] pointer_down", { mode: "pvbot", humanSide: "p1", label: "←", dir: "left" });
+                    console.info("[DUEL_TOUCH] down", { action: "left", phase: "arena", mode: "pvbot", humanSide: "p1", refWrite: "dir:left" });
                     localP1Ref.current = { dir: "left", nitroActivate: false, legendaryActivate: false };
                   }}
                   onPressEnd={() => {
-                    console.info("[DUEL_TOUCH] pointer_up", { mode: "pvbot", humanSide: "p1", label: "←" });
+                    console.info("[DUEL_TOUCH] up", { action: "left", phase: "arena", mode: "pvbot" });
                     if (localP1Ref.current) localP1Ref.current = { ...localP1Ref.current, dir: "straight" };
                   }}
                 />
-                <TouchBtn label="BOOST" color={challengerTouchColor} ariaLabel="akce"
+                <TouchBtn label="BOOST" color={challengerTouchColor} ariaLabel="akce" minHoldMs={200}
                   onPressStart={() => {
-                    console.info("[DUEL_TOUCH] pointer_down", { mode: "pvbot", humanSide: "p1", label: "BOOST", isLegendary: p1IsLegendary });
+                    const action = p1IsLegendary ? "legendaryActivate" : "nitroActivate";
+                    console.info("[DUEL_TOUCH] down", { action: "boost", phase: "arena", mode: "pvbot", humanSide: "p1", refWrite: action, isLegendary: p1IsLegendary });
                     if (p1IsLegendary) {
                       localP1Ref.current = { dir: localP1Ref.current?.dir ?? "straight", nitroActivate: false, legendaryActivate: true };
                     } else {
                       localP1Ref.current = { dir: localP1Ref.current?.dir ?? "straight", nitroActivate: true, legendaryActivate: false };
                     }
                   }}
+                  onPressEnd={() => {
+                    console.info("[DUEL_TOUCH] up", { action: "boost", phase: "arena", mode: "pvbot" });
+                    if (localP1Ref.current) localP1Ref.current = { ...localP1Ref.current, nitroActivate: false, legendaryActivate: false };
+                  }}
                 />
-                <TouchBtn label="→" color={challengerTouchColor} ariaLabel="doprava"
+                <TouchBtn label="→" color={challengerTouchColor} ariaLabel="doprava" minHoldMs={200}
                   onPressStart={() => {
-                    console.info("[DUEL_TOUCH] pointer_down", { mode: "pvbot", humanSide: "p1", label: "→", dir: "right" });
+                    console.info("[DUEL_TOUCH] down", { action: "right", phase: "arena", mode: "pvbot", humanSide: "p1", refWrite: "dir:right" });
                     localP1Ref.current = { dir: "right", nitroActivate: false, legendaryActivate: false };
                   }}
                   onPressEnd={() => {
-                    console.info("[DUEL_TOUCH] pointer_up", { mode: "pvbot", humanSide: "p1", label: "→" });
+                    console.info("[DUEL_TOUCH] up", { action: "right", phase: "arena", mode: "pvbot" });
                     if (localP1Ref.current) localP1Ref.current = { ...localP1Ref.current, dir: "straight" };
                   }}
                 />
