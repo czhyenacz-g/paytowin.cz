@@ -142,9 +142,9 @@ export default function GameFinishedScreen({
             <>
               <div className="px-[18%] py-8 text-center border-b border-stone-500">
                 <div className="text-5xl">💀</div>
-                <div className="mt-3 text-[9px] font-bold uppercase tracking-[0.22em] text-stone-500">Tréninková zpráva</div>
+                <div className="mt-3 text-[9px] font-bold uppercase tracking-[0.22em] text-stone-700">Tréninková zpráva</div>
                 <h2 className="mt-1 font-serif text-2xl font-black text-stone-900">Zkrachoval jsi</h2>
-                <p className="mt-1 text-xs italic text-stone-500">Tréninková hra skončila porážkou.</p>
+                <p className="mt-1 text-xs italic text-stone-600">Tréninková hra skončila porážkou.</p>
               </div>
               {isPersonalized && (
                 <div className="px-[18%] py-3 border-b border-stone-400 bg-stone-50/60">
@@ -169,21 +169,21 @@ export default function GameFinishedScreen({
                 </div>
               ) : isPersonalized && winnerIsBot ? (
                 <div className="px-[18%] py-6 border-b border-stone-500">
-                  <div className="text-[9px] font-bold uppercase tracking-[0.22em] text-stone-500">Výsledek kola</div>
+                  <div className="text-[9px] font-bold uppercase tracking-[0.22em] text-stone-700">Výsledek kola</div>
                   <h2 className="mt-2 font-serif text-[28px] font-black leading-tight text-stone-700">
                     🤖 Vyhrál bot
                   </h2>
-                  <p className="mt-2 text-xs italic text-stone-500">
+                  <p className="mt-2 text-xs italic text-stone-600">
                     Tréninkový soupeř byl tentokrát rychlejší.
                   </p>
                 </div>
               ) : isPersonalized ? (
                 <div className="px-[18%] py-6 border-b border-stone-500">
-                  <div className="text-[9px] font-bold uppercase tracking-[0.22em] text-stone-500">Konečné výsledky</div>
+                  <div className="text-[9px] font-bold uppercase tracking-[0.22em] text-stone-700">Konečné výsledky</div>
                   <h2 className="mt-2 font-serif text-[28px] font-black leading-tight text-stone-900 break-words">
                     {winner?.name ?? "—"}
                   </h2>
-                  <p className="mt-2 text-xs italic text-stone-500">Vyhrál závod bez dluhů.</p>
+                  <p className="mt-2 text-xs italic text-stone-600">Vyhrál závod bez dluhů.</p>
                   {myRank !== null && (
                     <p className="mt-2 text-xs font-medium text-stone-700">
                       Tvoje místo: {myRank}.{myPlayer && isBankrupt(myPlayer) ? " — zkrachoval jsi" : ""}
@@ -197,7 +197,7 @@ export default function GameFinishedScreen({
                   <h2 className="mt-2 font-serif text-[30px] font-black leading-tight text-stone-900 break-words">
                     {winner?.name ?? "—"}
                   </h2>
-                  <p className="mt-2 text-xs italic text-stone-500">
+                  <p className="mt-2 text-xs italic text-stone-600">
                     Poslední závodník bez dluhů.
                   </p>
                   {winner && (
@@ -227,7 +227,7 @@ export default function GameFinishedScreen({
                           <span className="rounded-full bg-amber-200 px-2.5 py-0.5 text-[11px] font-black text-amber-800">+1</span>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-1.5 text-xs text-stone-400 italic">
+                        <div className="flex items-center gap-1.5 text-xs text-stone-600 italic">
                           <span>⭐</span> Výherní hvězdy se počítají jen za hry proti reálným hráčům
                         </div>
                       )}
@@ -243,11 +243,11 @@ export default function GameFinishedScreen({
                       <div className="flex items-center justify-between text-xs font-medium text-stone-600">
                         <span className="flex items-center gap-1.5"><span className="text-amber-500">⚡</span> XP za účast</span>
                         {xpReward !== undefined && (
-                          <span className="font-bold text-stone-500">+{xpReward} XP</span>
+                          <span className="font-bold text-stone-700">+{xpReward} XP</span>
                         )}
                       </div>
                       {!isWinStarEligible && (
-                        <div className="flex items-center gap-1.5 text-xs text-stone-400 italic">
+                        <div className="flex items-center gap-1.5 text-xs text-stone-600 italic">
                           <span>⭐</span> Výherní hvězdy se počítají jen za hry proti reálným hráčům
                         </div>
                       )}
@@ -289,14 +289,14 @@ export default function GameFinishedScreen({
 
               {/* ── Konečné pořadí ── */}
               <div className="px-[18%] py-4 border-b border-stone-500 bg-[#f4efe4]/60">
-                <div className="mb-2 text-[9px] font-bold uppercase tracking-[0.22em] text-stone-500">Konečné pořadí</div>
+                <div className="mb-2 text-[9px] font-bold uppercase tracking-[0.22em] text-stone-700">Konečné pořadí</div>
                 <ScoreTable players={players} bustOrder={bustOrder} titles={matchTitles} />
               </div>
 
               {/* ── Padlí závodníci ── */}
               {sortedLosers.length > 0 && (
                 <div className="px-[18%] py-4 border-b border-stone-500 bg-[#f4efe4]/70">
-                  <div className="mb-2 text-[9px] font-bold uppercase tracking-[0.22em] text-stone-500">Padlí závodníci</div>
+                  <div className="mb-2 text-[9px] font-bold uppercase tracking-[0.22em] text-stone-700">Padlí závodníci</div>
                   <div className="space-y-2.5">
                     {sortedLosers.map(p => (
                       <div key={p.id}>

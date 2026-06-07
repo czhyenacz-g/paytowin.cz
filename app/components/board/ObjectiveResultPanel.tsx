@@ -27,19 +27,19 @@ export default function ObjectiveResultPanel({
 
   return (
     <div className="px-6 py-4 border-b border-stone-500">
-      <div className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.22em] text-stone-500">
+      <div className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.22em] text-stone-700">
         {sectionLabel}
       </div>
       <div className="text-sm font-bold text-stone-800 leading-snug">{objectiveTitle}</div>
-      <div className="mt-0.5 text-xs text-stone-500 italic leading-snug">{objectiveTask}</div>
+      <div className="mt-0.5 text-xs text-stone-600 italic leading-snug">{objectiveTask}</div>
 
       <div className="mt-2 space-y-0.5">
         {completed ? (
           <div className="text-xs font-bold text-emerald-700">✓ Splněno</div>
         ) : (
-          <div className="text-xs font-bold text-stone-400">✗ Nesplněno</div>
+          <div className="text-xs font-bold text-stone-600">✗ Nesplněno</div>
         )}
-        <div className="text-[10px] text-stone-400 leading-snug">{reason}</div>
+        <div className="text-[10px] text-stone-600 leading-snug">{reason}</div>
         {mode === "shared" && completed && winnerName && (
           <div className="text-xs text-stone-600">
             Kontrakt splnil jako první:{" "}
@@ -57,13 +57,13 @@ export default function ObjectiveResultPanel({
             </div>
           ) : null}
           {profileXpNote ? (
-            <div className="text-[10px] text-stone-500">{profileXpNote}</div>
+            <div className="text-[10px] text-stone-600">{profileXpNote}</div>
           ) : null}
         </div>
       )}
 
       {!inGameCoinsRewarded && !profileXpNote && (
-        <div className="mt-2 text-[10px] text-stone-500 italic">{rewardLabel}</div>
+        <div className="mt-2 text-[10px] text-stone-600 italic">{rewardLabel}</div>
       )}
     </div>
   );

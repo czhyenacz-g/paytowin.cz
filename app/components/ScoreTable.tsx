@@ -53,20 +53,20 @@ export default function ScoreTable({ players, bustOrder, className = "", titles 
       <tbody>
         {sorted.map((entry, i) => (
           <tr key={entry.id} className={i < sorted.length - 1 ? "border-b border-slate-100" : ""}>
-            <td className="w-6 py-1.5 pr-2 text-center text-xs font-bold text-slate-400 tabular-nums">
+            <td className="w-6 py-1.5 pr-2 text-center text-xs font-bold text-stone-500 tabular-nums">
               {i + 1}.
             </td>
             <td className="py-1.5 pr-2 min-w-0">
               <div className="font-medium text-slate-800 leading-snug break-words">{entry.name}</div>
               {titles?.get(entry.id) && (
-                <div className="text-[10px] text-stone-500 leading-snug break-words">
+                <div className="text-[10px] text-stone-600 leading-snug break-words">
                   {titles.get(entry.id)!.emoji} {titles.get(entry.id)!.label}
                 </div>
               )}
             </td>
             <td className="py-1.5 pl-3 text-right tabular-nums whitespace-nowrap align-top">
               {entry.isBankrupt ? (
-                <span className="text-xs text-red-400 font-medium">zkrachoval</span>
+                <span className="text-xs text-red-600 font-medium">zkrachoval</span>
               ) : (
                 <span className="font-semibold text-emerald-600">{entry.coins.toLocaleString("cs-CZ")} 💰</span>
               )}
