@@ -65,18 +65,30 @@ export function useOnlineBotTrigger({ gameId, gameState, players, myPlayerId, is
     console.info("[BOT_FLOW] bot_trigger_scheduled", { gameId, turnCount: gameState.turn_count, botId: botPlayer.id, botName: botPlayer.name, myPlayerId, pendingType, delayMs: Math.round(delay) });
 
     const run = async () => {
+      let actionAttempted = false;
       try {
         if (gameState.horse_pending) {
           console.info("[BOT_FLOW] bot_trigger_seen", { gameId, turnCount: gameState.turn_count, currentPlayerIndex: gameState.current_player_index, botId: botPlayer.id, botName: botPlayer.name, myPlayerId, action: "horse_decision" });
+          actionAttempted = true;
           await executeBotHorseDecisionAction(gameId, gameState.turn_count);
         } else if (!gameState.card_pending) {
           console.info("[BOT_FLOW] bot_trigger_seen", { gameId, turnCount: gameState.turn_count, currentPlayerIndex: gameState.current_player_index, botId: botPlayer.id, botName: botPlayer.name, myPlayerId, action: "bot_turn" });
+          actionAttempted = true;
           await executeBotTurnAction(gameId, gameState.turn_count);
         } else {
           console.info("[BOT_FLOW] bot_trigger_skipped", { gameId, turnCount: gameState.turn_count, botName: botPlayer.name, reason: "card_pending" });
           return; // žádná akce — přeskočí refetch, finally resetuje scheduledRef
         }
-        // Explicitní refetch po bot akci — realtime není garantované na mobilu
+      } catch (err) {
+        // Server action selhal (síťová chyba, timeout) — DB mohla být úspěšně zapsána.
+        // Refetch se musí zavolat i po výjimce, jinak klient zůstane ve stale stavu.
+        console.warn("[BOT_FLOW] bot_action_exception", { gameId, turnCount: gameState.turn_count, action: gameState.horse_pending ? "horse_decision" : "bot_turn", error: String(err) });
+      } finally {
+        scheduledRef.current = false;
+      }
+      // Explicitní refetch po každé bot akci — i po výjimce v server action.
+      // Realtime není garantované na mobilu; refetch je idempotentní.
+      if (actionAttempted) {
         const refetch = onBotActionCompleteRef.current;
         if (refetch) {
           console.info("[BOT_FLOW] bot_action_complete_callback_start", { gameId, turnCount: gameState.turn_count });
@@ -87,8 +99,6 @@ export function useOnlineBotTrigger({ gameId, gameState, players, myPlayerId, is
             console.warn("[BOT_FLOW] bot_action_complete_callback_failed", { gameId });
           }
         }
-      } finally {
-        scheduledRef.current = false;
       }
     };
 
