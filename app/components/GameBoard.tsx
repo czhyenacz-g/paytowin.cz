@@ -921,10 +921,27 @@ export default function GameBoard({ gameCode }: Props) {
           const rentGameEnds = (updatedPlayers.length >= 2 && activeAfterRent.length === 1) ||
                                (updatedPlayers.length === 1 && activeAfterRent.length === 0);
 
-          await Promise.all([
-            supabase.from("players").update({ position: finalRentedPlayer.position, coins: finalRentedPlayer.coins, horses: finalRentedPlayer.horses, laps: finalRentedPlayer.laps ?? 0 }).eq("id", finalRentedPlayer.id),
-            supabase.from("players").update({ coins: paidOwner.coins }).eq("id", paidOwner.id),
-          ]);
+          console.log(`[RENT_FLOW] human_rent_payment_start`, { gameId, payerId: finalRentedPlayer.id, ownerId: paidOwner.id, rent });
+          const { data: rentData, error: rentError } = await supabase.rpc("pay_rent_atomic", {
+            p_game_id:  gameId,
+            p_payer_id: finalRentedPlayer.id,
+            p_owner_id: paidOwner.id,
+            p_amount:   rent,
+          });
+          if (rentError || !rentData?.[0]) {
+            console.error(`[RENT_FLOW] human_rent_payment_failed`, { gameId, payerId: finalRentedPlayer.id, ownerId: paidOwner.id, rent, error: rentError?.message ?? "no data" });
+            return;
+          }
+          console.log(`[RENT_FLOW] human_rent_payment_done`, { gameId, payerCoinsDb: rentData[0].payer_coins, ownerCoinsDb: rentData[0].owner_coins });
+          // RPC atomicky přeneslo rent: owner_coins správně. Payer mohl prodat koně
+          // (forced sale) → finalRentedPlayer.coins se může lišit od rentData[0].payer_coins;
+          // přepíšeme payer's final state jedním write.
+          await supabase.from("players").update({
+            position: finalRentedPlayer.position,
+            coins:    finalRentedPlayer.coins,
+            horses:   finalRentedPlayer.horses,
+            laps:     finalRentedPlayer.laps ?? 0,
+          }).eq("id", finalRentedPlayer.id);
           await finishTurn({
             nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog], lastRoll: roll,
             ...(wouldBankruptRent ? { updatedCurrentPlayerHorses: finalRentedPlayer.horses } : {}),
