@@ -26,7 +26,7 @@ export default function ObjectiveResultPanel({
   const sectionLabel = mode === "personal" ? "Tvůj kontrakt" : "Společný kontrakt";
 
   return (
-    <div className="px-6 py-4 border-b border-stone-500">
+    <div className="relative px-6 py-4 border-b border-stone-500 bg-[#f4efe4]">
       <div className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.22em] text-stone-700">
         {sectionLabel}
       </div>
