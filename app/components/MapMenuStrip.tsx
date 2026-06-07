@@ -134,7 +134,7 @@ export default function MapMenuStrip({ onPanelClick, currentXp, isLoggedIn = fal
     <>
       {/* Campaign header */}
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 mb-1.5 px-0.5">
-        <span className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-400/85 select-none">PayToWin — první kampaň</span>
+        <span className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-400/85 select-none">PayToWin.cz — první kampaň</span>
         <span className="text-[9px] text-amber-200/35 tracking-wider select-none">5 kapitol · 1921–1936 · od dostihů ke strojům</span>
       </div>
 
@@ -195,7 +195,7 @@ export default function MapMenuStrip({ onPanelClick, currentXp, isLoggedIn = fal
                   <span className="text-sm font-bold text-white truncate">{panel.label}</span>
                 </div>
                 {panel.location && (
-                  <p className="mt-0 text-[9px] tracking-wide truncate" style={{ color: panel.accentColor, opacity: 0.65 }}>{panel.location}</p>
+                  <p className="mt-0 text-[9px] tracking-wide truncate drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]" style={{ color: "#f5f0e8", opacity: 0.80 }}>{panel.location}</p>
                 )}
                 {isAvailable && panel.desc && (
                   <p className="mt-0.5 text-[11px] leading-tight text-white/55 truncate">{panel.desc}</p>
@@ -313,8 +313,8 @@ export default function MapMenuStrip({ onPanelClick, currentXp, isLoggedIn = fal
 
               {panel.location && (
                 <div
-                  className="absolute top-[22px] left-3 text-[7px] tracking-[0.12em] uppercase select-none z-10 drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)]"
-                  style={{ color: "#fde68a", opacity: isHovered ? 0.70 : 0.40 }}
+                  className="absolute top-[22px] left-3 text-[7px] tracking-[0.12em] uppercase select-none z-10 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]"
+                  style={{ color: "#f5f0e8", opacity: isHovered ? 0.90 : 0.72 }}
                 >
                   {panel.location}
                 </div>

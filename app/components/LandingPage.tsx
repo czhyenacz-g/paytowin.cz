@@ -889,13 +889,7 @@ export default function LandingPage() {
                   Multiplayer závodní deskovka
                 </p>
 
-                {/* Campaign badge */}
-                <p className="mt-2 text-[10px] font-medium tracking-[0.1em] text-amber-500/60">
-                  První oficiální kampaň:{" "}
-                  <span className="font-semibold text-amber-300/80">PayToWin.cz</span>
-                </p>
-
-                <p className="mt-1.5 text-xs text-amber-100/70">Závody, sázky a finanční chaos.</p>
+                <p className="mt-2 text-xs text-amber-100/70">Závody, sázky a finanční chaos.</p>
               </div>
 
               <MapMenuStrip
