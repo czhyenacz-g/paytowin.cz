@@ -141,12 +141,15 @@ interface Props {
   p1IsLegendary?: boolean;
   /** If true, P2 uses legendary ability (cooldown) instead of one-shot nitro. */
   p2IsLegendary?: boolean;
+  /** When true, suppresses the built-in mobile touch controls (parent manages them). */
+  hideTouchControls?: boolean;
 }
 
 export default function DuelArena({
   config, mode, showDebug = false, backgroundUrl, overlayOpacity = 0.20,
   autoStart = false, onResult, onStateSnapshot, p1Speed = 5, p2Speed = 5,
   remoteP2Ref, p1IsLegendary = false, p2IsLegendary = false,
+  hideTouchControls = false,
 }: Props) {
   const [state, setState] = React.useState<DuelState>(() => {
     const s = createInitialState(config, p1Speed, p2Speed);
@@ -560,8 +563,8 @@ export default function DuelArena({
         )}
       </div>
 
-      {/* Touch controls (mobile/tablet) */}
-      {state.status === "running" && (
+      {/* Touch controls (mobile/tablet) — suppressed when parent manages them */}
+      {!hideTouchControls && state.status === "running" && (
         <div className="flex items-center justify-center gap-6 select-none">
           <div className="flex items-center gap-3">
             <TouchBtn label="←" color={P1_COLOR} ariaLabel="P1 doleva"

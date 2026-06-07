@@ -514,6 +514,7 @@ function ArenaPhase({
         remoteP2Ref={remoteP2Ref}
         p1IsLegendary={p1IsLegendary}
         p2IsLegendary={p2IsLegendary}
+        hideTouchControls
       />
     </div>
   );
@@ -709,7 +710,8 @@ export default function StableDuelBoardLayer({
   const p2Speed = defender.horse?.speed ?? 5;
   const p1IsLegendary = !!(challenger.horse?.isLegendary);
   const p2IsLegendary = !!(defender.horse?.isLegendary);
-  const defenderTouchColor = defender.color || "#a855f7";
+  const defenderTouchColor  = defender.color   || "#a855f7";
+  const challengerTouchColor = challenger.color || "#00ff88";
   const minigameType = selectStableMinigame({
     themeId,
     challengerHorse: challenger.horse,
@@ -965,6 +967,40 @@ export default function StableDuelBoardLayer({
               <TouchBtn label="→" color={defenderTouchColor} ariaLabel="doprava"
                 onPressStart={() => sendInputRef.current?.({ action: "turn", pressed: true, direction: "right" })}
                 onPressEnd={() => sendInputRef.current?.({ action: "turn", pressed: false })}
+              />
+            </div>
+          )}
+          {/* pvbot mode: human challenger controls P1 via synthetic KeyboardEvents → DuelArena keydown handler */}
+          {!duelRole && minigameType !== "neon_speedrace" && (
+            <div className="shrink-0 flex items-center justify-center gap-2 px-4 py-3 select-none">
+              <TouchBtn label="←" color={challengerTouchColor} ariaLabel="doleva"
+                onPressStart={() => {
+                  console.info("[DUEL_TOUCH] pointer_down", { mode: "pvbot", duelRole: undefined, label: "←", keyCode: "KeyA" });
+                  window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyA", bubbles: true, cancelable: true }));
+                }}
+                onPressEnd={() => {
+                  console.info("[DUEL_TOUCH] pointer_up", { mode: "pvbot", duelRole: undefined, label: "←", keyCode: "KeyA" });
+                  window.dispatchEvent(new KeyboardEvent("keyup", { code: "KeyA", bubbles: true, cancelable: true }));
+                }}
+              />
+              <TouchBtn label="BOOST" color={challengerTouchColor} ariaLabel="akce"
+                onPressStart={() => {
+                  console.info("[DUEL_TOUCH] pointer_down", { mode: "pvbot", duelRole: undefined, label: "BOOST", keyCode: "KeyQ", isLegendary: p1IsLegendary });
+                  window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyQ", bubbles: true, cancelable: true }));
+                }}
+                onPressEnd={() => {
+                  window.dispatchEvent(new KeyboardEvent("keyup", { code: "KeyQ", bubbles: true, cancelable: true }));
+                }}
+              />
+              <TouchBtn label="→" color={challengerTouchColor} ariaLabel="doprava"
+                onPressStart={() => {
+                  console.info("[DUEL_TOUCH] pointer_down", { mode: "pvbot", duelRole: undefined, label: "→", keyCode: "KeyD" });
+                  window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyD", bubbles: true, cancelable: true }));
+                }}
+                onPressEnd={() => {
+                  console.info("[DUEL_TOUCH] pointer_up", { mode: "pvbot", duelRole: undefined, label: "→", keyCode: "KeyD" });
+                  window.dispatchEvent(new KeyboardEvent("keyup", { code: "KeyD", bubbles: true, cancelable: true }));
+                }}
               />
             </div>
           )}
