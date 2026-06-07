@@ -2050,6 +2050,17 @@ export default function GameBoard({ gameCode }: Props) {
           supabase.from("players").update({ coins: newDCoins, horses: updatedDHorses }).eq("id", defender.id),
         ]);
 
+        // Popup pro ztrátu koně kvůli stamině — zobraz jen pokud challenger je lidský hráč tohoto klienta
+        const challengerLostHorse = cKey && updatedCHorses.length < challenger.horses.length;
+        if (challengerLostHorse && challenger.id === myPlayerId && !challenger.is_bot) {
+          const lostHorse = challenger.horses.find(h => racerOwnershipKey(h) === cKey);
+          if (lostHorse) {
+            const racerCategory: RacerCategory = themeId.startsWith("car") ? "car" : "animal";
+            console.log("[RACER_FLOW] stamina_loss_popup", { racerName: lostHorse.name, playerId: challenger.id, reason: "stable_duel_stamina" });
+            setRacerLostModal({ horse: lostHorse, playerName: challenger.name, racerCategory });
+          }
+        }
+
         // Snapshot pro game over check — closure `players` je stale (před-settlement coiny)
         const postDuelPlayers = players.map(p => {
           if (p.id === challenger.id) return { ...p, coins: newCCoins };
