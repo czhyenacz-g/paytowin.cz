@@ -34,7 +34,7 @@ export const horseDayTheme: Theme = {
     rollPanelIdle:     "bg-slate-100",
     rollPanelRolling:  "bg-amber-100",
     textPrimary:       "text-slate-800",
-    textMuted:         "text-slate-500",
+    textMuted:         "text-slate-700",
     playerCardActive:  "border-slate-900 bg-slate-50 shadow-sm",
     playerCardNormal:  "border-slate-200 bg-white",
     playerCardHover:   "border-blue-400 bg-blue-50 shadow-sm",

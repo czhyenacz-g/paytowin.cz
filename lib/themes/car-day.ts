@@ -34,7 +34,7 @@ export const carDayTheme: Theme = {
     rollPanelIdle:     "bg-slate-100",
     rollPanelRolling:  "bg-sky-100",
     textPrimary:       "text-slate-800",
-    textMuted:         "text-slate-500",
+    textMuted:         "text-slate-700",
     playerCardActive:  "border-slate-900 bg-slate-50 shadow-sm",
     playerCardNormal:  "border-slate-200 bg-white",
     playerCardHover:   "border-sky-400 bg-sky-50 shadow-sm",

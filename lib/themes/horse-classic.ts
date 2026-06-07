@@ -33,7 +33,7 @@ export const horseClassicTheme: Theme = {
     rollPanelIdle:     "bg-amber-100",
     rollPanelRolling:  "bg-green-100",
     textPrimary:       "text-stone-800",
-    textMuted:         "text-stone-500",
+    textMuted:         "text-stone-700",
     playerCardActive:  "border-green-700 bg-green-50 shadow-sm",
     playerCardNormal:  "border-stone-300 bg-amber-50",
     playerCardHover:   "border-amber-500 bg-amber-100 shadow-sm",
