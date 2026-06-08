@@ -80,8 +80,12 @@ export default function IntroOverlay({
               {subtitle}
             </div>
             {introText && (
-              <div className="mt-1 text-sm text-slate-400 max-w-xs mx-auto leading-relaxed italic">
-                {introText}
+              <div className="mt-1 max-w-xs mx-auto space-y-3">
+                {introText.split("\n\n").map((block, i) => (
+                  <p key={i} className="text-sm text-slate-400 leading-relaxed italic text-justify">
+                    {block}
+                  </p>
+                ))}
               </div>
             )}
             {publicObjectiveTitle && publicObjectiveText && (

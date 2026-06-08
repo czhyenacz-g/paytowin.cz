@@ -9,11 +9,8 @@ export const horseNightScenario: ScenarioDefinition = {
   subtitle: "Celou cestu si říkáš, kdo proboha pořádá dostihy v noci.",
   introText:
     "Stáj je drahá, koně žerou každý den a tvoje výhry po zaplacení bance mizí rychleji než potlesk na tribunách.\n\n" +
-    "Pak přijde dopis:\n„Skutečné peníze neběhají na slunci.“\n\n" +
-    "Pod větou je jen adresa a čas po půlnoci.\n\n" +
-    "Celou cestu si říkáš, kdo proboha pořádá dostihy v noci?\n\n" +
-    "Když se za tebou zavře brána, pochopíš:\n" +
-    "tady se nehraje jen o vítězství.",
+    "Pak přijde dopis: „Skutečné peníze neběhají na slunci.“ Pod větou je jen adresa a čas po půlnoci.\n\n" +
+    "Celou cestu si říkáš, kdo proboha pořádá dostihy v noci? Když se za tebou zavře brána, pochopíš: tady se nehraje jen o vítězství.",
   publicObjectiveTitle: "Cíl hry",
   publicObjectiveText:
     "Vyhráváš, pokud získáš všechny dostupné koně.\n\n" +
