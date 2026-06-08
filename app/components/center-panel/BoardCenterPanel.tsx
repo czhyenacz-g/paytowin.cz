@@ -56,9 +56,9 @@ export default function BoardCenterPanel({
     boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
     padding: "8px 10px",
   };
-  const typeBadgeCls = isNight ? "text-slate-500" : "text-stone-400";
-  const nameCls      = isNight ? "text-slate-100 font-semibold" : "text-stone-900 font-semibold";
-  const subtitleCls  = isNight ? "text-slate-400" : "text-stone-500";
+  const typeBadgeCls = isNight ? "text-slate-500" : "text-stone-500";
+  const nameCls      = isNight ? "text-slate-300 font-medium" : "text-stone-950 font-black";
+  const subtitleCls  = isNight ? "text-slate-500" : "text-stone-600 font-medium";
   const lblCls       = isNight ? "text-slate-400 shrink-0" : "text-stone-500 shrink-0";
   const valCls       = isNight ? "tracking-tight text-slate-100" : "tracking-tight text-stone-800";
   const ownerCls     = isNight ? "text-slate-300 font-medium" : "text-stone-600 font-medium";
