@@ -77,6 +77,7 @@ import CenterEventModal from "./modals/CenterEventModal";
 import FlashToast from "./modals/FlashToast";
 import RacerLostModal, { type RacerCategory } from "./modals/RacerLostModal";
 import MajorLossOverlay from "./modals/MajorLossOverlay";
+import MajorGainOverlay from "./modals/MajorGainOverlay";
 import RaceModal from "./RaceModal";
 import RaceEventOverlay from "./RaceEventOverlay";
 import type { MinigameResult } from "./race/RacingMinigame";
@@ -307,12 +308,15 @@ export default function GameBoard({ gameCode }: Props) {
     telegramMessage,
     coinsFeedback,
     majorLossAmount,
+    majorGainAmount,
     toggleSound,
     playSfx,
     playStepSound,
     showCoinsFeedback,
     showMajorLoss,
     clearMajorLoss,
+    showMajorGain,
+    clearMajorGain,
     showTelegram,
     showFlash,
     flashActiveRef,
@@ -1069,7 +1073,9 @@ export default function GameBoard({ gameCode }: Props) {
         showCoinsFeedback(coinDelta, "lose", movedPlayer.name, field.label);
         if (-coinDelta >= 500) showMajorLoss(-coinDelta);
       } else if (field.type === "coins_gain") {
-        showCoinsFeedback(afterField.coins - movedPlayer.coins, "gain", movedPlayer.name, field.label);
+        const gainDelta = afterField.coins - movedPlayer.coins;
+        showCoinsFeedback(gainDelta, "gain", movedPlayer.name, field.label);
+        if (gainDelta >= 1000) showMajorGain(gainDelta, movedPlayer.id);
       }
 
       // Bankrot? — dej hráči šanci prodat koně, pak znovu vyhodnoť
@@ -2098,6 +2104,8 @@ export default function GameBoard({ gameCode }: Props) {
         const newDCoins = Math.max(0, defender.coins   + s.p2.coinsDelta);
         if (challenger.id === myPlayerId && s.p1.coinsDelta <= -500) showMajorLoss(-s.p1.coinsDelta);
         if (defender.id === myPlayerId   && s.p2.coinsDelta <= -500) showMajorLoss(-s.p2.coinsDelta);
+        if (challenger.id === myPlayerId && s.p1.coinsDelta >= 1000) showMajorGain(s.p1.coinsDelta, challenger.id);
+        if (defender.id === myPlayerId   && s.p2.coinsDelta >= 1000) showMajorGain(s.p2.coinsDelta, defender.id);
 
         const updatedCHorses = (() => {
           if (!cKey) return challenger.horses;
@@ -2805,6 +2813,14 @@ export default function GameBoard({ gameCode }: Props) {
         <MajorLossOverlay
           amount={majorLossAmount}
           onDismiss={clearMajorLoss}
+        />
+      )}
+
+      {/* ── Major Gain Overlay (zisk >= 1000 coins) ───────────────────────── */}
+      {majorGainAmount !== null && (
+        <MajorGainOverlay
+          amount={majorGainAmount}
+          onDismiss={clearMajorGain}
         />
       )}
 
