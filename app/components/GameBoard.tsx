@@ -76,6 +76,7 @@ import { useGameBoardAudio } from "@/app/components/board/hooks/useGameBoardAudi
 import CenterEventModal from "./modals/CenterEventModal";
 import FlashToast from "./modals/FlashToast";
 import RacerLostModal, { type RacerCategory } from "./modals/RacerLostModal";
+import MajorLossOverlay from "./modals/MajorLossOverlay";
 import RaceModal from "./RaceModal";
 import RaceEventOverlay from "./RaceEventOverlay";
 import type { MinigameResult } from "./race/RacingMinigame";
@@ -305,10 +306,13 @@ export default function GameBoard({ gameCode }: Props) {
     flashEvent,
     telegramMessage,
     coinsFeedback,
+    majorLossAmount,
     toggleSound,
     playSfx,
     playStepSound,
     showCoinsFeedback,
+    showMajorLoss,
+    clearMajorLoss,
     showTelegram,
     showFlash,
     flashActiveRef,
@@ -817,9 +821,12 @@ export default function GameBoard({ gameCode }: Props) {
     // Daň za průchod/přistání na STARTu — roste s počtem průchodů (laps-based).
     // laps před tímto průchodem: 0 = první průchod = bez daně, 1 = druhý = baseTax, atd.
     if (passedStart || newPosition === 0) {
+      const beforeStartCoins = movedPlayer.coins;
       const { player: afterStart, logLines: startLog } = applyStartPassage(movedPlayer, passedStart, economy);
       movedPlayer = afterStart;
       extraLog.push(...startLog);
+      const startTaxPaid = beforeStartCoins - movedPlayer.coins;
+      if (startTaxPaid >= 500) showMajorLoss(startTaxPaid);
       // Roční event — vyhodnotí se jednou při průchodu STARTem pro nový rok
       const yearStart = theme.mapMeta?.yearStart ?? 1921;
       const campaignOffset = movedPlayer.laps ?? 0; // po inkrementu
@@ -1059,7 +1066,9 @@ export default function GameBoard({ gameCode }: Props) {
 
       // Center feedback pro finanční pole
       if (field.type === "coins_lose") {
-        showCoinsFeedback(afterField.coins - movedPlayer.coins, "lose", movedPlayer.name, field.label);
+        const coinDelta = afterField.coins - movedPlayer.coins; // záporné číslo
+        showCoinsFeedback(coinDelta, "lose", movedPlayer.name, field.label);
+        if (-coinDelta >= 500) showMajorLoss(-coinDelta);
       } else if (field.type === "coins_gain") {
         showCoinsFeedback(afterField.coins - movedPlayer.coins, "gain", movedPlayer.name, field.label);
       }
@@ -1386,9 +1395,12 @@ export default function GameBoard({ gameCode }: Props) {
       // START crossing — forward card move that wraps past field 0
       const passedStartCard = card.effect.value > 0 && newPos < oldPos;
       if (passedStartCard || newPos === 0) {
+        const beforeCardStartCoins = updatedPlayer.coins;
         const { player: afterStart, logLines: startLog } = applyStartPassage(updatedPlayer, passedStartCard, economy);
         updatedPlayer = afterStart;
         logLines.push(...startLog);
+        const cardStartTaxPaid = beforeCardStartCoins - updatedPlayer.coins;
+        if (cardStartTaxPaid >= 500) showMajorLoss(cardStartTaxPaid);
         const yearStart = theme.mapMeta?.yearStart ?? 1921;
         const campaignOffset = updatedPlayer.laps ?? 0;
         const displayYear = yearStart + campaignOffset;
@@ -2086,6 +2098,8 @@ export default function GameBoard({ gameCode }: Props) {
 
         const newCCoins = Math.max(0, challenger.coins + s.p1.coinsDelta);
         const newDCoins = Math.max(0, defender.coins   + s.p2.coinsDelta);
+        if (challenger.id === myPlayerId && s.p1.coinsDelta <= -500) showMajorLoss(-s.p1.coinsDelta);
+        if (defender.id === myPlayerId   && s.p2.coinsDelta <= -500) showMajorLoss(-s.p2.coinsDelta);
 
         const updatedCHorses = (() => {
           if (!cKey) return challenger.horses;
@@ -2785,6 +2799,14 @@ export default function GameBoard({ gameCode }: Props) {
           playerName={racerLostModal.playerName}
           racerCategory={racerLostModal.racerCategory}
           onDismiss={() => setRacerLostModal(null)}
+        />
+      )}
+
+      {/* ── Major Loss Overlay (ztráta >= 500 coins) ─────────────────────── */}
+      {majorLossAmount !== null && (
+        <MajorLossOverlay
+          amount={majorLossAmount}
+          onDismiss={clearMajorLoss}
         />
       )}
 

@@ -38,10 +38,13 @@ interface UseGameBoardAudioReturn {
   flashEvent: FlashEvent | null;
   coinsFeedback: CoinsFeedbackData | null;
   telegramMessage: TelegramMessage | null;
+  majorLossAmount: number | null;
   toggleSound: () => void;
   playSfx: (id: SoundId) => void;
   playStepSound: () => void;
   showCoinsFeedback: (amount: number, kind: "gain" | "lose", playerName: string, fieldLabel: string) => void;
+  showMajorLoss: (amount: number) => void;
+  clearMajorLoss: () => void;
   showTelegram: (text: string) => void;
   showFlash: (event: FlashEvent) => void;
   flashActiveRef: React.MutableRefObject<boolean>;
@@ -73,6 +76,7 @@ export function useGameBoardAudio(params: UseGameBoardAudioParams): UseGameBoard
   const [flashEvent, setFlashEvent] = React.useState<FlashEvent | null>(null);
   const [telegramMessage, setTelegramMessage] = React.useState<TelegramMessage | null>(null);
   const [coinsFeedback, setCoinsFeedback] = React.useState<CoinsFeedbackData | null>(null);
+  const [majorLossAmount, setMajorLossAmount] = React.useState<number | null>(null);
 
   // ── Refs ──────────────────────────────────────────────────────────────
   const audioCtxRef = React.useRef<AudioContext | null>(null);
@@ -85,6 +89,7 @@ export function useGameBoardAudio(params: UseGameBoardAudioParams): UseGameBoard
   const knownPlayerIdsRef = React.useRef<Set<string> | null>(null);
   const flashActiveRef = React.useRef(false);
   const deferredOfferRef = React.useRef<RerollOffer | null>(null);
+  const majorLossActiveRef = React.useRef(false);
 
   // ── Background music ──────────────────────────────────────────────────
   useBgMusic(themeMusic, soundEnabled);
@@ -194,6 +199,26 @@ export function useGameBoardAudio(params: UseGameBoardAudioParams): UseGameBoard
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ── Major loss overlay (>= 500 coins) — ignore while active (spam guard) ─
+  const clearMajorLoss = React.useCallback(() => {
+    majorLossActiveRef.current = false;
+    setMajorLossAmount(null);
+  }, []);
+
+  const showMajorLoss = React.useCallback((amount: number) => {
+    if (majorLossActiveRef.current) return;
+    majorLossActiveRef.current = true;
+    setMajorLossAmount(amount);
+    try {
+      const audio = new Audio("/sounds/laugh.mp3");
+      audio.volume = 0.6;
+      audio.play().catch(() => {/* soubor neexistuje nebo autoplay blocked */});
+    } catch {
+      // noop — zvuk není kritický
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ── Show telegram strip + Morse audio (4s auto-dismiss) ──────────────
   const showTelegram = React.useCallback((text: string) => {
     if (telegramTimerRef.current) clearTimeout(telegramTimerRef.current);
@@ -251,10 +276,13 @@ export function useGameBoardAudio(params: UseGameBoardAudioParams): UseGameBoard
     flashEvent,
     coinsFeedback,
     telegramMessage,
+    majorLossAmount,
     toggleSound,
     playSfx,
     playStepSound,
     showCoinsFeedback,
+    showMajorLoss,
+    clearMajorLoss,
     showTelegram,
     showFlash,
     flashActiveRef,
