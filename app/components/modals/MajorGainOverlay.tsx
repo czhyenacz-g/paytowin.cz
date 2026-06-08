@@ -7,6 +7,7 @@ const MESSAGES = [
   "Mission succeeded.",
   "Big W.",
   "Bingo!",
+  "Dobře ty.",
 ];
 
 const AUTO_DISMISS_MS = 2000;
