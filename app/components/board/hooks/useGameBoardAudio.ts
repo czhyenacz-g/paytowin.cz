@@ -209,13 +209,7 @@ export function useGameBoardAudio(params: UseGameBoardAudioParams): UseGameBoard
     if (majorLossActiveRef.current) return;
     majorLossActiveRef.current = true;
     setMajorLossAmount(amount);
-    try {
-      const audio = new Audio("/sounds/laugh.mp3");
-      audio.volume = 0.6;
-      audio.play().catch(() => {/* soubor neexistuje nebo autoplay blocked */});
-    } catch {
-      // noop — zvuk není kritický
-    }
+    playSfx("coin_loss");
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
