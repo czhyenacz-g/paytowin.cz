@@ -3,9 +3,10 @@
 import React from "react";
 
 const MESSAGES = [
-  "Profit.",
-  "Dobře ty.",
-  "To se povedlo.",
+  "Na zdraví.",
+  "Mission succeeded.",
+  "Big W.",
+  "Bingo!",
 ];
 
 const AUTO_DISMISS_MS = 2000;
