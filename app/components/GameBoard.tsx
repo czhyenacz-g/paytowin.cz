@@ -826,7 +826,6 @@ export default function GameBoard({ gameCode }: Props) {
       movedPlayer = afterStart;
       extraLog.push(...startLog);
       const startTaxPaid = beforeStartCoins - movedPlayer.coins;
-      if (startTaxPaid >= 500) showMajorLoss(startTaxPaid);
       // Roční event — vyhodnotí se jednou při průchodu STARTem pro nový rok
       const yearStart = theme.mapMeta?.yearStart ?? 1921;
       const campaignOffset = movedPlayer.laps ?? 0; // po inkrementu
@@ -1400,7 +1399,6 @@ export default function GameBoard({ gameCode }: Props) {
         updatedPlayer = afterStart;
         logLines.push(...startLog);
         const cardStartTaxPaid = beforeCardStartCoins - updatedPlayer.coins;
-        if (cardStartTaxPaid >= 500) showMajorLoss(cardStartTaxPaid);
         const yearStart = theme.mapMeta?.yearStart ?? 1921;
         const campaignOffset = updatedPlayer.laps ?? 0;
         const displayYear = yearStart + campaignOffset;
