@@ -10,6 +10,7 @@ import {
 } from "@/lib/scenarios";
 import ObjectiveResultPanel from "./ObjectiveResultPanel";
 import { getObjectiveRewardConfig, XP_OBJECTIVE } from "@/lib/scenarios/objective-rewards";
+import GameFinishedAudio from "./GameFinishedAudio";
 
 const BUST_LINES = [
   "Mafii se dluhy musí splácet. Bohužel jsi neměl už z čeho.",
@@ -121,6 +122,7 @@ export default function GameFinishedScreen({
 
   return (
     <div className={`min-h-screen ${pageBackground} flex items-center justify-center p-6`}>
+      <GameFinishedAudio />
       <div
         className="relative w-full max-w-md border-2 border-stone-500 shadow-2xl overflow-hidden"
         style={{ backgroundImage: "url('/new_end_backgroud.webp')", backgroundSize: "contain", backgroundPosition: "top center", backgroundRepeat: "no-repeat", backgroundColor: "#f4efe4" }}
