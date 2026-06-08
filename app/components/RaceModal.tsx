@@ -3,6 +3,11 @@
 import React from "react";
 import type { RaceOffer, Player } from "@/lib/types/game";
 
+const RACE_RESULT_MESSAGES = {
+  win: "Veni, vidi, vici!",
+  lose: "Skill Issue!",
+};
+
 interface Props {
   race: RaceOffer;
   players: Player[];
@@ -11,13 +16,14 @@ interface Props {
   onSubmitScore: (score: number) => void;
   onClose: () => void;
   isHost: boolean;
+  myPlayerId?: string | null;
 }
 
 type LocalPhase = "countdown" | "racing" | "done";
 
 const RACE_DURATION_MS = 5000;
 
-export default function RaceModal({ race, players, isMyRaceTurn, onSubmitScore, onClose, isHost }: Props) {
+export default function RaceModal({ race, players, isMyRaceTurn, onSubmitScore, onClose, isHost, myPlayerId }: Props) {
   const [localPhase, setLocalPhase] = React.useState<LocalPhase>("countdown");
   const [countdown, setCountdown] = React.useState(3);
   const [score, setScore] = React.useState(0);
@@ -95,6 +101,12 @@ export default function RaceModal({ race, players, isMyRaceTurn, onSubmitScore, 
       .map(id => ({ player: players.find(p => p.id === id), score: race.scores[id] ?? 0 }))
       .sort((a, b) => b.score - a.score);
 
+    const iParticipated = myPlayerId && race.playerIds.includes(myPlayerId);
+    const iWon = iParticipated && sortedResults[0]?.player?.id === myPlayerId;
+    const resultMsg = iParticipated
+      ? (iWon ? RACE_RESULT_MESSAGES.win : RACE_RESULT_MESSAGES.lose)
+      : null;
+
     const medals = ["🥇", "🥈", "🥉"];
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
@@ -102,6 +114,11 @@ export default function RaceModal({ race, players, isMyRaceTurn, onSubmitScore, 
           <div className="text-center">
             <div className="text-4xl">🏁</div>
             <h2 className="text-xl font-bold text-slate-800 mt-1">Výsledky závodu</h2>
+            {resultMsg && (
+              <p className={`mt-1 text-sm font-bold ${iWon ? "text-amber-600" : "text-slate-500"}`}>
+                {resultMsg}
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             {sortedResults.map(({ player, score: s }, i) => (

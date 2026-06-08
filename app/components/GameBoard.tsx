@@ -2836,6 +2836,7 @@ export default function GameBoard({ gameCode }: Props) {
           onSubmitScore={submitRaceScore}
           onClose={closeRace}
           isHost={isHost}
+          myPlayerId={myPlayerId}
         />
       )}
 
