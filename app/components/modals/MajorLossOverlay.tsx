@@ -4,8 +4,11 @@ import React from "react";
 
 const MESSAGES = [
   "To bolelo.",
-  "Bankéř se směje.",
-  "Nezaplatíš, nezávodíš.",
+  "Skill issue.",
+  "Rip peněženka.",
+  "Drahá chyba.",
+  "Tak určitě.",
+  "Certified chudoba moment.",
 ];
 
 const AUTO_DISMISS_MS = 2000;
