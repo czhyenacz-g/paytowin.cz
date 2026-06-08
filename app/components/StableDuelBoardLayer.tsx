@@ -526,12 +526,18 @@ function ArenaPhase({
   );
 }
 
+const DUEL_RESULT_MESSAGES = {
+  win: "Veni, vidi, vici!",
+  lose: "Skill Issue!",
+};
+
 function ResultPhase({
   challenger,
   defender,
   result,
   settlement,
   isDev,
+  duelRole,
   onContinue,
 }: {
   challenger:  DuelContestant;
@@ -539,10 +545,18 @@ function ResultPhase({
   result:      MinigameResult;
   settlement:  MinigameSettlement;
   isDev:       boolean;
+  duelRole?:   "challenger_authority" | "defender_remote";
   onContinue:  () => void;
 }) {
   const winner  = result.winner === 1 ? "challenger" : result.winner === 2 ? "defender" : "draw";
   const winnerC = winner === "challenger" ? challenger : winner === "defender" ? defender : null;
+
+  const iWon = duelRole === "challenger_authority" ? winner === "challenger"
+             : duelRole === "defender_remote"       ? winner === "defender"
+             : null;
+  const personalMsg = iWon === true ? DUEL_RESULT_MESSAGES.win
+                    : iWon === false ? DUEL_RESULT_MESSAGES.lose
+                    : null;
 
   const sides = [
     { contestant: challenger, ps: settlement.p1, pr: result.p1, isWinner: winner === "challenger" },
@@ -572,6 +586,13 @@ function ResultPhase({
           >
             🏆 {winnerC?.name ?? "?"}
           </div>
+        </div>
+      )}
+
+      {/* Personal win/lose message */}
+      {personalMsg && (
+        <div className={`text-sm font-bold shrink-0 ${iWon ? "text-emerald-400" : "text-slate-400"}`}>
+          {personalMsg}
         </div>
       )}
 
@@ -1054,6 +1075,7 @@ export default function StableDuelBoardLayer({
           result={duelResult}
           settlement={computeMinigameSettlement(duelResult, challenger.horse?.price, defender.horse?.price, mafiaBonus)}
           isDev={isDev}
+          duelRole={duelRole}
           onContinue={() => onFinish(duelResult)}
         />
       )}
