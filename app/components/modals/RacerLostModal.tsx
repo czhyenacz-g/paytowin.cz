@@ -13,13 +13,13 @@ interface Props {
 }
 
 function getTitle(category: RacerCategory): string {
-  if (category === "legendary") return "Legenda odešla";
+  if (category === "legendary") return "Zavřete oči — legenda odchází";
   return "Státní zabavení";
 }
 
 function getBodyText(name: string, category: RacerCategory): string {
   if (category === "legendary") {
-    return `${name} odvedl všechno, co měl. Legendy se nedrží — zmizely dřív, než si to stačíš uvědomit.`;
+    return `${name} odvedl všechno, co měl. Legendy se nedrží — zmizí dřív, než si to stačíš uvědomit.`;
   }
   if (category === "car") {
     return `${name} byl kvůli vyčerpání odstaven z provozu a odtažen mimo trať. Papírově jde o bezpečnostní opatření. Prakticky: už není tvůj.`;

@@ -1823,18 +1823,14 @@ export default function GameBoard({ gameCode }: Props) {
         : `${label}: Zkolaboval po závodě vyčerpáním. Zabaven.`;
     });
 
-    // Flash spotlight — legendární závodník má přednost; fallback na prvního stamina burnout
-    const legendaryEntry = burnedOutEntries.find(e => e.horse?.isLegendary);
-    if (legendaryEntry) {
-      showFlash({ type: "legendary_gone", emoji: legendaryEntry.horse!.emoji, playerName: legendaryEntry.player!.name, racerName: legendaryEntry.horse!.name });
-    }
-
-    // Modal pro ztrátu běžného racera — jen pro tohoto hráče, ne bota, ne legendu
+    // Modal pro ztrátu racera — jen pro tohoto hráče, ne bota; legenda dostane jiný text
     const myBurnout = burnedOutEntries.find(
-      e => !e.horse!.isLegendary && e.player!.id === myPlayerId && !e.player!.is_bot,
+      e => e.player!.id === myPlayerId && !e.player!.is_bot,
     );
     if (myBurnout?.horse) {
-      const racerCategory: RacerCategory = themeId.startsWith("car") ? "car" : "animal";
+      const racerCategory: RacerCategory = myBurnout.horse.isLegendary
+        ? "legendary"
+        : themeId.startsWith("car") ? "car" : "animal";
       setRacerLostModal({ horse: myBurnout.horse, playerName: myBurnout.player!.name, racerCategory });
     }
 
@@ -2127,12 +2123,10 @@ export default function GameBoard({ gameCode }: Props) {
           const lostHorse = challenger.horses.find(h => racerOwnershipKey(h) === cKey);
           if (lostHorse) {
             console.log("[RACER_FLOW] stamina_loss_popup", { racerName: lostHorse.name, playerId: challenger.id, reason: "stable_duel_stamina", isLegendary: !!lostHorse.isLegendary });
-            if (lostHorse.isLegendary) {
-              showFlash({ type: "legendary_gone", emoji: lostHorse.emoji, playerName: challenger.name, racerName: lostHorse.name });
-            } else {
-              const racerCategory: RacerCategory = themeId.startsWith("car") ? "car" : "animal";
-              setRacerLostModal({ horse: lostHorse, playerName: challenger.name, racerCategory });
-            }
+            const racerCategory: RacerCategory = lostHorse.isLegendary
+              ? "legendary"
+              : themeId.startsWith("car") ? "car" : "animal";
+            setRacerLostModal({ horse: lostHorse, playerName: challenger.name, racerCategory });
           }
         }
 
