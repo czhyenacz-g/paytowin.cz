@@ -2126,9 +2126,13 @@ export default function GameBoard({ gameCode }: Props) {
         if (challengerLostHorse && challenger.id === myPlayerId && !challenger.is_bot) {
           const lostHorse = challenger.horses.find(h => racerOwnershipKey(h) === cKey);
           if (lostHorse) {
-            const racerCategory: RacerCategory = themeId.startsWith("car") ? "car" : "animal";
-            console.log("[RACER_FLOW] stamina_loss_popup", { racerName: lostHorse.name, playerId: challenger.id, reason: "stable_duel_stamina" });
-            setRacerLostModal({ horse: lostHorse, playerName: challenger.name, racerCategory });
+            console.log("[RACER_FLOW] stamina_loss_popup", { racerName: lostHorse.name, playerId: challenger.id, reason: "stable_duel_stamina", isLegendary: !!lostHorse.isLegendary });
+            if (lostHorse.isLegendary) {
+              showFlash({ type: "legendary_gone", emoji: lostHorse.emoji, playerName: challenger.name, racerName: lostHorse.name });
+            } else {
+              const racerCategory: RacerCategory = themeId.startsWith("car") ? "car" : "animal";
+              setRacerLostModal({ horse: lostHorse, playerName: challenger.name, racerCategory });
+            }
           }
         }
 

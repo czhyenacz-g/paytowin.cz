@@ -3,7 +3,7 @@
 import React from "react";
 import type { Horse } from "@/lib/types/game";
 
-export type RacerCategory = "animal" | "car" | "generic";
+export type RacerCategory = "animal" | "car" | "generic" | "legendary";
 
 interface Props {
   horse: Horse;
@@ -12,7 +12,15 @@ interface Props {
   onDismiss: () => void;
 }
 
+function getTitle(category: RacerCategory): string {
+  if (category === "legendary") return "Legenda odešla";
+  return "Státní zabavení";
+}
+
 function getBodyText(name: string, category: RacerCategory): string {
+  if (category === "legendary") {
+    return `${name} odvedl všechno, co měl. Legendy se nedrží — zmizely dřív, než si to stačíš uvědomit.`;
+  }
   if (category === "car") {
     return `${name} byl kvůli vyčerpání odstaven z provozu a odtažen mimo trať. Papírově jde o bezpečnostní opatření. Prakticky: už není tvůj.`;
   }
@@ -48,8 +56,8 @@ export default function RacerLostModal({ horse, playerName, racerCategory, onDis
           <div className="text-5xl mb-3">{horse.emoji}</div>
         )}
 
-        <div className="text-xs font-bold uppercase tracking-widest text-red-400 mb-1">
-          Státní zabavení
+        <div className={`text-xs font-bold uppercase tracking-widest mb-1 ${racerCategory === "legendary" ? "text-amber-400" : "text-red-400"}`}>
+          {getTitle(racerCategory)}
         </div>
         <div className="text-lg font-black text-white mb-3">{horse.name}</div>
 
@@ -57,7 +65,9 @@ export default function RacerLostModal({ horse, playerName, racerCategory, onDis
           {getBodyText(horse.name, racerCategory)}
         </p>
         <p className="text-xs text-slate-600 mb-5">
-          Až se dá znovu dohromady, vrátí se do aukce.
+          {racerCategory === "legendary"
+            ? "Možná se jednou vrátí. Možná ne."
+            : "Až se dá znovu dohromady, vrátí se do aukce."}
         </p>
 
         <div className="text-[10px] text-slate-600 mb-3">
