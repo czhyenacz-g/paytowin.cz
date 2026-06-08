@@ -50,6 +50,7 @@ interface Props {
   gameId?: string;
   challengerId?: string;
   defenderId?: string;
+  myPlayerId?: string | null;
   // online_1v1: drive prestart countdown from shared DB startsAt, no manual start button
   useSharedCountdown?: boolean;
   sharedCountdownEndsAt?: number;
@@ -684,12 +685,20 @@ export default function StableDuelBoardLayer({
   gameId,
   challengerId,
   defenderId,
+  myPlayerId,
   useSharedCountdown = false,
   sharedCountdownEndsAt,
   disableManualStart = false,
   playSfx,
   mafiaBonus,
 }: Props) {
+  const effectiveDuelRole: "challenger_authority" | "defender_remote" | undefined =
+    duelRole ?? (
+      myPlayerId && challengerId && myPlayerId === challengerId ? "challenger_authority" :
+      myPlayerId && defenderId   && myPlayerId === defenderId   ? "defender_remote" :
+      undefined
+    );
+
   const [phase, setPhase]         = React.useState<Phase>("prestart");
   const [countdown, setCountdown] = React.useState(() => {
     if (useSharedCountdown && sharedCountdownEndsAt) {
@@ -1075,7 +1084,7 @@ export default function StableDuelBoardLayer({
           result={duelResult}
           settlement={computeMinigameSettlement(duelResult, challenger.horse?.price, defender.horse?.price, mafiaBonus)}
           isDev={isDev}
-          duelRole={duelRole}
+          duelRole={effectiveDuelRole}
           onContinue={() => onFinish(duelResult)}
         />
       )}

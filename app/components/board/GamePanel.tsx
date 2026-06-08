@@ -567,6 +567,7 @@ export default function GamePanel({
               gameId={gameId ?? undefined}
               challengerId={stableDuelCtx.challengerId}
               defenderId={stableDuelCtx.defenderId}
+              myPlayerId={myPlayerId}
               useSharedCountdown={!!stableDuelCtx.duelRole}
               sharedCountdownEndsAt={stableDuelCtx.sharedCountdownEndsAt}
               disableManualStart={!!stableDuelCtx.duelRole}
