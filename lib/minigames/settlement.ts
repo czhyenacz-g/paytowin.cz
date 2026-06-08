@@ -1,7 +1,7 @@
 import type { MinigameResult } from "./types";
 
 export const STABLE_DUEL_WIN_REWARD_MIN      = 200;
-export const STABLE_DUEL_WIN_REWARD_MAX      = 3000;
+export const STABLE_DUEL_WIN_REWARD_MAX      = 2000;
 export const STABLE_DUEL_MAFIA_BONUS_MAX     = 500;
 export const STABLE_DUEL_BASE_STAMINA_COST   = 20;
 export const STABLE_DUEL_NITRO_STAMINA_COST  = 30;
