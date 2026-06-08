@@ -161,6 +161,6 @@ export const horseNightTheme: Theme = {
   mapMeta: {
     yearStart: 1925,
     place: "New Orleans",
-    subtitle: "Oficiálně klid. Neoficiálně se dnes sází ve velkém.",
+    subtitle: "Noční klid platí jen pro ty, kteří nemají na koho vsadit.",
   },
 };
