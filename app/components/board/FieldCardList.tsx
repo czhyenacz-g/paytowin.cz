@@ -57,6 +57,11 @@ export default function FieldCardList({
   isFieldVisible,
   onHoverField,
 }: Props) {
+  const isNight = themeId.includes("night");
+  const labelBadgeClass = isNight
+    ? "inline-flex max-w-[58px] items-center justify-center rounded-[10px] bg-white/20 px-1.5 py-0.5 text-[5.5px] font-medium uppercase leading-[1.05] tracking-[0.04em] text-white/70 shadow-[0_1px_0_rgba(255,255,255,0.10)]"
+    : "inline-flex max-w-[58px] items-center justify-center rounded-[10px] bg-black/30 px-1.5 py-0.5 text-[5.5px] font-black uppercase leading-[1.05] tracking-[0.04em] text-white shadow-[0_1px_0_rgba(0,0,0,0.25)]";
+
   return (
     <>
       {fields.map((field) => {
@@ -175,7 +180,7 @@ export default function FieldCardList({
               )}
             <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-2 pb-2">
               <div className="flex justify-center">
-                <div className="inline-flex max-w-[58px] items-center justify-center rounded-[10px] bg-white/50 px-1.5 py-0.5 text-[5.5px] font-black uppercase leading-[1.05] tracking-[0.04em] text-slate-950 shadow-[0_1px_0_rgba(255,255,255,0.35)]">
+                <div className={labelBadgeClass}>
                     <span className="whitespace-normal break-words text-center">
                       {field.type === "start" ? "START" : field.label}
                     </span>
