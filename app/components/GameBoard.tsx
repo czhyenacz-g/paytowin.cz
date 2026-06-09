@@ -713,6 +713,36 @@ export default function GameBoard({ gameCode }: Props) {
     });
   }, []);
 
+  // ── Guide visibility — potřeba i v rollDice, proto nad ním ──────────────
+  const suppressGuideThisTurn = guideDismissedTurn !== null && guideDismissedTurn === (gameState?.turn_count ?? null);
+  const myPlayer = players.find((player) => player.id === myPlayerId) ?? null;
+  const hasPreferredRacer = !!myPlayer?.horses.some((horse) => horse.isPreferred);
+  const shouldShowRacerGuide =
+    viewerRole === "player" &&
+    !suppressGuideThisTurn &&
+    !racerGuideDismissed &&
+    !!myPlayer &&
+    !isBankrupt(myPlayer) &&
+    myPlayer.horses.length === 0 &&
+    gameStatus === "playing";
+  const shouldShowStaminaGuide =
+    viewerRole === "player" &&
+    !suppressGuideThisTurn &&
+    !staminaGuideDismissed &&
+    !!myPlayer &&
+    !isBankrupt(myPlayer) &&
+    myPlayer.horses.length > 0 &&
+    gameStatus === "playing";
+  const shouldShowPreferredGuide =
+    viewerRole === "player" &&
+    !suppressGuideThisTurn &&
+    !preferredGuideDismissed &&
+    !!myPlayer &&
+    !isBankrupt(myPlayer) &&
+    myPlayer.horses.length > 0 &&
+    !hasPreferredRacer &&
+    gameStatus === "playing";
+
   const rollDice = async () => {
     const activePendingRace = gameState?.offer_pending?.type === "race" ? gameState.offer_pending as RaceOffer : null;
     const activePendingBankrupt = gameState?.offer_pending?.type === "bankrupt_announcement";
@@ -720,6 +750,14 @@ export default function GameBoard({ gameCode }: Props) {
     const activePendingStableDuel = gameState?.offer_pending?.type === "stable_duel_pending" &&
       (gameState.offer_pending as StableDuelPendingOffer).phase !== "finished";
     if (!gameState || pendingRacer || pendingCard || pendingOffer || pendingRollDecision || activePendingRace || activePendingBankrupt || activePendingRacePlaceholder || activePendingStableDuel || isRolling || isMoving || bankruptWarning) return;
+
+    if (shouldShowRacerGuide) {
+      dismissRacerGuide();
+    } else if (shouldShowStaminaGuide) {
+      dismissStaminaGuide();
+    } else if (shouldShowPreferredGuide) {
+      dismissPreferredGuide();
+    }
 
     const roll = Math.floor(Math.random() * 6) + 1;
     const currentPlayer = players[gameState.current_player_index];
@@ -2563,43 +2601,15 @@ export default function GameBoard({ gameCode }: Props) {
   const isMyPendingRollDecisionTurn = !!(pendingRollDecision && (
     isLocalGame ? viewerRole === "player" : myPlayerId === pendingRollDecision.playerId
   ));
-  const suppressGuideThisTurn = guideDismissedTurn !== null && guideDismissedTurn === (gameState?.turn_count ?? null);
   // Local: kdokoliv "player" může hodit za aktuálního hráče (hot-seat)
   // Online: jen hráč jehož ID sedí s localStorage
   const isMyTurn = isLocalGame
     ? (viewerRole === "player" && !!currentPlayer && !isBankrupt(currentPlayer) && !isRolling && !isMoving && !hasPendingRollDecision)
     : (!!myPlayerId && currentPlayer?.id === myPlayerId && !isBankrupt(currentPlayer) && !isRolling && !isMoving && !isSpectator && !hasPendingRollDecision);
   const currentRound = gameState ? Math.floor(gameState.turn_count / Math.max(1, players.length)) + 1 : 1;
-  const myPlayer = players.find((player) => player.id === myPlayerId) ?? null;
   // Online: bankrotovaný hráč se stává pasivním pozorovatelem — vidí hru, ale nemůže jednat.
   // Local: všichni hráči sdílejí zařízení, pojem "můj hráč" neexistuje.
   const iAmBankrupt = !isLocalGame && !!myPlayer && isBankrupt(myPlayer);
-  const shouldShowRacerGuide =
-    viewerRole === "player" &&
-    !suppressGuideThisTurn &&
-    !racerGuideDismissed &&
-    !!myPlayer &&
-    !isBankrupt(myPlayer) &&
-    myPlayer.horses.length === 0 &&
-    gameStatus === "playing";
-  const shouldShowStaminaGuide =
-    viewerRole === "player" &&
-    !suppressGuideThisTurn &&
-    !staminaGuideDismissed &&
-    !!myPlayer &&
-    !isBankrupt(myPlayer) &&
-    myPlayer.horses.length > 0 &&
-    gameStatus === "playing";
-  const hasPreferredRacer = !!myPlayer?.horses.some((horse) => horse.isPreferred);
-  const shouldShowPreferredGuide =
-    viewerRole === "player" &&
-    !suppressGuideThisTurn &&
-    !preferredGuideDismissed &&
-    !!myPlayer &&
-    !isBankrupt(myPlayer) &&
-    myPlayer.horses.length > 0 &&
-    !hasPreferredRacer &&
-    gameStatus === "playing";
   const rollDecisionOptions = pendingRollDecision
     ? buildRollDecisionOptions(pendingRollDecision, FIELDS, currentPlayer?.coins ?? 0)
     : [];
