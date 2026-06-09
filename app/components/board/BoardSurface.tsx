@@ -248,7 +248,7 @@ export function BoardSurface({
 
         {/* Mobilní feedback overlay — zobrazí se nad kartami pouze na malých obrazovkách */}
         {(coinsFeedback || opponentMoneyEvent) && (
-          <div className="md:hidden absolute inset-0 z-[200] flex items-center justify-center pointer-events-none">
+          <div className="md:hidden absolute inset-0 z-[30] flex items-center justify-center pointer-events-none">
             <div className="rounded-2xl bg-black/80 px-6 py-5 text-center shadow-2xl backdrop-blur-sm">
               {coinsFeedback && (
                 <>
