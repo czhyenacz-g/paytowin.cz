@@ -422,11 +422,9 @@ function PreStartPhase({
               </div>
               {/* mobile: text-only hint — tlačítka se zobrazí až v herní fázi */}
               <div className="flex sm:hidden items-center gap-2 text-[10px] font-mono pointer-events-none" style={{ color: `${challengerColor}55` }}>
-                <span>← zatočit</span>
+                <span>◀ ▶ zatočit</span>
                 <span>·</span>
-                <span>BOOST</span>
-                <span>·</span>
-                <span>→ zatočit</span>
+                <span>⚡ boost</span>
               </div>
               <div className="hidden sm:block text-[9px] text-slate-600">nebo 2× dopředu</div>
             </div>
@@ -446,11 +444,9 @@ function PreStartPhase({
               </div>
               {/* mobile: text-only hint */}
               <div className="flex sm:hidden items-center gap-2 text-[10px] font-mono pointer-events-none" style={{ color: `${defenderColor}55` }}>
-                <span>← zatočit</span>
+                <span>◀ ▶ zatočit</span>
                 <span>·</span>
-                <span>BOOST</span>
-                <span>·</span>
-                <span>→ zatočit</span>
+                <span>⚡ boost</span>
               </div>
             </div>
           )}
