@@ -12,6 +12,9 @@ interface Params {
   isLocalGame: boolean;
   /** Zavolá se po úspěšné bot akci — explicitní refetch, nezávislý na realtime doručení. */
   onBotActionComplete?: () => Promise<void>;
+  /** Retry signál: inkrementuje se v onBotActionComplete pokud horse_pending=true pro bota po refetchi.
+   *  Zajišťuje re-trigger hookuu i když se žádný jiný dep nezměnil (same-state refetch po selhání). */
+  botRetrySeq?: number;
 }
 
 /**
@@ -28,7 +31,7 @@ interface Params {
  * Po dokončení bot akce se zavolá onBotActionComplete (explicitní refetch) — realtime
  * doručení není garantované na mobilu, takže nespoléháme jen na něj.
  */
-export function useOnlineBotTrigger({ gameId, gameState, players, myPlayerId, isLocalGame, onBotActionComplete }: Params) {
+export function useOnlineBotTrigger({ gameId, gameState, players, myPlayerId, isLocalGame, onBotActionComplete, botRetrySeq }: Params) {
   const scheduledRef = React.useRef(false);
   // Ref pro callback — nepatří do deps useEffectu, ale musí být vždy aktuální
   const onBotActionCompleteRef = React.useRef(onBotActionComplete);
@@ -121,5 +124,6 @@ export function useOnlineBotTrigger({ gameId, gameState, players, myPlayerId, is
     gameState?.card_pending,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     !!gameState?.offer_pending,
+    botRetrySeq,
   ]);
 }

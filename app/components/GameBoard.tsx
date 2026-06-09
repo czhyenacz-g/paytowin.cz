@@ -147,6 +147,7 @@ export default function GameBoard({ gameCode }: Props) {
   const [gameState, setGameState] = React.useState<GameState | null>(null);
   const [loading, setLoading] = React.useState(!!gameCode);
   const [pendingRacer, setPendingRacer] = React.useState<{ racer: Horse; playerIndex: number; flavorText?: string } | null>(null);
+  const [botRetrySeq, setBotRetrySeq] = React.useState(0);
   const [pendingCard, setPendingCard] = React.useState<{ card: GameCard; playerIndex: number } | null>(null);
   const cardAppliedRef = React.useRef<string | null>(null);
   const [pendingOffer, setPendingOffer] = React.useState<RerollOffer | null>(null);
@@ -626,12 +627,19 @@ export default function GameBoard({ gameCode }: Props) {
       // Volání setPendingRacer(null) je idempotentní — bezpečné i když je již null.
       if (!freshState.horse_pending) {
         setPendingRacer(null);
+      } else {
+        // horse_pending=true zůstalo — pokud je na tahu bot, spusť retry signál.
+        // Bez toho by useOnlineBotTrigger nereagoval (deps by se nezměnily).
+        const currentP = freshPlayers[freshState.current_player_index];
+        if (currentP?.is_bot) {
+          setBotRetrySeq(prev => prev + 1);
+        }
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId]); // refreshGame + setPendingRacer závisí jen na refs a stable setterech
 
-  useOnlineBotTrigger({ gameId, gameState, players, myPlayerId, isLocalGame: gameMode === "local", onBotActionComplete });
+  useOnlineBotTrigger({ gameId, gameState, players, myPlayerId, isLocalGame: gameMode === "local", onBotActionComplete, botRetrySeq });
 
   // ── Realtime subscriptions ───────────────────────────────────────────────────
   React.useEffect(() => {
