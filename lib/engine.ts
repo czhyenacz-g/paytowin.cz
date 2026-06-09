@@ -363,6 +363,7 @@ export function normalizeState(raw: unknown): GameState {
     objective_completed_by: (r.objective_completed_by != null && typeof r.objective_completed_by === "object" && !Array.isArray(r.objective_completed_by))
       ? (r.objective_completed_by as Record<string, string>)
       : undefined,
+    field_owners: Array.isArray(r.field_owners) ? (r.field_owners as import("@/lib/types/game").FieldOwnerEntry[]) : [],
   };
 }
 
