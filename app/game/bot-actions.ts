@@ -111,6 +111,11 @@ async function botFinishTurn(
 
   const playerUpdate: Record<string, unknown> = {};
   if (regenHorses.length > 0) playerUpdate.horses = regenHorses;
+  // Bankrot: bot přišel o všechny coins — uvolni racery (banka zabavuje bez kompenzace)
+  const finalHorses = params.updatedHorses ?? updatedBotPlayer.horses;
+  if (updatedBotPlayer.coins <= 0 && finalHorses.length > 0) {
+    playerUpdate.horses = [];
+  }
   if (updatedEffects.length !== effects.length ||
       effects.some((e, i) => e.turnsLeft !== updatedEffects[i]?.turnsLeft)) {
     playerUpdate.active_effects = updatedEffects;
