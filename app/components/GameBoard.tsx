@@ -2633,9 +2633,11 @@ export default function GameBoard({ gameCode }: Props) {
       ? `racing_${racePendingEvt.currentRacerIndex ?? 0}`
       : null]);
 
-  // Watchdog: pokud card_pending zůstane aktivní déle než 30s (selhání klienta), host ho
+  // Watchdog: pokud card_pending zůstane aktivní déle než 5 minut (selhání klienta), host ho
   // vyčistí. Nevolá applyCardEffect — pouze odblokuje hru smazáním stale pending stavu.
   // Před mazáním ověří, že DB stále obsahuje stejnou kartu (capturedCardId + capturedTurnCount).
+  // 5 minut dává hráči čas přejít z PC na mobil nebo se krátce odpojit.
+  const CARD_PENDING_WATCHDOG_MS = 5 * 60 * 1000;
   React.useEffect(() => {
     if (!gameState?.card_pending) return;
     if (!isHost && !isLocalGame) return;
@@ -2658,7 +2660,7 @@ export default function GameBoard({ gameCode }: Props) {
         .update({ card_pending: null })
         .eq("game_id", gameId)
         .eq("turn_count", capturedTurnCount); // safety: nemazat pokud tah pokročil
-    }, 30_000);
+    }, CARD_PENDING_WATCHDOG_MS);
     return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState?.card_pending
