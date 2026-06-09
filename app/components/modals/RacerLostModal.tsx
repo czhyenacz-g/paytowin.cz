@@ -25,7 +25,7 @@ function getBodyText(name: string, category: RacerCategory): string {
     return `${name} byl kvůli vyčerpání odstaven z provozu a odtažen mimo trať. Papírově jde o bezpečnostní opatření. Prakticky: už není tvůj.`;
   }
   if (category === "animal") {
-    return `${name} byl kvůli vyčerpání odebrán ze stáje. Papírově jde o ochranu závodníka. Prakticky: už není tvůj.`;
+    return `${name} byl kvůli vyčerpání odebrán ze stáje. Papírově jde o ochranu zvířat. Prakticky: už není tvůj.`;
   }
   return `${name} byl kvůli vyčerpání odebrán z provozu. Papírově jde o ochranné opatření. Prakticky: už není tvůj.`;
 }
