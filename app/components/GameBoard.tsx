@@ -1075,7 +1075,7 @@ export default function GameBoard({ gameCode }: Props) {
       if (field.type === "coins_lose") {
         const coinDelta = afterField.coins - movedPlayer.coins; // záporné číslo
         showCoinsFeedback(coinDelta, "lose", movedPlayer.name, field.label);
-        if (-coinDelta >= 500) showMajorLoss(-coinDelta);
+        if (-coinDelta >= 600) showMajorLoss(-coinDelta);
       } else if (field.type === "coins_gain") {
         const gainDelta = afterField.coins - movedPlayer.coins;
         const netGainDelta = gainDelta - adjustmentCost;
@@ -2107,8 +2107,8 @@ export default function GameBoard({ gameCode }: Props) {
 
         const newCCoins = Math.max(0, challenger.coins + s.p1.coinsDelta);
         const newDCoins = Math.max(0, defender.coins   + s.p2.coinsDelta);
-        if (challenger.id === myPlayerId && s.p1.coinsDelta <= -500) showMajorLoss(-s.p1.coinsDelta);
-        if (defender.id === myPlayerId   && s.p2.coinsDelta <= -500) showMajorLoss(-s.p2.coinsDelta);
+        if (challenger.id === myPlayerId && s.p1.coinsDelta <= -600) showMajorLoss(-s.p1.coinsDelta);
+        if (defender.id === myPlayerId   && s.p2.coinsDelta <= -600) showMajorLoss(-s.p2.coinsDelta);
         if (challenger.id === myPlayerId && s.p1.coinsDelta >= 1000) showMajorGain(s.p1.coinsDelta, challenger.id);
         if (defender.id === myPlayerId   && s.p2.coinsDelta >= 1000) showMajorGain(s.p2.coinsDelta, defender.id);
 
@@ -2819,7 +2819,7 @@ export default function GameBoard({ gameCode }: Props) {
         />
       )}
 
-      {/* ── Major Loss Overlay (ztráta >= 500 coins) ─────────────────────── */}
+      {/* ── Major Loss Overlay (ztráta >= 600 coins) ─────────────────────── */}
       {majorLossAmount !== null && (
         <MajorLossOverlay
           amount={majorLossAmount}
