@@ -59,7 +59,7 @@ async function fetchBotContext(gameId: string) {
   const resolvedRacers = await resolveManifestRacers(manifest);
   const racers: RacerConfig[] = resolvedRacers.length > 0 ? resolvedRacers : getThemeRacers(theme);
 
-  const boardDef = game.board_id ? getBoardById(game.board_id) : theme.board ?? getBoardById("small");
+  const boardDef = theme.board ?? getBoardById(game.board_id);
   const shuffled = applyBoardShuffle(boardDef, game.id);
   const FIELDS   = buildFields(shuffled, racers, economy);
 
