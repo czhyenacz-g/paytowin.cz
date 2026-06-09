@@ -56,6 +56,8 @@ interface Props {
   selectedFieldIndexes?: number[];
   onSelectField?: (idx: number) => void;
   myPlayerColor?: string;
+  // Persistentní field owners (mimo selection mode)
+  fieldOwnership?: Record<number, Player>;
 }
 
 export default function FieldCardList({
@@ -79,6 +81,7 @@ export default function FieldCardList({
   selectedFieldIndexes,
   onSelectField,
   myPlayerColor,
+  fieldOwnership,
 }: Props) {
   const playerHex = myPlayerColor
     ? (myPlayerColor.startsWith("#") || myPlayerColor.startsWith("rgb") ? myPlayerColor : TW_HEX[myPlayerColor] ?? "#f97316")
@@ -131,7 +134,19 @@ export default function FieldCardList({
           glows.push(`drop-shadow(0 0 24px ${ownerHex}44)`);
         }
 
-        // Selection mode glow — barva hráče
+        // Persistentní field ownership glow (mimo selection mode)
+        const fieldOwner = !selectionMode ? (fieldOwnership?.[field.index] ?? null) : null;
+        if (fieldOwner) {
+          const c = fieldOwner.color;
+          const hex = c
+            ? (c.startsWith("#") || c.startsWith("rgb") ? c : TW_HEX[c] ?? "#6366f1")
+            : "#6366f1";
+          glows.push(`drop-shadow(0 0 7px ${hex}dd)`);
+          glows.push(`drop-shadow(0 0 18px ${hex}88)`);
+          glows.push(`drop-shadow(0 0 30px ${hex}44)`);
+        }
+
+        // Selection mode glow — barva hráče (přebíjí persistent glow)
         const isEligible = selectionMode && !!eligibleFieldIndexes?.has(field.index);
         const isSelected = isEligible && !!selectedFieldIndexes?.includes(field.index);
         if (isSelected) {

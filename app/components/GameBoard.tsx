@@ -110,7 +110,7 @@ import { AmbientBackground } from "./ui/AmbientBackground";
 import { BoardAnimationLayer } from "./board/BoardAnimationLayer";
 import { BoardSurface } from "./board/BoardSurface";
 import { DEFAULT_STARTING_COINS } from "@/lib/game-constants";
-import { getFieldOwner, expireStaleEntries, buildFieldOwnershipPlacement } from "@/lib/game/fieldOwnership";
+import { getFieldOwner, expireStaleEntries, buildFieldOwnershipPlacement, buildFieldOwnership } from "@/lib/game/fieldOwnership";
 
 // Styly polí jsou součástí theme systému (lib/themes/*)
 // Přistupuj přes: theme.colors.fieldStyles[field.type]
@@ -357,6 +357,11 @@ export default function GameBoard({ gameCode }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState?.field_owners, gameState?.turn_count, FIELDS, players]);
 
+  const fieldOwnership = React.useMemo<Record<number, import("@/lib/types/game").Player>>(
+    () => buildFieldOwnership(gameState?.field_owners ?? [], players, gameState?.turn_count ?? 0),
+    [gameState?.field_owners, gameState?.turn_count, players],
+  );
+
   const [fieldOwnershipLoading, setFieldOwnershipLoading] = React.useState(false);
   const [fieldOwnershipError, setFieldOwnershipError] = React.useState<string | null>(null);
 
@@ -425,7 +430,8 @@ export default function GameBoard({ gameCode }: Props) {
         .select("turn_count");
 
       if (gsError || !updatedRows || updatedRows.length === 0) {
-        setFieldOwnershipError(gsError ? "Chyba při ukládání." : "Pole se mezitím změnila, zkus to znovu.");
+        console.error("[confirmFieldOwnership] gsError:", gsError, "updatedRows:", updatedRows);
+        setFieldOwnershipError(gsError ? `Chyba: ${gsError.message}` : "Pole se mezitím změnila, zkus to znovu.");
         return;
       }
 
@@ -3224,6 +3230,7 @@ export default function GameBoard({ gameCode }: Props) {
               selectedFieldIndexes={selectedFieldIndexes}
               onSelectField={handleFieldSelect}
               myPlayerColor={myPlayer?.color}
+              fieldOwnership={fieldOwnership}
             />
           </div>
 

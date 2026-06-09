@@ -51,6 +51,7 @@ interface Props {
   selectedFieldIndexes?: number[];
   onSelectField?: (idx: number) => void;
   myPlayerColor?: string;
+  fieldOwnership?: Record<number, Player>;
 }
 
 export function BoardSurface({
@@ -89,6 +90,7 @@ export function BoardSurface({
   selectedFieldIndexes,
   onSelectField,
   myPlayerColor,
+  fieldOwnership,
 }: Props) {
   const fieldPlayers = (fieldIndex: number) =>
     displayPlayers.filter((p) => p.position === fieldIndex && !isBankrupt(p) && p.id !== animatingPlayerId);
@@ -156,6 +158,7 @@ export function BoardSurface({
           selectedFieldIndexes={selectedFieldIndexes}
           onSelectField={onSelectField}
           myPlayerColor={myPlayerColor}
+          fieldOwnership={fieldOwnership}
         />
 
         {/* Ghost marker pro původní cíl hodu — zobrazen na pozici figurky (blíže středu) */}
