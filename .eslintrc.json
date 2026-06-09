@@ -1,11 +1,6 @@
 {
-  "extends": ["next/core-web-vitals"],
-  "plugins": ["@typescript-eslint"],
+  "extends": "next/core-web-vitals",
   "rules": {
-    "@typescript-eslint/no-explicit-any": "off",
-    "@typescript-eslint/no-require-imports": "off",
-    "react-hooks/exhaustive-deps": "warn",
-    "@next/next/no-html-link-for-pages": "warn",
-    "react/no-unescaped-entities": "off"
+    "react-hooks/exhaustive-deps": "warn"
   }
 }
