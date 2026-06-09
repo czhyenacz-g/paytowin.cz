@@ -344,7 +344,6 @@ export default function GameBoard({ gameCode }: Props) {
   const [selectedFieldIndexes, setSelectedFieldIndexes] = React.useState<number[]>([]);
 
   const eligibleFieldIndexes = React.useMemo<Set<number>>(() => {
-    if (!fieldSelectionMode) return new Set();
     const currentOwners = expireStaleEntries(gameState?.field_owners ?? [], gameState?.turn_count ?? 0);
     return new Set(
       FIELDS
@@ -356,7 +355,7 @@ export default function GameBoard({ gameCode }: Props) {
         .map(f => f.index)
     );
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fieldSelectionMode, gameState?.field_owners, gameState?.turn_count, FIELDS, players]);
+  }, [gameState?.field_owners, gameState?.turn_count, FIELDS, players]);
 
   const handleFieldSelect = React.useCallback((idx: number) => {
     if (!eligibleFieldIndexes.has(idx)) return;
@@ -3155,6 +3154,7 @@ export default function GameBoard({ gameCode }: Props) {
               eligibleFieldIndexes={eligibleFieldIndexes}
               selectedFieldIndexes={selectedFieldIndexes}
               onSelectField={handleFieldSelect}
+              myPlayerColor={myPlayer?.color}
             />
           </div>
 

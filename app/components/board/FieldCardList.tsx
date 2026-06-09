@@ -1,6 +1,18 @@
 "use client";
 
 import React from "react";
+
+const TW_HEX: Record<string, string> = {
+  "bg-emerald-500": "#10b981", "bg-violet-500": "#8b5cf6",
+  "bg-amber-500":   "#f59e0b", "bg-rose-500":   "#f43f5e",
+  "bg-sky-500":     "#0ea5e9", "bg-indigo-500": "#6366f1",
+  "bg-pink-500":    "#ec4899", "bg-orange-500": "#f97316",
+  "bg-teal-500":    "#14b8a6", "bg-red-500":    "#ef4444",
+  "bg-blue-500":    "#3b82f6", "bg-green-500":  "#22c55e",
+  "bg-yellow-500":  "#eab308", "bg-purple-500": "#a855f7",
+  "bg-cyan-500":    "#06b6d4", "bg-lime-500":   "#84cc16",
+  "bg-fuchsia-500": "#d946ef",
+};
 import type { Field } from "@/lib/engine";
 import { isBankrupt, racerOwnershipKey } from "@/lib/engine";
 import type { Player } from "@/lib/types/game";
@@ -43,6 +55,7 @@ interface Props {
   eligibleFieldIndexes?: Set<number>;
   selectedFieldIndexes?: number[];
   onSelectField?: (idx: number) => void;
+  myPlayerColor?: string;
 }
 
 export default function FieldCardList({
@@ -65,7 +78,11 @@ export default function FieldCardList({
   eligibleFieldIndexes,
   selectedFieldIndexes,
   onSelectField,
+  myPlayerColor,
 }: Props) {
+  const playerHex = myPlayerColor
+    ? (myPlayerColor.startsWith("#") || myPlayerColor.startsWith("rgb") ? myPlayerColor : TW_HEX[myPlayerColor] ?? "#f97316")
+    : "#f97316";
   const isNight = themeId.includes("night");
   const labelBadgeClass = isNight
     ? "inline-flex max-w-[58px] items-center justify-center rounded-[10px] bg-white/20 px-1.5 py-0.5 text-[5.5px] font-medium uppercase leading-[1.05] tracking-[0.04em] text-white/70 shadow-[0_1px_0_rgba(255,255,255,0.10)]"
@@ -107,31 +124,20 @@ export default function FieldCardList({
             const c = owner.color;
             if (!c) return "#6366f1";
             if (c.startsWith("#") || c.startsWith("rgb")) return c;
-            const tw: Record<string, string> = {
-              "bg-emerald-500": "#10b981", "bg-violet-500": "#8b5cf6",
-              "bg-amber-500":   "#f59e0b", "bg-rose-500":   "#f43f5e",
-              "bg-sky-500":     "#0ea5e9", "bg-indigo-500": "#6366f1",
-              "bg-pink-500":    "#ec4899", "bg-orange-500": "#f97316",
-              "bg-teal-500":    "#14b8a6", "bg-red-500":    "#ef4444",
-              "bg-blue-500":    "#3b82f6", "bg-green-500":  "#22c55e",
-              "bg-yellow-500":  "#eab308", "bg-purple-500": "#a855f7",
-              "bg-cyan-500":    "#06b6d4", "bg-lime-500":   "#84cc16",
-              "bg-fuchsia-500": "#d946ef",
-            };
-            return tw[c] ?? "#6366f1";
+            return TW_HEX[c] ?? "#6366f1";
           })();
           glows.push(`drop-shadow(0 0 6px ${ownerHex}cc)`);
           glows.push(`drop-shadow(0 0 14px ${ownerHex}88)`);
           glows.push(`drop-shadow(0 0 24px ${ownerHex}44)`);
         }
 
-        // Selection mode glow
+        // Selection mode glow — barva hráče
         const isEligible = selectionMode && !!eligibleFieldIndexes?.has(field.index);
         const isSelected = isEligible && !!selectedFieldIndexes?.includes(field.index);
         if (isSelected) {
-          glows.push("drop-shadow(0 0 10px #22c55e) drop-shadow(0 0 22px rgba(34,197,94,0.55))");
+          glows.push(`drop-shadow(0 0 10px ${playerHex}) drop-shadow(0 0 22px ${playerHex}cc) drop-shadow(0 0 6px white)`);
         } else if (isEligible) {
-          glows.push("drop-shadow(0 0 10px #f97316) drop-shadow(0 0 22px rgba(249,115,22,0.55))");
+          glows.push(`drop-shadow(0 0 10px ${playerHex}) drop-shadow(0 0 22px ${playerHex}88)`);
         }
 
         const fieldBgPrimaryPath = field.type === "racer"
