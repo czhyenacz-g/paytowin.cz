@@ -1025,16 +1025,25 @@ export default function StableDuelBoardLayer({
               />
             </div>
           )}
-          {/* pvbot mode: human challenger controls P1 via direct ref write.
+          {/* pvbot mode: D-pad pro hráče (P1 challenger).
               inputHoldMs < tickMs (156ms) → max 1 tick per tap, no double-turn.
               feedbackMs stays longer for visible press feedback. */}
           {!duelRole && minigameType !== "neon_speedrace" && (
             <div className="shrink-0 flex flex-col items-center gap-1 px-4 py-2 select-none">
-              <div className="text-[9px] font-black uppercase tracking-widest" style={{ color: challengerTouchColor }}>
+              <div className="text-[9px] font-black uppercase tracking-widest mb-1" style={{ color: challengerTouchColor }}>
                 👤 TY · {challenger.name}
               </div>
-              <div className="flex items-center gap-4">
-                <TouchBtn label="←" color={challengerTouchColor} ariaLabel="doleva"
+              <div className="grid grid-cols-3 gap-1.5">
+                {/* Row 1 */}
+                <span />
+                <TouchBtn label="▲" color={challengerTouchColor} ariaLabel="nahoru"
+                  onPressStart={() => {
+                    if (localP1Ref.current) localP1Ref.current = { ...localP1Ref.current, dir: "straight" };
+                  }}
+                />
+                <span />
+                {/* Row 2 */}
+                <TouchBtn label="◀" color={challengerTouchColor} ariaLabel="doleva"
                   inputHoldMs={130} feedbackMs={250}
                   onPressStart={() => {
                     console.info("[DUEL_TOUCH] down", { action: "left", inputHoldMs: 130, feedbackMs: 250, ignoredByCooldown: false, dirSet: "left" });
@@ -1045,7 +1054,10 @@ export default function StableDuelBoardLayer({
                     if (localP1Ref.current) localP1Ref.current = { ...localP1Ref.current, dir: "straight" };
                   }}
                 />
-                <TouchBtn label="BOOST" color={challengerTouchColor} ariaLabel="akce"
+                <TouchBtn
+                  label="⚡"
+                  color={p1IsLegendary ? "#fbbf24" : challengerTouchColor}
+                  ariaLabel="boost"
                   inputHoldMs={180} feedbackMs={250}
                   onPressStart={() => {
                     const action = p1IsLegendary ? "legendaryActivate" : "nitroActivate";
@@ -1061,7 +1073,7 @@ export default function StableDuelBoardLayer({
                     if (localP1Ref.current) localP1Ref.current = { ...localP1Ref.current, nitroActivate: false, legendaryActivate: false };
                   }}
                 />
-                <TouchBtn label="→" color={challengerTouchColor} ariaLabel="doprava"
+                <TouchBtn label="▶" color={challengerTouchColor} ariaLabel="doprava"
                   inputHoldMs={130} feedbackMs={250}
                   onPressStart={() => {
                     console.info("[DUEL_TOUCH] down", { action: "right", inputHoldMs: 130, feedbackMs: 250, ignoredByCooldown: false, dirSet: "right" });
@@ -1072,6 +1084,24 @@ export default function StableDuelBoardLayer({
                     if (localP1Ref.current) localP1Ref.current = { ...localP1Ref.current, dir: "straight" };
                   }}
                 />
+                {/* Row 3 */}
+                <span />
+                <TouchBtn label="▼" color={challengerTouchColor} ariaLabel="boost (dolů)"
+                  inputHoldMs={180} feedbackMs={250}
+                  onPressStart={() => {
+                    const action = p1IsLegendary ? "legendaryActivate" : "nitroActivate";
+                    console.info("[DUEL_TOUCH] down", { action: "boost-down", inputHoldMs: 180, feedbackMs: 250, refWrite: action, isLegendary: p1IsLegendary });
+                    if (p1IsLegendary) {
+                      localP1Ref.current = { dir: localP1Ref.current?.dir ?? "straight", nitroActivate: false, legendaryActivate: true };
+                    } else {
+                      localP1Ref.current = { dir: localP1Ref.current?.dir ?? "straight", nitroActivate: true, legendaryActivate: false };
+                    }
+                  }}
+                  onPressEnd={() => {
+                    if (localP1Ref.current) localP1Ref.current = { ...localP1Ref.current, nitroActivate: false, legendaryActivate: false };
+                  }}
+                />
+                <span />
               </div>
             </div>
           )}
