@@ -27,7 +27,7 @@ import type { Player, Horse, EconomyConfig, ActiveEffect, StableDuelPendingOffer
 import type { RacerConfig } from "@/lib/themes";
 import { getScenarioForTheme } from "@/lib/scenarios";
 import { checkSharedObjectiveInGameReward } from "@/lib/scenarios/objective-rewards";
-import { awardMoneySpentAction } from "@/app/game/actions";
+import { awardMoneySpentAction, awardXpAction, awardWinStarAction } from "@/app/game/actions";
 import { buildFogReveal } from "@/lib/fog";
 import { getFieldOwner, applyFieldOwnerPayment } from "@/lib/game/fieldOwnership";
 import type { FieldOwnerEntry } from "@/lib/types/game";
@@ -143,6 +143,8 @@ async function botFinishTurn(
   const activePlayers = updatedPlayers.filter(p => !isBankrupt(p));
   if (updatedPlayers.length >= 2 && activePlayers.length <= 1) {
     await supabase.from("games").update({ status: "finished" }).eq("id", gameId);
+    awardXpAction(gameId).catch(() => {});
+    awardWinStarAction(gameId).catch(() => {});
     awardMoneySpentAction(gameId).catch(() => {});
   }
 }
