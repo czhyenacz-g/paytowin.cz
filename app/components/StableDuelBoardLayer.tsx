@@ -491,7 +491,7 @@ function ArenaPhase({
 }) {
   if (minigameType === "neon_speedrace") {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center overflow-auto">
+      <div className="flex flex-1 flex-col items-center min-h-0 overflow-y-auto">
         <SpeedArenaPvp
           config={BOARD_SPEED_CONFIG}
           autoStart

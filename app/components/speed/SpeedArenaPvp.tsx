@@ -495,9 +495,30 @@ export default function SpeedArenaPvp({
         </div>
       </div>
 
-      {/* Touch controls — D-pad (mobile/tablet) */}
+      {/* ── Controls ── */}
+      <div className="flex items-center gap-2">
+        {pvpState.overallStatus === "running" && (
+          <button
+            onClick={handleStart}
+            className="rounded-lg bg-amber-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-amber-500 transition"
+          >
+            ⏸ Pauza
+          </button>
+        )}
+        <button
+          onClick={handleReset}
+          className="rounded-lg bg-slate-700 border border-slate-600 px-4 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-600 transition"
+        >
+          ↺ Reset
+        </button>
+      </div>
+
+      {/* Touch controls — D-pad (mobile only, sticky bottom) */}
       {pvpState.overallStatus === "running" && (
-        <div className="flex items-center justify-center gap-8 select-none">
+        <div
+          className="sm:hidden sticky bottom-0 z-10 w-full flex items-center justify-center gap-8 py-1.5 select-none"
+          style={{ background: "rgba(2,6,23,0.88)" }}
+        >
           <DPad
             color={P1_COLOR}
             playerLabel="P1"
@@ -527,24 +548,6 @@ export default function SpeedArenaPvp({
           />
         </div>
       )}
-
-      {/* ── Controls ── */}
-      <div className="flex items-center gap-2">
-        {pvpState.overallStatus === "running" && (
-          <button
-            onClick={handleStart}
-            className="rounded-lg bg-amber-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-amber-500 transition"
-          >
-            ⏸ Pauza
-          </button>
-        )}
-        <button
-          onClick={handleReset}
-          className="rounded-lg bg-slate-700 border border-slate-600 px-4 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-600 transition"
-        >
-          ↺ Reset
-        </button>
-      </div>
 
       {/* ── Debug ── */}
       {showDebug && (
