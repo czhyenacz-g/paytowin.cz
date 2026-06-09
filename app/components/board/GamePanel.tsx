@@ -57,10 +57,10 @@ interface Props {
   toggleSound: () => void;
   shouldShowRacerGuide: boolean;
   shouldShowStaminaGuide: boolean;
-  shouldShowPreferredGuide: boolean;
+  shouldShowCorrectionGuide: boolean;
   dismissRacerGuide: () => void;
   dismissStaminaGuide: () => void;
-  dismissPreferredGuide: () => void;
+  dismissCorrectionGuide: () => void;
   isRolling: boolean;
   isMoving: boolean;
   displayRoll: number | null;
@@ -123,10 +123,10 @@ export default function GamePanel({
   toggleSound,
   shouldShowRacerGuide,
   shouldShowStaminaGuide,
-  shouldShowPreferredGuide,
+  shouldShowCorrectionGuide,
   dismissRacerGuide,
   dismissStaminaGuide,
-  dismissPreferredGuide,
+  dismissCorrectionGuide,
   isRolling,
   isMoving,
   displayRoll,
@@ -183,7 +183,36 @@ export default function GamePanel({
           </button>
         </div>
         <div className="space-y-3">
-          {shouldShowRacerGuide && (
+          {shouldShowCorrectionGuide && (
+            <div className="relative overflow-hidden rounded-[4px] border border-violet-300 bg-gradient-to-br from-violet-50 via-white to-fuchsia-100 p-4 shadow-sm">
+              <div className="pointer-events-none absolute -right-4 -top-4 text-6xl opacity-10">🎲</div>
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[3px] bg-violet-100 text-2xl">
+                  🎩
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-black uppercase tracking-[0.18em] text-violet-700">
+                    Průvodce
+                  </div>
+                  <div className="mt-1 text-sm font-semibold text-slate-800">
+                    {UI_TEXT.guide.correction.title}
+                  </div>
+                  <p className="mt-1 text-xs leading-relaxed text-slate-600">
+                    {UI_TEXT.guide.correction.body}
+                  </p>
+                </div>
+                <button
+                  onClick={dismissCorrectionGuide}
+                  className="shrink-0 rounded-[3px] px-2 py-1 text-xs font-medium text-slate-400 transition hover:bg-white/70 hover:text-slate-700"
+                  title="Skrýt nápovědu"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!shouldShowCorrectionGuide && shouldShowRacerGuide && (
             <div className="relative overflow-hidden rounded-[4px] border border-amber-300 bg-gradient-to-br from-amber-50 via-white to-amber-100 p-4 shadow-sm">
               <div className="pointer-events-none absolute -right-4 -top-4 text-6xl opacity-10">{theme.labels.racingEmoji}</div>
               <div className="flex items-start gap-3">
@@ -212,7 +241,7 @@ export default function GamePanel({
             </div>
           )}
 
-          {!shouldShowRacerGuide && shouldShowStaminaGuide && (
+          {!shouldShowCorrectionGuide && !shouldShowRacerGuide && shouldShowStaminaGuide && (
             <div className="relative overflow-hidden rounded-[4px] border border-sky-300 bg-gradient-to-br from-sky-50 via-white to-cyan-100 p-4 shadow-sm">
               <div className="pointer-events-none absolute -right-4 -top-4 text-6xl opacity-10">{theme.labels.racingEmoji}</div>
               <div className="flex items-start gap-3">
@@ -232,35 +261,6 @@ export default function GamePanel({
                 </div>
                 <button
                   onClick={dismissStaminaGuide}
-                  className="shrink-0 rounded-[3px] px-2 py-1 text-xs font-medium text-slate-400 transition hover:bg-white/70 hover:text-slate-700"
-                  title="Skrýt nápovědu"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-          )}
-
-          {!shouldShowRacerGuide && !shouldShowStaminaGuide && shouldShowPreferredGuide && (
-            <div className="relative overflow-hidden rounded-[4px] border border-violet-300 bg-gradient-to-br from-violet-50 via-white to-fuchsia-100 p-4 shadow-sm">
-              <div className="pointer-events-none absolute -right-4 -top-4 text-6xl opacity-10">⭐</div>
-              <div className="flex items-start gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[3px] bg-violet-100 text-2xl">
-                  🎩
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-xs font-black uppercase tracking-[0.18em] text-violet-700">
-                    Průvodce
-                  </div>
-                  <div className="mt-1 text-sm font-semibold text-slate-800">
-                    {UI_TEXT.guide.setPreferred.title}
-                  </div>
-                  <p className="mt-1 text-xs leading-relaxed text-slate-600">
-                    {UI_TEXT.guide.setPreferred.body}
-                  </p>
-                </div>
-                <button
-                  onClick={dismissPreferredGuide}
                   className="shrink-0 rounded-[3px] px-2 py-1 text-xs font-medium text-slate-400 transition hover:bg-white/70 hover:text-slate-700"
                   title="Skrýt nápovědu"
                 >

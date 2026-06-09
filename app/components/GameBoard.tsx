@@ -177,7 +177,7 @@ export default function GameBoard({ gameCode }: Props) {
   const [hoveredFieldIdx, setHoveredFieldIdx] = React.useState<number | null>(null);
   const [racerGuideDismissed, setRacerGuideDismissed] = React.useState(false);
   const [staminaGuideDismissed, setStaminaGuideDismissed] = React.useState(false);
-  const [preferredGuideDismissed, setPreferredGuideDismissed] = React.useState(false);
+  const [correctionGuideDismissed, setCorrectionGuideDismissed] = React.useState(false);
   const [guideDismissedTurn, setGuideDismissedTurn] = React.useState<number | null>(null);
   // dev-only: Race Mode shell overlay (mimo game state)
   const [devRaceMode, setDevRaceMode] = React.useState(false);
@@ -379,7 +379,7 @@ export default function GameBoard({ gameCode }: Props) {
     const scope = gameCode ?? "local";
     setRacerGuideDismissed(localStorage.getItem(`paytowin_guide_racer_${scope}`) === "dismissed");
     setStaminaGuideDismissed(localStorage.getItem(`paytowin_guide_stamina_${scope}`) === "dismissed");
-    setPreferredGuideDismissed(localStorage.getItem(`paytowin_guide_preferred_${scope}`) === "dismissed");
+    setCorrectionGuideDismissed(localStorage.getItem(`paytowin_guide_correction_${scope}`) === "dismissed");
   }, [gameCode]);
 
   const dismissRacerGuide = React.useCallback(() => {
@@ -396,10 +396,10 @@ export default function GameBoard({ gameCode }: Props) {
     setGuideDismissedTurn(gameState?.turn_count ?? null);
   }, [gameCode, gameState?.turn_count]);
 
-  const dismissPreferredGuide = React.useCallback(() => {
-    const guideKey = `paytowin_guide_preferred_${gameCode ?? "local"}`;
+  const dismissCorrectionGuide = React.useCallback(() => {
+    const guideKey = `paytowin_guide_correction_${gameCode ?? "local"}`;
     localStorage.setItem(guideKey, "dismissed");
-    setPreferredGuideDismissed(true);
+    setCorrectionGuideDismissed(true);
     setGuideDismissedTurn(gameState?.turn_count ?? null);
   }, [gameCode, gameState?.turn_count]);
 
@@ -716,7 +716,13 @@ export default function GameBoard({ gameCode }: Props) {
   // ── Guide visibility — potřeba i v rollDice, proto nad ním ──────────────
   const suppressGuideThisTurn = guideDismissedTurn !== null && guideDismissedTurn === (gameState?.turn_count ?? null);
   const myPlayer = players.find((player) => player.id === myPlayerId) ?? null;
-  const hasPreferredRacer = !!myPlayer?.horses.some((horse) => horse.isPreferred);
+  const shouldShowCorrectionGuide =
+    viewerRole === "player" &&
+    !suppressGuideThisTurn &&
+    !correctionGuideDismissed &&
+    !!myPlayer &&
+    !isBankrupt(myPlayer) &&
+    gameStatus === "playing";
   const shouldShowRacerGuide =
     viewerRole === "player" &&
     !suppressGuideThisTurn &&
@@ -733,15 +739,6 @@ export default function GameBoard({ gameCode }: Props) {
     !isBankrupt(myPlayer) &&
     myPlayer.horses.length > 0 &&
     gameStatus === "playing";
-  const shouldShowPreferredGuide =
-    viewerRole === "player" &&
-    !suppressGuideThisTurn &&
-    !preferredGuideDismissed &&
-    !!myPlayer &&
-    !isBankrupt(myPlayer) &&
-    myPlayer.horses.length > 0 &&
-    !hasPreferredRacer &&
-    gameStatus === "playing";
 
   const rollDice = async () => {
     const activePendingRace = gameState?.offer_pending?.type === "race" ? gameState.offer_pending as RaceOffer : null;
@@ -751,12 +748,12 @@ export default function GameBoard({ gameCode }: Props) {
       (gameState.offer_pending as StableDuelPendingOffer).phase !== "finished";
     if (!gameState || pendingRacer || pendingCard || pendingOffer || pendingRollDecision || activePendingRace || activePendingBankrupt || activePendingRacePlaceholder || activePendingStableDuel || isRolling || isMoving || bankruptWarning) return;
 
-    if (shouldShowRacerGuide) {
+    if (shouldShowCorrectionGuide) {
+      dismissCorrectionGuide();
+    } else if (shouldShowRacerGuide) {
       dismissRacerGuide();
     } else if (shouldShowStaminaGuide) {
       dismissStaminaGuide();
-    } else if (shouldShowPreferredGuide) {
-      dismissPreferredGuide();
     }
 
     const roll = Math.floor(Math.random() * 6) + 1;
@@ -3115,10 +3112,10 @@ export default function GameBoard({ gameCode }: Props) {
             toggleSound={toggleSound}
             shouldShowRacerGuide={shouldShowRacerGuide}
             shouldShowStaminaGuide={shouldShowStaminaGuide}
-            shouldShowPreferredGuide={shouldShowPreferredGuide}
+            shouldShowCorrectionGuide={shouldShowCorrectionGuide}
             dismissRacerGuide={dismissRacerGuide}
             dismissStaminaGuide={dismissStaminaGuide}
-            dismissPreferredGuide={dismissPreferredGuide}
+            dismissCorrectionGuide={dismissCorrectionGuide}
             isRolling={isRolling}
             isMoving={isMoving}
             displayRoll={displayRoll}

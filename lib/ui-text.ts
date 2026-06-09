@@ -23,9 +23,9 @@ export const UI_TEXT = {
       title: "Super! Máš už na čem jezdit. Pokud ho ale úplně vyčerpáš (stamina = 0), seberou ti ho!",
       body:  "Po každém závodě klesá stamina. S boosty/nitrem mnohem rychleji. Tak se snaž neprohrát",
     },
-    setPreferred: {
-      title: "Vyber si hlavního (hvězdičkou).",
-      body:  "Do dalších závodů bude nasazen jako první.",
+    correction: {
+      title: "Kostka nerozhoduje úplně sama.",
+      body:  "Když ti hod nesedí, můžeš zaplatit za malou úpravu tahu. Občas se vyplatí ohnout štěstí dřív, než tě ono ohne zpátky.",
     },
   },
 
