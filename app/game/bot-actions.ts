@@ -256,7 +256,7 @@ export async function executeBotTurnAction(
 
   if (field.type === "racer" && field.racer) {
     const alreadyOwned = playerOwnsRacer(movedPlayer, field.racer);
-    const ownerPlayer  = players.find(p => p.id !== botPlayer.id && playerOwnsRacer(p, field.racer!));
+    const ownerPlayer  = players.find(p => p.id !== botPlayer.id && !isBankrupt(p) && playerOwnsRacer(p, field.racer!));
     BOT_LOG("bot_landed_on_racer", { gameId, botId: botPlayer.id, botName: botPlayer.name, racer: field.racer.name, racerId: field.racer.id, alreadyOwned, ownedByOther: ownerPlayer?.name ?? null, position: newPosition });
 
     if (alreadyOwned) {

@@ -857,9 +857,9 @@ export default function GameBoard({ gameCode }: Props) {
 
     if (field.type === "racer" && field.racer) {
       const alreadyOwned = playerOwnsRacer(movedPlayer, field.racer);
-      // Vlastník = jiný hráč který má tohoto racera — id-first, name fallback pro stará data
+      // Vlastník = živý jiný hráč který má tohoto racera — bankrotovaný se ignoruje
       const ownerPlayer = players.find(
-        p => p.id !== currentPlayer.id && playerOwnsRacer(p, field.racer!)
+        p => p.id !== currentPlayer.id && !isBankrupt(p) && playerOwnsRacer(p, field.racer!)
       );
       const lookupSource = (field.racer.id && ownerPlayer?.horses.some(h => h.id)) ? "id" : "name";
       console.log(`[racer-rent] owner lookup via ${lookupSource} for racer "${field.racer.name}" (id=${field.racer.id ?? "none"}) — owner=${ownerPlayer?.name ?? "none"}`);
