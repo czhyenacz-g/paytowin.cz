@@ -29,6 +29,8 @@ import { getScenarioForTheme } from "@/lib/scenarios";
 import { checkSharedObjectiveInGameReward } from "@/lib/scenarios/objective-rewards";
 import { awardMoneySpentAction } from "@/app/game/actions";
 import { buildFogReveal } from "@/lib/fog";
+import { getFieldOwner, applyFieldOwnerPayment } from "@/lib/game/fieldOwnership";
+import type { FieldOwnerEntry } from "@/lib/types/game";
 import { selectStableMinigame } from "@/lib/minigames/selectStableMinigame";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -463,12 +465,52 @@ export async function executeBotTurnAction(
   // coins_gain / coins_lose / start / neutral / gamble
   if (field.action) {
     const result = field.action(movedPlayer);
-    const finalPlayer = result.player as Player;
+    const actionPlayer = result.player as Player;
+
+    // Field ownership přesměrování pro coins_lose
+    const rawFieldOwners = Array.isArray((state as Record<string, unknown>).field_owners)
+      ? ((state as Record<string, unknown>).field_owners as FieldOwnerEntry[])
+      : [];
+    const fieldOwnerForPayment = field.type === "coins_lose"
+      ? getFieldOwner(field.index, rawFieldOwners, players, state.turn_count)
+      : null;
+    const shouldRedirect = fieldOwnerForPayment !== null
+      && fieldOwnerForPayment.id !== botPlayer.id
+      && !isBankrupt(fieldOwnerForPayment);
+
+    let finalPlayer: Player;
+    let actionLog: string;
+    let ownerAfterPayment: Player | null = null;
+
+    if (shouldRedirect && fieldOwnerForPayment) {
+      const lossAmount = movedPlayer.coins - actionPlayer.coins;
+      if (lossAmount > 0) {
+        const payment = applyFieldOwnerPayment(movedPlayer, fieldOwnerForPayment, lossAmount, field.label ?? field.type);
+        finalPlayer = payment.payer;
+        actionLog = payment.log;
+        ownerAfterPayment = payment.owner;
+      } else {
+        finalPlayer = actionPlayer;
+        actionLog = result.log;
+      }
+    } else {
+      finalPlayer = actionPlayer;
+      actionLog = result.log;
+    }
+
     if (finalPlayer.coins !== movedPlayer.coins) {
       await supabase.from("players").update({ coins: finalPlayer.coins }).eq("id", botPlayer.id);
     }
-    const log = [result.log, ...extraLog, ...logEntries].filter(Boolean) as string[];
-    const updatedForNext3 = updatedPlayers.map(p => p.id === botPlayer.id ? finalPlayer : p);
+    if (ownerAfterPayment) {
+      await supabase.from("players").update({ coins: ownerAfterPayment.coins }).eq("id", ownerAfterPayment.id);
+    }
+
+    const log = [actionLog, ...extraLog, ...logEntries].filter(Boolean) as string[];
+    const updatedForNext3 = updatedPlayers.map(p => {
+      if (p.id === botPlayer.id) return finalPlayer;
+      if (ownerAfterPayment && p.id === ownerAfterPayment.id) return ownerAfterPayment;
+      return p;
+    });
     const nextIdx4 = getNextActiveIndex(state.current_player_index, updatedForNext3);
     await botFinishTurn(gameId, botPlayer, finalPlayer, updatedForNext3, { nextIndex: nextIdx4, turnCount: newTurnCount, log, lastRoll: finalRoll, revealedFields: fogReveal(newPosition) });
     return { ok: true };

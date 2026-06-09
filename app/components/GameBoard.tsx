@@ -110,7 +110,7 @@ import { AmbientBackground } from "./ui/AmbientBackground";
 import { BoardAnimationLayer } from "./board/BoardAnimationLayer";
 import { BoardSurface } from "./board/BoardSurface";
 import { DEFAULT_STARTING_COINS } from "@/lib/game-constants";
-import { getFieldOwner, expireStaleEntries, buildFieldOwnershipPlacement, buildFieldOwnership } from "@/lib/game/fieldOwnership";
+import { getFieldOwner, expireStaleEntries, buildFieldOwnershipPlacement, buildFieldOwnership, applyFieldOwnerPayment } from "@/lib/game/fieldOwnership";
 
 // Styly polí jsou součástí theme systému (lib/themes/*)
 // Přistupuj přes: theme.colors.fieldStyles[field.type]
@@ -1190,7 +1190,36 @@ export default function GameBoard({ gameCode }: Props) {
       // Lokální state — ostatní klienti dostanou přes Realtime
       setPendingCard({ card, playerIndex: gameState.current_player_index });
     } else {
-      const { player: afterField, log: fieldLog } = field.action(movedPlayer);
+      // Field ownership přesměrování pro coins_lose
+      const fieldOwnerForPayment = field.type === "coins_lose"
+        ? getFieldOwner(field.index, gameState.field_owners ?? [], players, gameState.turn_count)
+        : null;
+      const shouldRedirectToOwner = fieldOwnerForPayment !== null
+        && fieldOwnerForPayment.id !== movedPlayer.id
+        && !isBankrupt(fieldOwnerForPayment);
+
+      let afterField: typeof movedPlayer;
+      let fieldLog: string;
+      let ownerAfterPayment: typeof movedPlayer | null = null;
+
+      if (shouldRedirectToOwner && fieldOwnerForPayment) {
+        const { player: actionResult } = field.action(movedPlayer);
+        const lossAmount = movedPlayer.coins - actionResult.coins;
+        if (lossAmount > 0) {
+          const payment = applyFieldOwnerPayment(movedPlayer, fieldOwnerForPayment, lossAmount, field.label);
+          afterField = payment.payer;
+          fieldLog = payment.log;
+          ownerAfterPayment = payment.owner;
+        } else {
+          afterField = actionResult;
+          fieldLog = `${movedPlayer.name} stál na ${field.label}`;
+        }
+      } else {
+        const result = field.action(movedPlayer);
+        afterField = result.player as typeof movedPlayer;
+        fieldLog = result.log;
+      }
+
       const logLines = [...(fieldLog ? [fieldLog] : []), ...extraLog];
 
       // Center feedback pro finanční pole
@@ -1212,14 +1241,19 @@ export default function GameBoard({ gameCode }: Props) {
       if (wentBankrupt) { logLines.push(`💀 ${finalPlayer.name} zkrachoval!`); playSfx("bankrupt"); }
       else if (wouldBankrupt) logLines.push(`${finalPlayer.name} prodal koně a přežil! 💰`);
 
-      const updatedPlayers = players.map((p, i) =>
-        i === gameState.current_player_index ? finalPlayer : p
-      );
+      const updatedPlayers = players.map((p, i) => {
+        if (i === gameState.current_player_index) return finalPlayer;
+        if (ownerAfterPayment && p.id === ownerAfterPayment.id) return ownerAfterPayment;
+        return p;
+      });
       const nextIndex = getNextActiveIndex(gameState.current_player_index, updatedPlayers);
 
       // Hráč aktualizován vždy (pozice, coins, koně)
       console.log(`[turn-flow] normal field persist — pos=${finalPlayer.position} coins=${finalPlayer.coins} wentBankrupt=${wentBankrupt}`);
       await supabase.from("players").update({ position: finalPlayer.position, coins: finalPlayer.coins, horses: finalPlayer.horses, laps: finalPlayer.laps ?? 0 }).eq("id", currentPlayer.id);
+      if (ownerAfterPayment) {
+        await supabase.from("players").update({ coins: ownerAfterPayment.coins }).eq("id", ownerAfterPayment.id);
+      }
 
       // Nabídka rerollu: 25 % šance, jen pokud nešel do bankrotu a nejde o reroll
       const triggerOffer = !canReroll && !wentBankrupt && Math.random() < REROLL_CHANCE;

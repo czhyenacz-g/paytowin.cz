@@ -149,3 +149,24 @@ export function expireStaleEntries(
 export function resetAllFieldOwners(): FieldOwnerEntry[] {
   return [];
 }
+
+// ── Platba vlastníkovi pole ────────────────────────────────────────────────────
+
+/**
+ * applyFieldOwnerPayment — přesměruje ztrátu z coins_lose pole na vlastníka.
+ *
+ * Pure helper — bez DB, bez side effects.
+ * Volá se jen pokud: owner existuje, owner.id !== payer.id, !isBankrupt(owner).
+ */
+export function applyFieldOwnerPayment(
+  payer: Player,
+  owner: Player,
+  lossAmount: number,  // kladné číslo = kolik payer ztrácí
+  fieldLabel: string,
+): { payer: Player; owner: Player; log: string } {
+  return {
+    payer: { ...payer, coins: payer.coins - lossAmount },
+    owner: { ...owner, coins: owner.coins + lossAmount },
+    log: `${payer.name} zaplatil ${lossAmount} 💰 hráči ${owner.name} za pole ${fieldLabel}`,
+  };
+}
