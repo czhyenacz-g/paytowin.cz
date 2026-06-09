@@ -328,7 +328,7 @@ function PreStartPhase({
 
   return (
     <div
-      className="flex flex-1 flex-col min-h-0 overflow-y-auto cursor-pointer select-none"
+      className="flex flex-1 flex-col items-center justify-center gap-3 min-h-0 overflow-y-auto cursor-pointer select-none py-3 px-4"
       style={{ zoom: 0.9 }}
       onClick={onClick}
     >
@@ -339,8 +339,8 @@ function PreStartPhase({
         }
       `}</style>
 
-      {/* ── Top: Karty + VS ─────────────────────────────────────────────────── */}
-      <div className="shrink-0 flex items-center justify-center gap-3 px-3 pt-3 pb-2">
+      {/* ── Karty + VS ──────────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-center gap-3">
         <PlayerCard contestant={cWithColor} label="Challenger" />
         <div
           className="text-5xl font-black tracking-tighter shrink-0 leading-none px-1"
@@ -364,8 +364,8 @@ function PreStartPhase({
         minigameType={minigameType}
       />
 
-      {/* ── Middle: Odpočet + název minihry ─────────────────────────────────── */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-2 px-4">
+      {/* ── Odpočet + název minihry ──────────────────────────────────────────── */}
+      <div className="flex flex-col items-center gap-1.5">
         {(isDev || duelRole) && (
           <div className="flex items-center gap-2">
             {isDev && (
@@ -403,8 +403,8 @@ function PreStartPhase({
         </div>
       </div>
 
-      {/* ── Bottom: OVLÁDÁNÍ ────────────────────────────────────────────────── */}
-      <div className="shrink-0 flex flex-col items-center gap-2 px-4 pb-3">
+      {/* ── OVLÁDÁNÍ ─────────────────────────────────────────────────────────── */}
+      <div className="flex flex-col items-center gap-2">
         <div
           className="text-[11px] font-black uppercase tracking-[0.3em] text-white"
           style={{ textShadow: "0 0 14px rgba(255,255,255,0.5), 0 0 28px rgba(255,255,255,0.2)" }}
