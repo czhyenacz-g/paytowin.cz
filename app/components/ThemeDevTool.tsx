@@ -697,7 +697,7 @@ export default function ThemeDevTool() {
     if (!showBoardPreview || savedSnapshot === null) return false;
     const current = JSON.stringify({ editableBoard, editableRacers, editableCards, editableFieldTextures, editableRacerImages });
     return current !== savedSnapshot;
-  }, [showBoardPreview, savedSnapshot, editableBoard, editableRacers, editableFieldTextures, editableRacerImages]);
+  }, [showBoardPreview, savedSnapshot, editableBoard, editableRacers, editableCards, editableFieldTextures, editableRacerImages]);
 
   // Živý manifest pro BoardEditorPreview — base manifest + asset overrides + editableRacers
   const liveManifest = React.useMemo<ThemeManifest | null>(() => {
@@ -805,7 +805,7 @@ export default function ThemeDevTool() {
         },
       };
     }
-  }, [selectedFieldIndex, editableBoard, liveManifest, editableFieldTextures, editableRacerImages]);
+  }, [selectedFieldIndex, editableBoard, liveManifest, editableFieldTextures]);
 
   // Actions
   const [saving, setSaving] = React.useState(false);

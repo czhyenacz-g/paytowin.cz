@@ -84,6 +84,8 @@ function CardEditor({ card, onUpdate }: { card: GameCard; onUpdate: (updated: Ga
     setValue(String(card.effect.value ?? ""));
     setRacerId(card.effect.racerId ?? "");
     setImagePath(card.imagePath ?? "");
+  // Záměrně pouze card.id — form se resetuje jen při přepnutí karty, ne při každé aktualizaci prop.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [card.id]);
 
   function buildEffect(): GameCard["effect"] {

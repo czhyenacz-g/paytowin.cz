@@ -81,6 +81,8 @@ export default function RacerEditorPanel({ racer, onChange, readOnly = false, th
     setIsBuiltIn(racer.isBuiltIn ?? false);
     setFlavorText(racer.flavorText ?? racer.heroText ?? "");
     setImageUrl(racer.image ?? "");
+  // Záměrně pouze racer.id — form se resetuje jen při přepnutí závodníka, ne při každé aktualizaci prop.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [racer.id]);
 
   // Zavolá onChange jen tehdy, kdy jsou hodnoty platné a lišící se
