@@ -1075,7 +1075,7 @@ export default function GameBoard({ gameCode }: Props) {
       if (field.type === "coins_lose") {
         const coinDelta = afterField.coins - movedPlayer.coins; // záporné číslo
         showCoinsFeedback(coinDelta, "lose", movedPlayer.name, field.label);
-        if (-coinDelta >= 600) showMajorLoss(-coinDelta);
+        if (-coinDelta >= 601) showMajorLoss(-coinDelta);
       } else if (field.type === "coins_gain") {
         const gainDelta = afterField.coins - movedPlayer.coins;
         const netGainDelta = gainDelta - adjustmentCost;
@@ -2107,8 +2107,8 @@ export default function GameBoard({ gameCode }: Props) {
 
         const newCCoins = Math.max(0, challenger.coins + s.p1.coinsDelta);
         const newDCoins = Math.max(0, defender.coins   + s.p2.coinsDelta);
-        if (challenger.id === myPlayerId && s.p1.coinsDelta <= -600) showMajorLoss(-s.p1.coinsDelta);
-        if (defender.id === myPlayerId   && s.p2.coinsDelta <= -600) showMajorLoss(-s.p2.coinsDelta);
+        if (challenger.id === myPlayerId && s.p1.coinsDelta <= -601) showMajorLoss(-s.p1.coinsDelta);
+        if (defender.id === myPlayerId   && s.p2.coinsDelta <= -601) showMajorLoss(-s.p2.coinsDelta);
         if (challenger.id === myPlayerId && s.p1.coinsDelta >= 1000) showMajorGain(s.p1.coinsDelta, challenger.id);
         if (defender.id === myPlayerId   && s.p2.coinsDelta >= 1000) showMajorGain(s.p2.coinsDelta, defender.id);
 
@@ -2724,7 +2724,7 @@ export default function GameBoard({ gameCode }: Props) {
           <div className="text-5xl">🚫</div>
           <h2 className="text-2xl font-bold text-slate-800">Hra byla zrušena</h2>
           <p className="text-slate-500">Hostitel ukončil tuto hru.</p>
-          <a href="/" className="block text-sm text-slate-400 underline hover:text-slate-600">← Zpět na úvod</a>
+          <a href="/" className="block text-sm text-slate-400 underline hover:text-slate-601">← Zpět na úvod</a>
         </div>
       </div>
     );
@@ -2756,7 +2756,7 @@ export default function GameBoard({ gameCode }: Props) {
             <p className="text-sm text-slate-500">
               Tato hra je lokální (hot-seat) a lze ji hrát pouze na zařízení, kde byla vytvořena.
             </p>
-            <a href="/" className="block text-sm text-slate-400 underline hover:text-slate-600">← Zpět na úvod</a>
+            <a href="/" className="block text-sm text-slate-400 underline hover:text-slate-601">← Zpět na úvod</a>
           </div>
         </div>
       );
@@ -2775,11 +2775,11 @@ export default function GameBoard({ gameCode }: Props) {
               provider: "discord",
               options: { redirectTo: `${window.location.origin}/auth/callback?next=/game/${gameCode}` },
             })}
-            className="w-full rounded-2xl bg-indigo-600 px-4 py-4 text-lg font-semibold text-white hover:bg-indigo-700"
+            className="w-full rounded-2xl bg-indigo-601 px-4 py-4 text-lg font-semibold text-white hover:bg-indigo-700"
           >
             🎮 Přihlásit přes Discord
           </button>
-          <a href="/" className="block text-xs text-slate-400 underline hover:text-slate-600">Zpět na úvod</a>
+          <a href="/" className="block text-xs text-slate-400 underline hover:text-slate-601">Zpět na úvod</a>
         </div>
       </div>
     );
@@ -2819,7 +2819,7 @@ export default function GameBoard({ gameCode }: Props) {
         />
       )}
 
-      {/* ── Major Loss Overlay (ztráta >= 600 coins) ─────────────────────── */}
+      {/* ── Major Loss Overlay (ztráta >= 601 coins) ─────────────────────── */}
       {majorLossAmount !== null && (
         <MajorLossOverlay
           amount={majorLossAmount}
@@ -2999,14 +2999,14 @@ export default function GameBoard({ gameCode }: Props) {
                   {!pendingRace && !pendingCard && !pendingRacer && !pendingOffer && players.filter(p => !isBankrupt(p)).length >= 2 && (
                     <button
                       onClick={startRace}
-                      className="rounded-[3px] bg-amber-500 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-amber-600 transition"
+                      className="rounded-[3px] bg-amber-500 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-amber-601 transition"
                     >
                       {UI_TEXT.board.raceButton}
                     </button>
                   )}
                   <button
                     onClick={cancelGame}
-                    className="rounded-[3px] bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-600 hover:bg-red-100 transition"
+                    className="rounded-[3px] bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-601 hover:bg-red-100 transition"
                   >
                     Zrušit
                   </button>
@@ -3015,7 +3015,7 @@ export default function GameBoard({ gameCode }: Props) {
               {/* Skrýt panel — vždy na pravém okraji */}
               <button
                 onClick={() => setTopPanelVisible(false)}
-                className="shrink-0 ml-1 rounded-[3px] px-1.5 py-1 text-[11px] text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
+                className="shrink-0 ml-1 rounded-[3px] px-1.5 py-1 text-[11px] text-slate-400 hover:text-slate-601 hover:bg-slate-100 transition"
                 title="Skrýt panel"
                 aria-label="Skrýt panel"
               >
@@ -3239,11 +3239,11 @@ export default function GameBoard({ gameCode }: Props) {
         </div>
       )}
       <div className="py-2 flex items-center justify-center gap-4 text-xs text-slate-400">
-        <a href="/pravidla" className="hover:text-slate-600 underline">Pravidla hry</a>
+        <a href="/pravidla" className="hover:text-slate-601 underline">Pravidla hry</a>
         <span>·</span>
-        <a href="/o-nas" className="hover:text-slate-600 underline">O nás</a>
+        <a href="/o-nas" className="hover:text-slate-601 underline">O nás</a>
         <span>·</span>
-        <a href="mailto:info@paytowin.cz" className="hover:text-slate-600 underline">info@paytowin.cz</a>
+        <a href="mailto:info@paytowin.cz" className="hover:text-slate-601 underline">info@paytowin.cz</a>
         <span>·</span>
         <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 tracking-wide">Beta v0.7.13-seno</span>
       </div>
