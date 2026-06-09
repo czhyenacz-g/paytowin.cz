@@ -52,6 +52,23 @@ export interface ActiveEffect {
   turnsLeft: number;
 }
 
+/**
+ * FieldOwnerEntry — záznam o dočasném vlastnictví coins_lose pole.
+ *
+ * Vlastnictví vyprší na začátku dalšího tahu vlastníka (expiresBeforeTurn).
+ * Uloženo v game_state.field_owners (JSONB array).
+ * Analogie: racer ownership v player.horses — ale na poli, ne na hráči.
+ */
+export interface FieldOwnerEntry {
+  fieldIndex:        number;
+  ownerId:           string;
+  /** Snapshot jména pro log — nevyžaduje zpětný lookup hráče. */
+  ownerName:         string;
+  placedAtTurn:      number;
+  /** Tah, před jehož začátkem vlastnictví vyprší (= placedAtTurn + počet hráčů). */
+  expiresBeforeTurn: number;
+}
+
 // ─── Hráč ─────────────────────────────────────────────────────────────────────
 
 /**
@@ -281,6 +298,12 @@ export interface GameState {
    * Optional pro backward kompatibilitu.
    */
   objective_completed_by?: Record<string, string>;
+  /**
+   * Dočasní vlastníci coins_lose polí.
+   * Optional pro backward kompatibilitu se hrami bez tohoto sloupce.
+   * Viz FieldOwnerEntry a helpery v lib/game/fieldOwnership.ts.
+   */
+  field_owners?: FieldOwnerEntry[];
 }
 
 /** Korekce hodu kostkou: −1, 0 nebo +1 krok. */
