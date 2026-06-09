@@ -1117,8 +1117,9 @@ export default function GameBoard({ gameCode }: Props) {
         if (-coinDelta >= 500) showMajorLoss(-coinDelta);
       } else if (field.type === "coins_gain") {
         const gainDelta = afterField.coins - movedPlayer.coins;
+        const netGainDelta = gainDelta - adjustmentCost;
         showCoinsFeedback(gainDelta, "gain", movedPlayer.name, field.label);
-        if (gainDelta >= 1000) showMajorGain(gainDelta, movedPlayer.id);
+        if (netGainDelta >= 1000) showMajorGain(gainDelta, movedPlayer.id);
       }
 
       // Bankrot? — dej hráči šanci prodat koně, pak znovu vyhodnoť
