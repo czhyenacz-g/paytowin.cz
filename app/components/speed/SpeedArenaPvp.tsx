@@ -110,6 +110,43 @@ function PvpSpeedGauge({
   );
 }
 
+// ── D-pad touch control ───────────────────────────────────────────────────────
+
+interface DPadProps {
+  color: string;
+  playerLabel: string;
+  nitroReady: boolean;
+  onUp: () => void;
+  onUpEnd: () => void;
+  onLeft: () => void;
+  onLeftEnd: () => void;
+  onDown: () => void;
+  onDownEnd?: () => void;
+  onRight: () => void;
+  onRightEnd: () => void;
+  onBoost: () => void;
+}
+
+function DPad({ color, playerLabel, nitroReady, onUp, onUpEnd, onLeft, onLeftEnd, onDown, onDownEnd, onRight, onRightEnd, onBoost }: DPadProps) {
+  const boostColor = nitroReady ? "#fbbf24" : "#475569";
+  return (
+    <div className="flex flex-col items-center gap-1 select-none touch-none">
+      <div className="text-[9px] font-mono mb-0.5" style={{ color }}>{playerLabel}</div>
+      <div className="grid grid-cols-3 gap-1.5">
+        <span />
+        <TouchBtn label="▲" color={color} ariaLabel={`${playerLabel} nahoru`} onPressStart={onUp} onPressEnd={onUpEnd} />
+        <span />
+        <TouchBtn label="◀" color={color} ariaLabel={`${playerLabel} doleva`} onPressStart={onLeft} onPressEnd={onLeftEnd} />
+        <TouchBtn label="⚡" color={boostColor} ariaLabel={`${playerLabel} boost`} onPressStart={onBoost} />
+        <TouchBtn label="▶" color={color} ariaLabel={`${playerLabel} doprava`} onPressStart={onRight} onPressEnd={onRightEnd} />
+        <span />
+        <TouchBtn label="▼" color={color} ariaLabel={`${playerLabel} dolů`} onPressStart={onDown} onPressEnd={onDownEnd} />
+        <span />
+      </div>
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 interface Props {
@@ -458,37 +495,36 @@ export default function SpeedArenaPvp({
         </div>
       </div>
 
-      {/* Touch controls (mobile/tablet) */}
+      {/* Touch controls — D-pad (mobile/tablet) */}
       {pvpState.overallStatus === "running" && (
-        <div className="flex items-center justify-center gap-6 select-none">
-          <div className="flex items-center gap-3">
-            <span className="text-[9px] font-mono" style={{ color: P1_COLOR }}>P1</span>
-            <TouchBtn label="A" color={P1_COLOR} ariaLabel="P1 doleva"
-              onPressStart={() => keysRef.current.add("KeyA")}
-              onPressEnd={() => keysRef.current.delete("KeyA")}
-            />
-            <TouchBtn label="D" color={P1_COLOR} ariaLabel="P1 doprava"
-              onPressStart={() => keysRef.current.add("KeyD")}
-              onPressEnd={() => keysRef.current.delete("KeyD")}
-            />
-            <TouchBtn label="S" color={P1_COLOR} ariaLabel="P1 nitro"
-              onPressStart={() => { p1NitroActivateRef.current = true; }}
-            />
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-[9px] font-mono" style={{ color: P2_COLOR }}>P2</span>
-            <TouchBtn label="←" color={P2_COLOR} ariaLabel="P2 doleva"
-              onPressStart={() => keysRef.current.add("ArrowLeft")}
-              onPressEnd={() => keysRef.current.delete("ArrowLeft")}
-            />
-            <TouchBtn label="→" color={P2_COLOR} ariaLabel="P2 doprava"
-              onPressStart={() => keysRef.current.add("ArrowRight")}
-              onPressEnd={() => keysRef.current.delete("ArrowRight")}
-            />
-            <TouchBtn label="SPACE" color={P2_COLOR} ariaLabel="P2 nitro"
-              onPressStart={() => { p2NitroActivateRef.current = true; }}
-            />
-          </div>
+        <div className="flex items-center justify-center gap-8 select-none">
+          <DPad
+            color={P1_COLOR}
+            playerLabel="P1"
+            nitroReady={!pvpState.p1NitroUsed}
+            onUp={() => keysRef.current.add("KeyW")}
+            onUpEnd={() => keysRef.current.delete("KeyW")}
+            onLeft={() => keysRef.current.add("KeyA")}
+            onLeftEnd={() => keysRef.current.delete("KeyA")}
+            onDown={() => { p1NitroActivateRef.current = true; }}
+            onRight={() => keysRef.current.add("KeyD")}
+            onRightEnd={() => keysRef.current.delete("KeyD")}
+            onBoost={() => { p1NitroActivateRef.current = true; }}
+          />
+          <DPad
+            color={P2_COLOR}
+            playerLabel="P2"
+            nitroReady={!pvpState.p2NitroUsed}
+            onUp={() => keysRef.current.add("ArrowUp")}
+            onUpEnd={() => keysRef.current.delete("ArrowUp")}
+            onLeft={() => keysRef.current.add("ArrowLeft")}
+            onLeftEnd={() => keysRef.current.delete("ArrowLeft")}
+            onDown={() => keysRef.current.add("ArrowDown")}
+            onDownEnd={() => keysRef.current.delete("ArrowDown")}
+            onRight={() => keysRef.current.add("ArrowRight")}
+            onRightEnd={() => keysRef.current.delete("ArrowRight")}
+            onBoost={() => { p2NitroActivateRef.current = true; }}
+          />
         </div>
       )}
 
