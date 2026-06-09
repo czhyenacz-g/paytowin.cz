@@ -2633,6 +2633,38 @@ export default function GameBoard({ gameCode }: Props) {
       ? `racing_${racePendingEvt.currentRacerIndex ?? 0}`
       : null]);
 
+  // Watchdog: pokud card_pending zůstane aktivní déle než 30s (selhání klienta), host ho
+  // vyčistí. Nevolá applyCardEffect — pouze odblokuje hru smazáním stale pending stavu.
+  // Před mazáním ověří, že DB stále obsahuje stejnou kartu (capturedCardId + capturedTurnCount).
+  React.useEffect(() => {
+    if (!gameState?.card_pending) return;
+    if (!isHost && !isLocalGame) return;
+    if (gameStatus !== "playing") return;
+    const capturedCardId   = gameState.card_pending.id;
+    const capturedTurnCount = gameState.turn_count;
+    const timer = setTimeout(async () => {
+      if (!gameId) return;
+      const { data: fresh } = await supabase
+        .from("game_state")
+        .select("card_pending, turn_count")
+        .eq("game_id", gameId)
+        .single();
+      if (!fresh?.card_pending) return; // klient mezitím vyřešil
+      const freshCard = fresh.card_pending as { id?: string };
+      if (freshCard.id !== capturedCardId || fresh.turn_count !== capturedTurnCount) return;
+      console.warn("[watchdog] card_pending stale — clearing", { capturedCardId, capturedTurnCount });
+      await supabase
+        .from("game_state")
+        .update({ card_pending: null })
+        .eq("game_id", gameId)
+        .eq("turn_count", capturedTurnCount); // safety: nemazat pokud tah pokročil
+    }, 30_000);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState?.card_pending
+      ? gameState.card_pending.id + "_" + gameState.turn_count
+      : null]);
+
   // Auto-confirm preferred racera — pokud má aktuální selektor validního preferred koně,
   // potvrdí ho automaticky bez zobrazení selection overlay.
   // Fallback ruční selection nastane pouze tehdy, když preferred neexistuje / hráč ho nevlastní.
