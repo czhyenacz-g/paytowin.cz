@@ -553,6 +553,7 @@ export default function GamePanel({
                   {canStartFieldSelection && (
                     <button
                       onClick={onStartFieldSelection}
+                      title="Označ ztrátové pole. Když na něj soupeř vstoupí, zaplatí tobě místo bance."
                       className="w-full rounded-[4px] border border-slate-600 px-4 py-2.5 text-sm font-semibold text-slate-300 hover:bg-slate-800 transition"
                     >
                       Vsadit na pole 🎯

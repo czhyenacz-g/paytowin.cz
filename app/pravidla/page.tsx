@@ -87,6 +87,22 @@ export default function PravidlaPage() {
           </section>
 
           <section className={cardClass}>
+            <div className={sectionTitle}>Vsadit na pole</div>
+            <p className={ruleBody}>
+              Před hodem kostkou můžeš zaplatit za označení až 3 odkrytých ztrátových polí.
+              Pokud na takové pole vstoupí soupeř, zaplatí ztrátu tobě místo bance.
+            </p>
+            <ul className={`${ruleList} list-disc list-inside`}>
+              <li>1. pole: 100 💰</li>
+              <li>2. pole: +200 💰</li>
+              <li>3. pole: +400 💰</li>
+            </ul>
+            <p className={ruleMuted}>
+              Označení platí jen krátce. Když vyprší, pole se zase chová normálně.
+            </p>
+          </section>
+
+          <section className={cardClass}>
             <div className={sectionTitle}>Stájový souboj</div>
             <p className={ruleBody}>Když vstoupíš na cizího závodníka:</p>
             <ol className={`${ruleList} list-decimal list-inside`}>
