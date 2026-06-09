@@ -245,6 +245,49 @@ export function BoardSurface({
           gameYear={gameYear}
           racerOwnership={racerOwnership}
         />
+
+        {/* Mobilní feedback overlay — zobrazí se nad kartami pouze na malých obrazovkách */}
+        {(coinsFeedback || opponentMoneyEvent) && (
+          <div className="md:hidden absolute inset-0 z-[200] flex items-center justify-center pointer-events-none">
+            <div className="rounded-2xl bg-black/80 px-6 py-5 text-center shadow-2xl backdrop-blur-sm">
+              {coinsFeedback && (
+                <>
+                  <div
+                    className="text-5xl font-black tabular-nums leading-none"
+                    style={{ color: coinsFeedback.kind === "gain" ? "#34d399" : "#f87171" }}
+                  >
+                    {coinsFeedback.kind === "gain" ? "+" : ""}{coinsFeedback.amount} 💰
+                  </div>
+                  <div className="mt-2 text-xs font-semibold uppercase tracking-wide text-white/70">
+                    {coinsFeedback.playerName}
+                  </div>
+                  <div className="mt-0.5 text-[10px] text-white/50">
+                    {coinsFeedback.fieldLabel}
+                  </div>
+                </>
+              )}
+              {opponentMoneyEvent && (
+                <>
+                  <div
+                    className="text-[10px] font-semibold uppercase tracking-widest mb-1.5 opacity-60"
+                    style={{ color: opponentMoneyEvent.kind === "gain" ? "#fbbf24" : "#94a3b8" }}
+                  >
+                    {opponentMoneyEvent.kind === "gain" ? "Soupeř získal" : "Ztráta soupeře"}
+                  </div>
+                  <div
+                    className="text-4xl font-black tabular-nums leading-none"
+                    style={{ color: opponentMoneyEvent.kind === "gain" ? "#fbbf24" : "#f87171" }}
+                  >
+                    {opponentMoneyEvent.kind === "gain" ? "+" : "-"}{opponentMoneyEvent.amount} 💰
+                  </div>
+                  <div className="mt-2 text-xs font-semibold text-white/70">
+                    {opponentMoneyEvent.playerName}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
