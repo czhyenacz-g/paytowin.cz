@@ -73,6 +73,7 @@ import type { CenterEvent, FlashEvent } from "@/lib/types/events";
 import { mapToCenterEvent, buildRollDecisionOptions } from "@/lib/game/viewModel";
 import { buildRacerOwnership, getDisplayPlayers, computeRaceResultsView } from "@/lib/game/gameBoardViewModel";
 import { useGameBoardAudio } from "@/app/components/board/hooks/useGameBoardAudio";
+import { useGuideState } from "@/app/components/board/hooks/useGuideState";
 import CenterEventModal from "./modals/CenterEventModal";
 import FlashToast from "./modals/FlashToast";
 import RacerLostModal, { type RacerCategory } from "./modals/RacerLostModal";
@@ -176,10 +177,6 @@ export default function GameBoard({ gameCode }: Props) {
   const [trailFields, setTrailFields] = React.useState<number[]>([]);
   const [hoveredPlayerId, setHoveredPlayerId] = React.useState<string | null>(null);
   const [hoveredFieldIdx, setHoveredFieldIdx] = React.useState<number | null>(null);
-  const [racerGuideDismissed, setRacerGuideDismissed] = React.useState(false);
-  const [staminaGuideDismissed, setStaminaGuideDismissed] = React.useState(false);
-  const [correctionGuideDismissed, setCorrectionGuideDismissed] = React.useState(false);
-  const [guideDismissedTurn, setGuideDismissedTurn] = React.useState<number | null>(null);
   // dev-only: Race Mode shell overlay (mimo game state)
   const [devRaceMode, setDevRaceMode] = React.useState(false);
   // dev-only: Race Board layer (vrstva uvnitř boardu)
@@ -375,34 +372,6 @@ export default function GameBoard({ gameCode }: Props) {
       if (rollDecisionTimerRef.current) clearTimeout(rollDecisionTimerRef.current);
     };
   }, []);
-
-  React.useEffect(() => {
-    const scope = gameCode ?? "local";
-    setRacerGuideDismissed(localStorage.getItem(`paytowin_guide_racer_${scope}`) === "dismissed");
-    setStaminaGuideDismissed(localStorage.getItem(`paytowin_guide_stamina_${scope}`) === "dismissed");
-    setCorrectionGuideDismissed(localStorage.getItem(`paytowin_guide_correction_${scope}`) === "dismissed");
-  }, [gameCode]);
-
-  const dismissRacerGuide = React.useCallback(() => {
-    const guideKey = `paytowin_guide_racer_${gameCode ?? "local"}`;
-    localStorage.setItem(guideKey, "dismissed");
-    setRacerGuideDismissed(true);
-    setGuideDismissedTurn(gameState?.turn_count ?? null);
-  }, [gameCode, gameState?.turn_count]);
-
-  const dismissStaminaGuide = React.useCallback(() => {
-    const guideKey = `paytowin_guide_stamina_${gameCode ?? "local"}`;
-    localStorage.setItem(guideKey, "dismissed");
-    setStaminaGuideDismissed(true);
-    setGuideDismissedTurn(gameState?.turn_count ?? null);
-  }, [gameCode, gameState?.turn_count]);
-
-  const dismissCorrectionGuide = React.useCallback(() => {
-    const guideKey = `paytowin_guide_correction_${gameCode ?? "local"}`;
-    localStorage.setItem(guideKey, "dismissed");
-    setCorrectionGuideDismissed(true);
-    setGuideDismissedTurn(gameState?.turn_count ?? null);
-  }, [gameCode, gameState?.turn_count]);
 
   const clearRollDecisionTimer = React.useCallback(() => {
     if (rollDecisionTimerRef.current) {
@@ -721,32 +690,24 @@ export default function GameBoard({ gameCode }: Props) {
     });
   }, []);
 
-  // ── Guide visibility — potřeba i v rollDice, proto nad ním ──────────────
-  const suppressGuideThisTurn = guideDismissedTurn !== null && guideDismissedTurn === (gameState?.turn_count ?? null);
+  // ── Guide visibility ─────────────────────────────────────────────────────
   const myPlayer = players.find((player) => player.id === myPlayerId) ?? null;
-  const shouldShowCorrectionGuide =
-    viewerRole === "player" &&
-    !suppressGuideThisTurn &&
-    !correctionGuideDismissed &&
-    !!myPlayer &&
-    !isBankrupt(myPlayer) &&
-    gameStatus === "playing";
-  const shouldShowRacerGuide =
-    viewerRole === "player" &&
-    !suppressGuideThisTurn &&
-    !racerGuideDismissed &&
-    !!myPlayer &&
-    !isBankrupt(myPlayer) &&
-    myPlayer.horses.length === 0 &&
-    gameStatus === "playing";
-  const shouldShowStaminaGuide =
-    viewerRole === "player" &&
-    !suppressGuideThisTurn &&
-    !staminaGuideDismissed &&
-    !!myPlayer &&
-    !isBankrupt(myPlayer) &&
-    myPlayer.horses.length > 0 &&
-    gameStatus === "playing";
+  const {
+    shouldShowCorrectionGuide,
+    shouldShowRacerGuide,
+    shouldShowStaminaGuide,
+    dismissCorrectionGuide,
+    dismissRacerGuide,
+    dismissStaminaGuide,
+  } = useGuideState({
+    gameCode,
+    turnCount: gameState?.turn_count,
+    viewerRole,
+    hasPlayer: !!myPlayer,
+    isPlayerBankrupt: !!myPlayer && isBankrupt(myPlayer),
+    horseCount: myPlayer?.horses.length ?? 0,
+    gameStatus,
+  });
 
   const rollDice = async () => {
     const activePendingRace = gameState?.offer_pending?.type === "race" ? gameState.offer_pending as RaceOffer : null;
