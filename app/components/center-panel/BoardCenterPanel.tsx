@@ -63,7 +63,8 @@ export default function BoardCenterPanel({
   const valCls       = isNight ? "tracking-tight text-slate-100" : "tracking-tight text-stone-800";
   const ownerCls     = isNight ? "text-slate-300 font-medium" : "text-stone-600 font-medium";
 
-  const wrapperClassName = `absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center p-4 text-center ${
+  const hasFeedback = !!coinsFeedback || !!opponentMoneyEvent;
+  const wrapperClassName = `absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center p-4 text-center ${hasFeedback ? "z-[20]" : ""} ${
     theme.assets?.centerBgImage
       ? ""
       : `${isNight ? "overflow-visible" : "overflow-hidden"} border-2 shadow-inner ${theme.colors.centerBorder}`
