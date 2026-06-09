@@ -299,11 +299,11 @@ export default function SpeedArenaPvp({
     <div className="flex flex-col items-center gap-3 select-none">
 
       {/* ── Arena SVG ── */}
-      <div className="relative rounded-xl overflow-hidden" style={{ boxShadow: `0 0 40px rgba(34,211,238,0.06), 0 0 0 1px ${WALL_COLOR}` }}>
+      <div className="relative w-full rounded-xl overflow-hidden" style={{ maxWidth: arenaW, boxShadow: `0 0 40px rgba(34,211,238,0.06), 0 0 0 1px ${WALL_COLOR}` }}>
         <svg
-          width={arenaW}
-          height={arenaH}
-          style={{ display: "block", background: backgroundUrl ? "transparent" : BG_COLOR }}
+          viewBox={`0 0 ${arenaW} ${arenaH}`}
+          preserveAspectRatio="xMidYMid meet"
+          style={{ display: "block", width: "100%", height: "auto", background: backgroundUrl ? "transparent" : BG_COLOR }}
         >
           <PvpFilters />
 
