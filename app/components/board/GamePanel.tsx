@@ -120,6 +120,9 @@ interface Props {
   myPlayerCoins?: number;
   onStartFieldSelection?: () => void;
   onCancelOwnership?: () => void;
+  onConfirmOwnership?: () => void;
+  fieldOwnershipLoading?: boolean;
+  fieldOwnershipError?: string | null;
 }
 
 export default function GamePanel({
@@ -182,6 +185,9 @@ export default function GamePanel({
   myPlayerCoins = 0,
   onStartFieldSelection,
   onCancelOwnership,
+  onConfirmOwnership,
+  fieldOwnershipLoading = false,
+  fieldOwnershipError = null,
 }: Props) {
   return (
     <div className="flex flex-col gap-3">
@@ -516,6 +522,9 @@ export default function GamePanel({
                   FIELDS={FIELDS}
                   playerCoins={myPlayerCoins}
                   onCancel={onCancelOwnership ?? (() => {})}
+                  onConfirm={onConfirmOwnership ?? (() => {})}
+                  loading={fieldOwnershipLoading}
+                  error={fieldOwnershipError}
                 />
               ) : (
                 <>

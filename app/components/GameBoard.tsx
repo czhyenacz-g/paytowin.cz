@@ -110,7 +110,7 @@ import { AmbientBackground } from "./ui/AmbientBackground";
 import { BoardAnimationLayer } from "./board/BoardAnimationLayer";
 import { BoardSurface } from "./board/BoardSurface";
 import { DEFAULT_STARTING_COINS } from "@/lib/game-constants";
-import { getFieldOwner, expireStaleEntries } from "@/lib/game/fieldOwnership";
+import { getFieldOwner, expireStaleEntries, buildFieldOwnershipPlacement } from "@/lib/game/fieldOwnership";
 
 // Styly polí jsou součástí theme systému (lib/themes/*)
 // Přistupuj přes: theme.colors.fieldStyles[field.type]
@@ -357,6 +357,9 @@ export default function GameBoard({ gameCode }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState?.field_owners, gameState?.turn_count, FIELDS, players]);
 
+  const [fieldOwnershipLoading, setFieldOwnershipLoading] = React.useState(false);
+  const [fieldOwnershipError, setFieldOwnershipError] = React.useState<string | null>(null);
+
   const handleFieldSelect = React.useCallback((idx: number) => {
     if (!eligibleFieldIndexes.has(idx)) return;
     setSelectedFieldIndexes(prev => {
@@ -369,18 +372,84 @@ export default function GameBoard({ gameCode }: Props) {
   const handleCancelOwnership = React.useCallback(() => {
     setFieldSelectionMode(false);
     setSelectedFieldIndexes([]);
+    setFieldOwnershipError(null);
   }, []);
 
   const handleStartFieldSelection = React.useCallback(() => {
     setSelectedFieldIndexes([]);
     setFieldSelectionMode(true);
+    setFieldOwnershipError(null);
   }, []);
+
+  const confirmFieldOwnership = React.useCallback(async () => {
+    if (!gameState || !gameId || !myPlayerId || selectedFieldIndexes.length === 0) return;
+    const player = players.find(p => p.id === myPlayerId);
+    if (!player) return;
+
+    const result = buildFieldOwnershipPlacement(
+      selectedFieldIndexes,
+      player.id,
+      player.name,
+      gameState.turn_count,
+      players.length,
+      FIELDS,
+      gameState.field_owners ?? [],
+    );
+
+    if (!result.valid) {
+      setFieldOwnershipError(result.reason ?? "Neplatný výběr");
+      return;
+    }
+    if (player.coins < result.totalCost) {
+      setFieldOwnershipError("Nedostatek coins.");
+      return;
+    }
+
+    setFieldOwnershipLoading(true);
+    setFieldOwnershipError(null);
+    try {
+      const newFieldOwners = [
+        ...expireStaleEntries(gameState.field_owners ?? [], gameState.turn_count),
+        ...result.entries,
+      ];
+      const newLog = [
+        `${player.name} vsadil na ${result.entries.length} ${result.entries.length === 1 ? "pole" : "polí"} za ${result.totalCost} 💰`,
+        ...(gameState.log ?? []),
+      ].slice(0, 20);
+
+      const { data: updatedRows, error: gsError } = await supabase
+        .from("game_state")
+        .update({ field_owners: newFieldOwners as unknown as Record<string, unknown>[], log: newLog })
+        .eq("game_id", gameId)
+        .eq("turn_count", gameState.turn_count)
+        .select("turn_count");
+
+      if (gsError || !updatedRows || updatedRows.length === 0) {
+        setFieldOwnershipError(gsError ? "Chyba při ukládání." : "Pole se mezitím změnila, zkus to znovu.");
+        return;
+      }
+
+      await supabase
+        .from("players")
+        .update({ coins: player.coins - result.totalCost })
+        .eq("id", player.id);
+
+      setFieldSelectionMode(false);
+      setSelectedFieldIndexes([]);
+    } catch (err) {
+      console.error("[confirmFieldOwnership]", err);
+      setFieldOwnershipError("Chyba při ukládání. Zkus to znovu.");
+    } finally {
+      setFieldOwnershipLoading(false);
+    }
+  }, [selectedFieldIndexes, gameState, gameId, myPlayerId, players, FIELDS]);
 
   // Reset selection when turn changes
   React.useEffect(() => {
     if (fieldSelectionMode) {
       setFieldSelectionMode(false);
       setSelectedFieldIndexes([]);
+      setFieldOwnershipError(null);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState?.turn_count]);
@@ -3219,6 +3288,9 @@ export default function GameBoard({ gameCode }: Props) {
             myPlayerCoins={myPlayer?.coins ?? 0}
             onStartFieldSelection={handleStartFieldSelection}
             onCancelOwnership={handleCancelOwnership}
+            onConfirmOwnership={confirmFieldOwnership}
+            fieldOwnershipLoading={fieldOwnershipLoading}
+            fieldOwnershipError={fieldOwnershipError}
           />
 
         </div>
