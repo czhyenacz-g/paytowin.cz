@@ -110,6 +110,7 @@ import { AmbientBackground } from "./ui/AmbientBackground";
 import { BoardAnimationLayer } from "./board/BoardAnimationLayer";
 import { BoardSurface } from "./board/BoardSurface";
 import { DEFAULT_STARTING_COINS } from "@/lib/game-constants";
+import { getFieldOwner, expireStaleEntries } from "@/lib/game/fieldOwnership";
 
 // Styly polí jsou součástí theme systému (lib/themes/*)
 // Přistupuj přes: theme.colors.fieldStyles[field.type]
@@ -337,6 +338,53 @@ export default function GameBoard({ gameCode }: Props) {
   const [flippingFields, setFlippingFields] = React.useState<Set<number>>(new Set());
   // showingHiddenRef: pole v první půlce flipu — stále zobrazují hidden card
   const showingHiddenRef = React.useRef<Set<number>>(new Set());
+
+  // Field ownership selection mode
+  const [fieldSelectionMode, setFieldSelectionMode] = React.useState(false);
+  const [selectedFieldIndexes, setSelectedFieldIndexes] = React.useState<number[]>([]);
+
+  const eligibleFieldIndexes = React.useMemo<Set<number>>(() => {
+    if (!fieldSelectionMode) return new Set();
+    const currentOwners = expireStaleEntries(gameState?.field_owners ?? [], gameState?.turn_count ?? 0);
+    return new Set(
+      FIELDS
+        .filter(f =>
+          f.type === "coins_lose" &&
+          isFieldVisible(f) &&
+          getFieldOwner(f.index, currentOwners, players, gameState?.turn_count ?? 0) === null
+        )
+        .map(f => f.index)
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fieldSelectionMode, gameState?.field_owners, gameState?.turn_count, FIELDS, players]);
+
+  const handleFieldSelect = React.useCallback((idx: number) => {
+    if (!eligibleFieldIndexes.has(idx)) return;
+    setSelectedFieldIndexes(prev => {
+      if (prev.includes(idx)) return prev.filter(i => i !== idx);
+      if (prev.length >= 3) return prev;
+      return [...prev, idx];
+    });
+  }, [eligibleFieldIndexes]);
+
+  const handleCancelOwnership = React.useCallback(() => {
+    setFieldSelectionMode(false);
+    setSelectedFieldIndexes([]);
+  }, []);
+
+  const handleStartFieldSelection = React.useCallback(() => {
+    setSelectedFieldIndexes([]);
+    setFieldSelectionMode(true);
+  }, []);
+
+  // Reset selection when turn changes
+  React.useEffect(() => {
+    if (fieldSelectionMode) {
+      setFieldSelectionMode(false);
+      setSelectedFieldIndexes([]);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState?.turn_count]);
 
   React.useEffect(() => {
     if (!fogOfWar) return;
@@ -3103,6 +3151,10 @@ export default function GameBoard({ gameCode }: Props) {
               currentYearEvent={currentYearEvent}
               gameYear={gameYear}
               onHoverField={setHoveredFieldIdx}
+              fieldSelectionMode={fieldSelectionMode}
+              eligibleFieldIndexes={eligibleFieldIndexes}
+              selectedFieldIndexes={selectedFieldIndexes}
+              onSelectField={handleFieldSelect}
             />
           </div>
 
@@ -3161,6 +3213,12 @@ export default function GameBoard({ gameCode }: Props) {
             setDevRaceBoardLayer={setDevRaceBoardLayer}
             devFlipOpen={devFlipOpen}
             closeDevFlip={closeDevFlip}
+            fieldSelectionMode={fieldSelectionMode}
+            selectedFieldIndexes={selectedFieldIndexes}
+            canStartFieldSelection={isMyTurn && !iAmBankrupt && (myPlayer?.coins ?? 0) >= 100 && eligibleFieldIndexes.size > 0}
+            myPlayerCoins={myPlayer?.coins ?? 0}
+            onStartFieldSelection={handleStartFieldSelection}
+            onCancelOwnership={handleCancelOwnership}
           />
 
         </div>

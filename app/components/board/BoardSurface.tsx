@@ -45,6 +45,11 @@ interface Props {
   currentYearEvent: YearEvent | null;
   gameYear: number;
   onHoverField: (idx: number | null) => void;
+  // Field ownership selection mode
+  fieldSelectionMode?: boolean;
+  eligibleFieldIndexes?: Set<number>;
+  selectedFieldIndexes?: number[];
+  onSelectField?: (idx: number) => void;
 }
 
 export function BoardSurface({
@@ -78,6 +83,10 @@ export function BoardSurface({
   currentYearEvent,
   gameYear,
   onHoverField,
+  fieldSelectionMode = false,
+  eligibleFieldIndexes,
+  selectedFieldIndexes,
+  onSelectField,
 }: Props) {
   const fieldPlayers = (fieldIndex: number) =>
     displayPlayers.filter((p) => p.position === fieldIndex && !isBankrupt(p) && p.id !== animatingPlayerId);
@@ -140,6 +149,10 @@ export function BoardSurface({
           showingHiddenRef={showingHiddenRef}
           isFieldVisible={isFieldVisible}
           onHoverField={onHoverField}
+          selectionMode={fieldSelectionMode}
+          eligibleFieldIndexes={eligibleFieldIndexes}
+          selectedFieldIndexes={selectedFieldIndexes}
+          onSelectField={onSelectField}
         />
 
         {/* Ghost marker pro původní cíl hodu — zobrazen na pozici figurky (blíže středu) */}

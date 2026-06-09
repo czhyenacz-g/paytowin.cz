@@ -38,6 +38,11 @@ interface Props {
   showingHiddenRef: React.MutableRefObject<Set<number>>;
   isFieldVisible: (field: { index: number; type: string }) => boolean;
   onHoverField: (idx: number | null) => void;
+  // Field ownership selection mode
+  selectionMode?: boolean;
+  eligibleFieldIndexes?: Set<number>;
+  selectedFieldIndexes?: number[];
+  onSelectField?: (idx: number) => void;
 }
 
 export default function FieldCardList({
@@ -56,6 +61,10 @@ export default function FieldCardList({
   showingHiddenRef,
   isFieldVisible,
   onHoverField,
+  selectionMode = false,
+  eligibleFieldIndexes,
+  selectedFieldIndexes,
+  onSelectField,
 }: Props) {
   const isNight = themeId.includes("night");
   const labelBadgeClass = isNight
@@ -116,6 +125,15 @@ export default function FieldCardList({
           glows.push(`drop-shadow(0 0 24px ${ownerHex}44)`);
         }
 
+        // Selection mode glow
+        const isEligible = selectionMode && !!eligibleFieldIndexes?.has(field.index);
+        const isSelected = isEligible && !!selectedFieldIndexes?.includes(field.index);
+        if (isSelected) {
+          glows.push("drop-shadow(0 0 10px #22c55e) drop-shadow(0 0 22px rgba(34,197,94,0.55))");
+        } else if (isEligible) {
+          glows.push("drop-shadow(0 0 10px #f97316) drop-shadow(0 0 22px rgba(249,115,22,0.55))");
+        }
+
         const fieldBgPrimaryPath = field.type === "racer"
           ? resolveRacerCardImagePath(
               themeId,
@@ -132,7 +150,7 @@ export default function FieldCardList({
         return (
           <div
             key={field.index}
-            className="absolute overflow-visible"
+            className={`absolute overflow-visible${selectionMode && !isEligible ? " opacity-40" : ""}`}
             style={{
               top: pos.top,
               left: pos.left,
@@ -142,10 +160,11 @@ export default function FieldCardList({
               transition: "transform 0.18s ease-out, box-shadow 0.18s ease-out",
               zIndex: isHovered ? 100 : 2,
               filter: glows.length > 0 ? glows.join(" ") : undefined,
-              cursor: "default",
+              cursor: selectionMode ? (isEligible ? "pointer" : "not-allowed") : "default",
             }}
             onMouseEnter={() => onHoverField(field.index)}
             onMouseLeave={() => onHoverField(null)}
+            onClick={() => isEligible && onSelectField?.(field.index)}
           >
             {(!isFieldVisible(field) || showingHiddenRef.current.has(field.index)) ? (
               <div
@@ -177,6 +196,15 @@ export default function FieldCardList({
               <div className={`pointer-events-none absolute inset-0 ${tone.cardOverlay}`} />
               {field.type !== "racer" && field.type !== "start" && (
                 <div className="pointer-events-none absolute inset-0 bg-white/25 transition-opacity duration-150 group-hover:opacity-0" />
+              )}
+              {isSelected && (
+                <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center">
+                  <div className="rounded-full bg-green-500/90 p-1.5 shadow-lg">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                      <path d="M2 6l3 3 5-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                </div>
               )}
             <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-2 pb-2">
               <div className="flex justify-center">

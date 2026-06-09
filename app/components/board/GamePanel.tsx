@@ -13,6 +13,7 @@ import DevRaceBoardLayer from "../DevRaceBoardLayer";
 import StableDuelBoardLayer, { type DuelContestant } from "../StableDuelBoardLayer";
 import DevRaceFlipLayer from "../DevRaceFlipLayer";
 import PlayerList from "./PlayerList";
+import FieldOwnershipPanel from "./FieldOwnershipPanel";
 
 const DICE_DOTS: [number, number][][] = [
   [[50, 50]],
@@ -112,6 +113,13 @@ interface Props {
   setDevRaceBoardLayer: (v: boolean) => void;
   devFlipOpen: boolean;
   closeDevFlip: () => void;
+  // Field ownership
+  fieldSelectionMode?: boolean;
+  selectedFieldIndexes?: number[];
+  canStartFieldSelection?: boolean;
+  myPlayerCoins?: number;
+  onStartFieldSelection?: () => void;
+  onCancelOwnership?: () => void;
 }
 
 export default function GamePanel({
@@ -168,6 +176,12 @@ export default function GamePanel({
   setDevRaceBoardLayer,
   devFlipOpen,
   closeDevFlip,
+  fieldSelectionMode = false,
+  selectedFieldIndexes,
+  canStartFieldSelection = false,
+  myPlayerCoins = 0,
+  onStartFieldSelection,
+  onCancelOwnership,
 }: Props) {
   return (
     <div className="flex flex-col gap-3">
@@ -496,28 +510,47 @@ export default function GamePanel({
             </div>
           ) : isMyTurn ? (
             <div className="space-y-2">
-              {canReroll && (
-                <div className="rounded-[3px] bg-amber-100 px-3 py-2 text-center text-xs font-semibold text-amber-800">
-                  {UI_TEXT.board.freeRerollNotice}
-                </div>
-              )}
-              {(() => {
-                const rollBlockedReason = getRollBlockedReason(gameState?.offer_pending ?? null);
-                return (
-                  <>
+              {fieldSelectionMode ? (
+                <FieldOwnershipPanel
+                  selectedIndexes={selectedFieldIndexes ?? []}
+                  FIELDS={FIELDS}
+                  playerCoins={myPlayerCoins}
+                  onCancel={onCancelOwnership ?? (() => {})}
+                />
+              ) : (
+                <>
+                  {canReroll && (
+                    <div className="rounded-[3px] bg-amber-100 px-3 py-2 text-center text-xs font-semibold text-amber-800">
+                      {UI_TEXT.board.freeRerollNotice}
+                    </div>
+                  )}
+                  {(() => {
+                    const rollBlockedReason = getRollBlockedReason(gameState?.offer_pending ?? null);
+                    return (
+                      <>
+                        <button
+                          onClick={rollDice}
+                          disabled={!gameState || players.length === 0 || !!rollBlockedReason}
+                          className={`w-full rounded-[4px] px-4 py-4 text-lg font-semibold text-white shadow transition disabled:cursor-not-allowed disabled:bg-slate-400 ${canReroll ? "bg-amber-500 hover:bg-amber-600" : "bg-slate-900 hover:bg-slate-800"}`}
+                        >
+                          {canReroll ? UI_TEXT.board.rerollButton : UI_TEXT.board.rollButton}
+                        </button>
+                        {rollBlockedReason && (
+                          <p className="text-center text-[11px] text-slate-400">{rollBlockedReason}</p>
+                        )}
+                      </>
+                    );
+                  })()}
+                  {canStartFieldSelection && (
                     <button
-                      onClick={rollDice}
-                      disabled={!gameState || players.length === 0 || !!rollBlockedReason}
-                      className={`w-full rounded-[4px] px-4 py-4 text-lg font-semibold text-white shadow transition disabled:cursor-not-allowed disabled:bg-slate-400 ${canReroll ? "bg-amber-500 hover:bg-amber-600" : "bg-slate-900 hover:bg-slate-800"}`}
+                      onClick={onStartFieldSelection}
+                      className="w-full rounded-[4px] border border-slate-600 px-4 py-2.5 text-sm font-semibold text-slate-300 hover:bg-slate-800 transition"
                     >
-                      {canReroll ? UI_TEXT.board.rerollButton : UI_TEXT.board.rollButton}
+                      Vsadit na pole 🎯
                     </button>
-                    {rollBlockedReason && (
-                      <p className="text-center text-[11px] text-slate-400">{rollBlockedReason}</p>
-                    )}
-                  </>
-                );
-              })()}
+                  )}
+                </>
+              )}
             </div>
           ) : (
             <div className="w-full rounded-[4px] bg-slate-100 px-4 py-4 text-center text-slate-500">
