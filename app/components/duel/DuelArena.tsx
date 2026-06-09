@@ -135,8 +135,9 @@ interface Props {
   }) => void;
   p1Speed?: number;
   p2Speed?: number;
-  /** pvbot: P1 dir/nitro/legendary from external touch ref instead of keyboard. */
-  remoteP1Ref?: React.MutableRefObject<{ dir: Dir; nitroActivate: boolean; legendaryActivate: boolean } | null>;
+  /** pvbot: P1 dir/nitro/legendary from external touch ref instead of keyboard.
+   *  Pokud ref obsahuje `keys` (Set<string> s WASD kódy), použije se dirFromHeldKeys stejně jako keyboard. */
+  remoteP1Ref?: React.MutableRefObject<{ dir: Dir; keys?: Set<string>; nitroActivate: boolean; legendaryActivate: boolean } | null>;
   /** challenger_authority: P2 dir/nitro/legendary from Broadcast ref instead of keyboard. */
   remoteP2Ref?: React.MutableRefObject<{ dir: Dir; nitroActivate: boolean; legendaryActivate: boolean } | null>;
   /** If true, P1 uses legendary ability (cooldown) instead of one-shot nitro. */
@@ -326,7 +327,9 @@ export default function DuelArena({
       // ── P1/P2 direction ──────────────────────────────────────────────────────
       const remoteP2 = remoteP2Ref?.current ?? null;
       const p1: Dir = remoteP1 !== null
-        ? remoteP1.dir
+        ? (remoteP1.keys
+            ? dirFromHeldKeys(remoteP1.keys, cur.p1.dir, "wasd")
+            : remoteP1.dir)
         : dirFromHeldKeys(keys, cur.p1.dir, "wasd");
       const p2: Dir = mode === "pvbot"
         ? getBotInput(cur, 2, config)

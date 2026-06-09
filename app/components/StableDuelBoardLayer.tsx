@@ -731,7 +731,9 @@ export default function StableDuelBoardLayer({
   }, [phase, playSfx]);
 
   // pvbot: ref pro P1 (human challenger) touch inputy — čten tick looopem v DuelArena
-  const localP1Ref = React.useRef<{ dir: Dir; nitroActivate: boolean; legendaryActivate: boolean } | null>(null);
+  const localP1Ref = React.useRef<{ dir: Dir; keys?: Set<string>; nitroActivate: boolean; legendaryActivate: boolean } | null>(null);
+  // Virtuální WASD klávesy pro mobilní D-pad — čteno přes localP1Ref.keys v DuelArena
+  const mobileKeysRef = React.useRef<Set<string>>(new Set());
   // challenger_authority: ref pro remote P2 (defender) inputy
   const remoteP2Ref = React.useRef<{ dir: Dir; nitroActivate: boolean; legendaryActivate: boolean } | null>(null);
   // Broadcast channel lifecycle
@@ -1030,24 +1032,26 @@ export default function StableDuelBoardLayer({
                 👤 TY · {challenger.name}
               </div>
               <div className="grid grid-cols-3 gap-1.5">
-                {/* Row 1 */}
+                {/* Row 1 — ▲ = W (absolutně nahoru, physics to přepočítá na relativní left/right/straight) */}
                 <span />
-                <TouchBtn label="▲" color={challengerTouchColor} ariaLabel="nahoru"
+                <TouchBtn label="▲" color={challengerTouchColor} ariaLabel="nahoru (W)"
                   onPressStart={() => {
-                    if (localP1Ref.current) localP1Ref.current = { ...localP1Ref.current, dir: "straight" };
+                    mobileKeysRef.current.add("KeyW");
+                    if (!localP1Ref.current) localP1Ref.current = { dir: "straight", keys: mobileKeysRef.current, nitroActivate: false, legendaryActivate: false };
                   }}
+                  onPressEnd={() => { mobileKeysRef.current.delete("KeyW"); }}
                 />
                 <span />
-                {/* Row 2 */}
-                <TouchBtn label="◀" color={challengerTouchColor} ariaLabel="doleva"
-                  inputHoldMs={130} feedbackMs={250}
+                {/* Row 2 — ◀ = A, ⚡ = boost, ▶ = D */}
+                <TouchBtn label="◀" color={challengerTouchColor} ariaLabel="doleva (A)"
                   onPressStart={() => {
-                    console.info("[DUEL_TOUCH] down", { action: "left", inputHoldMs: 130, feedbackMs: 250, ignoredByCooldown: false, dirSet: "left" });
-                    localP1Ref.current = { dir: "left", nitroActivate: false, legendaryActivate: false };
+                    console.info("[DUEL_TOUCH] down", { key: "KeyA" });
+                    mobileKeysRef.current.add("KeyA");
+                    if (!localP1Ref.current) localP1Ref.current = { dir: "straight", keys: mobileKeysRef.current, nitroActivate: false, legendaryActivate: false };
                   }}
                   onPressEnd={() => {
-                    console.info("[DUEL_TOUCH] up", { action: "left", dirSet: "straight" });
-                    if (localP1Ref.current) localP1Ref.current = { ...localP1Ref.current, dir: "straight" };
+                    console.info("[DUEL_TOUCH] up", { key: "KeyA" });
+                    mobileKeysRef.current.delete("KeyA");
                   }}
                 />
                 <TouchBtn
@@ -1057,44 +1061,41 @@ export default function StableDuelBoardLayer({
                   inputHoldMs={180} feedbackMs={250}
                   onPressStart={() => {
                     const action = p1IsLegendary ? "legendaryActivate" : "nitroActivate";
-                    console.info("[DUEL_TOUCH] down", { action: "boost", inputHoldMs: 180, feedbackMs: 250, ignoredByCooldown: false, refWrite: action, isLegendary: p1IsLegendary });
+                    console.info("[DUEL_TOUCH] down", { action: "boost", refWrite: action, isLegendary: p1IsLegendary });
+                    if (!localP1Ref.current) localP1Ref.current = { dir: "straight", keys: mobileKeysRef.current, nitroActivate: false, legendaryActivate: false };
                     if (p1IsLegendary) {
-                      localP1Ref.current = { dir: localP1Ref.current?.dir ?? "straight", nitroActivate: false, legendaryActivate: true };
+                      localP1Ref.current = { ...localP1Ref.current, legendaryActivate: true };
                     } else {
-                      localP1Ref.current = { dir: localP1Ref.current?.dir ?? "straight", nitroActivate: true, legendaryActivate: false };
+                      localP1Ref.current = { ...localP1Ref.current, nitroActivate: true };
                     }
                   }}
                   onPressEnd={() => {
-                    console.info("[DUEL_TOUCH] up", { action: "boost", dirSet: "unchanged" });
+                    console.info("[DUEL_TOUCH] up", { action: "boost" });
                     if (localP1Ref.current) localP1Ref.current = { ...localP1Ref.current, nitroActivate: false, legendaryActivate: false };
                   }}
                 />
-                <TouchBtn label="▶" color={challengerTouchColor} ariaLabel="doprava"
-                  inputHoldMs={130} feedbackMs={250}
+                <TouchBtn label="▶" color={challengerTouchColor} ariaLabel="doprava (D)"
                   onPressStart={() => {
-                    console.info("[DUEL_TOUCH] down", { action: "right", inputHoldMs: 130, feedbackMs: 250, ignoredByCooldown: false, dirSet: "right" });
-                    localP1Ref.current = { dir: "right", nitroActivate: false, legendaryActivate: false };
+                    console.info("[DUEL_TOUCH] down", { key: "KeyD" });
+                    mobileKeysRef.current.add("KeyD");
+                    if (!localP1Ref.current) localP1Ref.current = { dir: "straight", keys: mobileKeysRef.current, nitroActivate: false, legendaryActivate: false };
                   }}
                   onPressEnd={() => {
-                    console.info("[DUEL_TOUCH] up", { action: "right", dirSet: "straight" });
-                    if (localP1Ref.current) localP1Ref.current = { ...localP1Ref.current, dir: "straight" };
+                    console.info("[DUEL_TOUCH] up", { key: "KeyD" });
+                    mobileKeysRef.current.delete("KeyD");
                   }}
                 />
-                {/* Row 3 */}
+                {/* Row 3 — ▼ = S (absolutně dolů) */}
                 <span />
-                <TouchBtn label="▼" color={challengerTouchColor} ariaLabel="boost (dolů)"
-                  inputHoldMs={180} feedbackMs={250}
+                <TouchBtn label="▼" color={challengerTouchColor} ariaLabel="dolů (S)"
                   onPressStart={() => {
-                    const action = p1IsLegendary ? "legendaryActivate" : "nitroActivate";
-                    console.info("[DUEL_TOUCH] down", { action: "boost-down", inputHoldMs: 180, feedbackMs: 250, refWrite: action, isLegendary: p1IsLegendary });
-                    if (p1IsLegendary) {
-                      localP1Ref.current = { dir: localP1Ref.current?.dir ?? "straight", nitroActivate: false, legendaryActivate: true };
-                    } else {
-                      localP1Ref.current = { dir: localP1Ref.current?.dir ?? "straight", nitroActivate: true, legendaryActivate: false };
-                    }
+                    console.info("[DUEL_TOUCH] down", { key: "KeyS" });
+                    mobileKeysRef.current.add("KeyS");
+                    if (!localP1Ref.current) localP1Ref.current = { dir: "straight", keys: mobileKeysRef.current, nitroActivate: false, legendaryActivate: false };
                   }}
                   onPressEnd={() => {
-                    if (localP1Ref.current) localP1Ref.current = { ...localP1Ref.current, nitroActivate: false, legendaryActivate: false };
+                    console.info("[DUEL_TOUCH] up", { key: "KeyS" });
+                    mobileKeysRef.current.delete("KeyS");
                   }}
                 />
                 <span />
