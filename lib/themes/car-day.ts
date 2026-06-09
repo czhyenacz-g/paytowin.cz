@@ -136,7 +136,7 @@ export const carDayTheme: Theme = {
       "name": "Tvoja mama",
       "speed": 8,
       "price": 1500,
-      "emoji": "🐴",
+      "emoji": "🚗",
       "maxStamina": 100,
       "flavorText": "Za tu cenu? Nečekals to. Ona to věděla.",
       "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/car_day_r5.webp",
@@ -149,7 +149,7 @@ export const carDayTheme: Theme = {
       "name": "Legendarion",
       "speed": 10,
       "price": 99999,
-      "emoji": "🐴",
+      "emoji": "🏎️",
       "maxStamina": 100,
       "isLegendary": true,
       "flavorText": "Když se Legendarion postaví na start, ostatní závodí o druhé místo.",
@@ -173,6 +173,7 @@ export const carDayTheme: Theme = {
     "racerSlotIndexes": [
       3,
       10,
+      13,
       17,
       19
     ],
@@ -194,20 +195,20 @@ export const carDayTheme: Theme = {
       {
         "index": 2,
         "type": "coins_lose",
-        "label": "Veterinář",
-        "emoji": "🩺",
+        "label": "Technická kontrola",
+        "emoji": "🔧",
         "amount": -600
       },
       {
         "index": 3,
         "type": "racer",
-        "label": "Závodník",
-        "emoji": "🐎"
+        "label": "Garáž",
+        "emoji": "🏎️"
       },
       {
         "index": 4,
         "type": "coins_gain",
-        "label": "Vítěz dostihu",
+        "label": "Vítěz závodu",
         "emoji": "🏆",
         "amount": 1500
       },
@@ -221,7 +222,7 @@ export const carDayTheme: Theme = {
       {
         "index": 6,
         "type": "coins_gain",
-        "label": "Zlaté podkůvky",
+        "label": "Zlaté disky",
         "emoji": "🥇",
         "amount": 800
       },
@@ -248,8 +249,8 @@ export const carDayTheme: Theme = {
       {
         "index": 10,
         "type": "racer",
-        "label": "Závodník",
-        "emoji": "🐎"
+        "label": "Garáž",
+        "emoji": "🏎️"
       },
       {
         "index": 11,
@@ -267,8 +268,8 @@ export const carDayTheme: Theme = {
       {
         "index": 13,
         "type": "racer",
-        "label": "Zlatá hříva",
-        "emoji": "😈",
+        "label": "Zlatá kapota",
+        "emoji": "🏎️",
         "amount": -70
       },
       {
@@ -294,21 +295,21 @@ export const carDayTheme: Theme = {
       {
         "index": 17,
         "type": "racer",
-        "label": "Závodník",
-        "emoji": "🐎"
+        "label": "Garáž",
+        "emoji": "🏎️"
       },
       {
         "index": 18,
         "type": "coins_lose",
-        "label": "Veterinář",
-        "emoji": "💊",
+        "label": "Mechanik",
+        "emoji": "🔩",
         "amount": -600
       },
       {
         "index": 19,
         "type": "racer",
-        "label": "Závodník",
-        "emoji": "🐎"
+        "label": "Garáž",
+        "emoji": "🏎️"
       },
       {
         "index": 20,
