@@ -1009,7 +1009,7 @@ export default function StableDuelBoardLayer({
             duelRole={duelRole}
           />
           {duelRole === "defender_remote" && (
-            <div className="shrink-0 flex items-center justify-center gap-2 px-4 py-3 select-none">
+            <div className="shrink-0 flex items-center justify-center gap-2 px-4 py-3 select-none touch-manipulation" style={{ WebkitTouchCallout: "none" }}>
               <TouchBtn label="←" color={defenderTouchColor} ariaLabel="doleva"
                 onPressStart={() => sendInputRef.current?.({ action: "turn", pressed: true, direction: "left" })}
                 onPressEnd={() => sendInputRef.current?.({ action: "turn", pressed: false })}
@@ -1027,7 +1027,7 @@ export default function StableDuelBoardLayer({
               inputHoldMs < tickMs (156ms) → max 1 tick per tap, no double-turn.
               feedbackMs stays longer for visible press feedback. */}
           {!duelRole && minigameType !== "neon_speedrace" && (
-            <div className="shrink-0 flex flex-col items-center gap-1 px-4 py-2 select-none">
+            <div className="shrink-0 flex flex-col items-center gap-1 px-4 py-2 select-none touch-manipulation" style={{ WebkitTouchCallout: "none" }}>
               <div className="text-[9px] font-black uppercase tracking-widest mb-1" style={{ color: challengerTouchColor }}>
                 👤 TY · {challenger.name}
               </div>

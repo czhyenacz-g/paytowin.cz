@@ -95,6 +95,7 @@ export default function TouchBtn({ label, color, onPressStart, onPressEnd, ariaL
         WebkitUserSelect: "none",
         userSelect: "none",
         WebkitTapHighlightColor: "transparent",
+        WebkitTouchCallout: "none",
       }}
       onPointerDown={handleDown}
       onPointerUp={handleUp}
