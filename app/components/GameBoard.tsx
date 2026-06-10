@@ -995,7 +995,7 @@ export default function GameBoard({ gameCode }: Props) {
         );
         const nextIndex = getNextActiveIndex(gameState.current_player_index, updatedPlayers);
         await supabase.from("players").update({ position: newPosition, coins: movedPlayer.coins, laps: movedPlayer.laps ?? 0 }).eq("id", currentPlayer.id);
-        await finishTurn({ nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog], lastRoll: roll, ...(yearEventTelegramPayload ? { yearEventTelegram: yearEventTelegramPayload } : {}) });
+        await finishTurn({ nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog], lastRoll: roll, ...(yearEventTelegramPayload ? { yearEventTelegram: yearEventTelegramPayload } : {}), ...(fogRevealBase !== undefined ? { clearFieldOwners: true } : {}) });
       } else if (ownerPlayer) {
         if (canTriggerRivalsRace(movedPlayer, ownerPlayer)) {
           // ── Stájový souboj: oba hráči mají koně → board overlay duel ──────────
@@ -1146,6 +1146,7 @@ export default function GameBoard({ gameCode }: Props) {
             ...(wentBankrupt && !rentGameEnds ? { postTurnEvent: { kind: "announcement" as const, playerId: finalRentedPlayer.id, playerName: finalRentedPlayer.name } } : {}),
             ...(wentBankrupt ? { bustPlayerId: finalRentedPlayer.id } : {}),
             ...(yearEventTelegramPayload ? { yearEventTelegram: yearEventTelegramPayload } : {}),
+            ...(fogRevealBase !== undefined ? { clearFieldOwners: true } : {}),
           });
 
           if (wentBankrupt) await checkAndFinishGame(updatedPlayers);
@@ -1162,6 +1163,7 @@ export default function GameBoard({ gameCode }: Props) {
           log: [`${currentPlayer.name} přišel na ${theme.labels.racerField.toLowerCase()}: ${field.racer.emoji} ${field.racer.name}`, ...extraLog, ...newLog].slice(0, 20),
           year_event_telegram: yearEventTelegramPayload ?? null,
           ...(fogOfWar ? { revealed_fields: buildFogReveal(newPosition, fogRevealBase) } : {}),
+          ...(fogRevealBase !== undefined ? { field_owners: [] } : {}),
         }).eq("game_id", gameId);
         if (canReroll) setCanReroll(false);
         setPendingRacer({ racer: field.racer, playerIndex: gameState.current_player_index, flavorText: field.flavorText });
@@ -1185,6 +1187,7 @@ export default function GameBoard({ gameCode }: Props) {
         log: [`${currentPlayer.name} lízl kartu ${cardLabel}`, ...extraLog, ...newLog].slice(0, 20),
         year_event_telegram: yearEventTelegramPayload ?? null,
         ...(fogOfWar ? { revealed_fields: buildFogReveal(newPosition, fogRevealBase) } : {}),
+        ...(fogRevealBase !== undefined ? { field_owners: [] } : {}),
       }).eq("game_id", gameId);
       if (canReroll) setCanReroll(false);
       // Lokální state — ostatní klienti dostanou přes Realtime
@@ -1272,6 +1275,7 @@ export default function GameBoard({ gameCode }: Props) {
           log: [...logLines, `💡 Nabídka, co lze odmítnout — pro ${currentPlayer.name}`, ...newLog].slice(0, 20),
           year_event_telegram: yearEventTelegramPayload ?? null,
           ...(fogOfWar ? { revealed_fields: buildFogReveal(newPosition, fogRevealBase) } : {}),
+          ...(fogRevealBase !== undefined ? { field_owners: [] } : {}),
         }).eq("game_id", gameId);
         if (flashActiveRef.current) {
           deferredOfferRef.current = offer as RerollOffer;
@@ -1286,6 +1290,7 @@ export default function GameBoard({ gameCode }: Props) {
           ...(fogOfWar ? { revealedFields: buildFogReveal(newPosition, fogRevealBase) } : {}),
           ...(wentBankrupt ? { bustPlayerId: finalPlayer.id } : {}),
           ...(yearEventTelegramPayload ? { yearEventTelegram: yearEventTelegramPayload } : {}),
+          ...(fogRevealBase !== undefined ? { clearFieldOwners: true } : {}),
         });
         if (canReroll) setCanReroll(false);
       }
@@ -1790,6 +1795,8 @@ export default function GameBoard({ gameCode }: Props) {
      * TODO: až finishTurn bude useCallback s live gameState dep, přidat ověření proti DB hodnotě.
      */
     clearOfferPending?: { type: string; challengerId?: string; defenderId?: string };
+    /** Fog reset (resetNonRacerCards): vymaže všechny field_owners — neviditelné vlastněné pole by přesměrovalo platbu. */
+    clearFieldOwners?: boolean;
   }) => {
     if (!gameId) return;
 
@@ -1811,6 +1818,7 @@ export default function GameBoard({ gameCode }: Props) {
       };
       if (params.lastRoll !== undefined) announcementUpdate.last_roll = params.lastRoll;
       if (params.revealedFields !== undefined) announcementUpdate.revealed_fields = params.revealedFields;
+      if (params.clearFieldOwners) announcementUpdate.field_owners = [];
       if (params.bustPlayerId) announcementUpdate.bust_order = [...(gameState?.bust_order ?? []), params.bustPlayerId];
       announcementUpdate.year_event_telegram = params.yearEventTelegram ?? null;
       await supabase.from("game_state").update(announcementUpdate).eq("game_id", gameId);
@@ -1839,6 +1847,7 @@ export default function GameBoard({ gameCode }: Props) {
       };
       if (params.lastRoll !== undefined) evtUpdate.last_roll = params.lastRoll;
       if (params.revealedFields !== undefined) evtUpdate.revealed_fields = params.revealedFields;
+      if (params.clearFieldOwners) evtUpdate.field_owners = [];
       evtUpdate.year_event_telegram = params.yearEventTelegram ?? null;
       await supabase.from("game_state").update(evtUpdate).eq("game_id", gameId);
       return;
@@ -1858,6 +1867,7 @@ export default function GameBoard({ gameCode }: Props) {
     if (params.clearOfferPending !== undefined) update.offer_pending = null;
     if (params.lastRoll !== undefined) update.last_roll = params.lastRoll;
     if (params.revealedFields !== undefined) update.revealed_fields = params.revealedFields;
+    if (params.clearFieldOwners) update.field_owners = [];
     if (params.bustPlayerId) update.bust_order = [...(gameState?.bust_order ?? []), params.bustPlayerId];
     update.year_event_telegram = params.yearEventTelegram ?? null;
 
