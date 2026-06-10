@@ -55,7 +55,7 @@ export const horseNightTheme: Theme = {
     racingEmoji: "🐎",
   },
   racerRefs: [
-    { slotIndex: 0, racer_id: "divoka_ruze" },
+    { slotIndex: 0, racer_id: "horse_night_lama" },
     { slotIndex: 1, racer_id: "viento_dorado" },
     { slotIndex: 2, racer_id: "zlata_hriva" },
     { slotIndex: 3, racer_id: "rychly_vitr" },
@@ -64,14 +64,13 @@ export const horseNightTheme: Theme = {
   /** @fallback inline data — seed source + runtime fallback pokud registry není dostupná */
   racers: [
     {
-      "id": "divoka_ruze",
-      "name": "Mariane DR",
-      "speed": 2,
+      "id": "horse_night_lama",
+      "name": "La Negra",
+      "speed": 3,
       "price": 1200,
-      "emoji": "🌹",
-      "maxStamina": 100,
-      "flavorText": "Nejlevnější kůň ve hře. Když nemáš na vítězství, máš aspoň na účast.",
-      "image": "https://zyiaettnrfjzwcrumgty.supabase.co/storage/v1/object/public/racers/divoka_ruze.webp",
+      "emoji": "🦙",
+      "maxStamina": 110,
+      "flavorText": "Ve tmě si ji spletli s koněm. Teď už je pozdě to přiznat.",
       "isBuiltIn": true,
       "racerType": "horse",
       "slotIndex": 0
