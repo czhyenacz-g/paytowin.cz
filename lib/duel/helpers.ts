@@ -4,11 +4,7 @@
  */
 
 export function getRopeDuelStartDelayTicks(speed: number): number {
-  if (speed >= 9) return 0;
-  if (speed >= 7) return 1;
-  if (speed >= 5) return 2;
-  if (speed >= 3) return 3;
-  return 4;
+  return speed >= 7 ? 0 : 1;
 }
 
 export function getRopeDuelNitroDashTiles(speed: number, gridW: number): number {
