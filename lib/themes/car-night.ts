@@ -246,7 +246,65 @@ export const carNightTheme: Theme = {
           "themeTags": ["car"]
         }
       ],
-      "finance": []
+      "finance": [],
+      "mafia": [
+        {
+          id: "car_night_chase_slot_1",
+          type: "chance",
+          text: "Ve zpětném zrcátku se rozsvítily majáky. Najednou znáš všechny boční ulice.",
+          effect: { kind: "move", value: 3 },
+          effectLabel: "+3 pole",
+        },
+        {
+          id: "car_night_chase_slot_2",
+          type: "finance",
+          text: "Policejní zátaras tě zastavil přesně ve chvíli, kdy jsi vypadal nejrychleji.",
+          effect: { kind: "coins", value: -1200 },
+          effectLabel: "-1200 💰",
+        },
+        {
+          id: "car_night_chase_slot_3",
+          type: "chance",
+          text: "Rádio zapraskalo: odboč teď. Nevíš kdo to řekl, ale fungovalo to.",
+          effect: { kind: "move", value: 4 },
+          effectLabel: "+4 pole",
+        },
+        {
+          id: "car_night_chase_slot_4",
+          type: "chance",
+          text: "Sirény se přiblížily tak rychle, že i motor ztichl ze slušnosti.",
+          effect: { kind: "skip_turn" },
+          effectLabel: "Vynecháš tah",
+        },
+        {
+          id: "car_night_chase_slot_5",
+          type: "finance",
+          text: "Pokuta za noční jízdu? Ne. Tohle už je účet za odvahu.",
+          effect: { kind: "coins", value: -1000 },
+          effectLabel: "-1000 💰",
+        },
+        {
+          id: "car_night_chase_slot_6",
+          type: "chance",
+          text: "Policie zavřela hlavní tah. Ty jsi právě objevil kratší cestu.",
+          effect: { kind: "move", value: 2 },
+          effectLabel: "+2 pole",
+        },
+        {
+          id: "car_night_chase_slot_7",
+          type: "finance",
+          text: "Mechanik sundal z auta stopy po honičce. Fakturu radši nepodepsal.",
+          effect: { kind: "coins", value: -900 },
+          effectLabel: "-900 💰",
+        },
+        {
+          id: "car_night_chase_slot_8",
+          type: "chance",
+          text: "Hlas z vysílačky řekl jen: jeď. Poprvé dneska jsi neposlouchal sám sebe.",
+          effect: { kind: "move", value: 3 },
+          effectLabel: "+3 pole",
+        },
+      ]
     }
   },
 };
