@@ -71,6 +71,7 @@ export const horseNightTheme: Theme = {
       "emoji": "🦙",
       "maxStamina": 110,
       "flavorText": "Ve tmě si ji spletli s koněm. Teď už je pozdě to přiznat.",
+      "image": "/themes/_shared/racer-horse_night_lama.webp",
       "isBuiltIn": true,
       "racerType": "horse",
       "slotIndex": 0
