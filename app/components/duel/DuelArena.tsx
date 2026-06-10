@@ -486,7 +486,7 @@ export default function DuelArena({
 
       {/* Ability HUD */}
       {state.status !== "idle" && (
-        <div className="flex justify-between font-mono text-[10px] items-center" style={{ width: w }}>
+        <div className="flex justify-between font-mono text-[10px] items-center w-full" style={{ maxWidth: w }}>
           {p1IsLegendary
             ? <LegendaryBadge display={p1LegDisplay} flash={p1LegFlash} side="left" />
             : <span style={{ color: nitroColor(state.p1.nitroUsed, state.p1.nitroTicksRemaining, P1_COLOR) }}>
@@ -503,11 +503,10 @@ export default function DuelArena({
       )}
 
       {/* Arena SVG */}
-      <div className="relative rounded-lg overflow-hidden" style={{ boxShadow: "0 0 32px rgba(0,255,136,0.08), 0 0 0 1px rgba(255,255,255,0.06)" }}>
+      <div className="relative rounded-lg overflow-hidden w-full" style={{ maxWidth: w, boxShadow: "0 0 32px rgba(0,255,136,0.08), 0 0 0 1px rgba(255,255,255,0.06)" }}>
         <svg
-          width={w}
-          height={h}
-          style={{ display: "block", background: backgroundUrl ? "transparent" : BG_COLOR, pointerEvents: "none" }}
+          viewBox={`0 0 ${w} ${h}`}
+          style={{ display: "block", width: "100%", height: "auto", background: backgroundUrl ? "transparent" : BG_COLOR, pointerEvents: "none" }}
         >
           <NeonFilters />
           {backgroundUrl && (
