@@ -1,5 +1,9 @@
 import type { AbsDir, Dir, DuelConfig, DuelState, PlayerDuelState, Vec2 } from "./types";
-import { getRopeDuelStartDelayTicks, getRopeDuelNitroDashTiles } from "./helpers";
+import {
+  getRopeDuelStartDelayTicks,
+  getRopeDuelNitroDashTiles,
+  getRopeDuelNitroCooldownTicks,
+} from "./helpers";
 
 // ── Direction helpers ─────────────────────────────────────────────────────────
 
@@ -47,17 +51,21 @@ export function createInitialState(config: DuelConfig, p1Speed = 5, p2Speed = 5)
     winner: null,
     p1: {
       pos: { x: p1x, y: midY }, dir: "right", trail: [{ x: p1x, y: midY }],
-      alive: true, ticksAlive: 0, nitroTicksRemaining: 0, nitroUsed: false,
+      alive: true, ticksAlive: 0,
+      nitroTicksRemaining: 0, nitroUsed: false,
+      nitroCooldownTicksRemaining: 0,
+      nitroCooldownPerUse: getRopeDuelNitroCooldownTicks(p1Speed),
       startDelayTicksRemaining: getRopeDuelStartDelayTicks(p1Speed),
-      nitroDashTiles:           getRopeDuelNitroDashTiles(p1Speed, gridW),
-      legendaryDashRemaining: 0,
+      nitroDashTiles: getRopeDuelNitroDashTiles(p1Speed, gridW),
     },
     p2: {
       pos: { x: p2x, y: midY }, dir: "left",  trail: [{ x: p2x, y: midY }],
-      alive: true, ticksAlive: 0, nitroTicksRemaining: 0, nitroUsed: false,
+      alive: true, ticksAlive: 0,
+      nitroTicksRemaining: 0, nitroUsed: false,
+      nitroCooldownTicksRemaining: 0,
+      nitroCooldownPerUse: getRopeDuelNitroCooldownTicks(p2Speed),
       startDelayTicksRemaining: getRopeDuelStartDelayTicks(p2Speed),
-      nitroDashTiles:           getRopeDuelNitroDashTiles(p2Speed, gridW),
-      legendaryDashRemaining: 0,
+      nitroDashTiles: getRopeDuelNitroDashTiles(p2Speed, gridW),
     },
   };
 }
@@ -71,56 +79,49 @@ export function applyTick(
   config: DuelConfig,
   p1ActivateNitro = false,
   p2ActivateNitro = false,
-  p1ActivateLegendary = false,
-  p2ActivateLegendary = false,
 ): DuelState {
   if (state.status !== "running") return state;
 
   const { gridW, gridH, maxTicks } = config;
   const newTick = state.tick + 1;
 
-  // ── Start delay — player is immobile for first N ticks ──────────────────────
-
+  // ── Start delay ──────────────────────────────────────────────────────────────
   const p1InDelay = state.p1.startDelayTicksRemaining > 0;
   const p2InDelay = state.p2.startDelayTicksRemaining > 0;
 
-  // ── Nitro activation (one-time, guard against double-use) ───────────────────
+  // ── Nitro / boost activation (reusable, guarded by active dash + cooldown) ──
+  // Works identically for regular and legendary racers; speed-based values baked
+  // into nitroDashTiles and nitroCooldownPerUse at state creation.
 
-  const p1Activating = p1ActivateNitro && !state.p1.nitroUsed && !p1InDelay;
-  const p2Activating = p2ActivateNitro && !state.p2.nitroUsed && !p2InDelay;
+  const p1CanActivate = p1ActivateNitro
+    && !p1InDelay
+    && state.p1.nitroTicksRemaining === 0
+    && state.p1.nitroCooldownTicksRemaining === 0;
 
-  const p1NitroActive = p1Activating || state.p1.nitroTicksRemaining > 0;
-  const p2NitroActive = p2Activating || state.p2.nitroTicksRemaining > 0;
+  const p2CanActivate = p2ActivateNitro
+    && !p2InDelay
+    && state.p2.nitroTicksRemaining === 0
+    && state.p2.nitroCooldownTicksRemaining === 0;
 
-  const p1NitroNext = p1Activating
-    ? state.p1.nitroDashTiles - 1      // speed-based dash length
+  const p1NitroActive = p1CanActivate || state.p1.nitroTicksRemaining > 0;
+  const p2NitroActive = p2CanActivate || state.p2.nitroTicksRemaining > 0;
+
+  const p1NitroNext = p1CanActivate
+    ? state.p1.nitroDashTiles - 1
     : Math.max(0, state.p1.nitroTicksRemaining - 1);
-  const p2NitroNext = p2Activating
+  const p2NitroNext = p2CanActivate
     ? state.p2.nitroDashTiles - 1
     : Math.max(0, state.p2.nitroTicksRemaining - 1);
 
-  // ── Legendary ability (repeatable, guarded by cooldown outside simulation) ──
-  // legendaryDashRemaining === 0 ensures we don't stack mid-dash.
-  const p1LegActivating = p1ActivateLegendary && !p1InDelay && state.p1.legendaryDashRemaining === 0;
-  const p2LegActivating = p2ActivateLegendary && !p2InDelay && state.p2.legendaryDashRemaining === 0;
-
-  const p1LegActive = p1LegActivating || state.p1.legendaryDashRemaining > 0;
-  const p2LegActive = p2LegActivating || state.p2.legendaryDashRemaining > 0;
-
-  const p1LegNext = p1LegActivating
-    ? state.p1.nitroDashTiles - 1
-    : Math.max(0, state.p1.legendaryDashRemaining - 1);
-  const p2LegNext = p2LegActivating
-    ? state.p2.nitroDashTiles - 1
-    : Math.max(0, state.p2.legendaryDashRemaining - 1);
-
-  // Combined extra step: legendary OR nitro (one extra step per tick, not stacked)
-  const p1ExtraActive = p1NitroActive || p1LegActive;
-  const p2ExtraActive = p2NitroActive || p2LegActive;
+  // Cooldown counts down every tick regardless of dash state.
+  const p1CooldownNext = p1CanActivate
+    ? state.p1.nitroCooldownPerUse
+    : Math.max(0, state.p1.nitroCooldownTicksRemaining - 1);
+  const p2CooldownNext = p2CanActivate
+    ? state.p2.nitroCooldownPerUse
+    : Math.max(0, state.p2.nitroCooldownTicksRemaining - 1);
 
   // ── Step 1: standard simultaneous movement ──────────────────────────────────
-  // Delayed players do not turn or move; their trail does not grow.
-
   const p1dir  = p1InDelay ? state.p1.dir : turn(state.p1.dir, p1Input);
   const p2dir  = p2InDelay ? state.p2.dir : turn(state.p2.dir, p2Input);
   const p1next = p1InDelay ? state.p1.pos : step(state.p1.pos, p1dir);
@@ -136,7 +137,6 @@ export function applyTick(
     hits(p2next, state.p2.trail) ||
     hits(p2next, state.p1.trail)
   );
-  // Head-on only when both are actually moving
   const headOn = !p1InDelay && !p2InDelay && p1next.x === p2next.x && p1next.y === p2next.y;
 
   let p1alive = !p1crash1 && !headOn;
@@ -149,10 +149,11 @@ export function applyTick(
     alive: p1alive,
     ticksAlive: state.p1.ticksAlive + (p1alive ? 1 : 0),
     nitroTicksRemaining: p1NitroNext,
-    nitroUsed: state.p1.nitroUsed || p1Activating,
+    nitroUsed: state.p1.nitroUsed || p1CanActivate,
+    nitroCooldownTicksRemaining: p1CooldownNext,
+    nitroCooldownPerUse: state.p1.nitroCooldownPerUse,
     startDelayTicksRemaining: p1InDelay ? state.p1.startDelayTicksRemaining - 1 : 0,
     nitroDashTiles: state.p1.nitroDashTiles,
-    legendaryDashRemaining: p1LegNext,
   };
   let newP2: PlayerDuelState = {
     pos:   p2alive ? p2next : state.p2.pos,
@@ -161,25 +162,22 @@ export function applyTick(
     alive: p2alive,
     ticksAlive: state.p2.ticksAlive + (p2alive ? 1 : 0),
     nitroTicksRemaining: p2NitroNext,
-    nitroUsed: state.p2.nitroUsed || p2Activating,
+    nitroUsed: state.p2.nitroUsed || p2CanActivate,
+    nitroCooldownTicksRemaining: p2CooldownNext,
+    nitroCooldownPerUse: state.p2.nitroCooldownPerUse,
     startDelayTicksRemaining: p2InDelay ? state.p2.startDelayTicksRemaining - 1 : 0,
     nitroDashTiles: state.p2.nitroDashTiles,
-    legendaryDashRemaining: p2LegNext,
   };
 
-  // ── Early exit: if normal step already decided winner, extra steps don't run ──
-  // Prevents false draw when P2 crashes normally but P1's nitro extra-step also
-  // happens to hit P2's existing trail in the same tick (→ both dead → wrong draw).
+  // ── Early exit when normal step already decided winner ──────────────────────
   if (!p1alive || !p2alive) {
     const status: DuelState["status"] = (!p1alive && !p2alive) ? "draw" : !p1alive ? "p2_win" : "p1_win";
     const winner: DuelState["winner"] = (!p1alive && !p2alive) ? null : !p1alive ? 2 : 1;
     return { tick: newTick, status, winner, p1: newP1, p2: newP2 };
   }
 
-  // ── Extra step for P1: nitro OR legendary (one extra step per tick) ──────────
-  // Reached only when both players survived the normal step.
-
-  if (p1alive && p1ExtraActive) {
+  // ── Extra step for P1 (nitro/boost active) ───────────────────────────────────
+  if (p1alive && p1NitroActive) {
     const extra = step(newP1.pos, newP1.dir);
     if (
       outOfBounds(extra, gridW, gridH) ||
@@ -193,9 +191,8 @@ export function applyTick(
     }
   }
 
-  // ── Extra step for P2 (checks P1's trail after P1's extra step) ────────────
-
-  if (p2alive && p2ExtraActive) {
+  // ── Extra step for P2 (checks P1 trail after P1 extra step) ────────────────
+  if (p2alive && p2NitroActive) {
     const extra = step(newP2.pos, newP2.dir);
     if (
       outOfBounds(extra, gridW, gridH) ||
@@ -210,7 +207,6 @@ export function applyTick(
   }
 
   // ── Determine outcome ───────────────────────────────────────────────────────
-
   let status: DuelState["status"] = "running";
   let winner: DuelState["winner"] = null;
 
@@ -226,16 +222,10 @@ export function applyTick(
     winner = diff > 0 ? 1 : diff < 0 ? 2 : null;
   }
 
-  return {
-    tick:   newTick,
-    status,
-    winner,
-    p1:     newP1,
-    p2:     newP2,
-  };
+  return { tick: newTick, status, winner, p1: newP1, p2: newP2 };
 }
 
-// ── Bot ───────────────────────────────────────────────────────────────────────
+// ── Bot direction ─────────────────────────────────────────────────────────────
 
 export function getBotInput(state: DuelState, player: 1 | 2, config: DuelConfig): Dir {
   const p   = player === 1 ? state.p1 : state.p2;
@@ -265,4 +255,30 @@ export function getBotInput(state: DuelState, player: 1 | 2, config: DuelConfig)
   }
 
   return bestDir;
+}
+
+// ── Bot nitro activation ──────────────────────────────────────────────────────
+
+export function getBotNitroActivate(state: DuelState, player: 1 | 2, config: DuelConfig): boolean {
+  const p   = player === 1 ? state.p1 : state.p2;
+  const opp = player === 1 ? state.p2 : state.p1;
+
+  if (!p.alive) return false;
+  if (p.startDelayTicksRemaining > 0) return false;
+  if (p.nitroTicksRemaining > 0) return false;
+  if (p.nitroCooldownTicksRemaining > 0) return false;
+
+  // Only boost if there are at least nitroDashTiles clear cells straight ahead.
+  const combined = [...p.trail, ...opp.trail];
+  let pos = p.pos;
+  let clearAhead = 0;
+  for (let i = 0; i < p.nitroDashTiles + 2; i++) {
+    const next = step(pos, p.dir);
+    if (outOfBounds(next, config.gridW, config.gridH) || hits(next, combined)) break;
+    clearAhead++;
+    pos = next;
+  }
+  if (clearAhead < p.nitroDashTiles) return false;
+
+  return Math.random() < 0.6;
 }

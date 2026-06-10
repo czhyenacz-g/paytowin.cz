@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { applyTick, createInitialState, getBotInput } from "@/lib/duel/simulate";
+import { applyTick, createInitialState, getBotInput, getBotNitroActivate } from "@/lib/duel/simulate";
 import type { AbsDir, Dir, DuelConfig, DuelState } from "@/lib/duel/types";
 import { resolveRelativeDir, dirFromHeldKeys } from "@/lib/duel/steeringInput";
 import { getRopeDuelStartDelayTicks } from "@/lib/duel/helpers";
@@ -20,7 +20,6 @@ const GRID_COLOR     = "rgba(255,255,255,0.04)";
 const LEGENDARY_COLOR = "#fbbf24";
 
 const CELL_PX = 20;
-const LEGENDARY_COOLDOWN_MS = 2000;
 const DOUBLE_TAP_MS = 250;
 
 // ── SVG neon glow filter ──────────────────────────────────────────────────────
@@ -94,22 +93,20 @@ function Head({ pos, color, alive, cs }: { pos: { x: number; y: number }; color:
 
 // ── Legendary ability badge ───────────────────────────────────────────────────
 
-type LegDisplay = "ready" | number; // number = cooldown seconds remaining
-
-function LegendaryBadge({ display, flash, side }: { display: LegDisplay; side: "left" | "right"; flash: boolean }) {
-  const ready = display === "ready";
+function LegendaryBadge({ cooldownTicks, tickMs, side }: { cooldownTicks: number; tickMs: number; side: "left" | "right" }) {
+  const ready = cooldownTicks === 0;
+  const secDisplay = ready ? null : Math.max(1, Math.ceil(cooldownTicks * tickMs / 1000));
   return (
     <span
       style={{
         color: ready ? LEGENDARY_COLOR : "#475569",
-        textShadow: flash ? `0 0 12px ${LEGENDARY_COLOR}, 0 0 24px ${LEGENDARY_COLOR}` : "none",
-        transition: "text-shadow 0.4s ease-out, color 0.3s",
+        transition: "color 0.2s",
         fontWeight: 700,
       }}
     >
       {side === "left"
-        ? `⭐ ${ready ? "LEGENDARY · Q" : `${display}s`} · P1`
-        : `P2 · ${ready ? "LEGENDARY · SPACE" : `${display}s`} ⭐`
+        ? `⭐ ${ready ? "LEGENDARY · Q" : `${secDisplay}s`} · P1`
+        : `P2 · ${ready ? "LEGENDARY · SPACE" : `${secDisplay}s`} ⭐`
       }
     </span>
   );
@@ -140,9 +137,9 @@ interface Props {
   remoteP1Ref?: React.MutableRefObject<{ dir: Dir; keys?: Set<string>; nitroActivate: boolean; legendaryActivate: boolean } | null>;
   /** challenger_authority: P2 dir/nitro/legendary from Broadcast ref instead of keyboard. */
   remoteP2Ref?: React.MutableRefObject<{ dir: Dir; nitroActivate: boolean; legendaryActivate: boolean } | null>;
-  /** If true, P1 uses legendary ability (cooldown) instead of one-shot nitro. */
+  /** If true, P1 is a legendary racer (badge shown in HUD). */
   p1IsLegendary?: boolean;
-  /** If true, P2 uses legendary ability (cooldown) instead of one-shot nitro. */
+  /** If true, P2 is a legendary racer (badge shown in HUD). */
   p2IsLegendary?: boolean;
   /** When true, suppresses the built-in mobile touch controls (parent manages them). */
   hideTouchControls?: boolean;
@@ -165,27 +162,13 @@ export default function DuelArena({
   const keysRef    = React.useRef<Set<string>>(new Set());
   const runningRef = React.useRef(false);
 
-  // One-shot nitro flags (regular racers)
+  // Boost activate flags (regular and legendary share same path)
   const p1BoostActivateRef = React.useRef(false);
   const p2BoostActivateRef = React.useRef(false);
-
-  // One-shot legendary flags (local keyboard)
-  const p1LegActivateRef = React.useRef(false);
-  const p2LegActivateRef = React.useRef(false);
 
   // Double-tap straight-key boost tracking
   const p1LastStraightTapRef = React.useRef<{ keyCode: string; time: number } | null>(null);
   const p2LastStraightTapRef = React.useRef<{ keyCode: string; time: number } | null>(null);
-
-  // Legendary cooldown tracking (real-time ms)
-  const p1LegCooldownUntilRef = React.useRef<number | null>(null);
-  const p2LegCooldownUntilRef = React.useRef<number | null>(null);
-
-  // Legendary UI state
-  const [p1LegDisplay, setP1LegDisplay] = React.useState<LegDisplay>("ready");
-  const [p2LegDisplay, setP2LegDisplay] = React.useState<LegDisplay>("ready");
-  const [p1LegFlash, setP1LegFlash]     = React.useState(false);
-  const [p2LegFlash, setP2LegFlash]     = React.useState(false);
 
   stateRef.current  = state;
   runningRef.current = running;
@@ -201,14 +184,6 @@ export default function DuelArena({
     setLastInputs({ p1: "straight", p2: "straight" });
     p1BoostActivateRef.current = false;
     p2BoostActivateRef.current = false;
-    p1LegActivateRef.current = false;
-    p2LegActivateRef.current = false;
-    p1LegCooldownUntilRef.current = null;
-    p2LegCooldownUntilRef.current = null;
-    setP1LegDisplay("ready");
-    setP2LegDisplay("ready");
-    setP1LegFlash(false);
-    setP2LegFlash(false);
     p1LastStraightTapRef.current = null;
     p2LastStraightTapRef.current = null;
   }, [config, mode, p1Speed, p2Speed, autoStart]);
@@ -239,16 +214,10 @@ export default function DuelArena({
         e.preventDefault();
       }
 
-      // P1 explicit boost key (Q)
-      if (e.code === "KeyQ") {
-        if (p1IsLegendary) p1LegActivateRef.current = true;
-        else               p1BoostActivateRef.current = true;
-      }
-      // P2 explicit boost key (Space)
-      if (e.code === "Space") {
-        if (p2IsLegendary) p2LegActivateRef.current = true;
-        else               p2BoostActivateRef.current = true;
-      }
+      // P1 boost key (Q) — legendary and regular share same activate path
+      if (e.code === "KeyQ") p1BoostActivateRef.current = true;
+      // P2 boost key (Space)
+      if (e.code === "Space") p2BoostActivateRef.current = true;
 
       // Double-tap straight-key boost — only on fresh press, only when running
       if (!e.repeat && runningRef.current) {
@@ -260,8 +229,7 @@ export default function DuelArena({
           if (rel === "straight") {
             const last = p1LastStraightTapRef.current;
             if (last && last.keyCode === e.code && now - last.time <= DOUBLE_TAP_MS) {
-              if (p1IsLegendary) p1LegActivateRef.current = true;
-              else               p1BoostActivateRef.current = true;
+              p1BoostActivateRef.current = true;
               p1LastStraightTapRef.current = null;
             } else {
               p1LastStraightTapRef.current = { keyCode: e.code, time: now };
@@ -276,8 +244,7 @@ export default function DuelArena({
           if (rel === "straight") {
             const last = p2LastStraightTapRef.current;
             if (last && last.keyCode === e.code && now - last.time <= DOUBLE_TAP_MS) {
-              if (p2IsLegendary) p2LegActivateRef.current = true;
-              else               p2BoostActivateRef.current = true;
+              p2BoostActivateRef.current = true;
               p2LastStraightTapRef.current = null;
             } else {
               p2LastStraightTapRef.current = { keyCode: e.code, time: now };
@@ -311,21 +278,32 @@ export default function DuelArena({
       const keys = keysRef.current;
       const now  = Date.now();
 
-      // ── Nitro (regular racers) ───────────────────────────────────────────────
+      // ── Nitro / boost activate (regular + legendary share same path) ────────
       const remoteP1 = remoteP1Ref?.current ?? null;
-      // Merge touch ref + keyboard: touch ref = mobile, p1BoostActivateRef = Q / double-tap (PC)
-      const p1Activate = remoteP1Ref
-        ? ((remoteP1?.nitroActivate ?? false) || p1BoostActivateRef.current)
-        : p1BoostActivateRef.current;
-      if (remoteP1Ref?.current && remoteP1?.nitroActivate) {
-        remoteP1Ref.current = { ...remoteP1Ref.current, nitroActivate: false };
+      const remoteP2 = remoteP2Ref?.current ?? null;
+
+      // P1: remote (nitro or legendary) + local keyboard/touch
+      const remoteP1Activate = (remoteP1?.nitroActivate ?? false) || (remoteP1?.legendaryActivate ?? false);
+      if (remoteP1Ref?.current && (remoteP1?.nitroActivate || remoteP1?.legendaryActivate)) {
+        remoteP1Ref.current = { ...remoteP1Ref.current, nitroActivate: false, legendaryActivate: false };
       }
-      const p2Activate = p2BoostActivateRef.current;
+      const p1Activate = remoteP1Ref
+        ? (remoteP1Activate || p1BoostActivateRef.current)
+        : p1BoostActivateRef.current;
       p1BoostActivateRef.current = false;
+
+      // P2: depends on mode
+      const remoteP2Activate = (remoteP2?.nitroActivate ?? false) || (remoteP2?.legendaryActivate ?? false);
+      if (remoteP2Ref?.current && (remoteP2?.nitroActivate || remoteP2?.legendaryActivate)) {
+        remoteP2Ref.current = { ...remoteP2Ref.current, nitroActivate: false, legendaryActivate: false };
+      }
+      const botP2Activate  = mode === "pvbot" ? getBotNitroActivate(cur, 2, config) : false;
+      const effectiveP2Activate = mode === "pvp"
+        ? (remoteP2Ref ? remoteP2Activate : p2BoostActivateRef.current)
+        : botP2Activate;
       p2BoostActivateRef.current = false;
 
       // ── P1/P2 direction ──────────────────────────────────────────────────────
-      const remoteP2 = remoteP2Ref?.current ?? null;
       const p1: Dir = remoteP1 !== null
         ? (remoteP1.keys
             ? dirFromHeldKeys(remoteP1.keys, cur.p1.dir, "wasd")
@@ -337,86 +315,11 @@ export default function DuelArena({
           ? remoteP2.dir
           : dirFromHeldKeys(keys, cur.p2.dir, "arrows");
 
-      const effectiveP2Activate = mode === "pvp"
-        ? (remoteP2Ref ? (remoteP2?.nitroActivate ?? false) : p2Activate)
-        : false;
-      if (remoteP2Ref?.current && remoteP2?.nitroActivate) {
-        remoteP2Ref.current = { ...remoteP2Ref.current, nitroActivate: false };
-      }
-
-      // ── Legendary ability ────────────────────────────────────────────────────
-      // P1 legendary: remote ref or local keyboard flag
-      let p1LegFire = false;
-      if (p1IsLegendary) {
-        const remoteP1LegActivate = remoteP1Ref
-          ? ((remoteP1?.legendaryActivate ?? false) || p1LegActivateRef.current)
-          : p1LegActivateRef.current;
-        if (remoteP1Ref?.current && remoteP1?.legendaryActivate) {
-          remoteP1Ref.current = { ...remoteP1Ref.current, legendaryActivate: false };
-        }
-        p1LegActivateRef.current = false;
-
-        // Check if cooldown expired → restore charge
-        const cdu1 = p1LegCooldownUntilRef.current;
-        if (cdu1 !== null && now >= cdu1) {
-          p1LegCooldownUntilRef.current = null;
-          setP1LegDisplay("ready");
-          setP1LegFlash(true);
-          setTimeout(() => setP1LegFlash(false), 500);
-        }
-        // Update cooldown display
-        const remaining1 = p1LegCooldownUntilRef.current ? p1LegCooldownUntilRef.current - now : 0;
-        const sec1 = remaining1 > 0 ? Math.ceil(remaining1 / 1000) : 0;
-        if (remaining1 > 0) {
-          setP1LegDisplay(prev => prev !== sec1 ? sec1 : prev);
-        }
-        // Attempt activation
-        if (remoteP1LegActivate && p1LegCooldownUntilRef.current === null) {
-          p1LegFire = true;
-          p1LegCooldownUntilRef.current = now + LEGENDARY_COOLDOWN_MS;
-          setP1LegDisplay(2);
-        }
-      }
-
-      // P2 legendary: remote or local keyboard
-      let p2LegFire = false;
-      if (p2IsLegendary) {
-        // Remote legendary (challenger_authority mode) or local P2 (PvP mode)
-        const remoteP2LegActivate = mode === "pvp"
-          ? (remoteP2Ref ? (remoteP2?.legendaryActivate ?? false) : p2LegActivateRef.current)
-          : false;
-
-        if (remoteP2Ref?.current && remoteP2?.legendaryActivate) {
-          remoteP2Ref.current = { ...remoteP2Ref.current, legendaryActivate: false };
-        }
-        p2LegActivateRef.current = false;
-
-        const cdu2 = p2LegCooldownUntilRef.current;
-        if (cdu2 !== null && now >= cdu2) {
-          p2LegCooldownUntilRef.current = null;
-          setP2LegDisplay("ready");
-          setP2LegFlash(true);
-          setTimeout(() => setP2LegFlash(false), 500);
-        }
-        const remaining2 = p2LegCooldownUntilRef.current ? p2LegCooldownUntilRef.current - now : 0;
-        const sec2 = remaining2 > 0 ? Math.ceil(remaining2 / 1000) : 0;
-        if (remaining2 > 0) {
-          setP2LegDisplay(prev => prev !== sec2 ? sec2 : prev);
-        }
-        if (remoteP2LegActivate && p2LegCooldownUntilRef.current === null) {
-          p2LegFire = true;
-          p2LegCooldownUntilRef.current = now + LEGENDARY_COOLDOWN_MS;
-          setP2LegDisplay(2);
-        }
-      }
-
       setLastInputs({ p1, p2 });
       const next = applyTick(
         cur, p1, p2, config,
         p1Activate,
         effectiveP2Activate,
-        p1LegFire,
-        p2LegFire,
       );
       stateRef.current = next;
       setState(next);
@@ -454,14 +357,6 @@ export default function DuelArena({
     setLastInputs({ p1: "straight", p2: "straight" });
     p1BoostActivateRef.current = false;
     p2BoostActivateRef.current = false;
-    p1LegActivateRef.current = false;
-    p2LegActivateRef.current = false;
-    p1LegCooldownUntilRef.current = null;
-    p2LegCooldownUntilRef.current = null;
-    setP1LegDisplay("ready");
-    setP2LegDisplay("ready");
-    setP1LegFlash(false);
-    setP2LegFlash(false);
     p1LastStraightTapRef.current = null;
     p2LastStraightTapRef.current = null;
   };
@@ -476,10 +371,16 @@ export default function DuelArena({
   const p1Preview  = nitroStaminaPreview(state.p1.nitroUsed, p1Crashed);
   const p2Preview  = nitroStaminaPreview(state.p2.nitroUsed, p2Crashed);
 
-  const nitroLabel = (nitroUsed: boolean, nitroTicksRemaining: number, key: string) =>
-    nitroUsed ? (nitroTicksRemaining > 0 ? `⚡ NITRO (${nitroTicksRemaining})` : "⚡ použito") : `⚡ ${key}`;
-  const nitroColor = (nitroUsed: boolean, nitroTicksRemaining: number, base: string) =>
-    nitroUsed ? (nitroTicksRemaining > 0 ? "#fbbf24" : "#475569") : base;
+  const nitroLabel = (nitroTicksRemaining: number, nitroCooldown: number, key: string) => {
+    if (nitroTicksRemaining > 0) return `⚡ NITRO (${nitroTicksRemaining})`;
+    if (nitroCooldown > 0) return `⚡ ${nitroCooldown}`;
+    return `⚡ ${key}`;
+  };
+  const nitroColor = (nitroTicksRemaining: number, nitroCooldown: number, base: string) => {
+    if (nitroTicksRemaining > 0) return "#fbbf24";
+    if (nitroCooldown > 0) return "#475569";
+    return base;
+  };
 
   return (
     <div className="flex flex-col items-center gap-3 select-none">
@@ -488,15 +389,15 @@ export default function DuelArena({
       {state.status !== "idle" && (
         <div className="flex justify-between font-mono text-[10px] items-center w-full" style={{ maxWidth: w }}>
           {p1IsLegendary
-            ? <LegendaryBadge display={p1LegDisplay} flash={p1LegFlash} side="left" />
-            : <span style={{ color: nitroColor(state.p1.nitroUsed, state.p1.nitroTicksRemaining, P1_COLOR) }}>
-                {nitroLabel(state.p1.nitroUsed, state.p1.nitroTicksRemaining, "Q")} P1
+            ? <LegendaryBadge cooldownTicks={state.p1.nitroCooldownTicksRemaining} tickMs={config.tickMs} side="left" />
+            : <span style={{ color: nitroColor(state.p1.nitroTicksRemaining, state.p1.nitroCooldownTicksRemaining, P1_COLOR) }}>
+                {nitroLabel(state.p1.nitroTicksRemaining, state.p1.nitroCooldownTicksRemaining, "Q")} P1
               </span>
           }
           {mode === "pvp" && (p2IsLegendary
-            ? <LegendaryBadge display={p2LegDisplay} flash={p2LegFlash} side="right" />
-            : <span style={{ color: nitroColor(state.p2.nitroUsed, state.p2.nitroTicksRemaining, P2_COLOR) }}>
-                P2 {nitroLabel(state.p2.nitroUsed, state.p2.nitroTicksRemaining, "SPACE")}
+            ? <LegendaryBadge cooldownTicks={state.p2.nitroCooldownTicksRemaining} tickMs={config.tickMs} side="right" />
+            : <span style={{ color: nitroColor(state.p2.nitroTicksRemaining, state.p2.nitroCooldownTicksRemaining, P2_COLOR) }}>
+                P2 {nitroLabel(state.p2.nitroTicksRemaining, state.p2.nitroCooldownTicksRemaining, "SPACE")}
               </span>
           )}
         </div>
@@ -543,8 +444,8 @@ export default function DuelArena({
                 </div>
                 {(p1IsLegendary || p2IsLegendary) && (
                   <div className="text-[10px] font-mono text-center leading-snug" style={{ color: LEGENDARY_COLOR }}>
-                    {p1IsLegendary && <div>⭐ P1 legendary ability → Q (cooldown {LEGENDARY_COOLDOWN_MS / 1000}s)</div>}
-                    {p2IsLegendary && mode === "pvp" && <div>⭐ P2 legendary ability → SPACE (cooldown {LEGENDARY_COOLDOWN_MS / 1000}s)</div>}
+                    {p1IsLegendary && <div>⭐ P1 legendary ability → Q (reusable boost)</div>}
+                    {p2IsLegendary && mode === "pvp" && <div>⭐ P2 legendary ability → SPACE (reusable boost)</div>}
                   </div>
                 )}
                 <button
@@ -592,7 +493,7 @@ export default function DuelArena({
               onPressEnd={() => keysRef.current.delete("KeyA")}
             />
             <TouchBtn label="BOOST" color={P1_COLOR} ariaLabel="P1 akce"
-              onPressStart={() => { if (p1IsLegendary) p1LegActivateRef.current = true; else p1BoostActivateRef.current = true; }}
+              onPressStart={() => { p1BoostActivateRef.current = true; }}
             />
             <TouchBtn label="→" color={P1_COLOR} ariaLabel="P1 doprava"
               onPressStart={() => keysRef.current.add("KeyD")}
@@ -606,7 +507,7 @@ export default function DuelArena({
                 onPressEnd={() => keysRef.current.delete("ArrowLeft")}
               />
               <TouchBtn label="BOOST" color={P2_COLOR} ariaLabel="P2 akce"
-                onPressStart={() => { if (p2IsLegendary) p2LegActivateRef.current = true; else p2BoostActivateRef.current = true; }}
+                onPressStart={() => { p2BoostActivateRef.current = true; }}
               />
               <TouchBtn label="→" color={P2_COLOR} ariaLabel="P2 doprava"
                 onPressStart={() => keysRef.current.add("ArrowRight")}
@@ -647,22 +548,18 @@ export default function DuelArena({
             <span className="text-slate-600">p1</span> spd {p1Speed}{" "}
             delay {state.p1.startDelayTicksRemaining}/{getRopeDuelStartDelayTicks(p1Speed)}{" "}
             dashTiles {state.p1.nitroDashTiles}{" "}
-            {p1IsLegendary
-              ? <span style={{ color: LEGENDARY_COLOR }}>leg {state.p1.legendaryDashRemaining} cd:{p1LegCooldownUntilRef.current ? Math.ceil((p1LegCooldownUntilRef.current - Date.now()) / 1000) + "s" : "ready"}</span>
-              : <span style={{ color: nitroColor(state.p1.nitroUsed, state.p1.nitroTicksRemaining, P1_COLOR) }}>
-                  nitro {state.p1.nitroUsed ? (state.p1.nitroTicksRemaining > 0 ? `active(${state.p1.nitroTicksRemaining})` : "used") : "ready"}
-                </span>
-            }
+            <span style={{ color: state.p1.nitroTicksRemaining > 0 ? "#fbbf24" : state.p1.nitroCooldownTicksRemaining > 0 ? "#475569" : P1_COLOR }}>
+              nitro {state.p1.nitroTicksRemaining > 0 ? `active(${state.p1.nitroTicksRemaining})` : state.p1.nitroCooldownTicksRemaining > 0 ? `cd(${state.p1.nitroCooldownTicksRemaining})` : "ready"}
+            </span>
           </div>
           <div>
             <span className="text-slate-600">p2</span> spd {p2Speed}{" "}
             delay {state.p2.startDelayTicksRemaining}/{getRopeDuelStartDelayTicks(p2Speed)}{" "}
             dashTiles {state.p2.nitroDashTiles}{" "}
-            {mode === "pvp" && (p2IsLegendary
-              ? <span style={{ color: LEGENDARY_COLOR }}>leg {state.p2.legendaryDashRemaining} cd:{p2LegCooldownUntilRef.current ? Math.ceil((p2LegCooldownUntilRef.current - Date.now()) / 1000) + "s" : "ready"}</span>
-              : <span style={{ color: nitroColor(state.p2.nitroUsed, state.p2.nitroTicksRemaining, P2_COLOR) }}>
-                  nitro {state.p2.nitroUsed ? (state.p2.nitroTicksRemaining > 0 ? `active(${state.p2.nitroTicksRemaining})` : "used") : "ready"}
-                </span>
+            {mode === "pvp" && (
+              <span style={{ color: state.p2.nitroTicksRemaining > 0 ? "#fbbf24" : state.p2.nitroCooldownTicksRemaining > 0 ? "#475569" : P2_COLOR }}>
+                nitro {state.p2.nitroTicksRemaining > 0 ? `active(${state.p2.nitroTicksRemaining})` : state.p2.nitroCooldownTicksRemaining > 0 ? `cd(${state.p2.nitroCooldownTicksRemaining})` : "ready"}
+              </span>
             )}
           </div>
           {state.winner && <div className="text-amber-400 font-bold">winner: P{state.winner}</div>}

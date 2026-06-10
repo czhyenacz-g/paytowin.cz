@@ -7,10 +7,19 @@ export function getRopeDuelStartDelayTicks(speed: number): number {
   return speed >= 7 ? 0 : 1;
 }
 
-export function getRopeDuelNitroDashTiles(speed: number, gridW: number): number {
-  const base  = Math.max(3, Math.floor(gridW / 10));
-  const bonus = speed >= 9 ? 3 : speed >= 7 ? 2 : speed >= 5 ? 1 : speed >= 3 ? 0 : -1;
-  return Math.min(7, Math.max(2, base + bonus));
+// gridW kept in signature for call-site compatibility; not used in new model.
+export function getRopeDuelNitroDashTiles(speed: number, _gridW: number): number {
+  if (speed >= 10) return 8;
+  if (speed >= 7)  return 6;
+  if (speed >= 4)  return 4;
+  return 2;
+}
+
+export function getRopeDuelNitroCooldownTicks(speed: number): number {
+  if (speed >= 10) return 3;
+  if (speed >= 7)  return 7;
+  if (speed >= 4)  return 12;
+  return 18;
 }
 
 export interface RopeDuelSpeedLabel {
@@ -19,9 +28,8 @@ export interface RopeDuelSpeedLabel {
 }
 
 export function getRopeDuelSpeedLabel(speed: number): RopeDuelSpeedLabel {
-  if (speed >= 9) return { start: "bleskový",  nitro: "legendární" };
-  if (speed >= 7) return { start: "rychlý",    nitro: "silné" };
-  if (speed >= 5) return { start: "průměr",    nitro: "dobré" };
-  if (speed >= 3) return { start: "pomalejší", nitro: "krátké" };
-  return               { start: "těžký",      nitro: "slabé" };
+  if (speed >= 10) return { start: "bleskový", nitro: "legendární" };
+  if (speed >= 7)  return { start: "rychlý",   nitro: "silné" };
+  if (speed >= 4)  return { start: "průměr",   nitro: "dobré" };
+  return               { start: "pomalý",    nitro: "slabé" };
 }

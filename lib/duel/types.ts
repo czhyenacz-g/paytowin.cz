@@ -13,11 +13,12 @@ export interface PlayerDuelState {
   readonly trail: readonly Vec2[];
   readonly alive: boolean;
   readonly ticksAlive: number;
-  readonly nitroTicksRemaining: number; // ticks of extra step left (>0 = active)
-  readonly nitroUsed: boolean;          // true once activated; for stamina preview
-  readonly startDelayTicksRemaining: number; // ticks of immobility at game start
-  readonly nitroDashTiles: number;           // extra tiles per nitro activation (speed-based)
-  readonly legendaryDashRemaining: number;   // ticks of extra step from legendary ability (reusable)
+  readonly nitroTicksRemaining: number;         // ticks of extra step left (>0 = boost active)
+  readonly nitroUsed: boolean;                  // ever activated; used in MinigameResult
+  readonly nitroCooldownTicksRemaining: number; // ticks until next activation allowed
+  readonly nitroCooldownPerUse: number;         // cooldown to reset after each activation (speed-based)
+  readonly startDelayTicksRemaining: number;    // ticks of immobility at game start
+  readonly nitroDashTiles: number;              // extra tiles per nitro activation (speed-based)
 }
 
 export interface DuelState {
