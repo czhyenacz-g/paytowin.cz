@@ -1,5 +1,7 @@
 "use server";
 
+import { supabaseAdmin } from "@/lib/supabase-admin";
+
 const THEME_LABELS: Record<string, string> = {
   "horse-day":     "Dostihy — Den",
   "horse-night":   "Dostihy — Noc",
@@ -146,6 +148,15 @@ export async function notifyDiscordNewGameAction(params: NotifyParams): Promise<
   }
 
   const threadUrl = `https://discord.com/channels/${guildId}/${threadId}`;
+
+  // Uložit thread URL do DB (server-side — nespolehne se na client Promise)
+  await supabaseAdmin
+    .from("games")
+    .update({ discord_thread_url: threadUrl })
+    .eq("code", params.gameCode)
+    .then(({ error }) => {
+      if (error) console.warn("[discord] failed to save thread url:", error.message);
+    });
 
   // Úvodní zpráva v threadu
   await fetch(
