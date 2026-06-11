@@ -3,7 +3,7 @@ import type { Theme } from ".";
 export const horseClassicTheme: Theme = {
   id: "horse-classic",
   name: "Velká Chuchle",
-  description: "Závodní dráha Velké Chuchle, rok 1921. Tradice, trávník a koňský osud.",
+  description: "Závodní dráha Velké Chuchle, rok 1930. Tradice, trávník a koňský osud.",
   isPaid: false,
   priceCzk: 0,
   cardThemeTag: "horse",
@@ -177,7 +177,7 @@ export const horseClassicTheme: Theme = {
     }
   ],
   mapMeta: {
-    yearStart: 1921,
+    yearStart: 1930,
     place: "Velká Chuchle, Praha",
     subtitle: "Tradice na tribuně, nervy ve stáji.",
   },
