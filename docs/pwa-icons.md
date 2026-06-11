@@ -1,6 +1,11 @@
 # PWA ikonky — PayToWin.cz
 
-## Potřebné soubory (umístit do `public/`)
+## Soubory v `public/`
+
+**Stav:** všechny ikonky jsou doplněny (placeholder, zdroj: `favicon.svg` — „P" v amberu na tmavém pozadí).
+Lze nahradit finálním logem — stačí přepsat PNG soubory stejných rozměrů.
+
+## Specifikace souborů
 
 | Soubor | Rozměr | Účel |
 |---|---|---|
@@ -12,8 +17,9 @@
 
 ### Poznámky k maskable ikoně
 - Bezpečná zóna: obsah (logo) musí být v kruhu o průměru ~80 % šířky obrázku
+- `icon-maskable-512.png` má logo na ~60 % plochy (padding ~20 % na každé straně) — bezpečné pro libovolný Android ořez
 - Pozadí může přesahovat okraje — Android ho ořízne do tvaru dle systému (kruh, čtverec se zaoblením apod.)
-- Doporučené pozadí: `#111827` (tmavá, odpovídá tématu webu)
+- Pozadí: `#0f172a` (tmavá, odpovídá `favicon.svg`)
 
 ---
 

@@ -7,6 +7,10 @@ node_modules/
 public/tmp_prepare/
 public/**/*.png
 public/*.png
+!public/icon-192.png
+!public/icon-512.png
+!public/icon-maskable-512.png
+!public/apple-touch-icon.png
 
 .DS_Store
 supabase/.temp/
