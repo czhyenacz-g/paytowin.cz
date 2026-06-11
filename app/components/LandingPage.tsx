@@ -567,7 +567,7 @@ export default function LandingPage() {
     });
 
     logEvent({ name: "create_game_success", game_code: code, theme_id: selectedThemeId, board_id: selectedBoardId });
-    void notifyDiscordNewGameAction({
+    notifyDiscordNewGameAction({
       gameCode:        code,
       themeId:         selectedThemeId,
       boardId:         selectedBoardId,
@@ -575,6 +575,12 @@ export default function LandingPage() {
       requireApproval: requireApproval,
       maxPlayers:      maxPlayers,
       ownerName:       name.trim() || null,
+    }).then((result) => {
+      if (result.ok && result.threadUrl) {
+        void supabase.from("games").update({ discord_thread_url: result.threadUrl }).eq("id", game.id);
+      } else if (result.ok && result.warning) {
+        console.warn("[discord] thread not created:", result.warning);
+      }
     }).catch(() => {});
     localStorage.setItem(`paytowin_player_${code}`, newPlayer.id);
     setShareCode(code);
