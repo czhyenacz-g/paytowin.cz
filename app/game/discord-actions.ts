@@ -24,7 +24,7 @@ interface NotifyParams {
 }
 
 type NotifyResult =
-  | { ok: true }
+  | { ok: true; threadUrl: string | null; warning?: string }
   | { ok: false; reason: "not_configured" }
   | { ok: false; reason: "discord_error"; status: number; details: string };
 
@@ -88,5 +88,79 @@ export async function notifyDiscordNewGameAction(params: NotifyParams): Promise<
     return { ok: false, reason: "discord_error", status: res.status, details };
   }
 
-  return { ok: true };
+  // ── Thread creation ───────────────────────────────────────────────────────────
+
+  const guildId = process.env.DISCORD_GUILD_ID;
+  if (!guildId) {
+    console.warn("[discord] DISCORD_GUILD_ID missing — thread not created");
+    return { ok: true, threadUrl: null, warning: "DISCORD_GUILD_ID missing" };
+  }
+
+  let messageId: string | undefined;
+  try {
+    const msg = await res.json() as { id?: string };
+    messageId = msg.id;
+  } catch {
+    console.warn("[discord] failed to parse announce message response");
+    return { ok: true, threadUrl: null, warning: "announce message parse failed" };
+  }
+
+  if (!messageId) {
+    console.warn("[discord] announce message missing id");
+    return { ok: true, threadUrl: null, warning: "announce message id missing" };
+  }
+
+  const threadRes = await fetch(
+    `https://discord.com/api/v10/channels/${channelId}/messages/${messageId}/threads`,
+    {
+      method:  "POST",
+      headers: {
+        Authorization:  `Bot ${botToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name:                 `hra-${params.gameCode}`,
+        auto_archive_duration: 10080, // 7 dní
+      }),
+    },
+  );
+
+  if (!threadRes.ok) {
+    const details = await threadRes.text().catch(() => "");
+    console.warn(`[discord] thread creation failed ${threadRes.status}: ${details}`);
+    return { ok: true, threadUrl: null, warning: `thread creation failed (${threadRes.status})` };
+  }
+
+  let threadId: string | undefined;
+  try {
+    const thread = await threadRes.json() as { id?: string };
+    threadId = thread.id;
+  } catch {
+    console.warn("[discord] failed to parse thread response");
+    return { ok: true, threadUrl: null, warning: "thread response parse failed" };
+  }
+
+  if (!threadId) {
+    console.warn("[discord] thread response missing id");
+    return { ok: true, threadUrl: null, warning: "thread id missing" };
+  }
+
+  const threadUrl = `https://discord.com/channels/${guildId}/${threadId}`;
+
+  // Úvodní zpráva v threadu
+  await fetch(
+    `https://discord.com/api/v10/channels/${threadId}/messages`,
+    {
+      method:  "POST",
+      headers: {
+        Authorization:  `Bot ${botToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ content: `👋 Zde si domluvte tah — hra: ${gameUrl}` }),
+    },
+  ).catch((err: unknown) => {
+    console.warn("[discord] thread welcome message failed:", err);
+  });
+
+  return { ok: true, threadUrl };
 }
