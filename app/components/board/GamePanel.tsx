@@ -113,6 +113,7 @@ interface Props {
   setDevRaceBoardLayer: (v: boolean) => void;
   devFlipOpen: boolean;
   closeDevFlip: () => void;
+  discordThreadUrl?: string | null;
   // Field ownership
   fieldSelectionMode?: boolean;
   selectedFieldIndexes?: number[];
@@ -179,6 +180,7 @@ export default function GamePanel({
   setDevRaceBoardLayer,
   devFlipOpen,
   closeDevFlip,
+  discordThreadUrl = null,
   fieldSelectionMode = false,
   selectedFieldIndexes,
   canStartFieldSelection = false,
@@ -194,13 +196,25 @@ export default function GamePanel({
       <div className={`rounded-[4px] p-5 shadow-xl ring-1 ring-black/[0.06] ${theme.colors.cardBackground}`}>
         <div className="flex items-center justify-between mb-4">
           <div className={`text-[10px] font-bold uppercase tracking-widest ${theme.colors.textMuted}`}>{UI_TEXT.board.gamePanelTitle}</div>
-          <button
-            onClick={toggleSound}
-            title={soundEnabled ? "Vypnout zvuky" : "Zapnout zvuky"}
-            className="rounded-[3px] px-2 py-1 text-base text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
-          >
-            {soundEnabled ? "🔊" : "🔇"}
-          </button>
+          <div className="flex items-center gap-2">
+            {discordThreadUrl && (
+              <a
+                href={discordThreadUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] text-indigo-400 hover:text-indigo-300 transition"
+              >
+                💬 Discord místnost ↗
+              </a>
+            )}
+            <button
+              onClick={toggleSound}
+              title={soundEnabled ? "Vypnout zvuky" : "Zapnout zvuky"}
+              className="rounded-[3px] px-2 py-1 text-base text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+            >
+              {soundEnabled ? "🔊" : "🔇"}
+            </button>
+          </div>
         </div>
         <div className="space-y-3">
           {shouldShowCorrectionGuide && (

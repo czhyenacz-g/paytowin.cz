@@ -145,6 +145,7 @@ export default function GameBoard({ gameCode }: Props) {
   const [isHost, setIsHost] = React.useState(false);
   const [gameStatus, setGameStatus] = React.useState<string>("playing");
   const [fogOfWar, setFogOfWar] = React.useState(false);
+  const [discordThreadUrl, setDiscordThreadUrl] = React.useState<string | null>(null);
   const [players, setPlayers] = React.useState<Player[]>([]);
   const [gameState, setGameState] = React.useState<GameState | null>(null);
   const [loading, setLoading] = React.useState(!!gameCode);
@@ -585,6 +586,7 @@ export default function GameBoard({ gameCode }: Props) {
       // Seed: pokud hra už skončila před načtením, nezobrazuj GAME OVER telegram znovu
       if (game.status === "finished" || game.status === "cancelled") seenGameOverRef.current = true;
       setFogOfWar(!!game.fog_of_war);
+      setDiscordThreadUrl(game.discord_thread_url ?? null);
       if (game.economy && typeof game.economy === "object") {
         setEconomy({ ...DEFAULT_ECONOMY, ...(game.economy as Partial<EconomyConfig>) });
       }
@@ -3342,6 +3344,7 @@ export default function GameBoard({ gameCode }: Props) {
             onConfirmOwnership={confirmFieldOwnership}
             fieldOwnershipLoading={fieldOwnershipLoading}
             fieldOwnershipError={fieldOwnershipError}
+            discordThreadUrl={discordThreadUrl}
           />
 
         </div>
