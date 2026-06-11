@@ -20,6 +20,7 @@ export interface Database {
           xp_awarded: boolean;
           win_stars_awarded: boolean;
           money_spent_awarded: boolean;
+          discord_thread_url: string | null;
         };
         Insert: {
           code: string;
@@ -35,6 +36,7 @@ export interface Database {
           xp_awarded?: boolean;
           win_stars_awarded?: boolean;
           money_spent_awarded?: boolean;
+          discord_thread_url?: string | null;
         };
         Update: {
           code?: string;
@@ -50,6 +52,7 @@ export interface Database {
           xp_awarded?: boolean;
           win_stars_awarded?: boolean;
           money_spent_awarded?: boolean;
+          discord_thread_url?: string | null;
         };
       };
       spend_events: {
