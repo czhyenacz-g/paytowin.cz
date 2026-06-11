@@ -452,3 +452,49 @@ Proč je tato architektura připravena pro theme builder:
 1. Přidat `games.board_id` do DB schématu + migraci
 2. Přidat GameBoard read: `setBoardId(game.board_id ?? "small")`
 3. Přidat UI výběr board presetu při create game (volitelné, lze přidat boardId do create flow)
+
+## Env proměnné
+
+Všechny env proměnné jsou uloženy v `.env.local` (lokálně) a v Vercel Project Settings (produkce).
+`.env.local` není commitován — `.gitignore` ho vylučuje.
+
+### Supabase
+
+| Proměnná | Kde se používá |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase client init |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase client init |
+| `SUPABASE_SERVICE_ROLE_KEY` | server-side Supabase admin operace |
+
+### Systém / CRON
+
+| Proměnná | Kde se používá |
+|---|---|
+| `CRON_SECRET` | autentizace CRON job endpointů |
+
+### Discord integrace
+
+| Proměnná | Kde se používá | Stav |
+|---|---|---|
+| `DISCORD_BOT_TOKEN` | `app/game/discord-actions.ts` — odesílání bot zpráv | ✅ nakonfigurováno |
+| `DISCORD_LOBBY_CHANNEL_ID` | `app/game/discord-actions.ts` — cílový kanál pro announce | ✅ nakonfigurováno |
+| `NEXT_PUBLIC_ADMIN_DISCORD_ID` | `app/components/AdminAuth.tsx`, `WithAdminAuth.tsx` — admin guard | ✅ nakonfigurováno |
+| `NEXT_PUBLIC_APP_URL` | `app/game/discord-actions.ts` — base URL pro herní odkazy (fallback: `https://paytowin.cz`) | volitelné |
+| `DISCORD_GUILD_ID` | nutné pro budoucí Discord thread rooms — zatím neimplementováno | ⏳ připravit |
+
+#### Discord thread rooms — requirements
+
+Při implementaci per-game Discord thread místností bude potřeba:
+
+**Env proměnné:**
+- `DISCORD_BOT_TOKEN` — již existuje
+- `DISCORD_LOBBY_CHANNEL_ID` — již existuje (announce zpráva → thread se vytvoří na ní)
+- `DISCORD_GUILD_ID` — ID Discord serveru (guild); nutné pro Discord thread API
+
+**Bot oprávnění (nastavit v Discord Developer Portal → Bot → Permissions):**
+- View Channel
+- Send Messages
+- Create Public Threads
+- Send Messages in Threads
+
+Plán implementace: viz `docs/refaktoring/discord-per-game-communication-room-audit.md`
