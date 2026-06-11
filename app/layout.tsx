@@ -7,6 +7,7 @@ import { GOATCOUNTER_CODE } from "./config/analytics";
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  themeColor: "#f59e0b",
 };
 
 export const metadata: Metadata = {
@@ -14,6 +15,12 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
+    apple: "/apple-touch-icon.png",
+  },
+  appleWebApp: {
+    capable: true,
+    title: "PayToWin",
+    statusBarStyle: "black-translucent",
   },
   title: "PayToWin.cz – česká multiplayer závodní deskovka",
   description: "Multiplayerová desková hra v prohlížeči. Kupuj závodníky, riskuj v závodech a přežij finanční chaos. Hraj online s přáteli.",
