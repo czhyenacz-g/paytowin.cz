@@ -64,17 +64,25 @@ export default function BoardCenterPanel({
   const ownerCls     = isNight ? "text-slate-300 font-medium" : "text-stone-600 font-medium";
 
   const hasFeedback = !!coinsFeedback || !!opponentMoneyEvent;
-  const wrapperClassName = `absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center p-4 text-center ${hasFeedback ? "z-[20]" : ""} ${
+
+  // Responsive sizes: smaller on mobile, normal on sm+
+  const sizeClass = theme.assets?.centerBgImage
+    ? "w-[52%] h-[36%] sm:w-[62%] sm:h-[42%]"
+    : boardShape === "stadium"
+      ? "w-[42%] h-[34%] sm:w-[50%] sm:h-[40%]"
+      : "w-[38%] h-[38%] sm:w-[44%] sm:h-[44%]";
+
+  const wrapperClassName = `absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center p-4 text-center ${sizeClass} ${hasFeedback ? "z-[20]" : ""} ${
     theme.assets?.centerBgImage
       ? ""
       : `${isNight ? "overflow-visible" : "overflow-hidden"} border-2 shadow-inner ${theme.colors.centerBorder}`
   } ${theme.colors.centerBackground}`;
 
   const wrapperStyle: React.CSSProperties = theme.assets?.centerBgImage
-    ? { width: "62%", height: "42%" }
+    ? {}
     : boardShape === "stadium"
-      ? { width: "50%", height: "40%", borderRadius: "25%" }
-      : { width: "44%", height: "44%", borderRadius: "50%" };
+      ? { borderRadius: "25%" }
+      : { borderRadius: "50%" };
 
   return (
     <div className={wrapperClassName} style={wrapperStyle}>
@@ -195,7 +203,7 @@ export default function BoardCenterPanel({
       ) : opponentMoneyEvent ? (
         <OpponentMoneyFeedbackCard event={opponentMoneyEvent} centerTitleClass={theme.colors.centerTitle} />
       ) : (
-        <div className="relative z-10">
+        <div className="relative z-10 hidden sm:flex flex-col items-center text-center">
           <div className="text-4xl">{theme.labels.racingEmoji}</div>
           <div className={`mt-1 text-sm font-semibold ${theme.colors.centerTitle}`}>{theme.labels.centerTitle}</div>
           <div className={`mt-1 text-xs font-medium ${theme.colors.centerDescriptionPill ?? theme.colors.centerSubtitle}`}>{theme.labels.centerSubtitle}</div>

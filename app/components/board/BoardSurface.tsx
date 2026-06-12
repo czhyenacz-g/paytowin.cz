@@ -96,7 +96,8 @@ export function BoardSurface({
     displayPlayers.filter((p) => p.position === fieldIndex && !isBankrupt(p) && p.id !== animatingPlayerId);
 
   return (
-    /* aspect-[20/18] musí odpovídat STADIUM_ASPECT v lib/board/constants.ts */
+    <>
+    {/* aspect-[20/18] musí odpovídat STADIUM_ASPECT v lib/board/constants.ts */}
     <div ref={surfaceRef} className={`relative mx-auto w-full overflow-visible ${board.shape === "stadium" ? "aspect-[20/18]" : "aspect-square max-w-[760px]"}`}>
       <div
         className={`absolute inset-0 overflow-hidden rounded-[4px] border-2 ${theme.colors.boardSurfaceBorder} ${theme.colors.boardSurface}`}
@@ -265,22 +266,22 @@ export function BoardSurface({
           racerOwnership={racerOwnership}
         />
 
-        {/* Mobilní feedback overlay — zobrazí se nad kartami pouze na malých obrazovkách */}
+        {/* Mobilní feedback overlay — kompaktní karta nad boardem, ne přes celý board */}
         {(coinsFeedback || opponentMoneyEvent) && (
-          <div className="md:hidden absolute inset-0 z-[30] flex items-center justify-center pointer-events-none">
-            <div className="rounded-2xl bg-black/80 px-6 py-5 text-center shadow-2xl backdrop-blur-sm">
+          <div className="md:hidden absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[30] pointer-events-none w-[65%]">
+            <div className="rounded-2xl bg-black/80 px-4 py-3 text-center shadow-2xl backdrop-blur-sm">
               {coinsFeedback && (
                 <>
                   <div
-                    className="text-5xl font-black tabular-nums leading-none"
+                    className="text-3xl font-black tabular-nums leading-none"
                     style={{ color: coinsFeedback.kind === "gain" ? "#34d399" : "#f87171" }}
                   >
                     {coinsFeedback.kind === "gain" ? "+" : ""}{coinsFeedback.amount} 💰
                   </div>
-                  <div className="mt-2 text-xs font-semibold uppercase tracking-wide text-white/70">
+                  <div className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-white/70">
                     {coinsFeedback.playerName}
                   </div>
-                  <div className="mt-0.5 text-[10px] text-white/50">
+                  <div className="mt-0.5 text-[9px] text-white/50">
                     {coinsFeedback.fieldLabel}
                   </div>
                 </>
@@ -288,18 +289,18 @@ export function BoardSurface({
               {opponentMoneyEvent && (
                 <>
                   <div
-                    className="text-[10px] font-semibold uppercase tracking-widest mb-1.5 opacity-60"
+                    className="text-[9px] font-semibold uppercase tracking-widest mb-1 opacity-60"
                     style={{ color: opponentMoneyEvent.kind === "gain" ? "#fbbf24" : "#94a3b8" }}
                   >
                     {opponentMoneyEvent.kind === "gain" ? "Soupeř získal" : "Soupeř utratil"}
                   </div>
                   <div
-                    className="text-4xl font-black tabular-nums leading-none"
+                    className="text-3xl font-black tabular-nums leading-none"
                     style={{ color: opponentMoneyEvent.kind === "gain" ? "#fbbf24" : "#f87171" }}
                   >
                     {opponentMoneyEvent.kind === "gain" ? "+" : "-"}{opponentMoneyEvent.amount} 💰
                   </div>
-                  <div className="mt-2 text-xs font-semibold text-white/70">
+                  <div className="mt-1 text-[10px] font-semibold text-white/70">
                     {opponentMoneyEvent.playerName}
                   </div>
                 </>
@@ -309,5 +310,17 @@ export function BoardSurface({
         )}
       </div>
     </div>
+
+    {/* Mobilní event label pod boardem — viditelný jen na malých obrazovkách */}
+    <div className="sm:hidden mt-2 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-black/30 backdrop-blur-sm mx-auto max-w-xs">
+      <span className="text-xl shrink-0">{theme.labels.racingEmoji}</span>
+      <div className="min-w-0">
+        <div className={`text-xs font-semibold truncate ${theme.colors.centerTitle}`}>{theme.labels.centerTitle}</div>
+        <div className={`text-[10px] font-medium tabular-nums ${theme.colors.centerSubtitle}`}>
+          {currentYearEvent ? `${gameYear} — ${currentYearEvent.title}` : gameYear}
+        </div>
+      </div>
+    </div>
+    </>
   );
 }
