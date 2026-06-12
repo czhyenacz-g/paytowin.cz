@@ -144,7 +144,7 @@ export default function MapMenuStrip({ onPanelClick, currentXp, isLoggedIn = fal
           MOBILE render — zobrazí se jen na < sm (< 640 px)
           Dropdown: zavřený = vybraná mapa jako card; otevřený = seznam všech map.
           ════════════════════════════════════════════════════════════════════ */}
-      <div className="sm:hidden w-full shadow-2xl rounded-sm overflow-hidden">
+      <div className="sm:hidden w-full shadow-2xl rounded-sm overflow-visible relative z-10">
         {/* Zavřený stav — vybraná mapa */}
         {(() => {
           const sel = PANELS.find(p => p.id === selectedId) ?? PANELS[0];
