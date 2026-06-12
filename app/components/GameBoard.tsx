@@ -1354,7 +1354,7 @@ export default function GameBoard({ gameCode }: Props) {
       finalCoins += objectiveHit.config.inGameCoins;
     }
 
-    const logLines = [`${player.name} koupil ${racer.emoji} ${racer.name} za ${racer.price} 💰`];
+    const logLines = [`${player.name} koupil koně ${racer.emoji} ${racer.name}`];
     if (wentBankrupt) { logLines.push(`💀 ${player.name} zkrachoval!`); playSfx("bankrupt"); }
     else if (wouldBankruptBuy) logLines.push(`${player.name} prodal koně a přežil! 💰`);
     if (objectiveHit) {
