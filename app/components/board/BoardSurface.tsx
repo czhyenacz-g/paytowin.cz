@@ -291,7 +291,7 @@ export function BoardSurface({
                     className="text-[10px] font-semibold uppercase tracking-widest mb-1.5 opacity-60"
                     style={{ color: opponentMoneyEvent.kind === "gain" ? "#fbbf24" : "#94a3b8" }}
                   >
-                    {opponentMoneyEvent.kind === "gain" ? "Soupeř získal" : "Ztráta soupeře"}
+                    {opponentMoneyEvent.kind === "gain" ? "Soupeř získal" : "Soupeř utratil"}
                   </div>
                   <div
                     className="text-4xl font-black tabular-nums leading-none"

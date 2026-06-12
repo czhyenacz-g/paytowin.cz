@@ -13,7 +13,7 @@ export default function OpponentMoneyFeedbackCard({ event, centerTitleClass }: P
         className="text-[10px] font-semibold uppercase tracking-widest mb-1.5 opacity-60"
         style={{ color: isGain ? "#fbbf24" : "#94a3b8" }}
       >
-        {isGain ? "Soupeř získal" : "Ztráta soupeře"}
+        {isGain ? "Soupeř získal" : "Soupeř utratil"}
       </div>
       <div
         className="text-4xl font-black tabular-nums leading-none"
