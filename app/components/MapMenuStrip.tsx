@@ -64,6 +64,8 @@ const PANELS: Panel[] = [
 export default function MapMenuStrip({ onPanelClick, currentXp, isLoggedIn = false }: MapMenuStripProps) {
   const [hovered, setHovered] = React.useState<number | null>(null);
   const [isDev, setIsDev] = React.useState(process.env.NODE_ENV === "development");
+  const [selectedId, setSelectedId] = React.useState<string>(PANELS[0].id);
+  const [dropdownOpen, setDropdownOpen] = React.useState(false);
   const [lockToastMessage, setLockToastMessage] = React.useState<string | null>(null);
   const lockToastTimerRef = React.useRef<number | null>(null);
 
@@ -140,82 +142,136 @@ export default function MapMenuStrip({ onPanelClick, currentXp, isLoggedIn = fal
 
       {/* ════════════════════════════════════════════════════════════════════
           MOBILE render — zobrazí se jen na < sm (< 640 px)
-          Jednoduchý vertikální seznam karet pod sebou, žádný accordion.
+          Dropdown: zavřený = vybraná mapa jako card; otevřený = seznam všech map.
           ════════════════════════════════════════════════════════════════════ */}
-      <div className="sm:hidden w-full max-w-full flex flex-col divide-y divide-black/40 shadow-2xl overflow-x-hidden rounded-sm">
-        {PANELS.map((panel) => {
-          const isLocked = !isPanelXpUnlocked(panel.id, currentXp, isDev);
-          const isNavigable = !!onPanelClick || !!panel.href;
-          const isAvailable = panel.available;
-
-          const handleClick = () => {
-            if (isLocked) {
-              const msg = formatUnlockMessage(panel.id, getRequiredXpForPanel(panel.id), currentXp ?? null, isLoggedIn);
-              showLockToast(msg);
-              return;
-            }
-            dismissLockToast();
-            if (!isNavigable) return;
-            if (onPanelClick) { onPanelClick(panel.id); return; }
-            if (panel.href) window.location.href = panel.href;
-          };
-
+      <div className="sm:hidden w-full shadow-2xl rounded-sm overflow-hidden">
+        {/* Zavřený stav — vybraná mapa */}
+        {(() => {
+          const sel = PANELS.find(p => p.id === selectedId) ?? PANELS[0];
           return (
-            <React.Fragment key={panel.id}>
-              {panel.id === "ostatni" && (
-                <div className="bg-black/50 px-4 py-1 text-[8px] font-black uppercase tracking-[0.25em] text-white/25 select-none pointer-events-none">Ostatní sekce</div>
-              )}
-              <div
-                role="button"
-                onClick={handleClick}
-                className={[
-                  "relative flex items-center gap-3 px-4 min-h-[72px] overflow-hidden",
-                  panel.bgFrom, "bg-gradient-to-b", panel.bgTo,
-                  isLocked ? "cursor-pointer" : (isNavigable ? "cursor-pointer active:brightness-75" : "cursor-default"),
-                ].join(" ")}
-                style={panel.bgImage ? {
-                  backgroundImage: `url(${panel.bgImage})`,
-                  backgroundSize: "cover",
-                  backgroundPosition: panel.bgPosition ?? "center",
-                } : undefined}
-              >
-              {/* Tmavý overlay */}
-              <div className="absolute inset-0 bg-black/52 pointer-events-none" />
+            <div
+              role="button"
+              aria-expanded={dropdownOpen}
+              onClick={() => setDropdownOpen(o => !o)}
+              className="relative flex items-center gap-3 px-4 min-h-[88px] overflow-hidden cursor-pointer active:brightness-75"
+              style={sel.bgImage ? {
+                backgroundImage: `url(${sel.bgImage})`,
+                backgroundSize: "cover",
+                backgroundPosition: sel.bgPosition ?? "center",
+              } : undefined}
+            >
+              {/* Gradient overlay — silnější pro čitelnost textu */}
+              <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/40 pointer-events-none" />
 
               {/* Levý accent proužek */}
-              <div
-                className="relative z-10 self-stretch w-[3px] shrink-0 my-[14px] rounded-full"
-                style={{ background: panel.accentColor }}
-              />
+              <div className="relative z-10 self-stretch w-[3px] shrink-0 my-3 rounded-full" style={{ background: sel.accentColor }} />
 
               {/* Obsah */}
               <div className="relative z-10 flex-1 min-w-0 py-3">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-xl leading-none shrink-0">{panel.emoji}</span>
-                  <span className="text-sm font-bold text-white truncate">{panel.label}</span>
+                <div className="text-[8px] font-black uppercase tracking-[0.2em] mb-0.5" style={{ color: sel.accentColor, opacity: 0.85 }}>Vybraná mapa</div>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="text-base leading-none shrink-0">{sel.emoji}</span>
+                  <span className="text-sm font-bold text-white truncate">{sel.label}</span>
                 </div>
-                {panel.location && (
-                  <p className="mt-0 text-[9px] tracking-wide truncate drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]" style={{ color: "#f5f0e8", opacity: 0.80 }}>{panel.location}</p>
+                {sel.location && (
+                  <p className="mt-0.5 text-[9px] tracking-wide text-white/75 truncate">{sel.location}</p>
                 )}
-                {isAvailable && panel.desc && (
-                  <p className="mt-0.5 text-[11px] leading-tight text-white/55 truncate">{panel.desc}</p>
-                )}
-                {!isAvailable && (
-                  <p className="mt-0.5 text-[10px] font-black tracking-widest uppercase"
-                    style={{ color: panel.accentColor, opacity: 0.6 }}>Brzy</p>
+                {sel.desc && (
+                  <p className="mt-0.5 text-[11px] leading-tight text-white/50 truncate">{sel.desc}</p>
                 )}
               </div>
 
-              {/* Zámek / šipka */}
-              {isLocked ? (
-                <span className="relative z-10 shrink-0 text-base select-none">🔒</span>
-              ) : (isNavigable && isAvailable) ? (
-                <span className="relative z-10 shrink-0 text-white/35 text-2xl leading-none font-light">›</span>
-              ) : null}
+              {/* Chevron */}
+              <div className="relative z-10 shrink-0 flex flex-col items-center justify-center w-8">
+                <span
+                  className="text-white/50 text-lg leading-none transition-transform duration-200"
+                  style={{ transform: dropdownOpen ? "rotate(180deg)" : "rotate(0deg)" }}
+                >
+                  ⌄
+                </span>
               </div>
-            </React.Fragment>
+            </div>
           );
-        })}
+        })()}
+
+        {/* Rozbalený seznam */}
+        {dropdownOpen && (
+          <div className="flex flex-col divide-y divide-black/40 border-t border-black/50">
+            {PANELS.map((panel) => {
+              const isLocked = !isPanelXpUnlocked(panel.id, currentXp, isDev);
+              const isNavigable = !!onPanelClick || !!panel.href;
+              const isAvailable = panel.available;
+              const isSelected = panel.id === selectedId;
+
+              const handleClick = () => {
+                if (isLocked) {
+                  const msg = formatUnlockMessage(panel.id, getRequiredXpForPanel(panel.id), currentXp ?? null, isLoggedIn);
+                  showLockToast(msg);
+                  return;
+                }
+                dismissLockToast();
+                setSelectedId(panel.id);
+                setDropdownOpen(false);
+                if (!isNavigable) return;
+                if (onPanelClick) { onPanelClick(panel.id); return; }
+                if (panel.href) window.location.href = panel.href;
+              };
+
+              return (
+                <React.Fragment key={panel.id}>
+                  {panel.id === "ostatni" && (
+                    <div className="bg-black/60 px-4 py-1 text-[8px] font-black uppercase tracking-[0.25em] text-white/25 select-none pointer-events-none">Ostatní sekce</div>
+                  )}
+                  <div
+                    role="button"
+                    onClick={handleClick}
+                    className={[
+                      "relative flex items-center gap-3 px-4 min-h-[62px] overflow-hidden",
+                      panel.bgFrom, "bg-gradient-to-b", panel.bgTo,
+                      isLocked ? "cursor-pointer" : (isNavigable ? "cursor-pointer active:brightness-75" : "cursor-default"),
+                      isSelected ? "ring-1 ring-inset" : "",
+                    ].join(" ")}
+                    style={{
+                      ...(panel.bgImage ? {
+                        backgroundImage: `url(${panel.bgImage})`,
+                        backgroundSize: "cover",
+                        backgroundPosition: panel.bgPosition ?? "center",
+                      } : {}),
+                      ...(isSelected ? { boxShadow: `inset 0 0 0 1px ${panel.accentColor}55` } : {}),
+                    }}
+                  >
+                    {/* Overlay */}
+                    <div className="absolute inset-0 bg-black/62 pointer-events-none" />
+
+                    {/* Accent proužek */}
+                    <div className="relative z-10 self-stretch w-[3px] shrink-0 my-3 rounded-full" style={{ background: panel.accentColor }} />
+
+                    {/* Obsah */}
+                    <div className="relative z-10 flex-1 min-w-0 py-2.5">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-base leading-none shrink-0">{panel.emoji}</span>
+                        <span className="text-sm font-bold text-white truncate">{panel.label}</span>
+                        {isSelected && (
+                          <span className="shrink-0 text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full" style={{ background: panel.accentColor + "33", color: panel.accentColor }}>✓</span>
+                        )}
+                      </div>
+                      {panel.location && (
+                        <p className="mt-0 text-[9px] tracking-wide text-white/65 truncate">{panel.location}</p>
+                      )}
+                    </div>
+
+                    {/* Zámek / šipka */}
+                    {isLocked ? (
+                      <span className="relative z-10 shrink-0 text-sm select-none">🔒</span>
+                    ) : (isNavigable && isAvailable && !isSelected) ? (
+                      <span className="relative z-10 shrink-0 text-white/30 text-xl leading-none">›</span>
+                    ) : null}
+                  </div>
+                </React.Fragment>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* ════════════════════════════════════════════════════════════════════
