@@ -901,7 +901,7 @@ export default function LandingPage() {
               </div>
 
               <div className="mx-auto mt-2 mb-3 w-full max-w-4xl lg:max-w-[82%] xl:max-w-[78%]">
-                <QuickGameLauncher />
+                <QuickGameLauncher href="/quickgame" />
               </div>
 
               <MapMenuStrip

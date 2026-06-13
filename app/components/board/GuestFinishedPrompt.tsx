@@ -1,15 +1,9 @@
 "use client";
 
 import React from "react";
-import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { createQuickGame } from "@/lib/quickGame";
 
 export default function GuestFinishedPrompt() {
-  const router = useRouter();
-  const [replayLoading, setReplayLoading] = React.useState(false);
-  const [replayError, setReplayError] = React.useState("");
-
   const handleDiscordLogin = async () => {
     await supabase.auth.signInWithOAuth({
       provider: "discord",
@@ -17,18 +11,6 @@ export default function GuestFinishedPrompt() {
         redirectTo: `${window.location.origin}/auth/callback?next=/`,
       },
     });
-  };
-
-  const handlePlayAgain = async () => {
-    setReplayLoading(true);
-    setReplayError("");
-    const result = await createQuickGame();
-    if (!result.ok) {
-      setReplayError("Nepodařilo se spustit hru. Zkus to znovu.");
-      setReplayLoading(false);
-      return;
-    }
-    router.push(`/game/${result.gameCode}`);
   };
 
   return (
@@ -45,16 +27,12 @@ export default function GuestFinishedPrompt() {
       >
         🎮 Uložit přes Discord
       </button>
-      <button
-        onClick={handlePlayAgain}
-        disabled={replayLoading}
-        className="w-full rounded-xl border-2 border-stone-400 bg-white px-4 py-2.5 text-sm font-semibold text-stone-700 transition hover:border-stone-600 hover:bg-stone-50 disabled:opacity-60 active:scale-[0.98]"
+      <a
+        href="/quickgame"
+        className="block w-full rounded-xl border-2 border-stone-400 bg-white px-4 py-2.5 text-center text-sm font-semibold text-stone-700 transition hover:border-stone-600 hover:bg-stone-50 active:scale-[0.98]"
       >
-        {replayLoading ? "Zakládám hru…" : "🔄 Hrát znovu jako host"}
-      </button>
-      {replayError && (
-        <p className="text-xs text-red-600">{replayError}</p>
-      )}
+        🔄 Hrát znovu jako host
+      </a>
     </div>
   );
 }
