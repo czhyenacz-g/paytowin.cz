@@ -11,6 +11,7 @@ import {
 import ObjectiveResultPanel from "./ObjectiveResultPanel";
 import { getObjectiveRewardConfig, XP_OBJECTIVE } from "@/lib/scenarios/objective-rewards";
 import GameFinishedAudio from "./GameFinishedAudio";
+import GuestFinishedPrompt from "./GuestFinishedPrompt";
 
 const BUST_LINES = [
   "Mafii se dluhy musí splácet. Bohužel jsi neměl už z čeho.",
@@ -56,6 +57,7 @@ export default function GameFinishedScreen({
   const iWon = isPersonalized && winner?.id === myPlayerId;
   const winnerIsBot = !!winner?.is_bot;
   const myPlayer = isPersonalized ? (players.find(p => p.id === myPlayerId) ?? null) : null;
+  const isGuest = !!myPlayer && !myPlayer.discord_id && !myPlayer.is_bot;
 
   // Objective evaluation — čistě odvozené, žádný state
   const isLocalGame = gameMode === "local";
@@ -311,6 +313,8 @@ export default function GameFinishedScreen({
               )}
             </>
           )}
+
+          {isGuest && <GuestFinishedPrompt />}
 
           <div className="px-[18%] py-4 flex justify-center">
             <a href="/" className="border-2 border-stone-800 px-8 py-2.5 text-center text-sm font-bold tracking-wide text-stone-800 hover:bg-stone-100 active:scale-[0.98] transition">

@@ -98,6 +98,7 @@ import FieldCardList from "./board/FieldCardList";
 import GamePanel from "./board/GamePanel";
 import StableDuelStatusBanners from "./board/StableDuelStatusBanners";
 import GameFinishedScreen from "./board/GameFinishedScreen";
+import GuestBanner from "./board/GuestBanner";
 import IntroOverlay from "./IntroOverlay";
 import StartFlowOverlay from "./start-flow/StartFlowOverlay";
 import { getScenarioForTheme, evaluateScenarioWinCondition } from "@/lib/scenarios";
@@ -816,6 +817,7 @@ export default function GameBoard({ gameCode }: Props) {
 
   // ── Guide visibility ─────────────────────────────────────────────────────
   const myPlayer = players.find((player) => player.id === myPlayerId) ?? null;
+  const isGuestPlayer = !!myPlayer && !myPlayer.discord_id && !myPlayer.is_bot;
   const {
     shouldShowCorrectionGuide,
     shouldShowRacerGuide,
@@ -3422,6 +3424,8 @@ export default function GameBoard({ gameCode }: Props) {
           />
         </div>
       )}
+      {isGuestPlayer && gameCode && <GuestBanner gameCode={gameCode} />}
+
       <div className="py-2 flex items-center justify-center gap-4 text-xs text-slate-400">
         <a href="/pravidla" className="hover:text-slate-600 underline">Pravidla hry</a>
         <span>·</span>
