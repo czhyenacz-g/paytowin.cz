@@ -75,7 +75,7 @@ export default function RotatingBenefitStrip({ variant = "amber" }: Props) {
         {item.ctaHref && item.ctaLabel && (
           <a
             href={item.ctaHref}
-            className="shrink-0 rounded-lg bg-amber-600 px-5 py-1 text-[11px] font-bold text-white transition hover:bg-amber-500"
+            className="shrink-0 rounded-lg bg-amber-600 px-10 py-1 text-[11px] font-bold text-white transition hover:bg-amber-500"
             style={{ opacity: visible ? 1 : 0 }}
           >
             {item.ctaLabel}
