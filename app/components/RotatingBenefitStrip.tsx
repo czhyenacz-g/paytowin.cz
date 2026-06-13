@@ -9,20 +9,24 @@ interface BenefitItem {
   ctaHref?: string;
 }
 
-const BENEFITS: BenefitItem[] = [
+const REGULAR_BENEFITS: BenefitItem[] = [
   { text: "Deskovka, kterou nemusíš tahat s sebou." },
   { text: "Pošli odkaz a hrajte. Bez instalace." },
-  {
-    label: "RYCHLÁ HRA",
-    text: "Zahraj si proti botům bez registrace.",
-    ctaLabel: "Spustit →",
-    ctaHref: "/quickgame",
-  },
   { text: "Jedna partie může trvat klidně jen 20 minut." },
   { text: "Začni na počítači, pokračuj z mobilu." },
   { text: "Škodolibost starých deskovek bez celého odpoledne u stolu." },
   { text: "Když odejdeš od počítače, nemusíš odejít ze hry." },
 ];
+
+const QUICK_GAME_ITEM: BenefitItem = {
+  label: "RYCHLÁ HRA",
+  text: "Zahraj si proti botům bez registrace.",
+  ctaLabel: "Spustit →",
+  ctaHref: "/quickgame",
+};
+
+// Každá druhá položka je quick game: benefit, quickgame, benefit, quickgame, …
+const BENEFITS: BenefitItem[] = REGULAR_BENEFITS.flatMap(b => [b, QUICK_GAME_ITEM]);
 
 const INTERVAL_MS = 6000;
 
