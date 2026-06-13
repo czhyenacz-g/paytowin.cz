@@ -923,6 +923,9 @@ export default function LandingPage() {
               />
 
               <div className="mx-auto mt-2.5 sm:mt-4 w-full max-w-4xl lg:max-w-[82%] xl:max-w-[78%] space-y-1.5 sm:space-y-2">
+                {/* ── Benefit / quick-game strip ── */}
+                <RotatingBenefitStrip variant="slate" />
+
               <div
                   className="relative px-5 sm:px-8 py-[20px] sm:py-[26px] rounded-2xl overflow-hidden border border-amber-600/40 bg-slate-950/90 shadow-xl shadow-black/50 backdrop-blur-sm"
                 >
@@ -1089,9 +1092,6 @@ export default function LandingPage() {
                     ))}
                   </div>
                 )}
-
-                {/* ── Benefit strip ── */}
-                <RotatingBenefitStrip variant="slate" />
 
                 {/* ── Lobby: joinable games ── */}
                 <JoinableGamesList
