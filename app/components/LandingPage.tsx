@@ -8,7 +8,6 @@ import { THEMES } from "@/lib/themes";
 import { BOARD_PRESETS } from "@/lib/board";
 import MapMenuStrip from "./MapMenuStrip";
 import JoinableGamesList from "./landing/JoinableGamesList";
-import QuickGameLauncher from "./landing/QuickGameLauncher";
 import RotatingBenefitStrip from "./RotatingBenefitStrip";
 import { logEvent } from "@/lib/analytics";
 import {
@@ -898,10 +897,6 @@ export default function LandingPage() {
                 </p>
 
                 <p className="mt-2 text-xs text-amber-100/70">Závody, sázky a finanční chaos.</p>
-              </div>
-
-              <div className="mx-auto mt-2 mb-3 w-full max-w-4xl lg:max-w-[82%] xl:max-w-[78%]">
-                <QuickGameLauncher href="/quickgame" />
               </div>
 
               <MapMenuStrip
