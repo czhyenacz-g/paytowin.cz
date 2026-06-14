@@ -18,14 +18,15 @@ function generateGuestName(): string {
   return `${adj} ${noun} ${num}`;
 }
 
-const QUICK_BOT_NAMES = ["Závodiště bot", "Stájový bot"];
+// TODO: Re-enable multi-bot quickgame after bot-vs-bot/race flow is verified.
+const QUICK_BOT_NAMES = ["Stájový bot"];
 
 export type QuickGameResult =
   | { ok: true; gameCode: string; playerId: string }
   | { ok: false; reason: string };
 
 /**
- * Vytvoří quick game: 1 host + 2 boti, výchozí mapa horse-day, game_mode=online.
+ * Vytvoří quick game: 1 host + 1 bot, výchozí mapa horse-day, game_mode=online.
  * Ukládá playerId do localStorage. Kompatibilní s invite/join flow.
  */
 export async function createQuickGame(): Promise<QuickGameResult> {
