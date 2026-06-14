@@ -69,9 +69,9 @@ export default function QuickGamePage() {
             ← Zpět na hlavní stránku
           </a>
         </p>
-        <p className="text-center text-xs text-amber-200/30">
+        <p className="text-center text-xs font-semibold text-amber-200/50">
           Budu rád za zpětnou vazbu —{" "}
-          <a href="mailto:info@paytowin.cz" className="underline hover:text-amber-200/60">
+          <a href="mailto:info@paytowin.cz" className="underline hover:text-amber-200/80">
             info@paytowin.cz
           </a>
         </p>
