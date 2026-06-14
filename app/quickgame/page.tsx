@@ -52,7 +52,7 @@ export default function QuickGamePage() {
             </li>
             <li className="flex items-start gap-2">
               <span className="mt-0.5 text-amber-400">🤖</span>
-              Hraješ proti 2 botům
+              Hraješ proti botovi
             </li>
             <li className="flex items-start gap-2">
               <span className="mt-0.5 text-amber-400">💰</span>
@@ -63,10 +63,16 @@ export default function QuickGamePage() {
           <QuickGameLauncher ctaLabel="Spustit rychlou hru" />
         </div>
 
-        {/* Zpět */}
+        {/* Zpět + zpětná vazba */}
         <p className="text-center text-xs text-amber-200/40">
           <a href="/" className="underline hover:text-amber-200/70">
             ← Zpět na hlavní stránku
+          </a>
+        </p>
+        <p className="text-center text-xs text-amber-200/30">
+          Budu rád za zpětnou vazbu —{" "}
+          <a href="mailto:info@paytowin.cz" className="underline hover:text-amber-200/60">
+            info@paytowin.cz
           </a>
         </p>
 
