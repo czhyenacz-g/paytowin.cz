@@ -818,13 +818,18 @@ export default function GameBoard({ gameCode }: Props) {
   // ── Guide visibility ─────────────────────────────────────────────────────
   const myPlayer = players.find((player) => player.id === myPlayerId) ?? null;
   const isGuestPlayer = !!myPlayer && !myPlayer.discord_id && !myPlayer.is_bot;
+  const humanPlayerCount = players.filter(p => !p.is_bot).length;
+  const botPlayerCount   = players.filter(p => !!p.is_bot).length;
+
   const {
     shouldShowCorrectionGuide,
     shouldShowRacerGuide,
     shouldShowStaminaGuide,
+    shouldShowSoloLobbyGuide,
     dismissCorrectionGuide,
     dismissRacerGuide,
     dismissStaminaGuide,
+    dismissSoloLobbyGuide,
   } = useGuideState({
     gameCode,
     turnCount: gameState?.turn_count,
@@ -833,6 +838,8 @@ export default function GameBoard({ gameCode }: Props) {
     isPlayerBankrupt: !!myPlayer && isBankrupt(myPlayer),
     horseCount: myPlayer?.horses.length ?? 0,
     gameStatus,
+    humanPlayerCount,
+    botPlayerCount,
   });
 
   const rollDice = async () => {
@@ -3293,9 +3300,12 @@ export default function GameBoard({ gameCode }: Props) {
             shouldShowRacerGuide={shouldShowRacerGuide}
             shouldShowStaminaGuide={shouldShowStaminaGuide}
             shouldShowCorrectionGuide={shouldShowCorrectionGuide}
+            shouldShowSoloLobbyGuide={shouldShowSoloLobbyGuide}
             dismissRacerGuide={dismissRacerGuide}
             dismissStaminaGuide={dismissStaminaGuide}
             dismissCorrectionGuide={dismissCorrectionGuide}
+            dismissSoloLobbyGuide={dismissSoloLobbyGuide}
+            onCancelGame={cancelGame}
             isRolling={isRolling}
             isMoving={isMoving}
             displayRoll={displayRoll}

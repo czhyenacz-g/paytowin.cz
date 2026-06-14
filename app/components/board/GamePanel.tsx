@@ -59,9 +59,12 @@ interface Props {
   shouldShowRacerGuide: boolean;
   shouldShowStaminaGuide: boolean;
   shouldShowCorrectionGuide: boolean;
+  shouldShowSoloLobbyGuide?: boolean;
   dismissRacerGuide: () => void;
   dismissStaminaGuide: () => void;
   dismissCorrectionGuide: () => void;
+  dismissSoloLobbyGuide?: () => void;
+  onCancelGame?: () => void;
   isRolling: boolean;
   isMoving: boolean;
   displayRoll: number | null;
@@ -136,9 +139,12 @@ export default function GamePanel({
   shouldShowRacerGuide,
   shouldShowStaminaGuide,
   shouldShowCorrectionGuide,
+  shouldShowSoloLobbyGuide = false,
   dismissRacerGuide,
   dismissStaminaGuide,
   dismissCorrectionGuide,
+  dismissSoloLobbyGuide,
+  onCancelGame,
   isRolling,
   isMoving,
   displayRoll,
@@ -191,6 +197,17 @@ export default function GamePanel({
   fieldOwnershipLoading = false,
   fieldOwnershipError = null,
 }: Props) {
+  const [copied, setCopied] = React.useState(false);
+
+  const copyInviteLink = () => {
+    if (!gameCode) return;
+    const url = `${window.location.origin}/?join=${gameCode}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
   return (
     <div className="flex flex-col gap-3">
       <div className={`rounded-[4px] p-5 shadow-xl ring-1 ring-black/[0.06] ${theme.colors.cardBackground}`}>
@@ -217,6 +234,59 @@ export default function GamePanel({
           </div>
         </div>
         <div className="space-y-3">
+          {shouldShowSoloLobbyGuide && (
+            <div className="relative overflow-hidden rounded-[4px] border border-slate-300 bg-gradient-to-br from-slate-50 via-white to-blue-50 p-4 shadow-sm">
+              <div className="pointer-events-none absolute -right-4 -top-4 text-6xl opacity-10">👥</div>
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[3px] bg-slate-100 text-2xl">
+                  🕐
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">
+                    Průvodce
+                  </div>
+                  <div className="mt-1 text-sm font-semibold text-slate-800">
+                    Jsi tu zatím sám
+                  </div>
+                  <p className="mt-1 text-xs leading-relaxed text-slate-600">
+                    Klasická hra čeká na další hráče. Pošli kód hry nebo pozvánku kamarádům.
+                    <br />
+                    <span className="text-slate-500">Pokud chceš hrát i proti botovi, zapni si boty v konfiguraci při zakládání hry.</span>
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      onClick={copyInviteLink}
+                      className="rounded-[3px] bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-700"
+                    >
+                      {copied ? "✓ Zkopírováno" : "📋 Zkopírovat pozvánku"}
+                    </button>
+                    {onCancelGame && (
+                      <button
+                        onClick={onCancelGame}
+                        className="rounded-[3px] border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-100"
+                      >
+                        Zrušit tuto hru
+                      </button>
+                    )}
+                    <a
+                      href="/"
+                      className="rounded-[3px] border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-500 transition hover:bg-slate-50"
+                    >
+                      Založit novou hru
+                    </a>
+                  </div>
+                </div>
+                <button
+                  onClick={dismissSoloLobbyGuide}
+                  className="shrink-0 rounded-[3px] px-2 py-1 text-xs font-medium text-slate-400 transition hover:bg-white/70 hover:text-slate-700"
+                  title="Skrýt nápovědu"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
+
           {shouldShowCorrectionGuide && (
             <div className="relative overflow-hidden rounded-[4px] border border-violet-300 bg-gradient-to-br from-violet-50 via-white to-fuchsia-100 p-4 shadow-sm">
               <div className="pointer-events-none absolute -right-4 -top-4 text-6xl opacity-10">🎲</div>
