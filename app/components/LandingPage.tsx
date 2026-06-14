@@ -927,7 +927,7 @@ export default function LandingPage() {
                 <RotatingBenefitStrip variant="slate" />
 
               <div
-                  className="relative px-5 sm:px-8 py-[20px] sm:py-[26px] rounded-2xl overflow-hidden border border-amber-600/40 bg-slate-950/90 shadow-xl shadow-black/50 backdrop-blur-sm"
+                  className="relative px-5 sm:px-8 py-[10px] sm:py-[14px] rounded-2xl overflow-hidden border border-amber-600/40 bg-slate-950/90 shadow-xl shadow-black/50 backdrop-blur-sm"
                 >
                   <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-400/25 to-transparent" aria-hidden="true" />
                   <div className="relative grid grid-cols-1 lg:grid-cols-3 gap-3 lg:gap-0 lg:divide-x lg:divide-amber-700/20 lg:items-center">
