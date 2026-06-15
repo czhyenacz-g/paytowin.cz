@@ -14,7 +14,8 @@ export interface PlayerDuelState {
   readonly alive: boolean;
   readonly ticksAlive: number;
   readonly nitroTicksRemaining: number;         // ticks of extra step left (>0 = boost active)
-  readonly nitroUsed: boolean;                  // ever activated; used in MinigameResult
+  readonly nitroUsed: boolean;                  // ever activated; kept for UI compat
+  readonly nitroActivations: number;            // total count of activations this game
   readonly nitroCooldownTicksRemaining: number; // ticks until next activation allowed
   readonly nitroCooldownPerUse: number;         // cooldown to reset after each activation (speed-based)
   readonly startDelayTicksRemaining: number;    // ticks of immobility at game start

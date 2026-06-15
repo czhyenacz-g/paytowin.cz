@@ -11,7 +11,11 @@ export interface NitroStaminaPreview {
   total: number;
 }
 
-export function nitroStaminaPreview(nitroUsed: boolean, crashed: boolean): NitroStaminaPreview {
-  const s = calculateStableDuelStaminaCost({ nitroUsed, crashed });
+export function nitroStaminaPreview(
+  nitroUsed: boolean,
+  crashed: boolean,
+  nitroActivations?: number,
+): NitroStaminaPreview {
+  const s = calculateStableDuelStaminaCost({ nitroUsed, crashed, nitroActivations });
   return { baseCost: s.base, nitroCost: s.nitro, crashPenalty: s.crash, total: s.total };
 }

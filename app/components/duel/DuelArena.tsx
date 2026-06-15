@@ -233,8 +233,8 @@ export default function DuelArena({
       const w: 1 | 2 | "draw" = state.winner === 1 ? 1 : state.winner === 2 ? 2 : "draw";
       onResultRef.current?.({
         winner: w,
-        p1: { usedNitro: state.p1.nitroUsed, crashed: !state.p1.alive, score: state.p1.ticksAlive },
-        p2: { usedNitro: state.p2.nitroUsed, crashed: !state.p2.alive, score: state.p2.ticksAlive },
+        p1: { usedNitro: state.p1.nitroUsed, nitroActivations: state.p1.nitroActivations, crashed: !state.p1.alive, score: state.p1.ticksAlive },
+        p2: { usedNitro: state.p2.nitroUsed, nitroActivations: state.p2.nitroActivations, crashed: !state.p2.alive, score: state.p2.ticksAlive },
         meta: { minigameType: "neon_rope_duel" },
       });
     }
@@ -469,8 +469,8 @@ export default function DuelArena({
 
   const p1Crashed  = state.status === "p2_win" || state.status === "draw";
   const p2Crashed  = state.status === "p1_win" || state.status === "draw";
-  const p1Preview  = nitroStaminaPreview(state.p1.nitroUsed, p1Crashed);
-  const p2Preview  = nitroStaminaPreview(state.p2.nitroUsed, p2Crashed);
+  const p1Preview  = nitroStaminaPreview(state.p1.nitroUsed, p1Crashed, state.p1.nitroActivations);
+  const p2Preview  = nitroStaminaPreview(state.p2.nitroUsed, p2Crashed, state.p2.nitroActivations);
 
   const nitroLabel = (nitroTicksRemaining: number, nitroCooldown: number, key: string) => {
     if (nitroTicksRemaining > 0) return `⚡ NITRO (${nitroTicksRemaining})`;

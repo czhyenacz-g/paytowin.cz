@@ -353,7 +353,7 @@ export default function SpeedArena({ config, showDebug = false, backgroundUrl, o
         <div className="flex items-center gap-2 text-[10px] font-mono">
           <span className="text-slate-600 w-14 shrink-0">NITRO</span>
           {state.status === "idle" ? (
-            <span className="text-slate-600">S (1× za hru, −20 stamina)</span>
+            <span className="text-slate-600">S (−10 stamina / použití)</span>
           ) : nitroUsed ? (
             <span className="text-slate-500">✓ použito</span>
           ) : (

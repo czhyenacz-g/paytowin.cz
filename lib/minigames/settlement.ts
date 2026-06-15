@@ -26,7 +26,11 @@ function calcPlayer(
   pr: MinigameResult["p1"] | MinigameResult["p2"],
   coinsDelta: number,
 ): PlayerSettlement {
-  const stamina = calculateStableDuelStaminaCost({ nitroUsed: pr.usedNitro, crashed: pr.crashed });
+  const stamina = calculateStableDuelStaminaCost({
+    nitroUsed: pr.usedNitro,
+    crashed: pr.crashed,
+    nitroActivations: pr.nitroActivations,
+  });
   return { coinsDelta, stamina };
 }
 

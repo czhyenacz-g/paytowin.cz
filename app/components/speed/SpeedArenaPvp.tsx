@@ -207,8 +207,8 @@ export default function SpeedArenaPvp({
       onResultFiredRef.current = true;
       onResult?.({
         winner: pvpState.winner,
-        p1: { usedNitro: pvpState.p1NitroUsed, crashed: pvpState.p1.status === "crashed", score: pvpState.p1.score },
-        p2: { usedNitro: pvpState.p2NitroUsed, crashed: pvpState.p2.status === "crashed", score: pvpState.p2.score },
+        p1: { usedNitro: pvpState.p1NitroUsed, nitroActivations: pvpState.p1NitroUsed ? 1 : 0, crashed: pvpState.p1.status === "crashed", score: pvpState.p1.score },
+        p2: { usedNitro: pvpState.p2NitroUsed, nitroActivations: pvpState.p2NitroUsed ? 1 : 0, crashed: pvpState.p2.status === "crashed", score: pvpState.p2.score },
         meta: { minigameType: "neon_speedrace" },
       });
     }
@@ -464,7 +464,7 @@ export default function SpeedArenaPvp({
         <div className="flex items-center gap-2 text-[10px] font-mono">
           <span className="w-6 shrink-0" style={{ color: P1_COLOR }}>P1</span>
           {pvpState.overallStatus === "idle" ? (
-            <span className="text-slate-600">S (1× za hru, −20 stamina)</span>
+            <span className="text-slate-600">S (−10 stamina / použití)</span>
           ) : pvpState.p1NitroUsed ? (
             <span className="text-slate-500">⚡ použito</span>
           ) : (
@@ -477,7 +477,7 @@ export default function SpeedArenaPvp({
         <div className="flex items-center gap-2 text-[10px] font-mono">
           <span className="w-6 shrink-0" style={{ color: P2_COLOR }}>P2</span>
           {pvpState.overallStatus === "idle" ? (
-            <span className="text-slate-600">SPACE (1× za hru, −20 stamina)</span>
+            <span className="text-slate-600">SPACE (−10 stamina / použití)</span>
           ) : pvpState.p2NitroUsed ? (
             <span className="text-slate-500">⚡ použito</span>
           ) : (

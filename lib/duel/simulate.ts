@@ -52,7 +52,7 @@ export function createInitialState(config: DuelConfig, p1Speed = 5, p2Speed = 5)
     p1: {
       pos: { x: p1x, y: midY }, dir: "right", trail: [{ x: p1x, y: midY }],
       alive: true, ticksAlive: 0,
-      nitroTicksRemaining: 0, nitroUsed: false,
+      nitroTicksRemaining: 0, nitroUsed: false, nitroActivations: 0,
       nitroCooldownTicksRemaining: 0,
       nitroCooldownPerUse: getRopeDuelNitroCooldownTicks(p1Speed),
       startDelayTicksRemaining: getRopeDuelStartDelayTicks(p1Speed),
@@ -61,7 +61,7 @@ export function createInitialState(config: DuelConfig, p1Speed = 5, p2Speed = 5)
     p2: {
       pos: { x: p2x, y: midY }, dir: "left",  trail: [{ x: p2x, y: midY }],
       alive: true, ticksAlive: 0,
-      nitroTicksRemaining: 0, nitroUsed: false,
+      nitroTicksRemaining: 0, nitroUsed: false, nitroActivations: 0,
       nitroCooldownTicksRemaining: 0,
       nitroCooldownPerUse: getRopeDuelNitroCooldownTicks(p2Speed),
       startDelayTicksRemaining: getRopeDuelStartDelayTicks(p2Speed),
@@ -150,6 +150,7 @@ export function applyTick(
     ticksAlive: state.p1.ticksAlive + (p1alive ? 1 : 0),
     nitroTicksRemaining: p1NitroNext,
     nitroUsed: state.p1.nitroUsed || p1CanActivate,
+    nitroActivations: state.p1.nitroActivations + (p1CanActivate ? 1 : 0),
     nitroCooldownTicksRemaining: p1CooldownNext,
     nitroCooldownPerUse: state.p1.nitroCooldownPerUse,
     startDelayTicksRemaining: p1InDelay ? state.p1.startDelayTicksRemaining - 1 : 0,
@@ -163,6 +164,7 @@ export function applyTick(
     ticksAlive: state.p2.ticksAlive + (p2alive ? 1 : 0),
     nitroTicksRemaining: p2NitroNext,
     nitroUsed: state.p2.nitroUsed || p2CanActivate,
+    nitroActivations: state.p2.nitroActivations + (p2CanActivate ? 1 : 0),
     nitroCooldownTicksRemaining: p2CooldownNext,
     nitroCooldownPerUse: state.p2.nitroCooldownPerUse,
     startDelayTicksRemaining: p2InDelay ? state.p2.startDelayTicksRemaining - 1 : 0,

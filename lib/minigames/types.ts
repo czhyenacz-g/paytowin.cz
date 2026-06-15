@@ -6,6 +6,8 @@ export interface MinigameResult {
 
   p1: {
     usedNitro: boolean;
+    /** Počet skutečných nitro aktivací (pro per-use stamina cost). */
+    nitroActivations: number;
     crashed:   boolean;
     /** Skóre závislé na minihře: ticksAlive (duel) nebo score/distance (speed). */
     score?: number;
@@ -13,6 +15,7 @@ export interface MinigameResult {
 
   p2: {
     usedNitro: boolean;
+    nitroActivations: number;
     crashed:   boolean;
     score?: number;
   };
