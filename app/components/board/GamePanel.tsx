@@ -680,7 +680,8 @@ export default function GamePanel({
           )}
 
           {/* Stájový souboj — board overlay (game flow + dev preview) */}
-          {stableDuelCtx && (
+          {/* Guard: nespouštěj overlay přes pendingCard (legendary modal) — pendingCard=null ho odblokuje */}
+          {stableDuelCtx && !pendingCard && (
             <StableDuelBoardLayer
               challenger={stableDuelCtx.challenger}
               defender={stableDuelCtx.defender}

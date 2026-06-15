@@ -2589,8 +2589,9 @@ export default function GameBoard({ gameCode }: Props) {
     const createdAt = sdPending.createdAt;
     const duelKey = `overlay_${cId}_${dId}_${createdAt}_${startsAt}`;
 
-    // Open overlay immediately for active players — shared countdown runs inside overlay
-    if (isChallenger || isDefender) {
+    // Open overlay immediately for active players — shared countdown runs inside overlay.
+    // Guard: nespouštěj overlay přes otevřený legendary/card modal; effect se re-runne po zavření.
+    if ((isChallenger || isDefender) && !pendingCard) {
       const cPlayer = players.find(p => p.id === cId);
       const dPlayer = players.find(p => p.id === dId);
       const duelId = `stable_duel:${cId}:${dId}:${createdAt}`;
@@ -2625,7 +2626,7 @@ export default function GameBoard({ gameCode }: Props) {
     const interval = setInterval(tick, 250);
     return () => clearInterval(interval);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameState?.offer_pending, myPlayerId, players, openStableDuelOverlay]);
+  }, [gameState?.offer_pending, myPlayerId, players, openStableDuelOverlay, pendingCard]);
 
   // Zavře defender overlay jakmile challenger zapíše phase "finished" do DB.
   React.useEffect(() => {
@@ -2656,6 +2657,8 @@ export default function GameBoard({ gameCode }: Props) {
     if (stableDuelProceedRef.current) return; // nastaveno rollDice — nepřepisovat
     if (!gameState || !gameId || players.length === 0) return;
     if (botDuelHandledRef.current === sdPending.createdAt) return; // idempotent guard
+    // Nespouštěj overlay přes legendary/card modal — počkej na zavření, effect se re-runne.
+    if (pendingCard) return;
 
     const cPlayer = players.find(p => p.id === sdPending.challengerId);
     const dPlayer = players.find(p => p.id === sdPending.defenderId);
@@ -2702,7 +2705,7 @@ export default function GameBoard({ gameCode }: Props) {
       `pvbot_bot_${sdPending.challengerId}_${sdPending.defenderId}_${sdPending.createdAt}`,
     );
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameState?.offer_pending, myPlayerId, stableDuelCtx, players, gameId, openStableDuelOverlay]);
+  }, [gameState?.offer_pending, myPlayerId, stableDuelCtx, players, gameId, openStableDuelOverlay, pendingCard]);
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
