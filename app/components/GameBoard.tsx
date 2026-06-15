@@ -1395,18 +1395,6 @@ export default function GameBoard({ gameCode }: Props) {
 
     await supabase.from("players").update({ coins: finalCoins, horses: finalHorses }).eq("id", player.id);
 
-    // Objective guard — fire-and-forget; zapíše kdo vyhrál objective (pro post-game XP award)
-    if (objectiveHit && gameId) {
-      const newAwardedIds = [...alreadyAwardedObjectives, objectiveHit.objectiveId];
-      const prevCompletedBy = gameState.objective_completed_by ?? {};
-      supabase.from("game_state").update({
-        objective_rewards_awarded: newAwardedIds,
-        objective_completed_by: { ...prevCompletedBy, [objectiveHit.objectiveId]: player.id },
-      }).eq("game_id", gameId).then(({ error }) => {
-        if (error) console.warn("[objective] guard write failed", error);
-      });
-    }
-
     // Spend event — jen Discord hráči; chyba nesmí rozbít nákup
     if (player.discord_id && gameId) {
       supabase.from("spend_events").insert({
@@ -1424,12 +1412,18 @@ export default function GameBoard({ gameCode }: Props) {
       p.id === player.id ? { ...p, coins: finalCoins, horses: finalHorses } : p
     ));
 
+    // Objective guard se zapisuje atomicky v rámci finishTurn (stejný UPDATE jako posun tahu),
+    // aby Realtime subscription přečetla vždy konzistentní stav a odměna se nevyplatila 2×.
     await finishTurn({
       nextIndex, turnCount: newTurnCount, log: [...logLines, ...newLog],
       updatedCurrentPlayerHorses: finalHorses,
       ...(postTurnEvent ? { postTurnEvent } : {}),
       ...(wentBankrupt ? { bustPlayerId: player.id } : {}),
       ...(objectiveTelegram ? { yearEventTelegram: objectiveTelegram } : {}),
+      ...(objectiveHit ? {
+        newObjectiveRewardsAwarded: [...alreadyAwardedObjectives, objectiveHit.objectiveId],
+        newObjectiveCompletedBy: { ...(gameState.objective_completed_by ?? {}), [objectiveHit.objectiveId]: player.id },
+      } : {}),
     });
 
     if (wentBankrupt) await checkAndFinishGame(updatedPlayers);
@@ -1808,6 +1802,15 @@ export default function GameBoard({ gameCode }: Props) {
     clearOfferPending?: { type: string; challengerId?: string; defenderId?: string };
     /** Fog reset (resetNonRacerCards): vymaže všechny field_owners — neviditelné vlastněné pole by přesměrovalo platbu. */
     clearFieldOwners?: boolean;
+    /**
+     * Objective guard — pokud byl v tomto tahu splněn sdílený objective, předej nový seznam
+     * awarded IDs a completed_by map. Zapisuje se atomicky v tomtéž UPDATE jako posun tahu,
+     * čímž se zabrání race condition (fire-and-forget by mohl dorazit do DB až po Realtime
+     * triggeru z finishTurn, čímž by refreshGame přečetl starý prázdný seznam a odměna
+     * by se vyplatila znovu při dalším nákupu).
+     */
+    newObjectiveRewardsAwarded?: string[];
+    newObjectiveCompletedBy?: Record<string, string>;
   }) => {
     if (!gameId) return;
 
@@ -1881,6 +1884,11 @@ export default function GameBoard({ gameCode }: Props) {
     if (params.clearFieldOwners) update.field_owners = [];
     if (params.bustPlayerId) update.bust_order = [...(gameState?.bust_order ?? []), params.bustPlayerId];
     update.year_event_telegram = params.yearEventTelegram ?? null;
+    // Objective guard — atomicky se zápisem tahu; zabraňuje race condition fire-and-forget.
+    if (params.newObjectiveRewardsAwarded !== undefined) {
+      update.objective_rewards_awarded = params.newObjectiveRewardsAwarded;
+      update.objective_completed_by    = params.newObjectiveCompletedBy ?? {};
+    }
 
     // Regen staminy pro aktuálního hráče (+10 za tah, strop = maxStamina ?? 100)
     // Použijeme params.updatedCurrentPlayerHorses pokud existuje — closure `players`
