@@ -143,13 +143,16 @@ interface Props {
   p2IsLegendary?: boolean;
   /** When true, suppresses the built-in mobile touch controls (parent manages them). */
   hideTouchControls?: boolean;
+  /** Scale factor applied to arena max-width on desktop (≥768 px). Default 1 (no scaling).
+   *  The SVG viewBox stays unchanged — only the rendered CSS size grows. */
+  desktopScale?: number;
 }
 
 export default function DuelArena({
   config, mode, showDebug = false, backgroundUrl, overlayOpacity = 0.20,
   autoStart = false, onResult, onStateSnapshot, p1Speed = 5, p2Speed = 5,
   remoteP1Ref, remoteP2Ref, p1IsLegendary = false, p2IsLegendary = false,
-  hideTouchControls = false,
+  hideTouchControls = false, desktopScale = 1,
 }: Props) {
   const [state, setState] = React.useState<DuelState>(() => {
     const s = createInitialState(config, p1Speed, p2Speed);
@@ -425,6 +428,17 @@ export default function DuelArena({
 
   const w = config.gridW * CELL_PX;
   const h = config.gridH * CELL_PX;
+
+  const [isDesktop, setIsDesktop] = React.useState(false);
+  React.useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    setIsDesktop(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+  const displayMaxW = isDesktop && desktopScale > 1 ? Math.round(w * desktopScale) : w;
+
   const isDone   = state.status !== "idle" && state.status !== "running";
   const isPaused = !running && state.status === "running";
 
@@ -449,7 +463,7 @@ export default function DuelArena({
 
       {/* Ability HUD */}
       {state.status !== "idle" && (
-        <div className="flex justify-between font-mono text-[10px] items-center w-full" style={{ maxWidth: w }}>
+        <div className="flex justify-between font-mono text-[10px] items-center w-full" style={{ maxWidth: displayMaxW }}>
           {p1IsLegendary
             ? <LegendaryBadge cooldownTicks={state.p1.nitroCooldownTicksRemaining} tickMs={config.tickMs} side="left" />
             : <span style={{ color: nitroColor(state.p1.nitroTicksRemaining, state.p1.nitroCooldownTicksRemaining, P1_COLOR) }}>
@@ -466,7 +480,7 @@ export default function DuelArena({
       )}
 
       {/* Arena SVG */}
-      <div className="relative rounded-lg overflow-hidden w-full" style={{ maxWidth: w, boxShadow: "0 0 32px rgba(0,255,136,0.08), 0 0 0 1px rgba(255,255,255,0.06)" }}>
+      <div className="relative rounded-lg overflow-hidden w-full" style={{ maxWidth: displayMaxW, boxShadow: "0 0 32px rgba(0,255,136,0.08), 0 0 0 1px rgba(255,255,255,0.06)" }}>
         <svg
           viewBox={`0 0 ${w} ${h}`}
           style={{ display: "block", width: "100%", height: "auto", background: backgroundUrl ? "transparent" : BG_COLOR, pointerEvents: "none" }}
