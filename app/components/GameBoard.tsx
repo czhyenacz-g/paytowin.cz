@@ -1654,6 +1654,20 @@ export default function GameBoard({ gameCode }: Props) {
       const duration = card.effect.duration ?? 2;
       updatedPlayer = applyStaminaDebuff(updatedPlayer, factor, duration);
       logLines.push(`${player.name}: ${card.text} (stamina závodníků ×${factor} na ${duration} kola)`);
+    } else if (card.effect.kind === "all_racers_stamina") {
+      const delta = card.effect.value ?? -20;
+      updatedPlayer = {
+        ...updatedPlayer,
+        horses: updatedPlayer.horses.map(h => ({
+          ...h,
+          stamina: Math.max(0, (h.stamina ?? h.maxStamina ?? 100) + delta),
+        })),
+      };
+      if (updatedPlayer.horses.length === 0) {
+        logLines.push(`${player.name}: ${card.text} — žádný závodník ve stáji.`);
+      } else {
+        logLines.push(`${player.name}: ${card.text}`);
+      }
     }
 
     // effect2 — Mafia trade-off druhý efekt (coins nebo move)
@@ -1687,6 +1701,7 @@ export default function GameBoard({ gameCode }: Props) {
     if (anySkip) playerUpdate.skip_next_turn = true;
     if (card.effect.kind === "give_racer" || wouldBankruptCard) playerUpdate.horses = finalCardHorses;
     if (card.effect.kind === "stamina_debuff") playerUpdate.active_effects = finalUpdatedPlayer.active_effects;
+    if (card.effect.kind === "all_racers_stamina" && updatedPlayer.horses.length > 0) playerUpdate.horses = finalUpdatedPlayer.horses;
 
     console.log(`[turn-flow] applyCardEffect persisting — pos=${finalUpdatedPlayer.position} coins=${finalUpdatedPlayer.coins} wentBankrupt=${wentBankrupt}`);
     await supabase.from("players").update(playerUpdate).eq("id", player.id);

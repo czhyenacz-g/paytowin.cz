@@ -355,6 +355,15 @@ export async function executeBotTurnAction(
       cardLog.push(`${botPlayer.name}: přeskočí příští tah`);
     } else if (effect.kind === "stamina_debuff" && effect.factor !== undefined && effect.duration !== undefined) {
       finalPlayer = applyStaminaDebuff(finalPlayer, effect.factor, effect.duration);
+    } else if (effect.kind === "all_racers_stamina" && effect.value !== undefined) {
+      const delta = effect.value;
+      finalPlayer = {
+        ...finalPlayer,
+        horses: finalPlayer.horses.map(h => ({
+          ...h,
+          stamina: Math.max(0, (h.stamina ?? h.maxStamina ?? 100) + delta),
+        })),
+      };
     } else if (effect.kind === "move" && effect.value !== undefined) {
       const fc = FIELDS.length;
       const oldPos = finalPlayer.position;
@@ -431,6 +440,7 @@ export async function executeBotTurnAction(
     }
     if (anyCardSkip) playerUpdates.skip_next_turn = true;
     if (effect.kind === "give_racer") playerUpdates.horses = finalPlayer.horses;
+    if (effect.kind === "all_racers_stamina" && finalPlayer.horses.length > 0) playerUpdates.horses = finalPlayer.horses;
     if (finalPlayer.active_effects !== movedPlayer.active_effects) {
       playerUpdates.active_effects = finalPlayer.active_effects;
     }

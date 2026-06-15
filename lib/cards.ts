@@ -1,6 +1,6 @@
 // ─── Karty Náhoda / Finance ───────────────────────────────────────────────────
 
-export type CardEffectKind = "coins" | "skip_turn" | "move" | "give_racer" | "stamina_debuff";
+export type CardEffectKind = "coins" | "skip_turn" | "move" | "give_racer" | "stamina_debuff" | "all_racers_stamina";
 
 export interface CardEffect {
   kind: CardEffectKind;
@@ -73,9 +73,9 @@ export const CHANCE_CARDS: GameCard[] = [
   {
     id: "ch9",
     type: "chance",
-    text: "Zákeřný sok tvým závodníkům přimíchal do krmení sedativa. Příští 2 kola závodí na poloviční výkon.",
-    effect: { kind: "stamina_debuff", factor: 0.5, duration: 2 },
-    effectLabel: "Stamina ×0.5 (2 kola)",
+    text: "Špatná noc ve stáji. Všichni tvoji raceři ztrácí 20 staminy.",
+    effect: { kind: "all_racers_stamina", value: -20 },
+    effectLabel: "Všichni tvoji raceři: -20 stamina",
   },
   {
     id: "ch10",
