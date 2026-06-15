@@ -83,7 +83,8 @@ import RaceModal from "./RaceModal";
 import RaceEventOverlay from "./RaceEventOverlay";
 import type { MinigameResult } from "./race/RacingMinigame";
 import type { MinigameResult as StableMinigameResult } from "@/lib/minigames/types";
-import { computeMinigameSettlement, STABLE_DUEL_APPLY_BOT_STAMINA_LOSS } from "@/lib/minigames/settlement";
+import { computeMinigameSettlement } from "@/lib/minigames/settlement";
+import { applyStableDuelSettlementHorses } from "@/lib/minigames/apply-stable-duel-settlement";
 import { selectStableMinigame } from "@/lib/minigames/selectStableMinigame";
 import BuildInfoBar from "./BuildInfoBar";
 import ThemeAssetInspector from "./ThemeAssetInspector";
@@ -2321,29 +2322,18 @@ export default function GameBoard({ gameCode }: Props) {
         if (challenger.id === myPlayerId && s.p1.coinsDelta >= 1000) showMajorGain(s.p1.coinsDelta, challenger.id);
         if (defender.id === myPlayerId   && s.p2.coinsDelta >= 1000) showMajorGain(s.p2.coinsDelta, defender.id);
 
-        const updatedCHorses = (() => {
-          if (!cKey) return challenger.horses;
-          const newStamina = Math.max(0, ((challenger.horses.find(h => racerOwnershipKey(h) === cKey)?.stamina) ?? 0) - s.p1.stamina.total);
-          if (newStamina === 0) return normalizeFavoriteHorse(challenger.horses.filter(h => racerOwnershipKey(h) !== cKey));
-          return challenger.horses.map(h => racerOwnershipKey(h) === cKey ? { ...h, stamina: newStamina } : h);
-        })();
-
-        const updatedDHorses = (() => {
-          if (!STABLE_DUEL_APPLY_BOT_STAMINA_LOSS || !dKey) return defender.horses;
-          const newStamina = Math.max(0, ((defender.horses.find(h => racerOwnershipKey(h) === dKey)?.stamina) ?? 0) - s.p2.stamina.total);
-          if (newStamina === 0) return normalizeFavoriteHorse(defender.horses.filter(h => racerOwnershipKey(h) !== dKey));
-          return defender.horses.map(h => racerOwnershipKey(h) === dKey ? { ...h, stamina: newStamina } : h);
-        })();
+        const { updatedCHorses, updatedDHorses, challengerRacerLost, defenderRacerLost } =
+          applyStableDuelSettlementHorses(
+            challenger.horses, defender.horses,
+            cKey, dKey,
+            s.p1.stamina.total, s.p2.stamina.total,
+          );
 
         if (process.env.NODE_ENV === "development") {
           console.log("[stable-duel] result:", result);
           console.log("[stable-duel] settlement:", s);
-          const cBefore = challenger.horses.find(h => racerOwnershipKey(h) === cKey)?.stamina ?? "?";
-          const cAfter  = updatedCHorses.find(h => racerOwnershipKey(h) === cKey)?.stamina ?? "?";
-          console.log(`[stable-duel] challenger stamina: ${cBefore} → ${cAfter}`);
-          const dBefore = defender.horses.find(h => racerOwnershipKey(h) === dKey)?.stamina ?? "?";
-          const dAfter  = updatedDHorses.find(h => racerOwnershipKey(h) === dKey)?.stamina ?? (updatedDHorses.length < defender.horses.length ? "lost" : "?");
-          console.log(`[stable-duel] defender stamina: ${dBefore} → ${dAfter}`);
+          console.log(`[stable-duel] challenger racer lost: ${challengerRacerLost}`);
+          console.log(`[stable-duel] defender racer lost: ${defenderRacerLost}`);
         }
 
         await Promise.all([
@@ -2352,8 +2342,7 @@ export default function GameBoard({ gameCode }: Props) {
         ]);
 
         // Popup pro ztrátu koně kvůli stamině — zobraz jen pokud challenger je lidský hráč tohoto klienta
-        const challengerLostHorse = cKey && updatedCHorses.length < challenger.horses.length;
-        if (challengerLostHorse && challenger.id === myPlayerId && !challenger.is_bot) {
+        if (challengerRacerLost && challenger.id === myPlayerId && !challenger.is_bot) {
           const lostHorse = challenger.horses.find(h => racerOwnershipKey(h) === cKey);
           if (lostHorse) {
             console.log("[RACER_FLOW] stamina_loss_popup", { racerName: lostHorse.name, playerId: challenger.id, reason: "stable_duel_stamina", isLegendary: !!lostHorse.isLegendary });
@@ -3475,7 +3464,7 @@ export default function GameBoard({ gameCode }: Props) {
         <span>·</span>
         <a href="mailto:info@paytowin.cz" className="hover:text-slate-600 underline">info@paytowin.cz</a>
         <span>·</span>
-        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 tracking-wide">Beta v0.7.22-seno</span>
+        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 tracking-wide">Beta v0.8.0-seno</span>
       </div>
     </div>
   );
