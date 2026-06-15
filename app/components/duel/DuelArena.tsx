@@ -171,6 +171,10 @@ export default function DuelArena({
   // Debug metrics — populated only when showDebug=true; read at render time.
   const observedTickMsRef = React.useRef<number | null>(null);
   const skippedTicksRef   = React.useRef(0);
+  // Sustained ticks-per-second: count real ticks in a rolling 2s window.
+  const tickCountRef    = React.useRef(0);
+  const tpsWindowRef    = React.useRef(0);
+  const tpsRef          = React.useRef<number | null>(null);
 
   // Keep showDebug accessible inside setInterval without adding it to effect deps
   const showDebugRef = React.useRef(showDebug);
@@ -281,7 +285,11 @@ export default function DuelArena({
     if (!running) return;
 
     loopCountRef.current += 1;
-    lastTickTimeRef.current = Date.now();
+    const startNow = Date.now();
+    lastTickTimeRef.current = startNow;
+    tickCountRef.current    = 0;
+    tpsWindowRef.current    = startNow;
+    tpsRef.current          = null;
 
     if (loopCountRef.current > 1 && process.env.NODE_ENV === "development") {
       console.error(`[DuelArena] ${loopCountRef.current} parallel tick loops — game will run ${loopCountRef.current}× fast!`);
@@ -302,8 +310,22 @@ export default function DuelArena({
         return;
       }
 
+      // Warn if gap is very large — likely tab was hidden and timer fired catch-up.
+      if (elapsed > config.tickMs * 4 && process.env.NODE_ENV === "development") {
+        console.warn(`[DuelArena] large tick gap: ${elapsed}ms — tab hidden/resumed?`);
+      }
+
       lastTickTimeRef.current = now;
       observedTickMsRef.current = elapsed;
+
+      // Sustained tps: count ticks in a rolling 2-second window.
+      tickCountRef.current += 1;
+      const tpsElapsed = now - tpsWindowRef.current;
+      if (tpsElapsed >= 2000) {
+        tpsRef.current = (tickCountRef.current / tpsElapsed) * 1000;
+        tickCountRef.current = 0;
+        tpsWindowRef.current = now;
+      }
 
       const cur = stateRef.current;
       if (cur.status !== "running") {
@@ -610,12 +632,21 @@ export default function DuelArena({
             </div>
           )}
           <div className="border-t border-slate-800 pt-0.5 mt-0.5">
-            <span className="text-slate-600">tickMs cfg</span> {config.tickMs}{" "}
+            <span className="text-slate-600">tickMs</span> {config.tickMs}{" "}
             <span className="text-slate-600 ml-2">observed</span>{" "}
             <span className={observedTickMsRef.current !== null && observedTickMsRef.current > config.tickMs * 1.5 ? "text-amber-400" : "text-white"}>
               {observedTickMsRef.current !== null ? `${observedTickMsRef.current}ms` : "—"}
             </span>{" "}
-            <span className="text-slate-600 ml-2">skipped</span> {skippedTicksRef.current}{" "}
+            <span className="text-slate-600 ml-2">tps</span>{" "}
+            <span className={
+              tpsRef.current !== null && tpsRef.current > (1000 / config.tickMs) * 1.15
+                ? "text-red-400 font-bold"
+                : "text-white"
+            }>
+              {tpsRef.current !== null ? tpsRef.current.toFixed(1) : "—"}
+            </span>
+            <span className="text-slate-600"> / {(1000 / config.tickMs).toFixed(1)} target</span>{" "}
+            <span className="text-slate-600 ml-2">skip</span> {skippedTicksRef.current}{" "}
             <span className="text-slate-600 ml-2">loops</span>{" "}
             <span className={loopCountRef.current > 1 ? "text-red-400 font-bold" : "text-white"}>
               {loopCountRef.current}
