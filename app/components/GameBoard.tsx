@@ -1909,12 +1909,6 @@ export default function GameBoard({ gameCode }: Props) {
     if (params.clearFieldOwners) update.field_owners = [];
     if (params.bustPlayerId) update.bust_order = [...(gameState?.bust_order ?? []), params.bustPlayerId];
     update.year_event_telegram = params.yearEventTelegram ?? null;
-    // Objective guard — atomicky se zápisem tahu; zabraňuje race condition fire-and-forget.
-    if (params.newObjectiveRewardsAwarded !== undefined) {
-      update.objective_rewards_awarded = params.newObjectiveRewardsAwarded;
-      update.objective_completed_by    = params.newObjectiveCompletedBy ?? {};
-    }
-
     // Regen staminy pro aktuálního hráče (+10 za tah, strop = maxStamina ?? 100)
     // Použijeme params.updatedCurrentPlayerHorses pokud existuje — closure `players`
     // je stale, pokud volající (buyRacer) v tomto tahu horses aktualizoval.
@@ -1945,6 +1939,26 @@ export default function GameBoard({ gameCode }: Props) {
         ? [supabase.from("players").update(playerRegenUpdate).eq("id", playerForRegen.id)]
         : []),
     ]);
+
+    // Objective persistence — oddělený zápis, nikdy nesmí blokovat průběh hry.
+    // Session guard (awardedObjectiveIdsRef) chrání před dvojím vyplacením i při výpadku DB.
+    if (params.newObjectiveRewardsAwarded !== undefined) {
+      supabase.from("game_state")
+        .update({
+          objective_rewards_awarded: params.newObjectiveRewardsAwarded,
+          objective_completed_by:    params.newObjectiveCompletedBy ?? {},
+        })
+        .eq("game_id", gameId)
+        .then(({ error }) => {
+          if (error && process.env.NODE_ENV === "development") {
+            console.warn("[objective] DB write failed", {
+              gameId,
+              objectiveIds: params.newObjectiveRewardsAwarded,
+              error,
+            });
+          }
+        });
+    }
   };
 
   const closeBankruptAnnouncement = async () => {
