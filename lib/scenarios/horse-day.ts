@@ -36,9 +36,9 @@ export const horseDayScenario: ScenarioDefinition = {
       id: "stable-collector",
       title: "Sběratel stáje",
       story: "V Connecticutu se nevyhrává jedním koněm. Vyhrává se stájí.",
-      task: "Vlastni v jednu chvíli alespoň 3 racery.",
+      task: "Vlastni v jednu chvíli alespoň 2 racery.",
       rewardLabel: "Bonusový cíl: výsledek se ukáže po hře.",
-      condition: { type: "owns_at_least_racers", count: 3 },
+      condition: { type: "owns_at_least_racers", count: 2 },
     },
     {
       id: "mafia-debt",
