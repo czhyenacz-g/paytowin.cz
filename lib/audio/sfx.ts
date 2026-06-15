@@ -9,7 +9,8 @@
 export type SoundId = "dice" | "coin_gain" | "coin_loss" | "race" | "newspaper" | "bankrupt"
   | "hoof_hover" | "engine_hover" | "hoof_move" | "engine_move"
   | "hoof_step" | "engine_step"
-  | "countdown_tick" | "countdown_go";
+  | "countdown_tick" | "countdown_go"
+  | "duel_nitro";
 
 // Cooldown guard — zabraňuje spamování (ms)
 const COOLDOWNS: Record<SoundId, number> = {
@@ -27,6 +28,7 @@ const COOLDOWNS: Record<SoundId, number> = {
   engine_step:    130,
   countdown_tick: 800,
   countdown_go:   1500,
+  duel_nitro:     200,
 };
 const lastPlayed = new Map<SoundId, number>();
 
@@ -307,6 +309,40 @@ function synthCountdownGo(ctx: AudioContext): void {
   });
 }
 
+// Krátký whoosh pro nitro/boost aktivaci v Neon Rope Duelu
+function synthDuelNitro(ctx: AudioContext): void {
+  const t = ctx.currentTime;
+  // Filtered noise sweep — stoupající "swoosh"
+  const size = Math.floor(ctx.sampleRate * 0.10);
+  const buf = ctx.createBuffer(1, size, ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < size; i++) {
+    const env = Math.sin((i / size) * Math.PI);
+    d[i] = (Math.random() * 2 - 1) * env;
+  }
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  const hp = ctx.createBiquadFilter();
+  hp.type = "highpass";
+  hp.frequency.setValueAtTime(1200, t);
+  hp.frequency.exponentialRampToValueAtTime(5000, t + 0.08);
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.18, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.10);
+  src.connect(hp); hp.connect(gain); gain.connect(ctx.destination);
+  src.start(t); src.stop(t + 0.12);
+  // Tón — vzestupný sweep
+  const osc = ctx.createOscillator();
+  osc.type = "sine";
+  osc.frequency.setValueAtTime(600, t);
+  osc.frequency.exponentialRampToValueAtTime(1800, t + 0.08);
+  const oscGain = ctx.createGain();
+  oscGain.gain.setValueAtTime(0.13, t);
+  oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
+  osc.connect(oscGain); oscGain.connect(ctx.destination);
+  osc.start(t); osc.stop(t + 0.11);
+}
+
 // ─── Dispatch tabulka ─────────────────────────────────────────────────────────
 
 const SYNTHS: Record<SoundId, (ctx: AudioContext) => void> = {
@@ -324,6 +360,7 @@ const SYNTHS: Record<SoundId, (ctx: AudioContext) => void> = {
   engine_step:    synthEngineStep,
   countdown_tick: synthCountdownTick,
   countdown_go:   synthCountdownGo,
+  duel_nitro:     synthDuelNitro,
 };
 
 // ─── Public API ───────────────────────────────────────────────────────────────

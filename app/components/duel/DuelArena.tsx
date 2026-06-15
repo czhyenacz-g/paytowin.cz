@@ -7,6 +7,7 @@ import { resolveRelativeDir, dirFromHeldKeys } from "@/lib/duel/steeringInput";
 import { getRopeDuelStartDelayTicks } from "@/lib/duel/helpers";
 import { nitroStaminaPreview } from "@/lib/minigame-nitro";
 import type { MinigameResult } from "@/lib/minigames/types";
+import type { SoundId } from "@/lib/audio/sfx";
 import TouchBtn from "../ui/TouchBtn";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -80,11 +81,16 @@ function Trail({ trail, color, dimColor, alive, filterId, cs }: {
 
 // ── Player head ───────────────────────────────────────────────────────────────
 
-function Head({ pos, color, alive, cs }: { pos: { x: number; y: number }; color: string; alive: boolean; cs: number }) {
+function Head({ pos, color, alive, cs, lowStamina = false }: { pos: { x: number; y: number }; color: string; alive: boolean; cs: number; lowStamina?: boolean }) {
   const cx = pos.x * cs + cs / 2;
   const cy = pos.y * cs + cs / 2;
   return (
     <g filter={alive ? "url(#glow-head)" : undefined} opacity={alive ? 1 : 0.3}>
+      {lowStamina && alive && (
+        <circle cx={cx} cy={cy} r={cs * 0.56} fill="none" stroke="#ef4444" strokeWidth={cs * 0.10}>
+          <animate attributeName="opacity" values="1;0.15;1" dur="0.75s" repeatCount="indefinite" />
+        </circle>
+      )}
       <circle cx={cx} cy={cy} r={cs * 0.42} fill={color} />
       <circle cx={cx} cy={cy} r={cs * 0.2} fill="white" opacity={0.7} />
     </g>
@@ -146,13 +152,19 @@ interface Props {
   /** Scale factor applied to arena max-width on desktop (≥768 px). Default 1 (no scaling).
    *  The SVG viewBox stays unchanged — only the rendered CSS size grows. */
   desktopScale?: number;
+  /** SFX callback — fired on boost activation and other arena events. */
+  playSfx?: (id: SoundId) => void;
+  /** Current stamina of P1's racer (0–100). Ring pulses red when ≤ 50. */
+  p1Stamina?: number;
+  /** Current stamina of P2's racer (0–100). Ring pulses red when ≤ 50. */
+  p2Stamina?: number;
 }
 
 export default function DuelArena({
   config, mode, showDebug = false, backgroundUrl, overlayOpacity = 0.20,
   autoStart = false, onResult, onStateSnapshot, p1Speed = 5, p2Speed = 5,
   remoteP1Ref, remoteP2Ref, p1IsLegendary = false, p2IsLegendary = false,
-  hideTouchControls = false, desktopScale = 1,
+  hideTouchControls = false, desktopScale = 1, playSfx, p1Stamina, p2Stamina,
 }: Props) {
   const [state, setState] = React.useState<DuelState>(() => {
     const s = createInitialState(config, p1Speed, p2Speed);
@@ -182,6 +194,10 @@ export default function DuelArena({
   // Keep showDebug accessible inside setInterval without adding it to effect deps
   const showDebugRef = React.useRef(showDebug);
   showDebugRef.current = showDebug;
+
+  // playSfx ref — avoids adding playSfx to tick-loop effect deps
+  const playSfxRef = React.useRef(playSfx);
+  playSfxRef.current = playSfx;
 
   // Boost activate flags (regular and legendary share same path)
   const p1BoostActivateRef = React.useRef(false);
@@ -386,6 +402,10 @@ export default function DuelArena({
       stateRef.current = next;
       setState(next);
 
+      // Nitro sound — fires on the first tick of each boost activation
+      if (next.p1.nitroTicksRemaining > 0 && cur.p1.nitroTicksRemaining === 0) playSfxRef.current?.("duel_nitro");
+      if (next.p2.nitroTicksRemaining > 0 && cur.p2.nitroTicksRemaining === 0) playSfxRef.current?.("duel_nitro");
+
       onStateSnapshot?.({
         tick: next.tick,
         p1: { x: next.p1.pos.x, y: next.p1.pos.y, dir: next.p1.dir },
@@ -440,6 +460,9 @@ export default function DuelArena({
   const scale = isDesktop && desktopScale !== 1 ? desktopScale : 1;
   const displayW = Math.round(w * scale);
   const displayH = Math.round(h * scale);
+
+  const p1LowStamina = (p1Stamina ?? 100) <= 50;
+  const p2LowStamina = (p2Stamina ?? 100) <= 50;
 
   const isDone   = state.status !== "idle" && state.status !== "running";
   const isPaused = !running && state.status === "running";
@@ -502,8 +525,8 @@ export default function DuelArena({
           <GridLines w={config.gridW} h={config.gridH} cs={CELL_PX} />
           <Trail trail={state.p1.trail} color={P1_COLOR} dimColor={P1_DIM} alive={state.p1.alive} filterId="glow-p1" cs={CELL_PX} />
           <Trail trail={state.p2.trail} color={P2_COLOR} dimColor={P2_DIM} alive={state.p2.alive} filterId="glow-p2" cs={CELL_PX} />
-          <Head pos={state.p1.pos} color={P1_COLOR} alive={state.p1.alive} cs={CELL_PX} />
-          <Head pos={state.p2.pos} color={P2_COLOR} alive={state.p2.alive} cs={CELL_PX} />
+          <Head pos={state.p1.pos} color={P1_COLOR} alive={state.p1.alive} cs={CELL_PX} lowStamina={p1LowStamina} />
+          <Head pos={state.p2.pos} color={P2_COLOR} alive={state.p2.alive} cs={CELL_PX} lowStamina={p2LowStamina} />
         </svg>
 
         {(state.status === "idle" || isPaused || isDone) && (

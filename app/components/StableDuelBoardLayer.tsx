@@ -472,6 +472,9 @@ function ArenaPhase({
   p1IsLegendary = false,
   p2IsLegendary = false,
   duelRole,
+  playSfx,
+  p1Stamina,
+  p2Stamina,
 }: {
   backgroundUrl?: string;
   p1Speed?: number;
@@ -484,6 +487,9 @@ function ArenaPhase({
   p1IsLegendary?: boolean;
   p2IsLegendary?: boolean;
   duelRole?: "challenger_authority" | "defender_remote";
+  playSfx?: (id: SoundId) => void;
+  p1Stamina?: number;
+  p2Stamina?: number;
 }) {
   if (minigameType === "neon_speedrace") {
     return (
@@ -519,6 +525,9 @@ function ArenaPhase({
         p2IsLegendary={p2IsLegendary}
         hideTouchControls
         desktopScale={0.9}
+        playSfx={playSfx}
+        p1Stamina={p1Stamina}
+        p2Stamina={p2Stamina}
       />
     </div>
   );
@@ -1008,6 +1017,9 @@ export default function StableDuelBoardLayer({
             p1IsLegendary={p1IsLegendary}
             p2IsLegendary={p2IsLegendary}
             duelRole={duelRole}
+            playSfx={playSfx}
+            p1Stamina={challenger.horse?.stamina}
+            p2Stamina={defender.horse?.stamina}
           />
           {duelRole === "defender_remote" && (
             <div className="shrink-0 flex items-center justify-center gap-2 px-4 py-3 select-none touch-manipulation" style={{ WebkitTouchCallout: "none" }}>
