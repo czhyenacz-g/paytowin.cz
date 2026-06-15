@@ -160,6 +160,8 @@ export interface Database {
           card_pending: Json | null;
           offer_pending: Json | null;
           revealed_fields: Json;
+          objective_rewards_awarded: Json | null;
+          objective_completed_by: Json | null;
           updated_at: string;
         };
         Insert: {
@@ -172,6 +174,8 @@ export interface Database {
           card_pending?: Json | null;
           offer_pending?: Json | null;
           revealed_fields?: Json;
+          objective_rewards_awarded?: Json | null;
+          objective_completed_by?: Json | null;
         };
         Update: {
           current_player_index?: number;
@@ -182,6 +186,8 @@ export interface Database {
           card_pending?: Json | null;
           offer_pending?: Json | null;
           revealed_fields?: Json;
+          objective_rewards_awarded?: Json | null;
+          objective_completed_by?: Json | null;
         };
       };
       game_join_requests: {

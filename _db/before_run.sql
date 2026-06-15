@@ -34,11 +34,13 @@ create table if not exists game_state (
 );
 
 -- Přidej sloupce pokud tabulka existovala bez nich
-alter table game_state add column if not exists turn_count          int  not null default 0;
-alter table game_state add column if not exists horse_pending       bool not null default false;
-alter table game_state add column if not exists mass_race_done      bool not null default false;
-alter table players    add column if not exists is_bot              bool not null default false;
-alter table games      add column if not exists discord_thread_url  text null;
+alter table game_state add column if not exists turn_count                 int  not null default 0;
+alter table game_state add column if not exists horse_pending              bool not null default false;
+alter table game_state add column if not exists mass_race_done             bool not null default false;
+alter table game_state add column if not exists objective_rewards_awarded  jsonb null;
+alter table game_state add column if not exists objective_completed_by     jsonb null;
+alter table players    add column if not exists is_bot                     bool not null default false;
+alter table games      add column if not exists discord_thread_url         text null;
 
 create table if not exists horse_catalog (
   id     uuid primary key default gen_random_uuid(),

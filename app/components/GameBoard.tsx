@@ -296,6 +296,8 @@ export default function GameBoard({ gameCode }: Props) {
   const seenRevealedRef = React.useRef<Set<number>>(new Set());
   // Guard: turn číslo posledního zobrazeného year event telegramu — brání dvojímu zobrazení
   const seenYearEventTurnRef = React.useRef<number>(0);
+  // Guard: objective IDs awarded this session — belt-and-suspenders pokud DB sloupec chybí nebo Realtime přijde pozdě
+  const awardedObjectiveIdsRef = React.useRef<Set<string>>(new Set());
   // Guard: GAME OVER telegram — true = already shown or game was already finished on load
   const seenGameOverRef = React.useRef<boolean>(false);
   // Late-join spectator telegram: true = sessionStorage flag byl přečten, telegram čeká na render
@@ -688,6 +690,8 @@ export default function GameBoard({ gameCode }: Props) {
       if (seenYearEventTurnRef.current === 0 && ns.year_event_telegram?.turn) {
         seenYearEventTurnRef.current = ns.year_event_telegram.turn;
       }
+      // Seed awardedObjectiveIdsRef z DB — zajistí guard i po reloadu
+      ns.objective_rewards_awarded?.forEach(id => awardedObjectiveIdsRef.current.add(id));
       setGameState(ns);
     }
     return { players: normalized, state: stateData ? normalizeState(stateData) : null };
@@ -1351,8 +1355,11 @@ export default function GameBoard({ gameCode }: Props) {
     const wentBankrupt = finalCoins <= 0;
 
     // Objective reward — zkontroluj sdílený objective ihned po nákupu racera
-    // Bonus se přičte do finalCoins před DB write; guard se zapíše fire-and-forget
-    const alreadyAwardedObjectives = gameState.objective_rewards_awarded ?? [];
+    // Guard: kombinace DB stavu + session ref (belt-and-suspenders pro případ stale Realtime)
+    const alreadyAwardedObjectives = [
+      ...(gameState.objective_rewards_awarded ?? []),
+      ...awardedObjectiveIdsRef.current,
+    ];
     const objectiveHit = !wentBankrupt && scenario
       ? checkSharedObjectiveInGameReward(
           scenario,
@@ -1362,6 +1369,8 @@ export default function GameBoard({ gameCode }: Props) {
       : null;
     if (objectiveHit) {
       finalCoins += objectiveHit.config.inGameCoins;
+      // Okamžitě zapsat do refu — guard platí i pokud Realtime přijde pozdě nebo sloupec chybí
+      awardedObjectiveIdsRef.current.add(objectiveHit.objectiveId);
     }
 
     const logLines = [`${player.name} koupil koně ${racer.emoji} ${racer.name}`];
@@ -1412,15 +1421,6 @@ export default function GameBoard({ gameCode }: Props) {
     setPlayers(prev => prev.map(p =>
       p.id === player.id ? { ...p, coins: finalCoins, horses: finalHorses } : p
     ));
-
-    // Optimistický update objective guard — zabraňuje race condition kdy Realtime ještě
-    // nedoručil nový objective_rewards_awarded a hráč stihne koupit dalšího racera dřív.
-    if (objectiveHit) {
-      setGameState(prev => prev ? {
-        ...prev,
-        objective_rewards_awarded: [...(prev.objective_rewards_awarded ?? []), objectiveHit.objectiveId],
-      } : prev);
-    }
 
     // Objective guard se zapisuje atomicky v rámci finishTurn (stejný UPDATE jako posun tahu),
     // aby Realtime subscription přečetla vždy konzistentní stav a odměna se nevyplatila 2×.
