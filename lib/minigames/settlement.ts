@@ -4,8 +4,7 @@ import { calculateStableDuelStaminaCost } from "./stamina-costs";
 export const STABLE_DUEL_WIN_REWARD_MIN      = 200;
 export const STABLE_DUEL_WIN_REWARD_MAX      = 2000;
 export const STABLE_DUEL_MAFIA_BONUS_MAX     = 500;
-// false = bot/defender nedostane penalizaci staminy (single-device beta)
-export const STABLE_DUEL_APPLY_BOT_STAMINA_LOSS = false;
+export const STABLE_DUEL_APPLY_BOT_STAMINA_LOSS = true;
 
 export interface PlayerSettlement {
   coinsDelta: number;

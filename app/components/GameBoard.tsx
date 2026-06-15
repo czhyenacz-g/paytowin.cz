@@ -2328,14 +2328,12 @@ export default function GameBoard({ gameCode }: Props) {
           return challenger.horses.map(h => racerOwnershipKey(h) === cKey ? { ...h, stamina: newStamina } : h);
         })();
 
-        // Bot/defender stamina skip dokud hraje jen jeden hráč na jednom zařízení
-        const updatedDHorses = STABLE_DUEL_APPLY_BOT_STAMINA_LOSS && dKey
-          ? defender.horses.map(h =>
-              racerOwnershipKey(h) === dKey
-                ? { ...h, stamina: Math.max(0, (h.stamina ?? h.maxStamina ?? 100) - s.p2.stamina.total) }
-                : h
-            )
-          : defender.horses;
+        const updatedDHorses = (() => {
+          if (!STABLE_DUEL_APPLY_BOT_STAMINA_LOSS || !dKey) return defender.horses;
+          const newStamina = Math.max(0, ((defender.horses.find(h => racerOwnershipKey(h) === dKey)?.stamina) ?? 0) - s.p2.stamina.total);
+          if (newStamina === 0) return normalizeFavoriteHorse(defender.horses.filter(h => racerOwnershipKey(h) !== dKey));
+          return defender.horses.map(h => racerOwnershipKey(h) === dKey ? { ...h, stamina: newStamina } : h);
+        })();
 
         if (process.env.NODE_ENV === "development") {
           console.log("[stable-duel] result:", result);
@@ -2343,7 +2341,9 @@ export default function GameBoard({ gameCode }: Props) {
           const cBefore = challenger.horses.find(h => racerOwnershipKey(h) === cKey)?.stamina ?? "?";
           const cAfter  = updatedCHorses.find(h => racerOwnershipKey(h) === cKey)?.stamina ?? "?";
           console.log(`[stable-duel] challenger stamina: ${cBefore} → ${cAfter}`);
-          console.log(`[stable-duel] defender stamina skipped (bot flag): ${!STABLE_DUEL_APPLY_BOT_STAMINA_LOSS}`);
+          const dBefore = defender.horses.find(h => racerOwnershipKey(h) === dKey)?.stamina ?? "?";
+          const dAfter  = updatedDHorses.find(h => racerOwnershipKey(h) === dKey)?.stamina ?? (updatedDHorses.length < defender.horses.length ? "lost" : "?");
+          console.log(`[stable-duel] defender stamina: ${dBefore} → ${dAfter}`);
         }
 
         await Promise.all([
@@ -3475,7 +3475,7 @@ export default function GameBoard({ gameCode }: Props) {
         <span>·</span>
         <a href="mailto:info@paytowin.cz" className="hover:text-slate-600 underline">info@paytowin.cz</a>
         <span>·</span>
-        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 tracking-wide">Beta v0.7.21-seno</span>
+        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 tracking-wide">Beta v0.7.22-seno</span>
       </div>
     </div>
   );

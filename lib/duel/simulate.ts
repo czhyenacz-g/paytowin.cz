@@ -269,6 +269,7 @@ export function getBotNitroActivate(state: DuelState, player: 1 | 2, config: Due
   if (p.startDelayTicksRemaining > 0) return false;
   if (p.nitroTicksRemaining > 0) return false;
   if (p.nitroCooldownTicksRemaining > 0) return false;
+  if (p.nitroActivations >= 1) return false; // bot smí nitro použít max 1× za duel
 
   // Only boost if there are at least nitroDashTiles clear cells straight ahead.
   const combined = [...p.trail, ...opp.trail];
