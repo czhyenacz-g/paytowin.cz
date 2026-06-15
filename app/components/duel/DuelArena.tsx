@@ -437,7 +437,7 @@ export default function DuelArena({
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
   }, []);
-  const scale = isDesktop && desktopScale > 1 ? desktopScale : 1;
+  const scale = isDesktop && desktopScale !== 1 ? desktopScale : 1;
   const displayW = Math.round(w * scale);
   const displayH = Math.round(h * scale);
 
