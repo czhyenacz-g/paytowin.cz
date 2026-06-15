@@ -162,6 +162,20 @@ export default function DuelArena({
   const keysRef    = React.useRef<Set<string>>(new Set());
   const runningRef = React.useRef(false);
 
+  // Cross-platform timing stability: track last actual tick wall-clock time and
+  // number of concurrent setInterval loops. On Windows/Chrome, setInterval can
+  // fire earlier than requested (high-resolution timer) or — in edge-cases around
+  // React effect ordering with autoStart — multiple intervals can stack.
+  const lastTickTimeRef  = React.useRef(0);
+  const loopCountRef     = React.useRef(0);
+  // Debug metrics — populated only when showDebug=true; read at render time.
+  const observedTickMsRef = React.useRef<number | null>(null);
+  const skippedTicksRef   = React.useRef(0);
+
+  // Keep showDebug accessible inside setInterval without adding it to effect deps
+  const showDebugRef = React.useRef(showDebug);
+  showDebugRef.current = showDebug;
+
   // Boost activate flags (regular and legendary share same path)
   const p1BoostActivateRef = React.useRef(false);
   const p2BoostActivateRef = React.useRef(false);
@@ -266,7 +280,31 @@ export default function DuelArena({
   React.useEffect(() => {
     if (!running) return;
 
+    loopCountRef.current += 1;
+    lastTickTimeRef.current = Date.now();
+
+    if (loopCountRef.current > 1 && process.env.NODE_ENV === "development") {
+      console.error(`[DuelArena] ${loopCountRef.current} parallel tick loops — game will run ${loopCountRef.current}× fast!`);
+    }
+
     const id = setInterval(() => {
+      const now     = Date.now();
+      const elapsed = now - lastTickTimeRef.current;
+
+      // Skip if interval fired too early (< 80 % of tickMs).
+      // Windows/Chrome high-res timers can fire setInterval ahead of schedule;
+      // without this guard the game advances 2× per intended tick period.
+      if (elapsed < config.tickMs * 0.8) {
+        skippedTicksRef.current += 1;
+        if (process.env.NODE_ENV === "development") {
+          console.warn(`[DuelArena] early tick skipped: elapsed=${elapsed}ms, threshold=${Math.round(config.tickMs * 0.8)}ms`);
+        }
+        return;
+      }
+
+      lastTickTimeRef.current = now;
+      observedTickMsRef.current = elapsed;
+
       const cur = stateRef.current;
       if (cur.status !== "running") {
         setRunning(false);
@@ -276,7 +314,6 @@ export default function DuelArena({
       }
 
       const keys = keysRef.current;
-      const now  = Date.now();
 
       // ── Nitro / boost activate (regular + legendary share same path) ────────
       const remoteP1 = remoteP1Ref?.current ?? null;
@@ -332,7 +369,10 @@ export default function DuelArena({
       });
     }, config.tickMs);
 
-    return () => clearInterval(id);
+    return () => {
+      clearInterval(id);
+      loopCountRef.current = Math.max(0, loopCountRef.current - 1);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [running]);
 
@@ -569,6 +609,19 @@ export default function DuelArena({
               {mode === "pvp" && ` · P2 −${p2Preview.total}`}
             </div>
           )}
+          <div className="border-t border-slate-800 pt-0.5 mt-0.5">
+            <span className="text-slate-600">tickMs cfg</span> {config.tickMs}{" "}
+            <span className="text-slate-600 ml-2">observed</span>{" "}
+            <span className={observedTickMsRef.current !== null && observedTickMsRef.current > config.tickMs * 1.5 ? "text-amber-400" : "text-white"}>
+              {observedTickMsRef.current !== null ? `${observedTickMsRef.current}ms` : "—"}
+            </span>{" "}
+            <span className="text-slate-600 ml-2">skipped</span> {skippedTicksRef.current}{" "}
+            <span className="text-slate-600 ml-2">loops</span>{" "}
+            <span className={loopCountRef.current > 1 ? "text-red-400 font-bold" : "text-white"}>
+              {loopCountRef.current}
+            </span>
+            {loopCountRef.current > 1 && <span className="text-red-400 font-bold ml-1">⚠ MULTI-LOOP</span>}
+          </div>
         </div>
       )}
     </div>
