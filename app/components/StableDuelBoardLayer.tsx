@@ -518,7 +518,7 @@ function ArenaPhase({
         p1IsLegendary={p1IsLegendary}
         p2IsLegendary={p2IsLegendary}
         hideTouchControls
-        desktopScale={1.5}
+        desktopScale={1.2}
       />
     </div>
   );
