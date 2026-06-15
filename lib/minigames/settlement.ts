@@ -1,20 +1,18 @@
 import type { MinigameResult } from "./types";
+import { calculateStableDuelStaminaCost } from "./stamina-costs";
 
 export const STABLE_DUEL_WIN_REWARD_MIN      = 200;
 export const STABLE_DUEL_WIN_REWARD_MAX      = 2000;
 export const STABLE_DUEL_MAFIA_BONUS_MAX     = 500;
-export const STABLE_DUEL_BASE_STAMINA_COST   = 20;
-export const STABLE_DUEL_NITRO_STAMINA_COST  = 30;
-export const STABLE_DUEL_CRASH_STAMINA_COST  = 15;
 // false = bot/defender nedostane penalizaci staminy (single-device beta)
 export const STABLE_DUEL_APPLY_BOT_STAMINA_LOSS = false;
 
 export interface PlayerSettlement {
   coinsDelta: number;
   stamina: {
-    base:  number;  // vždy BASE_STAMINA_COST
-    nitro: number;  // 0 nebo NITRO_STAMINA_COST
-    crash: number;  // 0 nebo CRASH_STAMINA_COST
+    base:  number;
+    nitro: number;
+    crash: number;
     total: number;
   };
 }
@@ -28,10 +26,8 @@ function calcPlayer(
   pr: MinigameResult["p1"] | MinigameResult["p2"],
   coinsDelta: number,
 ): PlayerSettlement {
-  const base  = STABLE_DUEL_BASE_STAMINA_COST;
-  const nitro = pr.usedNitro ? STABLE_DUEL_NITRO_STAMINA_COST : 0;
-  const crash = pr.crashed   ? STABLE_DUEL_CRASH_STAMINA_COST : 0;
-  return { coinsDelta, stamina: { base, nitro, crash, total: base + nitro + crash } };
+  const stamina = calculateStableDuelStaminaCost({ nitroUsed: pr.usedNitro, crashed: pr.crashed });
+  return { coinsDelta, stamina };
 }
 
 /** Základní odměna závisí pouze na cenách koní. Pure, deterministic. */

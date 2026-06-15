@@ -1,11 +1,8 @@
 /**
- * lib/minigame-nitro.ts — sdílená konstanta a preview helper pro nitro/stamina boost.
- * Dev-only, žádný DB zápis.
+ * lib/minigame-nitro.ts — UI preview helper pro nitro/stamina boost.
+ * Konstanty importovány ze stamina-costs.ts — jediná zdrojová pravda.
  */
-
-export const NITRO_COST        = 20;  // stamina cena za použití nitro
-export const BASE_STAMINA_COST = 20;  // základní stamina cost za odehrání minihry
-export const CRASH_PENALTY     = 15;  // extra penalizace za crash
+import { calculateStableDuelStaminaCost } from "./minigames/stamina-costs";
 
 export interface NitroStaminaPreview {
   baseCost: number;
@@ -15,8 +12,6 @@ export interface NitroStaminaPreview {
 }
 
 export function nitroStaminaPreview(nitroUsed: boolean, crashed: boolean): NitroStaminaPreview {
-  const baseCost     = BASE_STAMINA_COST;
-  const nitroCost    = nitroUsed ? NITRO_COST    : 0;
-  const crashPenalty = crashed   ? CRASH_PENALTY : 0;
-  return { baseCost, nitroCost, crashPenalty, total: baseCost + nitroCost + crashPenalty };
+  const s = calculateStableDuelStaminaCost({ nitroUsed, crashed });
+  return { baseCost: s.base, nitroCost: s.nitro, crashPenalty: s.crash, total: s.total };
 }
