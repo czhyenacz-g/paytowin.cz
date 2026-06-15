@@ -2364,6 +2364,18 @@ export default function GameBoard({ gameCode }: Props) {
           console.log("[stable-duel] settlement:", s);
           console.log(`[stable-duel] challenger racer lost: ${challengerRacerLost}`);
           console.log(`[stable-duel] defender racer lost: ${defenderRacerLost}`);
+          const dTarget = defender.horses.find(h => racerOwnershipKey(h) === dKey);
+          console.log("[stable-duel] dKey debug:", {
+            defenderName:  defender.name,
+            defenderIsBot: defender.is_bot,
+            dKey,
+            defenderHorseKeys: defender.horses.map(h => racerOwnershipKey(h)),
+            matchFound:    !!dTarget,
+            staminaBefore: dTarget?.stamina ?? dTarget?.maxStamina,
+            staminaLoss:   s.p2.stamina.total,
+            defenderRacerLost,
+            updatedDHorses,
+          });
         }
 
         await Promise.all([
@@ -2456,7 +2468,14 @@ export default function GameBoard({ gameCode }: Props) {
           return;
         }
 
-        if (proceed) await proceed(resultLog, updatedCHorses);
+        // finishTurn aplikuje stamina regen na aktuálního hráče (players[current_player_index]).
+        // Scénář A (lidský hráč přistál na botově poli): current player = challenger → updatedCHorses.
+        // Scénář B (bot přistál na hráčově poli): current player = defender/bot → updatedDHorses.
+        // Předáme správné horses, aby regen byl aplikovaný na POST-settlement staminy, ne na staré.
+        const currentPlayerId = gameState ? players[gameState.current_player_index]?.id : undefined;
+        const horsesForCurrentPlayerRegen =
+          currentPlayerId === defender.id ? updatedDHorses : updatedCHorses;
+        if (proceed) await proceed(resultLog, horsesForCurrentPlayerRegen);
         await checkAndFinishGame(postDuelPlayers);
         return;
       }
@@ -2663,7 +2682,7 @@ export default function GameBoard({ gameCode }: Props) {
     const capturedCId        = sdPending.challengerId;
     const capturedDId        = sdPending.defenderId;
 
-    stableDuelProceedRef.current = async (resultLog?: string[]) => {
+    stableDuelProceedRef.current = async (resultLog?: string[], updatedCurrentPlayerHorses?: import("@/lib/types/game").Horse[]) => {
       await finishTurn({
         nextIndex:          capturedNextIndex,
         turnCount:          capturedTurnCount,
@@ -2672,6 +2691,9 @@ export default function GameBoard({ gameCode }: Props) {
           ...capturedLog,
         ],
         clearOfferPending:  { type: "stable_duel_pending", challengerId: capturedCId, defenderId: capturedDId },
+        // Předáme post-settlement horses pro regen — jinak by stale finishTurn použil
+        // staré horses bota z doby kdy se duel spustil a přepsal by stamina loss.
+        ...(updatedCurrentPlayerHorses ? { updatedCurrentPlayerHorses } : {}),
       });
     };
 
