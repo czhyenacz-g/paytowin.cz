@@ -66,7 +66,7 @@ function canTriggerRivalsRace(p1: Player, p2: Player): boolean {
 
 import { drawCard } from "@/lib/cards";
 import type { GameCard } from "@/lib/cards";
-import type { Player, Horse, ActiveEffect, GameState, OfferPending, RerollOffer, RaceOffer, BankruptAnnouncement, RacePendingEvent, StableDuelPendingOffer, PostTurnEvent, RaceType, EconomyConfig, RollAdjustment } from "@/lib/types/game";
+import type { Player, Horse, ActiveEffect, GameState, OfferPending, RerollOffer, RaceOffer, BankruptAnnouncement, RacePendingEvent, StableDuelPendingOffer, PostTurnEvent, RaceType, EconomyConfig, RollAdjustment, FieldOwnerEntry } from "@/lib/types/game";
 import { DEFAULT_ECONOMY } from "@/lib/types/game";
 import { resolveYearEvent } from "@/lib/year-events";
 import type { CenterEvent, FlashEvent } from "@/lib/types/events";
@@ -396,42 +396,58 @@ export default function GameBoard({ gameCode }: Props) {
     const player = players.find(p => p.id === myPlayerId);
     if (!player) return;
 
-    const result = buildFieldOwnershipPlacement(
-      selectedFieldIndexes,
-      player.id,
-      player.name,
-      gameState.turn_count,
-      players.length,
-      FIELDS,
-      gameState.field_owners ?? [],
-    );
-
-    if (!result.valid) {
-      setFieldOwnershipError(result.reason ?? "Neplatný výběr");
-      return;
-    }
-    if (player.coins < result.totalCost) {
-      setFieldOwnershipError("Nedostatek coins.");
-      return;
-    }
-
     setFieldOwnershipLoading(true);
     setFieldOwnershipError(null);
     try {
+      // Načti čerstvý stav z DB — vyhneme se chybě způsobené zpožděním Realtime
+      // doručení (refreshGame je async, React state může být o krok pozadu).
+      const { data: fresh } = await supabase
+        .from("game_state")
+        .select("turn_count, field_owners, log")
+        .eq("game_id", gameId)
+        .single();
+
+      const currentTurnCount   = fresh?.turn_count ?? gameState.turn_count;
+      const currentFieldOwners = Array.isArray(fresh?.field_owners)
+        ? (fresh!.field_owners as unknown as FieldOwnerEntry[])
+        : (gameState.field_owners ?? []);
+      const currentLog         = Array.isArray(fresh?.log)
+        ? (fresh!.log as string[])
+        : (gameState.log ?? []);
+
+      const result = buildFieldOwnershipPlacement(
+        selectedFieldIndexes,
+        player.id,
+        player.name,
+        currentTurnCount,
+        players.length,
+        FIELDS,
+        currentFieldOwners,
+      );
+
+      if (!result.valid) {
+        setFieldOwnershipError(result.reason ?? "Neplatný výběr");
+        return;
+      }
+      if (player.coins < result.totalCost) {
+        setFieldOwnershipError("Nedostatek coins.");
+        return;
+      }
+
       const newFieldOwners = [
-        ...expireStaleEntries(gameState.field_owners ?? [], gameState.turn_count),
+        ...expireStaleEntries(currentFieldOwners, currentTurnCount),
         ...result.entries,
       ];
       const newLog = [
         `${player.name} vsadil na ${result.entries.length} ${result.entries.length === 1 ? "pole" : "polí"} za ${result.totalCost} 💰`,
-        ...(gameState.log ?? []),
+        ...currentLog,
       ].slice(0, 20);
 
       const { data: updatedRows, error: gsError } = await supabase
         .from("game_state")
         .update({ field_owners: newFieldOwners as unknown as Record<string, unknown>[], log: newLog })
         .eq("game_id", gameId)
-        .eq("turn_count", gameState.turn_count)
+        .eq("turn_count", currentTurnCount)
         .select("turn_count");
 
       if (gsError || !updatedRows || updatedRows.length === 0) {
