@@ -61,7 +61,7 @@ interface Props {
 
 type Phase = "prestart" | "arena" | "result" | "waiting_result";
 
-const BOARD_DUEL_CONFIG: DuelConfig  = { gridW: 34, gridH: 24, maxTicks: 244, tickMs: 156 };
+const BOARD_DUEL_CONFIG: DuelConfig  = { gridW: 34, gridH: 24, maxTicks: 244, tickMs: 195 };
 const BOARD_SPEED_CONFIG: SpeedConfig = {
   arenaW: 480, arenaH: 320,
   maxTicks: 120, tickMs: 80,
@@ -1024,7 +1024,7 @@ export default function StableDuelBoardLayer({
             </div>
           )}
           {/* pvbot mode: D-pad pro hráče (P1 challenger).
-              inputHoldMs < tickMs (156ms) → max 1 tick per tap, no double-turn.
+              inputHoldMs < tickMs (195ms) → max 1 tick per tap, no double-turn.
               feedbackMs stays longer for visible press feedback. */}
           {!duelRole && minigameType !== "neon_speedrace" && (
             <div className="shrink-0 flex flex-col items-center gap-1 px-4 py-2 select-none touch-manipulation" style={{ WebkitTouchCallout: "none" }}>
