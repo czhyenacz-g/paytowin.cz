@@ -1412,6 +1412,15 @@ export default function GameBoard({ gameCode }: Props) {
       p.id === player.id ? { ...p, coins: finalCoins, horses: finalHorses } : p
     ));
 
+    // Optimistický update objective guard — zabraňuje race condition kdy Realtime ještě
+    // nedoručil nový objective_rewards_awarded a hráč stihne koupit dalšího racera dřív.
+    if (objectiveHit) {
+      setGameState(prev => prev ? {
+        ...prev,
+        objective_rewards_awarded: [...(prev.objective_rewards_awarded ?? []), objectiveHit.objectiveId],
+      } : prev);
+    }
+
     // Objective guard se zapisuje atomicky v rámci finishTurn (stejný UPDATE jako posun tahu),
     // aby Realtime subscription přečetla vždy konzistentní stav a odměna se nevyplatila 2×.
     await finishTurn({
