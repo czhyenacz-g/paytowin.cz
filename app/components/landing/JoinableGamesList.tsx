@@ -46,9 +46,10 @@ interface Props {
   onJoin: (code: string) => void;
   playerName: string;
   isDiscordLoggedIn: boolean;
+  onCountChange?: (count: number) => void;
 }
 
-export default function JoinableGamesList({ onJoin, playerName: _playerName, isDiscordLoggedIn }: Props) {
+export default function JoinableGamesList({ onJoin, playerName: _playerName, isDiscordLoggedIn, onCountChange }: Props) {
   const [games, setGames] = React.useState<LobbyGame[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [fetchError, setFetchError] = React.useState<string | null>(null);
@@ -67,14 +68,17 @@ export default function JoinableGamesList({ onJoin, playerName: _playerName, isD
     if (qErr) {
       setFetchError("Nepodařilo se načíst hry.");
     } else {
-      setGames((data ?? []) as unknown as LobbyGame[]);
+      const loaded = (data ?? []) as unknown as LobbyGame[];
+      setGames(loaded);
+      onCountChange?.(loaded.length);
     }
     setLoading(false);
-  }, []);
+  }, [onCountChange]);
 
   React.useEffect(() => { load(); }, [load]);
 
   const now = Date.now();
+
   const freshGames = games.filter(g => {
     const lastAction = g.game_state?.[0]?.updated_at ?? null;
     if (g.status === "waiting") {
