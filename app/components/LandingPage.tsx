@@ -232,12 +232,13 @@ export default function LandingPage() {
   const [ownerRequestActionError, setOwnerRequestActionError] = React.useState<Record<string, string>>({});
   const isDiscordConnected = Boolean(discordUser?.id);
   const [showJoinDisabledHint, setShowJoinDisabledHint] = React.useState(false);
+  const [hasJoinParam, setHasJoinParam] = React.useState(false);
   const playerNameInputRef = React.useRef<HTMLInputElement | null>(null);
   // Načti session + předvyplň ?join=KOD z URL
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const join = params.get("join");
-    if (join) setJoinCode(join.toUpperCase());
+    if (join) { setJoinCode(join.toUpperCase()); setHasJoinParam(true); }
 
     // Dev join — pouze localhost / dev build, nikdy produkce
     if (params.get("dev") === "1" && join) {
@@ -758,34 +759,6 @@ export default function LandingPage() {
     router.push(`/game/${game.code}`);
   };
 
-  const utilityDiscordBlock = discordUser ? (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-600/25 bg-white/[0.05] px-3 py-2">
-      <div className="flex min-w-0 items-center gap-3">
-        {discordUser.avatar ? (
-          <img src={discordUser.avatar} alt="" className="h-8 w-8 rounded-full" />
-        ) : (
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-700 text-sm font-bold text-white">
-            {discordUser.name.charAt(0).toUpperCase()}
-          </div>
-        )}
-        <div className="min-w-0">
-          <div className="truncate text-sm font-semibold text-amber-100">{discordUser.name}</div>
-        </div>
-      </div>
-      <button onClick={logoutDiscord} className="shrink-0 text-xs font-medium text-amber-400/70 transition hover:text-amber-300">
-        Odhlásit
-      </button>
-    </div>
-  ) : (
-    <button
-      onClick={loginWithDiscord}
-      className="w-full rounded-lg border border-amber-600/25 bg-white/[0.05] px-4 py-2.5 text-sm font-semibold text-amber-300 transition hover:bg-white/[0.09] hover:border-amber-500/40"
-    >
-      <div>🎮 Přihlásit přes Discord</div>
-      <div className="mt-0.5 text-[11px] font-normal text-amber-400/50">Rychle. Bez registrace.</div>
-    </button>
-  );
-
   const activeConfig = activePanel ? PANEL_CONFIG[activePanel] : null;
   const isCommunityPanel = activePanel === "ostatni";
   const isProfilePanel = activePanel === "profil";
@@ -794,8 +767,6 @@ export default function LandingPage() {
   const selectedCommunityTheme = communityThemes.find((theme) => theme.id === selectedThemeId);
   const selectedThemeLabel = selectedBuiltinTheme?.name ?? selectedCommunityTheme?.name ?? selectedThemeId;
   const selectedCommunityCountLabel = `${communityThemes.length} map${communityThemes.length === 1 ? "a" : communityThemes.length < 5 ? "y" : ""}`;
-  const ticketSectionHeadingClass = "mx-auto w-fit text-center text-[8px] sm:text-[9px] font-black uppercase tracking-[0.32em] sm:tracking-[0.35em] text-amber-400/80 select-none";
-  const ticketSectionDividerClass = "mx-auto h-px w-16 sm:w-20 bg-gradient-to-r from-amber-600/0 via-amber-600/30 to-amber-600/0";
 
   if (isDevJoin) {
     return (
@@ -926,95 +897,92 @@ export default function LandingPage() {
                 {/* ── Benefit / quick-game strip ── */}
                 <RotatingBenefitStrip variant="slate" />
 
-              <div
-                  className="relative px-5 sm:px-8 py-[10px] sm:py-[14px] rounded-2xl overflow-hidden border border-amber-600/40 bg-slate-950/90 shadow-xl shadow-black/50 backdrop-blur-sm"
-                >
-                  <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-400/25 to-transparent" aria-hidden="true" />
-                  <div className="relative grid grid-cols-1 lg:grid-cols-3 gap-3 lg:gap-0 lg:divide-x lg:divide-amber-700/20 lg:items-center">
-                    {/* Levá sekce: Discord stav / login */}
-                    <div className="min-w-0 space-y-1.5 sm:space-y-2 w-full max-w-sm mx-auto lg:max-w-none lg:justify-self-center lg:flex lg:flex-col lg:items-center lg:px-5">
-                      <div className={`${ticketSectionHeadingClass} hidden lg:block`}>
-                        Vstupenka do hry
-                      </div>
-                      <div className={`${ticketSectionDividerClass} hidden lg:block`} />
-                      <div className="w-full lg:flex lg:justify-center">
-                        <div className="w-full lg:max-w-[13.25rem]">
-                          {utilityDiscordBlock}
-                        </div>
-                      </div>
-                    </div>
+              {/* ── Compact join + games panel ── */}
+              <div className="relative rounded-2xl border border-amber-600/40 bg-slate-950/90 shadow-xl shadow-black/50 backdrop-blur-sm px-4 sm:px-5 py-3 sm:py-4 space-y-2">
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-400/25 to-transparent" aria-hidden="true" />
 
-                    {/* Střední sekce: jméno (jen guest) + kód hry + Připojit */}
-                    <div className="min-w-0 flex flex-col gap-1.5 sm:gap-2 w-full max-w-sm mx-auto lg:max-w-none lg:items-center lg:px-5">
-                      <div className={`${ticketSectionHeadingClass} hidden lg:block`}>
-                        Kód hry
-                      </div>
-                      <div className={`${ticketSectionDividerClass} hidden lg:block`} />
-                      <div className="w-full lg:flex lg:justify-center">
-                        <div className="w-full lg:max-w-[13.5rem]">
-                          {!isDiscordConnected && (
-                            <>
-                              <input
-                                ref={playerNameInputRef}
-                                type="text"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                placeholder="Tvoje jméno"
-                                className="w-full h-8 min-w-0 rounded-lg border border-amber-600/25 bg-white/[0.05] px-3 text-sm text-amber-100 outline-none placeholder:text-amber-200/25 focus:border-amber-500/60 focus:bg-white/[0.08]"
-                              />
-                              <div className="my-1.5 h-px bg-slate-700/50" />
-                            </>
-                          )}
-                          <div className="w-full flex flex-col gap-1.5 sm:flex-row sm:items-stretch sm:gap-2">
-                            <input
-                              type="text"
-                              value={joinCode}
-                              onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                              placeholder="Kód hry"
-                              maxLength={5}
-                              className="h-8 min-w-0 flex-1 rounded-lg border border-amber-600/25 bg-white/[0.05] px-3 text-sm uppercase tracking-[0.18em] sm:tracking-[0.2em] text-amber-100 outline-none placeholder:tracking-normal placeholder:text-amber-200/25 focus:border-amber-500/60 focus:bg-white/[0.08]"
-                            />
-                            <div
-                              className="relative w-full shrink-0 sm:w-[6rem]"
-                              onMouseEnter={() => joinButtonDisabled && setShowJoinDisabledHint(true)}
-                              onMouseLeave={() => setShowJoinDisabledHint(false)}
-                              onClick={handleJoinButtonClick}
-                            >
-                              <button
-                                type="button"
-                                disabled={joinButtonDisabled}
-                                className="h-8 w-full rounded-lg bg-amber-600 px-4 text-[13px] sm:text-sm font-semibold text-white transition hover:bg-amber-500 disabled:border disabled:border-amber-600/20 disabled:bg-white/[0.04] disabled:text-amber-200/30"
-                              >
-                                {discordSessionLoading && joinCode.trim() ? "Načítám…" : "Připojit"}
-                              </button>
-                              {joinButtonDisabled && showJoinDisabledHint && (
-                                <div className="pointer-events-none absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[11px] text-white shadow-sm">
-                                  <span aria-hidden="true">⊘</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
+                {/* Řádek A: identita */}
+                {discordUser ? (
+                  <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-600/25 bg-white/[0.05] px-3 py-1.5">
+                    <div className="flex min-w-0 items-center gap-2">
+                      {discordUser.avatar ? (
+                        <img src={discordUser.avatar} alt="" className="h-6 w-6 rounded-full shrink-0" />
+                      ) : (
+                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-700 text-[11px] font-bold text-white shrink-0">
+                          {discordUser.name.charAt(0).toUpperCase()}
                         </div>
-                      </div>
+                      )}
+                      <span className="truncate text-sm font-semibold text-amber-100">{discordUser.name}</span>
                     </div>
-
-                    {/* Pravá sekce: sledovat hry */}
-                    <div className="min-w-0 flex flex-col gap-1.5 sm:gap-2 w-full max-w-sm mx-auto lg:max-w-none lg:items-center lg:px-5">
-                      <div className={`${ticketSectionHeadingClass} hidden lg:block`}>
-                        Aktivní hry
-                      </div>
-                      <div className={`${ticketSectionDividerClass} hidden lg:block`} />
-                      <div className="w-full lg:flex lg:justify-center">
-                      <a
-                        href="/hry"
-                        className="inline-flex h-8 w-full items-center justify-center whitespace-nowrap rounded-lg border border-amber-600/25 bg-white/[0.05] px-4 text-[13px] sm:text-sm font-semibold text-amber-300 transition hover:bg-white/[0.09] hover:border-amber-500/40 lg:self-center"
-                      >
-                        👀 Sledovat aktivní hry
-                      </a>
-                      </div>
-                    </div>
+                    <button onClick={logoutDiscord} className="shrink-0 text-xs font-medium text-amber-400/70 transition hover:text-amber-300">
+                      Odhlásit
+                    </button>
                   </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={playerNameInputRef}
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Tvoje jméno"
+                      className="flex-1 min-w-0 h-8 rounded-lg border border-amber-600/25 bg-white/[0.05] px-3 text-sm text-amber-100 outline-none placeholder:text-amber-200/25 focus:border-amber-500/60 focus:bg-white/[0.08]"
+                    />
+                    {hasJoinParam ? (
+                      <button
+                        onClick={loginWithDiscord}
+                        className="shrink-0 h-8 rounded-lg border border-amber-600/25 bg-white/[0.05] px-3 text-[11px] font-semibold text-amber-300 hover:bg-white/[0.09] hover:border-amber-500/40 whitespace-nowrap transition"
+                      >
+                        🎮 Discord
+                      </button>
+                    ) : null}
+                  </div>
+                )}
+
+                {/* Řádek B: kód + připojit + sledovat hry */}
+                <div className="flex items-stretch gap-1.5">
+                  <input
+                    type="text"
+                    value={joinCode}
+                    onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                    placeholder="Kód hry"
+                    maxLength={5}
+                    className="h-8 w-[5.5rem] min-w-0 rounded-lg border border-amber-600/25 bg-white/[0.05] px-3 text-sm uppercase tracking-[0.18em] text-amber-100 outline-none placeholder:tracking-normal placeholder:text-amber-200/25 focus:border-amber-500/60 focus:bg-white/[0.08]"
+                  />
+                  <div
+                    className="relative shrink-0"
+                    onMouseEnter={() => joinButtonDisabled && setShowJoinDisabledHint(true)}
+                    onMouseLeave={() => setShowJoinDisabledHint(false)}
+                    onClick={handleJoinButtonClick}
+                  >
+                    <button
+                      type="button"
+                      disabled={joinButtonDisabled}
+                      className="h-8 w-[5.5rem] rounded-lg bg-amber-600 px-3 text-sm font-semibold text-white transition hover:bg-amber-500 disabled:border disabled:border-amber-600/20 disabled:bg-white/[0.04] disabled:text-amber-200/30"
+                    >
+                      {discordSessionLoading && joinCode.trim() ? "Načítám…" : "Připojit"}
+                    </button>
+                    {joinButtonDisabled && showJoinDisabledHint && (
+                      <div className="pointer-events-none absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[11px] text-white shadow-sm">
+                        <span aria-hidden="true">⊘</span>
+                      </div>
+                    )}
+                  </div>
+                  <a
+                    href="/hry"
+                    className="flex-1 inline-flex h-8 min-w-0 items-center justify-center whitespace-nowrap rounded-lg border border-amber-600/25 bg-white/[0.05] px-3 text-xs font-semibold text-amber-300 transition hover:bg-white/[0.09] hover:border-amber-500/40"
+                  >
+                    👀 Sledovat hry
+                  </a>
                 </div>
+
+                {/* Seznam her — interní scroll, stránka neroste */}
+                <JoinableGamesList
+                  onJoin={handleJoinFromLobby}
+                  playerName={name}
+                  isDiscordLoggedIn={!!discordUser?.id}
+                />
+              </div>
 
                 {error && (
                   <p className="text-center text-sm text-red-600">{error}</p>
@@ -1093,13 +1061,6 @@ export default function LandingPage() {
                   </div>
                 )}
 
-                {/* ── Lobby: joinable games ── */}
-                <JoinableGamesList
-                  onJoin={handleJoinFromLobby}
-                  playerName={name}
-                  isDiscordLoggedIn={!!discordUser?.id}
-                />
-
                 <div className="flex items-center justify-center gap-4 text-xs text-slate-400">
                   <a href="/pravidla" className="hover:text-slate-200 underline">Pravidla hry</a>
                   <span>·</span>
@@ -1111,7 +1072,7 @@ export default function LandingPage() {
                   <span>·</span> */}
                   <a href="/partners" className="hover:text-slate-200 underline">Partnerství</a>
                   <span>·</span>
-                  <a href="/testeri" className="hover:text-slate-200 underline">Hledám testery</a>
+                  <a href="/testeri" className="hover:text-slate-200 underline font-semibold">Hledám testery</a>
                   <span>·</span>
                   <a href="/faq" className="hover:text-slate-200 underline">FAQ</a>
                   <span>·</span>
