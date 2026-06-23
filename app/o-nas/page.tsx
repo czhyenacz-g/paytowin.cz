@@ -37,6 +37,9 @@ export default function ONasPage() {
               StartovníPole.cz je česká online deskovka o závodech, risku a špatných rozhodnutích, navazující na původní projekt PayToWin. Běží na enginu RaceToWin, kde každá kampaň dostane vlastní svět, pravidla a atmosféru.
             </p>
             <p className="max-w-3xl text-sm leading-relaxed text-stone-400 sm:text-[15px]">
+              PayToWin byl původní název enginu, na kterém hra vznikla, než se přejmenoval na RaceToWin.
+            </p>
+            <p className="max-w-3xl text-sm leading-relaxed text-stone-400 sm:text-[15px]">
               <span className="font-semibold text-amber-200/90">PayToWin</span> je název první kampaně — a záměrná ironie. Odkazuje na hry, kde si hráči reálně kupují výhodu, která rozhoduje o výsledku. My to otočili: ve hře se platí a riskuje v rámci herního světa, ne ve skutečnosti. Žádné mikrotransakce, žádné prémiové výhody. Název je satirický komentář na tenhle model, ne jeho popis.
             </p>
           </div>
