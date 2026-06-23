@@ -883,14 +883,13 @@ export default function LandingPage() {
             <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-4 sm:px-6 py-4 sm:py-8">
 
               <div className="mb-3 sm:mb-6 text-center">
-                <h1 className="sr-only">RaceToWin — česká multiplayer závodní deskovka v prohlížeči</h1>
+                <h1 className="sr-only">StartovníPole.cz — česká multiplayer závodní deskovka v prohlížeči</h1>
 
                 {/* Hlavní herní titul */}
                 <div className="brand-logo brand-logo--hero mx-auto inline-block">
                   <span className="brand-logo__wordmark">
-                    <span className="brand-logo__pay">Race</span>
-                    <span className="brand-logo__to">To</span>
-                    <span className="brand-logo__win">Win</span>
+                    <span className="brand-logo__pay">Startovní</span>
+                    <span className="brand-logo__win">Pole</span>
                   </span>
                 </div>
 
@@ -1141,7 +1140,7 @@ export default function LandingPage() {
                   <span>·</span>
                   <a href="mailto:info@paytowin.cz" className="hover:text-slate-200 underline">info@paytowin.cz</a>
                   <span>·</span>
-                  <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-400 tracking-wide">Beta v0.7.86-seno</span>
+                  <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-400 tracking-wide">Beta v0.7.87-seno</span>
                 </div>
               </div>
             </div>

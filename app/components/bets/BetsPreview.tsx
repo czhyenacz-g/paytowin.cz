@@ -109,7 +109,7 @@ export default function BetsPreview({ compact = false }: Props) {
         <div className="rounded-2xl border border-slate-700 bg-slate-800/40 px-5 py-4 text-sm text-slate-400 space-y-3">
           <p>
             💡 Až bude web mít traffic, napojíme affiliate partnera nebo ručně vybraný externí odkaz.
-            Pokud máte zájem stát se partnerem PayToWin.cz, ozvěte se — připravujeme prostor pro reklamu,
+            Pokud máte zájem stát se partnerem StartovníPole.cz, ozvěte se — připravujeme prostor pro reklamu,
             speciální eventy i soutěže o produkty.
           </p>
           <Link

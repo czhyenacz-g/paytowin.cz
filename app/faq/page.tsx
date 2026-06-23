@@ -2,25 +2,25 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "FAQ | PayToWin.cz",
+  title: "FAQ | StartovníPole.cz",
   description:
-    "Časté otázky k PayToWin.cz, české online závodní deskovce postavené na RaceToWin enginu. Jak se hraje, co je cílem, co je RaceToWin a proč nejde o hazard.",
+    "Časté otázky ke StartovníPole.cz, české online závodní deskovce postavené na RaceToWin enginu. Jak se hraje, co je cílem, co je RaceToWin a proč nejde o hazard.",
   alternates: {
-    canonical: "https://paytowin.cz/faq",
+    canonical: "https://startovnipole.cz/faq",
   },
   openGraph: {
-    title: "FAQ | PayToWin.cz",
+    title: "FAQ | StartovníPole.cz",
     description:
-      "Časté otázky k PayToWin.cz, české online závodní deskovce postavené na RaceToWin enginu.",
-    url: "https://paytowin.cz/faq",
-    siteName: "PayToWin.cz",
+      "Časté otázky ke StartovníPole.cz, české online závodní deskovce postavené na RaceToWin enginu.",
+    url: "https://startovnipole.cz/faq",
+    siteName: "StartovníPole.cz",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "FAQ | PayToWin.cz",
+    title: "FAQ | StartovníPole.cz",
     description:
-      "Časté otázky k PayToWin.cz, české online závodní deskovce postavené na RaceToWin enginu.",
+      "Časté otázky ke StartovníPole.cz, české online závodní deskovce postavené na RaceToWin enginu.",
   },
 };
 
@@ -144,13 +144,13 @@ export default function FaqPage() {
           <div className="relative space-y-3 p-5 sm:p-8">
             <div className={sectionTitle}>Časté otázky</div>
             <h1 className="font-serif text-3xl font-semibold leading-tight tracking-[-0.03em] text-amber-50 sm:text-4xl">
-              FAQ — časté otázky k PayToWin.cz
+              FAQ — časté otázky ke StartovníPole.cz
             </h1>
             <p className="text-sm leading-relaxed text-stone-300 sm:text-[15px]">
-              PayToWin.cz je česká online závodní deskovka ve vývoji. První kampaň PayToWin běží
-              na RaceToWin enginu a kombinuje tahovou deskovku, nákup koní, závody, risk, banku,
-              odvody a špatná rozhodnutí. Tady jsou nejčastější otázky, které můžou zajímat nové
-              hráče, testery i náhodné kolemjdoucí.
+              StartovníPole.cz je česká online závodní deskovka ve vývoji, navazující na původní
+              projekt PayToWin. První kampaň PayToWin běží na RaceToWin enginu a kombinuje tahovou
+              deskovku, nákup koní, závody, risk, banku, odvody a špatná rozhodnutí. Tady jsou
+              nejčastější otázky, které můžou zajímat nové hráče, testery i náhodné kolemjdoucí.
             </p>
           </div>
         </section>

@@ -2,25 +2,25 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Wanted testeři hry | PayToWin.cz",
+  title: "Wanted testeři hry | StartovníPole.cz",
   description:
-    "Hledám testery pro PayToWin.cz, českou online deskovku o závodech, penězích a risku. Vyzkoušej demo hry a pomoz doladit pravidla, mobilní ovládání i zábavnost.",
+    "Hledám testery pro StartovníPole.cz, českou online deskovku o závodech, penězích a risku. Vyzkoušej demo hry a pomoz doladit pravidla, mobilní ovládání i zábavnost.",
   alternates: {
-    canonical: "https://paytowin.cz/testeri",
+    canonical: "https://startovnipole.cz/testeri",
   },
   openGraph: {
-    title: "Wanted testeři hry | PayToWin.cz",
+    title: "Wanted testeři hry | StartovníPole.cz",
     description:
-      "Hledám testery pro PayToWin.cz, českou online deskovku o závodech, penězích a risku. Vyzkoušej demo hry a pomoz doladit pravidla, mobilní ovládání i zábavnost.",
-    url: "https://paytowin.cz/testeri",
-    siteName: "PayToWin.cz",
+      "Hledám testery pro StartovníPole.cz, českou online deskovku o závodech, penězích a risku. Vyzkoušej demo hry a pomoz doladit pravidla, mobilní ovládání i zábavnost.",
+    url: "https://startovnipole.cz/testeri",
+    siteName: "StartovníPole.cz",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Wanted testeři hry | PayToWin.cz",
+    title: "Wanted testeři hry | StartovníPole.cz",
     description:
-      "Hledám testery pro PayToWin.cz, českou online deskovku o závodech, penězích a risku. Vyzkoušej demo hry a pomoz doladit pravidla, mobilní ovládání i zábavnost.",
+      "Hledám testery pro StartovníPole.cz, českou online deskovku o závodech, penězích a risku. Vyzkoušej demo hry a pomoz doladit pravidla, mobilní ovládání i zábavnost.",
   },
 };
 
@@ -41,10 +41,10 @@ export default function TesteriPage() {
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
         <div className="mb-4 flex items-center justify-between gap-3">
           <Link href="/" className="text-xs font-semibold uppercase tracking-[0.25em] text-amber-100/70 hover:text-amber-100">
-            ← Zpět na PayToWin.cz
+            ← Zpět na StartovníPole.cz
           </Link>
           <span className="rounded-full border border-amber-300/20 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-amber-300">
-            Beta v0.7.32-seno
+            Beta v0.7.87-seno
           </span>
         </div>
 
@@ -54,10 +54,10 @@ export default function TesteriPage() {
             <div className="space-y-5">
               <p className={sectionTitle}>Wanted</p>
               <h1 className="max-w-2xl font-serif text-4xl font-semibold leading-[0.95] tracking-[-0.04em] text-amber-50 sm:text-5xl lg:text-6xl">
-                Wanted: testeři hry PayToWin.cz
+                Wanted: testeři hry StartovníPole.cz
               </h1>
               <p className="max-w-2xl text-base leading-relaxed text-stone-300 sm:text-lg">
-                Hledám pár lidí na beta testování české online deskovky PayToWin.cz. Zahraj demo hry, zkus mobil i desktop a napiš, co je nejasné, zábavné nebo rozbité.
+                Hledám pár lidí na beta testování české online deskovky StartovníPole.cz (navazuje na PayToWin). Zahraj demo hry, zkus mobil i desktop a napiš, co je nejasné, zábavné nebo rozbité.
               </p>
               <p className="max-w-2xl text-sm leading-relaxed text-stone-400 sm:text-[15px]">
                 Nečekej hotovou hru. Čekej bugy, divné situace, boty, co občas udělají hloupost, a pravidla, která se ještě ladí.
@@ -109,7 +109,7 @@ export default function TesteriPage() {
             <div className={sectionTitle}>Kdo za tím stojí</div>
             <h2 className="mt-3 text-xl font-bold text-amber-50">Osobní výzva od autora hry</h2>
             <p className="mt-3 text-sm leading-relaxed text-stone-300">
-              Za PayToWin.cz nestojí tým o stovce lidí. Stavím ho já — Hynek „czhyenacz“ Dařbujan — a pár přátel, kteří se nebojí říct mi, že něco nefunguje, nedává smysl nebo prostě není zábavné.
+              Za StartovníPole.cz nestojí tým o stovce lidí. Stavím ho já — Hynek „czhyenacz“ Dařbujan — a pár přátel, kteří se nebojí říct mi, že něco nefunguje, nedává smysl nebo prostě není zábavné.
             </p>
             <p className="mt-3 text-sm leading-relaxed text-amber-100/80">
               Právě takovou zpětnou vazbu teď potřebuji víc než pochvalu.
@@ -177,7 +177,7 @@ export default function TesteriPage() {
               href="/"
               className="inline-flex h-10 items-center justify-center rounded-full border border-amber-200/20 bg-amber-500/15 px-4 text-sm font-semibold text-amber-100 transition hover:bg-amber-500/25"
             >
-              Zpět na PayToWin.cz
+              Zpět na StartovníPole.cz
             </Link>
             <a
               href="mailto:info@paytowin.cz"

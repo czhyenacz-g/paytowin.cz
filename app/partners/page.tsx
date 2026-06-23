@@ -1,8 +1,8 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Partnerství a spolupráce — paytowin.cz",
-  description: "Hledáme partnery pro reklamu, affiliate spolupráci a speciální herní eventy na PayToWin.cz.",
+  title: "Partnerství a spolupráce — startovnipole.cz",
+  description: "Hledáme partnery pro reklamu, affiliate spolupráci a speciální herní eventy na StartovníPole.cz.",
 };
 
 const COOPERATION_OPTIONS = [
@@ -59,7 +59,7 @@ export default function PartnersPage() {
         {/* Úvod */}
         <div className="rounded-2xl border border-slate-700 bg-slate-800/60 px-5 py-5 text-sm text-slate-300 leading-relaxed space-y-2">
           <p>
-            <strong className="text-white">PayToWin.cz</strong> je závodní online deskovka inspirovaná dostihy a motoristickými závody.
+            <strong className="text-white">StartovníPole.cz</strong> je závodní online deskovka inspirovaná dostihy a motoristickými závody, navazující na původní projekt PayToWin.
             Hráči staví stáje, kupují závodníky, sázejí a soupeří v multiplayer hrách v reálném čase.
           </p>
           <p className="text-slate-400">

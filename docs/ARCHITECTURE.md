@@ -1,5 +1,9 @@
 # Architektura — paytowin.cz
 
+> **Domény:** hlavní veřejná doména a canonical brand je `startovnipole.cz` (StartovníPole.cz).
+> `paytowin.cz` a `racetowin.cz` jsou podpůrné/historické domény určené k přesměrování na `startovnipole.cz`.
+> Přesměrování DNS/Vercel se nastavuje mimo repozitář. Viz `PROJECT_CARD.md` → „Domény a značka".
+
 ## Vrstvy
 
 ```

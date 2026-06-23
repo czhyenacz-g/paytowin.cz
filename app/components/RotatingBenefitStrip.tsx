@@ -92,7 +92,7 @@ export default function RotatingBenefitStrip({ variant = "amber" }: Props) {
       onMouseLeave={() => setPaused(false)}
     >
       <div className="text-[11px] font-black uppercase tracking-[0.28em] text-amber-200/80 mb-2">
-        {item.label ? item.label : "Proč hrát PayToWin?"}
+        {item.label ? item.label : "Proč hrát StartovníPole.cz?"}
       </div>
       <p
         className="text-sm font-medium text-stone-200 leading-snug min-h-[1.25rem] transition-opacity duration-300"

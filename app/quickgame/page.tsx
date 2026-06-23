@@ -2,17 +2,17 @@ import type { Metadata } from "next";
 import QuickGameLauncher from "@/app/components/landing/QuickGameLauncher";
 
 export const metadata: Metadata = {
-  title: "Rychlá hra | PayToWin.cz",
+  title: "Rychlá hra | StartovníPole.cz",
   description:
     "Zahraj si rychlou hru proti botům bez registrace. Spusť hned — žádné přihlašování.",
   alternates: {
-    canonical: "https://paytowin.cz/quickgame",
+    canonical: "https://startovnipole.cz/quickgame",
   },
   openGraph: {
-    title: "Rychlá hra | PayToWin.cz",
+    title: "Rychlá hra | StartovníPole.cz",
     description:
       "Zahraj si rychlou hru proti botům bez registrace. Spusť hned.",
-    url: "https://paytowin.cz/quickgame",
+    url: "https://startovnipole.cz/quickgame",
   },
 };
 
@@ -33,9 +33,8 @@ export default function QuickGamePage() {
         <div className="text-center">
           <div className="brand-logo brand-logo--hero mx-auto inline-block">
             <span className="brand-logo__wordmark">
-              <span className="brand-logo__pay">Race</span>
-              <span className="brand-logo__to">To</span>
-              <span className="brand-logo__win">Win</span>
+              <span className="brand-logo__pay">Startovní</span>
+              <span className="brand-logo__win">Pole</span>
             </span>
           </div>
           <p className="mt-2 text-sm font-semibold text-amber-200/80">

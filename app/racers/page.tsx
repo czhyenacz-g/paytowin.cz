@@ -4,7 +4,7 @@ import { racerProfilesToConfigs } from "@/lib/racers/builtInRacers";
 import RacersGallery from "@/app/components/racers/RacersGallery";
 
 export const metadata: Metadata = {
-  title: "Závodníci | PayToWin.cz",
+  title: "Závodníci | StartovníPole.cz",
   description: "Prohlédni si všechny dostupné závodníky — koně, lamy, velbloudy i auta. Každý má jiný charakter, rychlost a příběh.",
 };
 

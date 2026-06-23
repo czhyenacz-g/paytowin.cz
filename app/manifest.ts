@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "PayToWin.cz",
-    short_name: "PayToWin",
+    name: "StartovníPole.cz",
+    short_name: "StartovníPole",
     description: "Multiplayerová desková hra v prohlížeči. Kupuj závodníky, riskuj v závodech a přežij finanční chaos.",
     start_url: "/",
     scope: "/",

@@ -26,9 +26,8 @@ export default function BrandLogo({
   return (
     <div className={rootClassName} onClick={onClick}>
       <span className="brand-logo__wordmark">
-        <span className="brand-logo__pay">Pay</span>
-        <span className="brand-logo__to">To</span>
-        <span className="brand-logo__win">Win</span>
+        <span className="brand-logo__pay">Startovní</span>
+        <span className="brand-logo__win">Pole</span>
         <span className="brand-logo__tld">.cz</span>
       </span>
     </div>

@@ -136,7 +136,7 @@ export default function MapMenuStrip({ onPanelClick, currentXp, isLoggedIn = fal
     <>
       {/* Campaign header */}
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 mb-1.5 px-0.5">
-        <span className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-400/85 select-none">První kampaň · PayToWin.cz</span>
+        <span className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-400/85 select-none">První kampaň PayToWin · StartovníPole.cz</span>
         <span className="text-[9px] text-amber-200/35 tracking-wider select-none">5 kapitol · 1921–1936 · od dostihů ke strojům</span>
       </div>
 

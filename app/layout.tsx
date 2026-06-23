@@ -11,7 +11,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://paytowin.cz"),
+  metadataBase: new URL("https://startovnipole.cz"),
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
@@ -19,25 +19,25 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    title: "PayToWin",
+    title: "StartovníPole",
     statusBarStyle: "black-translucent",
   },
-  title: "PayToWin.cz – česká multiplayer závodní deskovka",
-  description: "Multiplayerová desková hra v prohlížeči. Kupuj závodníky, riskuj v závodech a přežij finanční chaos. Hraj online s přáteli.",
+  title: "StartovníPole.cz – česká multiplayer závodní deskovka",
+  description: "Multiplayerová desková hra v prohlížeči. Kupuj závodníky, riskuj v závodech a přežij finanční chaos. Hraj online s přáteli. StartovníPole.cz navazuje na původní projekt PayToWin.",
   openGraph: {
-    title: "PayToWin.cz – česká multiplayer závodní deskovka",
+    title: "StartovníPole.cz – česká multiplayer závodní deskovka",
     description: "Multiplayerová desková hra v prohlížeči. Kupuj závodníky, riskuj v závodech a přežij finanční chaos.",
-    url: "https://paytowin.cz",
-    siteName: "PayToWin.cz",
+    url: "https://startovnipole.cz",
+    siteName: "StartovníPole.cz",
     locale: "cs_CZ",
     type: "website",
-    images: [{ url: "/api/og?title=PayToWin.cz&sub=Multiplayer+závodní+deskovka", width: 1200, height: 630 }],
+    images: [{ url: "/api/og?title=StartovníPole.cz&sub=Multiplayer+závodní+deskovka", width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "PayToWin.cz – česká multiplayer závodní deskovka",
+    title: "StartovníPole.cz – česká multiplayer závodní deskovka",
     description: "Multiplayerová desková hra v prohlížeči. Kupuj závodníky, riskuj v závodech a přežij finanční chaos.",
-    images: ["/api/og?title=PayToWin.cz&sub=Multiplayer+závodní+deskovka"],
+    images: ["/api/og?title=StartovníPole.cz&sub=Multiplayer+závodní+deskovka"],
   },
 };
 
