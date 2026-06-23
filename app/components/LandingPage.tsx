@@ -1405,7 +1405,7 @@ export default function LandingPage() {
                         <span className="absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full bg-emerald-400 ring-2 ring-white" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="text-base font-bold text-slate-900 truncate">
+                        <div className={`text-base font-bold text-slate-900 ${discordUser?.name ? "truncate" : ""}`}>
                           {discordUser?.name || "Nepřihlášený hráč"}
                         </div>
                         {discordUser?.id && (
