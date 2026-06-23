@@ -3,7 +3,7 @@ import RotatingBenefitStrip from "@/app/components/RotatingBenefitStrip";
 
 export const metadata: Metadata = {
   title: "O nás | StartovníPole.cz",
-  description: "StartovníPole.cz je česká online deskovka navazující na původní projekt PayToWin, postavená na enginu RaceToWin. Za projektem stojí Hynek Dařbujan.",
+  description: "StartovníPole.cz je česká online deskovka o závodech, risku a špatných rozhodnutích. Za projektem stojí Hynek Dařbujan.",
 };
 
 const cardClass = "rounded-[28px] border border-amber-200/15 bg-[#15110e]/92 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-sm";
@@ -34,13 +34,7 @@ export default function ONasPage() {
               StartovníPole.cz
             </h1>
             <p className="max-w-3xl text-base leading-relaxed text-stone-300 sm:text-lg">
-              StartovníPole.cz je česká online deskovka o závodech, risku a špatných rozhodnutích, navazující na původní projekt PayToWin. Běží na enginu RaceToWin, kde každá kampaň dostane vlastní svět, pravidla a atmosféru.
-            </p>
-            <p className="max-w-3xl text-sm leading-relaxed text-stone-400 sm:text-[15px]">
-              PayToWin byl původní název enginu, na kterém hra vznikla, než se přejmenoval na RaceToWin.
-            </p>
-            <p className="max-w-3xl text-sm leading-relaxed text-stone-400 sm:text-[15px]">
-              <span className="font-semibold text-amber-200/90">PayToWin</span> je název první kampaně — a záměrná ironie. Odkazuje na hry, kde si hráči reálně kupují výhodu, která rozhoduje o výsledku. My to otočili: ve hře se platí a riskuje v rámci herního světa, ne ve skutečnosti. Žádné mikrotransakce, žádné prémiové výhody. Název je satirický komentář na tenhle model, ne jeho popis.
+              StartovníPole.cz je česká online deskovka o závodech, risku a špatných rozhodnutích. Běží na enginu <span className="font-semibold text-amber-200/90">PayToWin</span>, kde každá kampaň — třeba RaceToWin — dostane vlastní svět, pravidla a atmosféru.
             </p>
           </div>
         </section>
@@ -50,7 +44,7 @@ export default function ONasPage() {
           <div className={sectionTitle}>Proč si to zahrát</div>
           <h2 className="mt-3 text-xl font-bold text-amber-50">Svižná deskovka pro partu</h2>
           <p className="mt-3 text-sm leading-relaxed text-stone-300">
-            PayToWin je online deskovka pro přátele. Kupuješ závodníky, posíláš je do závodů, riskuješ herní peníze a doufáš, že tě jedna špatná karta nepošle zpátky na zem.
+            StartovníPole.cz je online deskovka pro přátele. Kupuješ závodníky, posíláš je do závodů, riskuješ herní peníze a doufáš, že tě jedna špatná karta nepošle zpátky na zem.
           </p>
           <p className="mt-3 text-sm leading-relaxed text-stone-400">
             Cíl není sedět u stolu celé odpoledne a čekat, až někdo konečně dohraje tah. Partie má být rychlejší, škodolibější a víc o společných momentech: kdo přestřelil nákup, kdo zariskoval v závodě, komu karta otočila hru a kdo se směje naposledy.
@@ -96,7 +90,7 @@ export default function ONasPage() {
             <div className={sectionTitle}>Jak se to vyvíjí</div>
             <h2 className="mt-3 text-xl font-bold text-amber-50">Experiment ve vývoji</h2>
             <p className="mt-3 text-sm leading-relaxed text-stone-300">
-              RaceToWin je zatím v beta fázi. Něco funguje, něco se rozbije a něco se během testování přepíše. Kampaň PayToWin (dnes pod StartovníPole.cz) slouží jako první živý provoz enginu.
+              StartovníPole.cz je zatím v beta fázi. Něco funguje, něco se rozbije a něco se během testování přepíše.
             </p>
             <p className="mt-3 text-sm leading-relaxed text-stone-400">
               Pokud tě baví sledovat, jak se hra rodí, jsi tu správně. Upřímná zpětná vazba je pro tenhle projekt důležitější než uhlazený marketing.

@@ -4,14 +4,13 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "FAQ | StartovníPole.cz",
   description:
-    "Časté otázky ke StartovníPole.cz, české online závodní deskovce postavené na RaceToWin enginu. Jak se hraje, co je cílem, co je RaceToWin a proč nejde o hazard.",
+    "Časté otázky ke StartovníPole.cz, české online závodní deskovce. Jak se hraje, co je kampaň RaceToWin a proč nejde o hazard.",
   alternates: {
     canonical: "https://startovnipole.cz/faq",
   },
   openGraph: {
     title: "FAQ | StartovníPole.cz",
-    description:
-      "Časté otázky ke StartovníPole.cz, české online závodní deskovce postavené na RaceToWin enginu.",
+    description: "Časté otázky ke StartovníPole.cz, české online závodní deskovce.",
     url: "https://startovnipole.cz/faq",
     siteName: "StartovníPole.cz",
     type: "website",
@@ -19,31 +18,22 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "FAQ | StartovníPole.cz",
-    description:
-      "Časté otázky ke StartovníPole.cz, české online závodní deskovce postavené na RaceToWin enginu.",
+    description: "Časté otázky ke StartovníPole.cz, české online závodní deskovce.",
   },
 };
 
 const faq: { q: string; a: string }[] = [
   {
-    q: "Co je PayToWin.cz?",
-    a: "PayToWin.cz je česká online závodní deskovka ve vývoji. Hráči se pohybují po mapě, kupují koně, závodí, riskují tahy, platí odvody a snaží se přežít finanční chaos. Je to hra o závodech, penězích a rozhodnutích, která se někdy vyplatí a někdy bolí.",
+    q: "Co je StartovníPole.cz?",
+    a: "StartovníPole.cz je česká online závodní deskovka ve vývoji. Hráči se pohybují po mapě, kupují koně, závodí, riskují tahy, platí odvody a snaží se přežít finanční chaos. Aktuální kampaň se jmenuje RaceToWin a běží na enginu PayToWin, který řeší tahy, mapy, hráče, boty, závodníky, vlastnictví, minihry a kampaně.",
   },
   {
-    q: "Co je RaceToWin engine?",
-    a: "RaceToWin je obecnější herní engine, na kterém PayToWin.cz běží. Engine řeší tahy, mapy, hráče, boty, závodníky, vlastnictví, minihry a kampaně. PayToWin je první veřejná kampaň postavená na tomto enginu.",
+    q: "Je StartovníPole.cz hotová hra?",
+    a: "Ne. StartovníPole.cz je beta verze a otevřený prototyp. Některé části už se dají hrát, jiné se ladí, přepisují nebo testují. Bugy, divné situace a změny pravidel zatím patří k vývoji.",
   },
   {
-    q: "Jaký je rozdíl mezi RaceToWin a PayToWin?",
-    a: "RaceToWin je základní engine. PayToWin je první konkrétní kampaň — svět dostihů, bank, peněz, risku a drahých chyb. Do budoucna může na RaceToWin enginu běžet víc kampaní, map nebo závodních světů.",
-  },
-  {
-    q: "Je PayToWin.cz hotová hra?",
-    a: "Ne. PayToWin.cz je beta verze a otevřený prototyp. Některé části už se dají hrát, jiné se ladí, přepisují nebo testují. Bugy, divné situace a změny pravidel zatím patří k vývoji.",
-  },
-  {
-    q: "Je PayToWin.cz hazard?",
-    a: "Ne. PayToWin.cz není hazardní hra. Nehraje se o skutečné peníze, herní mince nemají reálnou peněžní hodnotu a výhry nejdou vybrat. Jde o online deskovou hru a testovací herní projekt.",
+    q: "Je StartovníPole.cz hazard?",
+    a: "Ne. StartovníPole.cz není hazardní hra. Nehraje se o skutečné peníze, herní mince nemají reálnou peněžní hodnotu a výhry nejdou vybrat. Jde o online deskovou hru a testovací herní projekt.",
   },
   {
     q: "Je hra vhodná i pro děti?",
@@ -51,7 +41,7 @@ const faq: { q: string; a: string }[] = [
   },
   {
     q: "Musím za hru platit?",
-    a: "Ne. Demo a testování hry je zdarma. Název PayToWin je satirický a odkazuje na herní svět, kde se pořád něco platí, kupuje, riskuje a zachraňuje na poslední chvíli.",
+    a: "Ne. Demo a testování hry je zdarma.",
   },
   {
     q: "Jak se hra hraje?",
@@ -75,7 +65,7 @@ const faq: { q: string; a: string }[] = [
   },
   {
     q: "Proč se ve hře tolik řeší peníze?",
-    a: "Protože PayToWin je satirická kampaň o světě, kde všechno něco stojí. Koně, závody, odvody, chyby i druhé šance. Peníze jsou herní prostředek, ne skutečná měna.",
+    a: "Protože je to satirická hra o světě, kde všechno něco stojí. Koně, závody, odvody, chyby i druhé šance. Peníze jsou herní prostředek, ne skutečná měna.",
   },
   {
     q: "Co znamená beta verze?",
@@ -90,16 +80,12 @@ const faq: { q: string; a: string }[] = [
     a: "Možná ano. Nejaktivnější a nejužitečnější testeři se můžou propsat přímo do hry — třeba jako jméno koně, závodníka nebo později auta. Není to garantovaná odměna pro každého, spíš poděkování lidem, kteří hře opravdu pomůžou.",
   },
   {
-    q: "Kdo za PayToWin.cz stojí?",
-    a: "Za PayToWin.cz stojí hlavně Hynek (czhyenacz) Dařbujan a pár lidí kolem něj, kteří se nebojí testovat, kritizovat a zkoušet divné nápady. Další projekty najdeš na darbujan.com.",
-  },
-  {
-    q: "Proč se hra jmenuje PayToWin?",
-    a: "Název je ironie. Ve hře se pořád platí, kupuje, riskuje a zachraňuje poslední šance. Neznamená to, že hráči platí skutečné peníze za výhru.",
+    q: "Kdo za StartovníPole.cz stojí?",
+    a: "Za StartovníPole.cz stojí hlavně Hynek (czhyenacz) Dařbujan a pár lidí kolem něj, kteří se nebojí testovat, kritizovat a zkoušet divné nápady. Další projekty najdeš na darbujan.com.",
   },
   {
     q: "Co bude dál?",
-    a: "Nejdřív se stabilizuje první kampaň PayToWin: pravidla, mobilní ovládání, bot, multiplayer a základní mapy. Potom může RaceToWin engine růst o další mapy, kampaně, závodníky, auta nebo komunitní obsah.",
+    a: "Nejdřív se stabilizuje aktuální kampaň: pravidla, mobilní ovládání, bot, multiplayer a základní mapy. Potom může přibýt dalších map, kampaní, závodníků, aut nebo komunitního obsahu.",
   },
 ];
 
@@ -151,8 +137,7 @@ export default function FaqPage() {
               FAQ — časté otázky ke StartovníPole.cz
             </h1>
             <p className="text-sm leading-relaxed text-stone-300 sm:text-[15px]">
-              StartovníPole.cz je česká online závodní deskovka ve vývoji, navazující na původní
-              projekt PayToWin. První kampaň PayToWin běží na RaceToWin enginu a kombinuje tahovou
+              StartovníPole.cz je česká online závodní deskovka ve vývoji. Kombinuje tahovou
               deskovku, nákup koní, závody, risk, banku, odvody a špatná rozhodnutí. Tady jsou
               nejčastější otázky, které můžou zajímat nové hráče, testery i náhodné kolemjdoucí.
             </p>

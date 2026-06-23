@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
   },
   title: "StartovníPole.cz – česká multiplayer závodní deskovka",
-  description: "Multiplayerová desková hra v prohlížeči. Kupuj závodníky, riskuj v závodech a přežij finanční chaos. Hraj online s přáteli. StartovníPole.cz navazuje na původní projekt PayToWin.",
+  description: "Multiplayerová desková hra v prohlížeči. Kupuj závodníky, riskuj v závodech a přežij finanční chaos. Hraj online s přáteli.",
   openGraph: {
     title: "StartovníPole.cz – česká multiplayer závodní deskovka",
     description: "Multiplayerová desková hra v prohlížeči. Kupuj závodníky, riskuj v závodech a přežij finanční chaos.",

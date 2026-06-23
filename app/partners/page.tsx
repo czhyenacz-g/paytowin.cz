@@ -59,7 +59,7 @@ export default function PartnersPage() {
         {/* Úvod */}
         <div className="rounded-2xl border border-slate-700 bg-slate-800/60 px-5 py-5 text-sm text-slate-300 leading-relaxed space-y-2">
           <p>
-            <strong className="text-white">StartovníPole.cz</strong> je závodní online deskovka inspirovaná dostihy a motoristickými závody, navazující na původní projekt PayToWin.
+            <strong className="text-white">StartovníPole.cz</strong> je závodní online deskovka inspirovaná dostihy a motoristickými závody.
             Hráči staví stáje, kupují závodníky, sázejí a soupeří v multiplayer hrách v reálném čase.
           </p>
           <p className="text-slate-400">
@@ -132,7 +132,7 @@ export default function PartnersPage() {
             </p>
           </div>
           <a
-            href="mailto:info@paytowin.cz?subject=Partnerství PayToWin.cz"
+            href="mailto:info@paytowin.cz?subject=Partnerství StartovníPole.cz"
             className="inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-500 transition"
           >
             ✉️ info@paytowin.cz

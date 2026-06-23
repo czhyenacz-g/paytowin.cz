@@ -57,7 +57,7 @@ export default function TesteriPage() {
                 Wanted: testeři hry StartovníPole.cz
               </h1>
               <p className="max-w-2xl text-base leading-relaxed text-stone-300 sm:text-lg">
-                Hledám pár lidí na beta testování české online deskovky StartovníPole.cz (navazuje na PayToWin). Zahraj demo hry, zkus mobil i desktop a napiš, co je nejasné, zábavné nebo rozbité.
+                Hledám pár lidí na beta testování české online deskovky StartovníPole.cz. Zahraj demo hry, zkus mobil i desktop a napiš, co je nejasné, zábavné nebo rozbité.
               </p>
               <p className="max-w-2xl text-sm leading-relaxed text-stone-400 sm:text-[15px]">
                 Nečekej hotovou hru. Čekej bugy, divné situace, boty, co občas udělají hloupost, a pravidla, která se ještě ladí.

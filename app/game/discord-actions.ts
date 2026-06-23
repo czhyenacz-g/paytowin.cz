@@ -56,11 +56,11 @@ export async function notifyDiscordNewGameAction(params: NotifyParams): Promise<
     content: "",
     embeds: [{
       title:       `🏁 Nová hra ${params.gameCode}`,
-      description: "Na PayToWin.cz byla založena nová online hra.",
+      description: "Na StartovníPole.cz byla založena nová online hra.",
       color:       0xf59e0b,
       fields,
       url:         gameUrl,
-      footer:      { text: "PayToWin.cz" },
+      footer:      { text: "StartovníPole.cz" },
     }],
     components: [{
       type: 1,

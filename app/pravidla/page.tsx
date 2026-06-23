@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Pravidla hry | StartovníPole.cz — kampaň PayToWin",
-  description: "Jak se hraje StartovníPole.cz: raceři, peníze, závody, riziko, výhry a druhé šance. Kampaň PayToWin postavená na enginu RaceToWin.",
+  title: "Pravidla hry | StartovníPole.cz — kampaň RaceToWin",
+  description: "Jak se hraje StartovníPole.cz: raceři, peníze, závody, riziko, výhry a druhé šance.",
 };
 
 const cardClass = "rounded-[28px] border border-amber-200/15 bg-[#15110e]/92 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-sm";
@@ -32,12 +32,12 @@ export default function PravidlaPage() {
         <section className={`${cardClass} overflow-hidden`}>
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.16),transparent_40%),radial-gradient(circle_at_bottom_right,rgba(120,53,15,0.28),transparent_45%)]" />
           <div className="relative space-y-3">
-            <div className={sectionTitle}>StartovníPole.cz · kampaň PayToWin · engine RaceToWin</div>
+            <div className={sectionTitle}>StartovníPole.cz · kampaň RaceToWin · engine PayToWin</div>
             <h1 className="font-serif text-4xl font-semibold leading-[0.95] tracking-[-0.04em] text-amber-50 sm:text-5xl">
               🎮 Jak hrát
             </h1>
             <p className="text-sm leading-relaxed text-stone-400">
-              Rychlá pravidla první kampaně postavené na enginu RaceToWin.
+              Rychlá pravidla první kampaně.
             </p>
           </div>
         </section>
@@ -157,7 +157,7 @@ export default function PravidlaPage() {
               <li>Velké závody pro všechny hráče</li>
               <li>Speciální podmínky pro jejich spuštění</li>
               <li>Další typy karet a eventů</li>
-              <li>Nové kampaně na enginu RaceToWin</li>
+              <li>Nové kampaně a mapy</li>
             </ul>
           </section>
 
