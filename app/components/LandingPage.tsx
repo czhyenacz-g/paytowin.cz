@@ -1414,6 +1414,14 @@ export default function LandingPage() {
                           </div>
                         )}
                       </div>
+                      {!discordUser && (
+                        <button
+                          onClick={loginWithDiscord}
+                          className="shrink-0 rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-800"
+                        >
+                          🎮 Přihlásit přes Discord
+                        </button>
+                      )}
                     </div>
 
                     {/* Stats grid */}
