@@ -899,6 +899,9 @@ export default function LandingPage() {
                 </p>
 
                 <p className="mt-2 text-xs text-amber-100/70">Závody, sázky a finanční chaos.</p>
+                <p className="mt-1 text-xs text-amber-100/50">
+                  Nenásilná rodinná deskovka pro hráče od 5 do 120 let. Bez krve, bez instalace — jen kostka, náhoda a kamarádi, kteří ti stejně škodí.
+                </p>
               </div>
 
               <MapMenuStrip

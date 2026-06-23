@@ -46,6 +46,10 @@ const faq: { q: string; a: string }[] = [
     a: "Ne. PayToWin.cz není hazardní hra. Nehraje se o skutečné peníze, herní mince nemají reálnou peněžní hodnotu a výhry nejdou vybrat. Jde o online deskovou hru a testovací herní projekt.",
   },
   {
+    q: "Je hra vhodná i pro děti?",
+    a: "Ano. StartovníPole.cz je nenásilná závodní deskovka s kostkou, náhodou a jednoduchými rozhodnutími. Přesný věk záleží na dítěti, ale cílíme na hru, kterou zvládnou děti, rodiče i prarodiče — klidně od 5 do 120 let.",
+  },
+  {
     q: "Musím za hru platit?",
     a: "Ne. Demo a testování hry je zdarma. Název PayToWin je satirický a odkazuje na herní svět, kde se pořád něco platí, kupuje, riskuje a zachraňuje na poslední chvíli.",
   },

@@ -16,6 +16,9 @@ const REGULAR_BENEFITS: BenefitItem[] = [
   { text: "Začni na počítači, pokračuj z mobilu." },
   { text: "Škodolibost starých deskovek bez celého odpoledne u stolu." },
   { text: "Když odejdeš od počítače, nemusíš odejít ze hry." },
+  { text: "Bez násilí, bez krve. Jen kostka, náhoda a kamarádi, kteří ti stejně budou škodit." },
+  { text: "Od 5 do 120 let. Nad 120 doporučujeme hrát s doprovodem." },
+  { text: "David Attenborough by to možná popsal jako vzácný souboj o přežití v cílové rovince." },
 ];
 
 const QUICK_GAME_ITEM: BenefitItem = {
