@@ -350,7 +350,7 @@ export default function MapMenuStrip({ onPanelClick, currentXp, isLoggedIn = fal
                   <span style={{ fontSize: "22px", lineHeight: 1 }}>{lockState.reason === "time" ? "🌓" : "🔒"}</span>
                   <span className="rounded-full border border-amber-300/35 bg-black/70 px-2.5 py-0.5 text-[10px] font-black tracking-[0.18em] uppercase text-amber-100 shadow-sm">Zamčeno</span>
                   <span className="text-[8px] tracking-wide text-amber-100/70 text-center leading-tight px-1.5">
-                    {lockState.shortLabel ?? "Vyžaduje odemknutí"}
+                    {lockState.shortLabel ?? "Hraj pro odemčení"}
                   </span>
                 </div>
               )}
