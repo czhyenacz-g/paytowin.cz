@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { getRequiredXpForPanel, isUnlockedByXp, formatUnlockMessage } from "@/lib/map-unlocks";
+import { getPanelLockState } from "@/lib/map-unlocks";
 
 /**
  * MapMenuStrip — game-mode select / hlavní menu landing page.
@@ -39,15 +39,6 @@ interface MapMenuStripProps {
   currentXp?: number | null;
   /** True pokud je hráč přihlášen přes Discord. */
   isLoggedIn?: boolean;
-}
-
-/** Vrátí true pokud je panel XP-odemčený (nebo je to dev/bez XP požadavku). */
-function isPanelXpUnlocked(panelId: string, currentXp: number | null | undefined, isDev: boolean): boolean {
-  if (isDev) return true;
-  const required = getRequiredXpForPanel(panelId);
-  if (required === 0) return true;
-  if (currentXp == null) return false;
-  return isUnlockedByXp(currentXp, required);
 }
 
 const PANELS: Panel[] = [
@@ -177,7 +168,7 @@ export default function MapMenuStrip({ onPanelClick, currentXp, isLoggedIn = fal
                   <p className="mt-0.5 text-[9px] tracking-wide text-white/75 truncate">{sel.location}</p>
                 )}
                 {sel.desc && (
-                  <p className="mt-0.5 text-[11px] leading-tight text-white/50 truncate">{sel.desc}</p>
+                  <p className="mt-0.5 text-[11px] leading-snug line-clamp-2 break-words text-white/50">{sel.desc}</p>
                 )}
               </div>
 
@@ -198,15 +189,15 @@ export default function MapMenuStrip({ onPanelClick, currentXp, isLoggedIn = fal
         {dropdownOpen && (
           <div className="flex flex-col divide-y divide-black/40 border-t border-black/50">
             {PANELS.map((panel) => {
-              const isLocked = !isPanelXpUnlocked(panel.id, currentXp, isDev);
+              const lockState = getPanelLockState(panel.id, currentXp, isLoggedIn, isDev);
+              const isLocked = lockState.locked;
               const isNavigable = !!onPanelClick || !!panel.href;
               const isAvailable = panel.available;
               const isSelected = panel.id === selectedId;
 
               const handleClick = () => {
                 if (isLocked) {
-                  const msg = formatUnlockMessage(panel.id, getRequiredXpForPanel(panel.id), currentXp ?? null, isLoggedIn);
-                  showLockToast(msg);
+                  if (lockState.message) showLockToast(lockState.message);
                   return;
                 }
                 dismissLockToast();
@@ -248,15 +239,18 @@ export default function MapMenuStrip({ onPanelClick, currentXp, isLoggedIn = fal
 
                     {/* Obsah */}
                     <div className="relative z-10 flex-1 min-w-0 py-2.5">
-                      <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex items-start gap-2 min-w-0">
                         <span className="text-base leading-none shrink-0">{panel.emoji}</span>
-                        <span className="text-sm font-bold text-white truncate">{panel.label}</span>
+                        <span className="text-sm font-bold text-white leading-snug line-clamp-2 break-words">{panel.label}</span>
                         {isSelected && (
                           <span className="shrink-0 text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full" style={{ background: panel.accentColor + "33", color: panel.accentColor }}>✓</span>
                         )}
                       </div>
                       {panel.location && (
                         <p className="mt-0 text-[9px] tracking-wide text-white/65 truncate">{panel.location}</p>
+                      )}
+                      {isLocked && lockState.shortLabel && (
+                        <p className="mt-0.5 text-[9px] font-semibold tracking-wide text-amber-200/80">{lockState.shortLabel}</p>
                       )}
                     </div>
 
@@ -289,14 +283,14 @@ export default function MapMenuStrip({ onPanelClick, currentXp, isLoggedIn = fal
         {PANELS.map((panel, idx) => {
           const isHovered = hovered === idx;
           const isLast = idx === PANELS.length - 1;
-          const isLocked = !isPanelXpUnlocked(panel.id, currentXp, isDev);
+          const lockState = getPanelLockState(panel.id, currentXp, isLoggedIn, isDev);
+          const isLocked = lockState.locked;
           const isNavigable = !!onPanelClick || !!panel.href;
           const isAvailable = panel.available;
 
           const handleClick = () => {
             if (isLocked) {
-              const msg = formatUnlockMessage(panel.id, getRequiredXpForPanel(panel.id), currentXp ?? null, isLoggedIn);
-              showLockToast(msg);
+              if (lockState.message) showLockToast(lockState.message);
               return;
             }
             dismissLockToast();
@@ -353,9 +347,11 @@ export default function MapMenuStrip({ onPanelClick, currentXp, isLoggedIn = fal
               {/* ZAMKNUTO overlay */}
               {isLocked && (
                 <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-1.5 bg-black/40 pb-[20%] pointer-events-none select-none">
-                  <span style={{ fontSize: "22px", lineHeight: 1 }}>🔒</span>
+                  <span style={{ fontSize: "22px", lineHeight: 1 }}>{lockState.reason === "time" ? "🌓" : "🔒"}</span>
                   <span className="rounded-full border border-amber-300/35 bg-black/70 px-2.5 py-0.5 text-[10px] font-black tracking-[0.18em] uppercase text-amber-100 shadow-sm">Zamčeno</span>
-                  <span className="text-[8px] tracking-wide text-amber-100/70 text-center leading-tight px-1">Vyžaduje odemknutí</span>
+                  <span className="text-[8px] tracking-wide text-amber-100/70 text-center leading-tight px-1.5">
+                    {lockState.shortLabel ?? "Vyžaduje odemknutí"}
+                  </span>
                 </div>
               )}
 
@@ -388,7 +384,7 @@ export default function MapMenuStrip({ onPanelClick, currentXp, isLoggedIn = fal
               {/* Bottom: label + CTA / Brzy */}
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 via-black/55 to-transparent px-3 pt-10 pb-4 z-10">
                 <div
-                  className="text-sm font-bold leading-tight truncate transition-opacity duration-300 tracking-wide text-amber-50 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]"
+                  className="text-sm font-bold leading-snug line-clamp-2 break-words transition-opacity duration-300 tracking-wide text-amber-50 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]"
                   style={{ opacity: isHovered ? 1 : (isAvailable ? 0.98 : 0.56) }}
                 >
                   {panel.label}
@@ -396,7 +392,7 @@ export default function MapMenuStrip({ onPanelClick, currentXp, isLoggedIn = fal
 
                 {isAvailable && panel.desc && (
                   <div
-                    className="text-xs leading-tight truncate mt-0.5 transition-opacity duration-300 text-amber-50/72"
+                    className="text-xs leading-snug line-clamp-2 break-words mt-0.5 transition-opacity duration-300 text-amber-50/72"
                     style={{ opacity: isHovered ? 1 : (isAvailable ? 0.92 : 0) }}
                   >
                     {panel.desc}

@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import { generateGameCode, PLAYER_COLORS } from "@/lib/game";
 import { DEFAULT_STARTING_COINS } from "@/lib/game-constants";
+import { isNightTime } from "@/lib/map-unlocks";
 
 const GUEST_ADJECTIVES = [
   "Rychlý", "Statečný", "Chytrý", "Šikovný", "Drzý",
@@ -26,19 +27,21 @@ export type QuickGameResult =
   | { ok: false; reason: string };
 
 /**
- * Vytvoří quick game: 1 host + 1 bot, výchozí mapa horse-day, game_mode=online.
+ * Vytvoří quick game: 1 host + 1 bot, mapa horse-day/horse-night podle reálného
+ * času hráče (noc 20:00–7:00), game_mode=online.
  * Ukládá playerId do localStorage. Kompatibilní s invite/join flow.
  */
 export async function createQuickGame(): Promise<QuickGameResult> {
   const code = generateGameCode();
   const startingCoins = DEFAULT_STARTING_COINS;
+  const themeId = isNightTime() ? "horse-night" : "horse-day";
 
   const { data: game, error: gameErr } = await supabase
     .from("games")
     .insert({
       code,
       status: "waiting",
-      theme_id: "horse-day",
+      theme_id: themeId,
       board_id: "small-stadium",
       game_mode: "online",
       owner_discord_id: null,
