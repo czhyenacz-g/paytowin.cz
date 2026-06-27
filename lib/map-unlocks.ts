@@ -22,7 +22,7 @@ const TIME_GATED_PANELS: Record<string, "day" | "night"> = {
   "mapa-2": "night", // Noční dostihy
 };
 
-const NIGHT_START_HOUR = 20; // 20:00
+const NIGHT_START_HOUR = 19; // 19:00
 const NIGHT_END_HOUR = 7;    // 7:00
 
 /** Vrátí true, pokud je podle lokálního času prohlížeče právě noc (20:00–7:00). */
@@ -120,6 +120,19 @@ export function getPanelLockState(
   date: Date = new Date(),
 ): PanelLockState {
   if (isDev) return { locked: false, reason: null, shortLabel: null, message: null };
+
+  if (panelId === "mapa-1" || panelId === "mapa-2") {
+    if (isTimeLocked(panelId, date)) {
+      return {
+        locked: true,
+        reason: "time",
+        shortLabel: getTimeLockShortLabel(panelId),
+        message: formatTimeLockMessage(panelId),
+      };
+    }
+
+    return { locked: false, reason: null, shortLabel: null, message: null };
+  }
 
   if (isTimeLocked(panelId, date)) {
     return {
