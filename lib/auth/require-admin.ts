@@ -1,5 +1,6 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export type AdminContext = {
@@ -22,15 +23,12 @@ export async function isAdminUser(userId: string): Promise<boolean> {
   return !!data;
 }
 
-export async function requireAuthenticatedUser(): Promise<AdminContext> {
+export async function requireAuthenticatedUser(): Promise<AdminContext | null> {
   const supabase = await createSupabaseServerClient();
   const { data: { user }, error } = await supabase.auth.getUser();
 
-  if (error) {
-    throw new Error("Přihlášení je vyžadováno.");
-  }
-  if (!user) {
-    throw new Error("Přihlášení je vyžadováno.");
+  if (error || !user) {
+    return null;
   }
 
   return {
@@ -45,12 +43,12 @@ export async function requireAdminWithResolvers(
 ): Promise<AdminContext> {
   const user = await getUser();
   if (!user) {
-    throw new Error("Přihlášení je vyžadováno.");
+    redirect("/");
   }
 
   const admin = await checkAdmin(user.userId);
   if (!admin) {
-    throw new Error("Přístup zamítnut.");
+    redirect("/");
   }
 
   return user;
