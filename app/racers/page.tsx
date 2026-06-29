@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { listRacersAction } from "@/app/admin/racers/actions";
-import { racerProfilesToConfigs } from "@/lib/racers/builtInRacers";
+import { getRacerCatalogSections } from "@/lib/racers/catalog";
 import RacersGallery from "@/app/components/racers/RacersGallery";
+import MyStableSection from "@/app/components/racers/MyStableSection";
 
 export const metadata: Metadata = {
   title: "Závodníci | StartovníPole.cz",
@@ -11,8 +11,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function RacersPage() {
-  const profiles = await listRacersAction({ isBuiltin: true, isPublic: true });
-  const racers = racerProfilesToConfigs(profiles);
+  const sections = await getRacerCatalogSections();
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -20,10 +19,13 @@ export default async function RacersPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-black text-slate-900">Závodníci</h1>
           <p className="mt-1 text-sm text-slate-500">
-            {racers.length} dostupných závodníků — vyber si svého favorita
+            Katalog rozdělený na běžné raceře, legendy a unikátní perma kusy.
           </p>
         </div>
-        <RacersGallery racers={racers} />
+        <div className="mb-8">
+          <MyStableSection />
+        </div>
+        <RacersGallery sections={sections} />
       </div>
     </main>
   );

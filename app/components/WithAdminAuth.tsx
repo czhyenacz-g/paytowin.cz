@@ -8,6 +8,7 @@ type AuthState = "loading" | "unauthenticated" | "unauthorized" | "authorized";
 /**
  * WithAdminAuth — generický auth gate pro admin stránky.
  * Renderuje children místo AdminPanel (jinak identický s AdminAuth).
+ * TODO: UI gate není bezpečnostní hranice; skutečné ověření dělá server-side requireAdmin().
  */
 export default function WithAdminAuth({ children }: { children: React.ReactNode }) {
   const [state, setState] = React.useState<AuthState>("loading");

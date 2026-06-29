@@ -19,12 +19,28 @@ import {
   updateRacer,
   deleteRacer,
 } from "@/lib/racers/repository";
+import {
+  getOwnedPermaRacers,
+  getPermaRacerBySlug,
+  getPermaRacerAssets,
+  getPermaRacersForSale,
+  listAllPermaRacers,
+  assignPermaRacerToUser,
+  reservePermaRacerForUser,
+  markPermaRacerSold,
+  updatePermaRacerDetails,
+  upsertPermaRacerAsset,
+  getGamePoolRacers,
+  getLegendPoolRacers,
+} from "@/lib/racers/catalog";
 import { uploadRacerImage } from "@/lib/racers/storage";
 import { seedBuiltinRacers, resetBuiltinRacers } from "@/lib/racers/seed-builtin";
 import { resolveRacerRefs } from "@/lib/racers/resolver";
 import type { RacerRef } from "@/lib/racers/resolver";
 import type { RacerProfile, RacerProfileInsert, RacerProfileUpdate } from "@/lib/racers/types";
+import type { PermaRacer, RacerUniqueDetail, RacerAsset } from "@/lib/racers/catalog";
 import type { RacerConfig } from "@/lib/themes";
+import { requireAdmin } from "@/lib/auth/require-admin";
 
 // ─── Read ─────────────────────────────────────────────────────────────────────
 
@@ -38,6 +54,71 @@ export async function listRacersAction(opts?: {
 
 export async function getRacerByIdAction(id: string): Promise<RacerProfile | null> {
   return getRacerById(id);
+}
+
+export async function getOwnedPermaRacersAction(ownerId: string): Promise<PermaRacer[]> {
+  return getOwnedPermaRacers(ownerId);
+}
+
+export async function getPermaRacerBySlugAction(slug: string): Promise<RacerUniqueDetail | null> {
+  return getPermaRacerBySlug(slug);
+}
+
+export async function getPermaRacerAssetsAction(uniqueRacerId: string): Promise<RacerAsset[]> {
+  return getPermaRacerAssets(uniqueRacerId);
+}
+
+export async function getPermaRacersForSaleAction() {
+  return getPermaRacersForSale();
+}
+
+export async function listAllPermaRacersAction() {
+  await requireAdmin();
+  return listAllPermaRacers();
+}
+
+export async function getGamePoolRacersAction() {
+  return getGamePoolRacers();
+}
+
+export async function getLegendPoolRacersAction() {
+  return getLegendPoolRacers();
+}
+
+export async function assignPermaRacerToUserAction(uniqueRacerId: string, userId: string) {
+  await requireAdmin();
+  return assignPermaRacerToUser(uniqueRacerId, userId);
+}
+
+export async function reservePermaRacerForUserAction(uniqueRacerId: string, userId: string) {
+  await requireAdmin();
+  return reservePermaRacerForUser(uniqueRacerId, userId);
+}
+
+export async function markPermaRacerSoldAction(uniqueRacerId: string, userId: string) {
+  await requireAdmin();
+  return markPermaRacerSold(uniqueRacerId, userId);
+}
+
+export async function adminAssignPermaRacerToUser(uniqueRacerId: string, userId: string) {
+  return assignPermaRacerToUserAction(uniqueRacerId, userId);
+}
+
+export async function adminReservePermaRacerForUser(uniqueRacerId: string, userId: string) {
+  return reservePermaRacerForUserAction(uniqueRacerId, userId);
+}
+
+export async function updatePermaRacerDetailsAction(
+  uniqueRacerId: string,
+  update: Parameters<typeof updatePermaRacerDetails>[1],
+) {
+  await requireAdmin();
+  return updatePermaRacerDetails(uniqueRacerId, update);
+}
+
+export async function upsertPermaRacerAssetAction(uniqueRacerId: string, assetType: "front_image" | "side_image" | "idle_animation" | "token_image" | "badge_icon", path: string) {
+  await requireAdmin();
+  return upsertPermaRacerAsset(uniqueRacerId, assetType, path);
 }
 
 // ─── Write ────────────────────────────────────────────────────────────────────

@@ -1,131 +1,80 @@
 "use client";
 
-import { useState } from "react";
-import type { RacerConfig } from "@/lib/themes";
-import type { RacerType } from "@/lib/racers/types";
-import { RACER_TYPE_ORDER, RACER_TYPE_LABELS } from "@/lib/racers/types";
-import RacerDetailCard from "@/app/components/editor/RacerDetailCard";
+import type { RacerProfile } from "@/lib/racers/types";
+import type { RacerCatalogSection, RacerUnique } from "@/lib/racers/catalog";
+import { RACER_TYPE_LABELS } from "@/lib/racers/types";
 
 interface Props {
-  racers: RacerConfig[];
+  sections: RacerCatalogSection[];
 }
 
-function RacerGridCard({ racer, selected, onClick }: { racer: RacerConfig; selected: boolean; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full text-left rounded-xl border-2 transition-all overflow-hidden ${
-        selected
-          ? "border-amber-400 shadow-md shadow-amber-100"
-          : "border-slate-200 hover:border-slate-300 hover:shadow-sm"
-      }`}
-    >
-      <div className="bg-slate-100 flex items-center justify-center" style={{ aspectRatio: "1 / 1" }}>
-        {racer.image ? (
-          <img src={racer.image} alt={racer.name} className="w-full h-full object-cover" />
+function RacerCard({ racer, href }: { racer: RacerProfile | RacerUnique; href?: string }) {
+  const isPerma = "sale_status" in racer;
+  const body = (
+    <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm hover:shadow-md transition">
+      <div className="aspect-square bg-slate-100 flex items-center justify-center">
+        {"imageUrl" in racer && racer.imageUrl ? (
+          <img src={racer.imageUrl} alt={racer.name} className="h-full w-full object-cover" />
         ) : (
-          <span className="text-4xl select-none">{racer.emoji}</span>
+          <div className="text-5xl select-none">🏁</div>
         )}
       </div>
-      <div className="px-2.5 py-2">
-        <div className="text-xs font-bold text-slate-800 truncate">{racer.name}</div>
-        <div className="flex items-center gap-1 mt-0.5">
-          <span className="text-[10px] text-slate-400">Rychlost</span>
-          <span className="text-[10px] font-semibold text-slate-600">{racer.speed}</span>
-          {racer.isLegendary && (
-            <span className="ml-auto text-[9px] font-bold text-amber-500">✦</span>
-          )}
+      <div className="p-3">
+        <div className="text-sm font-bold text-slate-900">{racer.name}</div>
+        <div className="mt-1 text-[11px] text-slate-500">
+          {"type" in racer ? RACER_TYPE_LABELS[racer.type] : racer.rarity}
         </div>
-      </div>
-    </button>
-  );
-}
-
-export default function RacersGallery({ racers }: Props) {
-  const [selectedId, setSelectedId] = useState<string>(racers[0]?.id ?? "");
-  const [activeType, setActiveType] = useState<RacerType | "all">("all");
-
-  const typesPresent = RACER_TYPE_ORDER.filter((t) =>
-    t !== "unset" && racers.some((r) => r.racerType === t)
-  );
-
-  const filtered = activeType === "all"
-    ? racers
-    : racers.filter((r) => r.racerType === activeType);
-
-  const selectedRacer = racers.find((r) => r.id === selectedId) ?? filtered[0] ?? null;
-
-  function handleFilterChange(type: RacerType | "all") {
-    setActiveType(type);
-    const first = type === "all" ? racers[0] : racers.find((r) => r.racerType === type);
-    if (first) setSelectedId(first.id);
-  }
-
-  return (
-    <div className="flex flex-col lg:flex-row gap-6">
-
-      {/* Left: filters + grid */}
-      <div className="flex-1 min-w-0">
-
-        {/* Type filter pills */}
-        {typesPresent.length > 1 && (
-          <div className="flex flex-wrap gap-2 mb-5">
-            <button
-              onClick={() => handleFilterChange("all")}
-              className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
-                activeType === "all"
-                  ? "bg-slate-800 text-white"
-                  : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300"
-              }`}
-            >
-              Všichni ({racers.length})
-            </button>
-            {typesPresent.map((t) => {
-              const count = racers.filter((r) => r.racerType === t).length;
-              return (
-                <button
-                  key={t}
-                  onClick={() => handleFilterChange(t)}
-                  className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
-                    activeType === t
-                      ? "bg-slate-800 text-white"
-                      : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300"
-                  }`}
-                >
-                  {RACER_TYPE_LABELS[t]} ({count})
-                </button>
-              );
-            })}
+        {isPerma && (
+          <div className="mt-1 flex flex-wrap gap-1 text-[10px] font-semibold">
+            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-amber-800">Permanentní</span>
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-700">{racer.status}</span>
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-700">{racer.sale_status}</span>
           </div>
         )}
-
-        {/* Grid */}
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-          {filtered.map((r) => (
-            <RacerGridCard
-              key={r.id}
-              racer={r}
-              selected={r.id === selectedId}
-              onClick={() => setSelectedId(r.id)}
-            />
-          ))}
-        </div>
       </div>
+    </div>
+  );
 
-      {/* Right: detail card */}
-      <div className="w-full lg:w-72 xl:w-80 shrink-0">
-        <div className="sticky top-6 rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-          {selectedRacer ? (
-            <RacerDetailCard racer={selectedRacer} />
-          ) : (
-            <div className="flex flex-col items-center justify-center py-16 text-slate-300">
-              <span className="text-5xl mb-3">🏁</span>
-              <span className="text-sm font-medium">Vyber závodníka</span>
+  if (!href) return body;
+  return <a href={href}>{body}</a>;
+}
+
+export default function RacersGallery({ sections }: Props) {
+  return (
+    <div className="space-y-10">
+      {sections.map((section) => (
+        <section key={section.species} className="space-y-4">
+          <div>
+            <h2 className="text-2xl font-black text-slate-900">{section.label}</h2>
+            <p className="text-sm text-slate-500">Běžní raceři, legendy a permanentní kusy odděleně.</p>
+          </div>
+
+          <div className="space-y-6">
+            <div>
+              <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">Běžní raceři</h3>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                {section.gameRacers.map((r) => <RacerCard key={r.id} racer={r} />)}
+              </div>
             </div>
-          )}
-        </div>
-      </div>
 
+            <div>
+              <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">Legendy / event raceři</h3>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                {section.legendRacers.map((r) => <RacerCard key={r.id} racer={r} />)}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">K prodeji</h3>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                {section.permaForSale.map((u) => (
+                  <RacerCard key={u.id} racer={u} href={`/racers/perma/${u.slug}`} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      ))}
     </div>
   );
 }
