@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import WithAdminAuth from "@/app/components/WithAdminAuth";
 import PermaRacerAdminPanel from "@/app/components/racers/PermaRacerAdminPanel";
-import { requireAdmin } from "@/lib/auth/require-admin";
 
 export const metadata: Metadata = {
   title: "Perma raceři | Admin",
@@ -10,9 +9,7 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminPermaRacersPage() {
-  await requireAdmin();
-
+export default function AdminPermaRacersPage() {
   return (
     <WithAdminAuth>
       <main className="min-h-screen bg-slate-50 px-4 py-8">
