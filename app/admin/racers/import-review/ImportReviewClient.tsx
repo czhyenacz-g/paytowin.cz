@@ -2,7 +2,14 @@
 
 import React, { useState, useTransition } from "react";
 import { type RacerImportReviewItem } from "@/lib/racers/import-review";
-import { saveImportReviewItemAction, exportRacerDraftAction } from "./actions";
+import {
+  saveImportReviewItemAction,
+  exportRacerDraftAction,
+  saveClassicLegendReviewItemAction,
+  exportClassicLegendDraftAction,
+} from "./actions";
+
+export type ImportGroup = "horses" | "classic-legend";
 
 type Category = "race" | "work" | "perma" | "unknown";
 type FilterValue = "all" | Category;
@@ -10,8 +17,14 @@ type FilterValue = "all" | Category;
 const COLOR_OPTIONS = [
   { value: "", label: "—" },
   { value: "bělouš", label: "bělouš" },
+  { value: "bělka", label: "bělka" },
   { value: "hnědák", label: "hnědák" },
+  { value: "hnědka", label: "hnědka" },
+  { value: "tmavá hnědka", label: "tmavá hnědka" },
+  { value: "tmavý hnědák", label: "tmavý hnědák" },
   { value: "ryzák", label: "ryzák" },
+  { value: "ryzka", label: "ryzka" },
+  { value: "ryzák s lysinou", label: "ryzák s lysinou" },
   { value: "vraník", label: "vraník" },
   { value: "strakáč", label: "strakáč" },
   { value: "šedák", label: "šedák" },
@@ -28,15 +41,19 @@ const ROLE_OPTIONS = [
   { value: "pomalejší s vysokou staminou", label: "pomalejší s vysokou staminou" },
   { value: "pracovní tahoun", label: "pracovní tahoun" },
   { value: "perma unikát", label: "perma unikát" },
+  { value: "classic_legend", label: "classic_legend" },
 ];
 
 const RARITY_OPTIONS = [
   { value: "", label: "—" },
   { value: "common", label: "common" },
+  { value: "uncommon", label: "uncommon" },
   { value: "rare", label: "rare" },
   { value: "epic", label: "epic" },
   { value: "legendary", label: "legendary" },
+  { value: "legendary_classic", label: "legendary_classic" },
   { value: "unique", label: "unique" },
+  { value: "premium", label: "premium" },
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -77,9 +94,10 @@ function buildEditState(item: RacerImportReviewItem): EditState {
 interface Props {
   items: RacerImportReviewItem[];
   isDev: boolean;
+  group: ImportGroup;
 }
 
-export default function ImportReviewClient({ items, isDev }: Props) {
+export default function ImportReviewClient({ items, isDev, group }: Props) {
   const [filter, setFilter] = useState<FilterValue>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editMap, setEditMap] = useState<Record<string, EditState>>(() => {
@@ -92,8 +110,10 @@ export default function ImportReviewClient({ items, isDev }: Props) {
   const [isPending, startTransition] = useTransition();
   const [exportStatus, setExportStatus] = useState<"idle" | "exporting" | "ok" | "error">("idle");
   const [exportError, setExportError] = useState<string | null>(null);
-  const [exportWarnings, setExportWarnings] = useState<string[] | null>(null);
+  const [exportMsg, setExportMsg] = useState<string | null>(null);
   const [exportValidationErrors, setExportValidationErrors] = useState<string[] | null>(null);
+
+  const isClassicLegend = group === "classic-legend";
 
   const categories: FilterValue[] = ["all", "race", "work", "perma", "unknown"];
 
@@ -111,11 +131,7 @@ export default function ImportReviewClient({ items, isDev }: Props) {
 
   function updateEdit(field: keyof EditState, value: string | number | null) {
     if (!selectedId) return;
-    setEditMap((prev) => ({
-      ...prev,
-      [selectedId]: { ...prev[selectedId], [field]: value },
-    }));
-    // Reset save status on change
+    setEditMap((prev) => ({ ...prev, [selectedId]: { ...prev[selectedId], [field]: value } }));
     setSaveStatus((prev) => ({ ...prev, [selectedId]: "idle" }));
   }
 
@@ -124,7 +140,8 @@ export default function ImportReviewClient({ items, isDev }: Props) {
     setSaveStatus((prev) => ({ ...prev, [selectedId]: "saving" }));
     const updates = editMap[selectedId] ?? {};
     startTransition(async () => {
-      const result = await saveImportReviewItemAction(selectedId, updates);
+      const action = isClassicLegend ? saveClassicLegendReviewItemAction : saveImportReviewItemAction;
+      const result = await action(selectedId, updates);
       if (result.ok) {
         setSaveStatus((prev) => ({ ...prev, [selectedId!]: "ok" }));
       } else {
@@ -134,101 +151,81 @@ export default function ImportReviewClient({ items, isDev }: Props) {
     });
   }
 
-  function applyPreset(preset: "sprinter" | "vytrvalec" | "tahoun" | "perma_unique") {
+  function applyPreset(preset: "sprinter" | "vytrvalec" | "tahoun" | "perma_unique" | "classic_legend") {
     if (!selectedId) return;
     const current = editMap[selectedId] ?? {};
-
     let updates: Partial<EditState> = {};
 
     if (preset === "sprinter") {
-      updates = {
-        confirmedRole: "sprinter",
-        confirmedType: "race",
-        speed: 9,
-        maxStamina: 4,
-        rarity: current.rarity ?? "common",
-        price: current.price ?? 100,
-        flavorText: current.flavorText ?? "Rychlý start, krátký dech.",
-      };
+      updates = { confirmedRole: "sprinter", confirmedType: "race", speed: 9, maxStamina: 4, rarity: current.rarity ?? "common", price: current.price ?? 100, flavorText: current.flavorText ?? "Rychlý start, krátký dech." };
     } else if (preset === "vytrvalec") {
-      updates = {
-        confirmedRole: "vytrvalec",
-        confirmedType: "race",
-        speed: 6,
-        maxStamina: 9,
-        rarity: current.rarity ?? "common",
-        price: current.price ?? 120,
-        flavorText: current.flavorText ?? "Nespěchá. On ví, že ostatní časem odpadnou.",
-      };
+      updates = { confirmedRole: "vytrvalec", confirmedType: "race", speed: 6, maxStamina: 9, rarity: current.rarity ?? "common", price: current.price ?? 120, flavorText: current.flavorText ?? "Nespěchá. On ví, že ostatní časem odpadnou." };
     } else if (preset === "tahoun") {
-      updates = {
-        confirmedRole: "pracovní tahoun",
-        confirmedType: "work",
-        speed: 4,
-        maxStamina: 10,
-        rarity: current.rarity ?? "rare",
-        price: current.price ?? 150,
-        flavorText: current.flavorText ?? "Možná není nejrychlejší, ale utáhne i špatný den.",
-      };
+      updates = { confirmedRole: "pracovní tahoun", confirmedType: "work", speed: 4, maxStamina: 10, rarity: current.rarity ?? "rare", price: current.price ?? 150, flavorText: current.flavorText ?? "Možná není nejrychlejší, ale utáhne i špatný den." };
     } else if (preset === "perma_unique") {
-      updates = {
-        confirmedRole: "perma unikát",
-        confirmedType: "perma",
-        rarity: "unique",
-        price: current.price ?? 500,
-        flavorText: current.flavorText ?? "Jeden kus. Jedna stáj. Jedna legenda.",
-      };
+      updates = { confirmedRole: "perma unikát", confirmedType: "perma", rarity: "unique", price: current.price ?? 500, flavorText: current.flavorText ?? "Jeden kus. Jedna stáj. Jedna legenda." };
+    } else if (preset === "classic_legend") {
+      updates = { confirmedRole: "classic_legend", confirmedType: "horse", rarity: "legendary_classic", poolType: "classic_legend", spawnSource: "historical_stable_card" };
     }
 
-    setEditMap((prev) => ({
-      ...prev,
-      [selectedId]: {
-        ...prev[selectedId],
-        ...updates,
-      },
-    }));
+    setEditMap((prev) => ({ ...prev, [selectedId]: { ...prev[selectedId], ...updates } }));
     setSaveStatus((prev) => ({ ...prev, [selectedId]: "idle" }));
   }
 
   function handleExport() {
     if (!isDev) return;
 
-    // Client-side validation on all items
-    const errors: string[] = [];
-    for (const item of items) {
-      const e = editMap[item.id] ?? {};
-      const missing: string[] = [];
-      if (!e.displayName) missing.push("displayName");
-      if (!e.slug) missing.push("slug");
-      if (missing.length > 0) {
-        errors.push(`${item.id}: ${missing.join(", ")}`);
+    if (!isClassicLegend) {
+      // Pardubice: client-side validation
+      const errors: string[] = [];
+      for (const item of items) {
+        const e = editMap[item.id] ?? {};
+        const missing: string[] = [];
+        if (!e.displayName) missing.push("displayName");
+        if (!e.slug) missing.push("slug");
+        if (missing.length > 0) errors.push(`${item.id}: ${missing.join(", ")}`);
       }
-    }
-
-    if (errors.length > 0) {
-      setExportValidationErrors(errors);
-      setExportStatus("idle");
-      return;
+      if (errors.length > 0) {
+        setExportValidationErrors(errors);
+        setExportStatus("idle");
+        return;
+      }
     }
 
     setExportValidationErrors(null);
     setExportStatus("exporting");
     setExportError(null);
-    setExportWarnings(null);
+    setExportMsg(null);
 
     startTransition(async () => {
-      const result = await exportRacerDraftAction();
-      if (result.ok) {
-        setExportStatus("ok");
-        setExportWarnings(result.warnings ?? null);
+      if (isClassicLegend) {
+        const result = await exportClassicLegendDraftAction();
+        if (result.ok) {
+          setExportStatus("ok");
+          setExportMsg(result.count !== undefined ? `Exportováno ${result.count} koní.` : null);
+        } else {
+          setExportStatus("error");
+          setExportError(result.error ?? "Neznámá chyba při exportu.");
+        }
       } else {
-        setExportStatus("error");
-        setExportError(result.error ?? "Neznámá chyba při exportu.");
+        const result = await exportRacerDraftAction();
+        if (result.ok) {
+          setExportStatus("ok");
+          if (result.warnings && result.warnings.length > 0) {
+            setExportMsg(result.warnings.join("\n"));
+          }
+        } else {
+          setExportStatus("error");
+          setExportError(result.error ?? "Neznámá chyba při exportu.");
+        }
       }
     });
   }
 
   const status = selectedId ? (saveStatus[selectedId] ?? "idle") : "idle";
+
+  const draftFile = isClassicLegend ? "horses-classic-legend.draft.json" : "horses.racers-draft.json";
+  const reviewFile = isClassicLegend ? "horses-classic-legend.review.json" : "horses.review.json";
 
   return (
     <div className="space-y-4">
@@ -236,7 +233,7 @@ export default function ImportReviewClient({ items, isDev }: Props) {
       {isDev ? (
         <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           <strong>Lokální review mód:</strong> Změny se ukládají do{" "}
-          <code className="font-mono">data/racer-imports/horses.review.json</code>. Používej lokálně a commitni výsledek do gitu.
+          <code className="font-mono">data/racer-imports/{reviewFile}</code>. Používej lokálně a commitni výsledek do gitu.
         </div>
       ) : (
         <div className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">
@@ -269,7 +266,7 @@ export default function ImportReviewClient({ items, isDev }: Props) {
             <div>
               <h2 className="text-sm font-semibold text-slate-700">Export racer draftu</h2>
               <p className="text-xs text-slate-500">
-                Zapíše <code className="font-mono">horses.racers-draft.json</code> z aktuálně uloženého review.
+                Zapíše <code className="font-mono">{draftFile}</code> z aktuálně uloženého review.
                 Neuložené změny v editoru se nepřenesou — nejdřív ulož každého koně.
               </p>
             </div>
@@ -286,9 +283,7 @@ export default function ImportReviewClient({ items, isDev }: Props) {
             <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 space-y-1">
               <p className="font-semibold">Export nelze provést. Chybí povinná pole:</p>
               <ul className="list-disc list-inside text-xs space-y-0.5">
-                {exportValidationErrors.map((err) => (
-                  <li key={err}>{err}</li>
-                ))}
+                {exportValidationErrors.map((err) => <li key={err}>{err}</li>)}
               </ul>
             </div>
           )}
@@ -296,13 +291,7 @@ export default function ImportReviewClient({ items, isDev }: Props) {
           {exportStatus === "ok" && (
             <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
               <p className="font-semibold">Draft exportován ✓</p>
-              {exportWarnings && exportWarnings.length > 0 && (
-                <ul className="mt-1 list-disc list-inside text-xs space-y-0.5">
-                  {exportWarnings.map((w) => (
-                    <li key={w}>{w}</li>
-                  ))}
-                </ul>
-              )}
+              {exportMsg && <p className="mt-1 text-xs whitespace-pre-wrap">{exportMsg}</p>}
             </div>
           )}
 
@@ -332,7 +321,6 @@ export default function ImportReviewClient({ items, isDev }: Props) {
                       : "border-slate-200 hover:border-slate-300"
                   }`}
                 >
-                  {/* Image */}
                   <div className="aspect-square w-full overflow-hidden bg-slate-100">
                     <img
                       src={item.targetPath}
@@ -341,8 +329,6 @@ export default function ImportReviewClient({ items, isDev }: Props) {
                       loading="lazy"
                     />
                   </div>
-
-                  {/* Info */}
                   <div className="flex flex-col gap-1 p-2">
                     <div className="flex items-center justify-between gap-1">
                       <span className="truncate text-xs font-mono text-slate-400">{item.id}</span>
@@ -356,7 +342,7 @@ export default function ImportReviewClient({ items, isDev }: Props) {
                       {e.speed != null && <span>spd {e.speed}</span>}
                       {e.maxStamina != null && <span>sta {e.maxStamina}</span>}
                       {e.rarity && (
-                        <span className="rounded bg-indigo-50 px-1 text-indigo-600">
+                        <span className={`rounded px-1 ${e.rarity === "legendary_classic" ? "bg-amber-50 text-amber-700" : "bg-indigo-50 text-indigo-600"}`}>
                           {e.rarity}
                         </span>
                       )}
@@ -371,7 +357,6 @@ export default function ImportReviewClient({ items, isDev }: Props) {
         {/* Edit panel */}
         {selectedItem && (
           <div className="w-80 shrink-0 rounded-xl border border-slate-200 bg-white p-4 shadow-sm space-y-4 sticky top-4 self-start max-h-[calc(100vh-6rem)] overflow-y-auto">
-            {/* Header image */}
             <div className="aspect-square w-full overflow-hidden rounded-lg bg-slate-100">
               <img
                 src={selectedItem.targetPath}
@@ -380,7 +365,6 @@ export default function ImportReviewClient({ items, isDev }: Props) {
               />
             </div>
 
-            {/* Read-only meta */}
             <div className="space-y-1 text-xs text-slate-500 font-mono bg-slate-50 rounded-lg p-3">
               <div><span className="text-slate-400">id: </span>{selectedItem.id}</div>
               <div className="truncate"><span className="text-slate-400">target: </span>{selectedItem.targetPath}</div>
@@ -388,6 +372,9 @@ export default function ImportReviewClient({ items, isDev }: Props) {
               <div><span className="text-slate-400">suggested: </span>
                 <CategoryBadge category={selectedItem.suggestedCategory} />
               </div>
+              {selectedItem.poolType && (
+                <div><span className="text-slate-400">poolType: </span>{selectedItem.poolType}</div>
+              )}
             </div>
 
             {/* Quick presets */}
@@ -395,30 +382,27 @@ export default function ImportReviewClient({ items, isDev }: Props) {
               <div className="space-y-2">
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Rychlé presety</p>
                 <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => applyPreset("sprinter")}
-                    className="rounded-lg border border-blue-200 bg-blue-50 px-2 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors text-left"
-                  >
-                    ⚡ Sprinter
-                  </button>
-                  <button
-                    onClick={() => applyPreset("vytrvalec")}
-                    className="rounded-lg border border-green-200 bg-green-50 px-2 py-1.5 text-xs font-semibold text-green-700 hover:bg-green-100 transition-colors text-left"
-                  >
-                    🏃 Vytrvalec
-                  </button>
-                  <button
-                    onClick={() => applyPreset("tahoun")}
-                    className="rounded-lg border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-100 transition-colors text-left"
-                  >
-                    🐎 Tahoun
-                  </button>
-                  <button
-                    onClick={() => applyPreset("perma_unique")}
-                    className="rounded-lg border border-purple-200 bg-purple-50 px-2 py-1.5 text-xs font-semibold text-purple-700 hover:bg-purple-100 transition-colors text-left"
-                  >
-                    ✦ Perma unique
-                  </button>
+                  {!isClassicLegend && (
+                    <>
+                      <button onClick={() => applyPreset("sprinter")} className="rounded-lg border border-blue-200 bg-blue-50 px-2 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors text-left">
+                        ⚡ Sprinter
+                      </button>
+                      <button onClick={() => applyPreset("vytrvalec")} className="rounded-lg border border-green-200 bg-green-50 px-2 py-1.5 text-xs font-semibold text-green-700 hover:bg-green-100 transition-colors text-left">
+                        🏃 Vytrvalec
+                      </button>
+                      <button onClick={() => applyPreset("tahoun")} className="rounded-lg border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-100 transition-colors text-left">
+                        🐎 Tahoun
+                      </button>
+                      <button onClick={() => applyPreset("perma_unique")} className="rounded-lg border border-purple-200 bg-purple-50 px-2 py-1.5 text-xs font-semibold text-purple-700 hover:bg-purple-100 transition-colors text-left">
+                        ✦ Perma unique
+                      </button>
+                    </>
+                  )}
+                  {isClassicLegend && (
+                    <button onClick={() => applyPreset("classic_legend")} className="col-span-2 rounded-lg border border-amber-300 bg-amber-50 px-2 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-100 transition-colors text-left">
+                      ★ Classic legend (nastaví rarity + poolType)
+                    </button>
+                  )}
                 </div>
                 <p className="text-xs text-slate-400">Preset upraví formulář, ale neuloží automaticky.</p>
               </div>
@@ -427,145 +411,46 @@ export default function ImportReviewClient({ items, isDev }: Props) {
             {/* Editable fields */}
             <div className="space-y-3">
               <Field label="Jméno (displayName)">
-                <input
-                  type="text"
-                  value={edit.displayName ?? ""}
-                  onChange={(e) => updateEdit("displayName", e.target.value || null)}
-                  disabled={!isDev}
-                  className="input-field"
-                  placeholder="např. Blesk"
-                />
+                <input type="text" value={edit.displayName ?? ""} onChange={(e) => updateEdit("displayName", e.target.value || null)} disabled={!isDev} className="input-field" placeholder="např. Fantôme" />
               </Field>
-
               <Field label="Slug">
-                <input
-                  type="text"
-                  value={edit.slug ?? ""}
-                  onChange={(e) => updateEdit("slug", e.target.value || null)}
-                  disabled={!isDev}
-                  className="input-field"
-                  placeholder="např. blesk"
-                />
+                <input type="text" value={edit.slug ?? ""} onChange={(e) => updateEdit("slug", e.target.value || null)} disabled={!isDev} className="input-field" placeholder="např. fantome" />
               </Field>
-
-              <Field label="Typ (confirmedType)">
-                <input
-                  type="text"
-                  value={edit.confirmedType ?? ""}
-                  onChange={(e) => updateEdit("confirmedType", e.target.value || null)}
-                  disabled={!isDev}
-                  className="input-field"
-                  placeholder="např. horse"
-                />
-              </Field>
-
               <Field label="Barva (confirmedColor)">
-                <select
-                  value={edit.confirmedColor ?? ""}
-                  onChange={(e) => updateEdit("confirmedColor", e.target.value || null)}
-                  disabled={!isDev}
-                  className="input-field"
-                >
-                  {COLOR_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
+                <select value={edit.confirmedColor ?? ""} onChange={(e) => updateEdit("confirmedColor", e.target.value || null)} disabled={!isDev} className="input-field">
+                  {COLOR_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </Field>
-
               <Field label="Role (confirmedRole)">
-                <select
-                  value={edit.confirmedRole ?? ""}
-                  onChange={(e) => updateEdit("confirmedRole", e.target.value || null)}
-                  disabled={!isDev}
-                  className="input-field"
-                >
-                  {ROLE_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
+                <select value={edit.confirmedRole ?? ""} onChange={(e) => updateEdit("confirmedRole", e.target.value || null)} disabled={!isDev} className="input-field">
+                  {ROLE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </Field>
-
               <Field label="Rychlost (speed)">
-                <input
-                  type="number"
-                  value={edit.speed ?? ""}
-                  onChange={(e) => updateEdit("speed", e.target.value === "" ? null : Number(e.target.value))}
-                  disabled={!isDev}
-                  className="input-field"
-                  placeholder="—"
-                />
+                <input type="number" value={edit.speed ?? ""} onChange={(e) => updateEdit("speed", e.target.value === "" ? null : Number(e.target.value))} disabled={!isDev} className="input-field" placeholder="—" />
               </Field>
-
               <Field label="Max stamina (maxStamina)">
-                <input
-                  type="number"
-                  value={edit.maxStamina ?? ""}
-                  onChange={(e) => updateEdit("maxStamina", e.target.value === "" ? null : Number(e.target.value))}
-                  disabled={!isDev}
-                  className="input-field"
-                  placeholder="—"
-                />
+                <input type="number" value={edit.maxStamina ?? ""} onChange={(e) => updateEdit("maxStamina", e.target.value === "" ? null : Number(e.target.value))} disabled={!isDev} className="input-field" placeholder="—" />
               </Field>
-
               <Field label="Cena (price)">
-                <input
-                  type="number"
-                  value={edit.price ?? ""}
-                  onChange={(e) => updateEdit("price", e.target.value === "" ? null : Number(e.target.value))}
-                  disabled={!isDev}
-                  className="input-field"
-                  placeholder="—"
-                />
+                <input type="number" value={edit.price ?? ""} onChange={(e) => updateEdit("price", e.target.value === "" ? null : Number(e.target.value))} disabled={!isDev} className="input-field" placeholder="—" />
               </Field>
-
               <Field label="Raritu (rarity)">
-                <select
-                  value={edit.rarity ?? ""}
-                  onChange={(e) => updateEdit("rarity", e.target.value || null)}
-                  disabled={!isDev}
-                  className="input-field"
-                >
-                  {RARITY_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
+                <select value={edit.rarity ?? ""} onChange={(e) => updateEdit("rarity", e.target.value || null)} disabled={!isDev} className="input-field">
+                  {RARITY_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </Field>
-
               <Field label="Flavor text (veřejný text na kartě)">
-                <textarea
-                  value={edit.flavorText ?? ""}
-                  onChange={(e) => updateEdit("flavorText", e.target.value || null)}
-                  disabled={!isDev}
-                  className="input-field resize-none"
-                  rows={2}
-                  placeholder="Krátký veřejný text..."
-                />
+                <textarea value={edit.flavorText ?? ""} onChange={(e) => updateEdit("flavorText", e.target.value || null)} disabled={!isDev} className="input-field resize-none" rows={2} placeholder="Krátký veřejný text..." />
               </Field>
-
               <Field label="Příběh / lore (story)">
-                <textarea
-                  value={edit.story ?? ""}
-                  onChange={(e) => updateEdit("story", e.target.value || null)}
-                  disabled={!isDev}
-                  className="input-field resize-none"
-                  rows={4}
-                  placeholder="Delší lore nebo příběh koně..."
-                />
+                <textarea value={edit.story ?? ""} onChange={(e) => updateEdit("story", e.target.value || null)} disabled={!isDev} className="input-field resize-none" rows={4} placeholder="Delší lore nebo příběh koně..." />
               </Field>
-
               <Field label="Interní poznámka (nezobrazovat hráčům)">
-                <textarea
-                  value={edit.notes ?? ""}
-                  onChange={(e) => updateEdit("notes", e.target.value || null)}
-                  disabled={!isDev}
-                  className="input-field resize-none"
-                  rows={2}
-                  placeholder="Poznámka pro interní použití..."
-                />
+                <textarea value={edit.notes ?? ""} onChange={(e) => updateEdit("notes", e.target.value || null)} disabled={!isDev} className="input-field resize-none" rows={2} placeholder="Poznámka pro interní použití..." />
               </Field>
             </div>
 
-            {/* Save button */}
             {isDev && (
               <div className="space-y-1">
                 <button
@@ -575,18 +460,12 @@ export default function ImportReviewClient({ items, isDev }: Props) {
                 >
                   {status === "saving" ? "Ukládám…" : "Uložit změny"}
                 </button>
-                {status === "ok" && (
-                  <p className="text-center text-xs text-green-600 font-medium">Uloženo ✓</p>
-                )}
-                {status === "error" && (
-                  <p className="text-center text-xs text-red-600">{saveError[selectedId!] ?? "Chyba při ukládání"}</p>
-                )}
+                {status === "ok" && <p className="text-center text-xs text-green-600 font-medium">Uloženo ✓</p>}
+                {status === "error" && <p className="text-center text-xs text-red-600">{saveError[selectedId!] ?? "Chyba při ukládání"}</p>}
               </div>
             )}
 
-            {!isDev && (
-              <p className="text-center text-xs text-slate-400">Read-only v produkci</p>
-            )}
+            {!isDev && <p className="text-center text-xs text-slate-400">Read-only v produkci</p>}
           </div>
         )}
       </div>

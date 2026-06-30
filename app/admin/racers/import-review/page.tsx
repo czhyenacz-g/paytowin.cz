@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import WithAdminAuth from "@/app/components/WithAdminAuth";
-import { loadImportReviewAction } from "./actions";
-import ImportReviewClient from "./ImportReviewClient";
+import { loadImportReviewAction, loadClassicLegendImportReviewAction } from "./actions";
+import ImportReviewClient, { type ImportGroup } from "./ImportReviewClient";
 
 export const metadata: Metadata = {
   title: "Import review — koně | Admin",
@@ -10,8 +11,23 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminRacerImportReviewPage() {
-  const items = await loadImportReviewAction();
+const GROUPS: { value: ImportGroup; label: string }[] = [
+  { value: "horses", label: "Pardubice koně" },
+  { value: "classic-legend", label: "Classic legend" },
+];
+
+export default async function AdminRacerImportReviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ group?: string }>;
+}) {
+  const { group: groupParam } = await searchParams;
+  const group: ImportGroup = groupParam === "classic-legend" ? "classic-legend" : "horses";
+
+  const items = group === "classic-legend"
+    ? await loadClassicLegendImportReviewAction()
+    : await loadImportReviewAction();
+
   const isDev = process.env.NODE_ENV !== "production";
 
   return (
@@ -24,7 +40,28 @@ export default async function AdminRacerImportReviewPage() {
               Prohlíž a doplňuj metadata importovaných obrázků koní.
             </p>
           </div>
-          <ImportReviewClient items={items} isDev={isDev} />
+
+          {/* Group tabs */}
+          <div className="flex gap-2 border-b border-slate-200 pb-1">
+            {GROUPS.map((g) => (
+              <Link
+                key={g.value}
+                href={`/admin/racers/import-review?group=${g.value}`}
+                className={`rounded-t-lg px-4 py-2 text-sm font-semibold transition-colors ${
+                  group === g.value
+                    ? "bg-white border border-b-white border-slate-200 text-slate-900 -mb-px"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                {g.label}
+                <span className="ml-1.5 text-xs opacity-60">
+                  ({group === g.value ? items.length : "…"})
+                </span>
+              </Link>
+            ))}
+          </div>
+
+          <ImportReviewClient items={items} isDev={isDev} group={group} />
         </div>
       </main>
     </WithAdminAuth>

@@ -1,7 +1,7 @@
 "use server";
 
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { loadDraftManifest } from "@/lib/racers/import-review";
+import { loadDraftManifest, loadClassicLegendDraftManifest } from "@/lib/racers/import-review";
 
 // ─── Import race/work koní do tabulky racers ──────────────────────────────────
 
@@ -9,12 +9,6 @@ export type ImportRaceWorkResult =
   | { ok: true; inserted: number; errors: string[] }
   | { ok: false; error: string };
 
-/**
- * importRaceWorkHorsesAction — upsertuje game_pool + work koně do tabulky `racers`.
- *
- * Bezpečné pro opakované spuštění (ON CONFLICT (id) DO UPDATE).
- * Nastavuje is_builtin=true, is_public=true, owner_id=null.
- */
 export async function importRaceWorkHorsesAction(): Promise<ImportRaceWorkResult> {
   const draft = loadDraftManifest();
   if (!draft) {
@@ -63,12 +57,6 @@ export type ImportPermaResult =
   | { ok: true; templates: number; uniques: number; errors: string[] }
   | { ok: false; error: string };
 
-/**
- * importPermaHorsesAction — upsertuje perma_unique koně do `racer_templates` a `racer_uniques`.
- *
- * Bezpečné pro opakované spuštění (ON CONFLICT DO UPDATE).
- * Nastavuje status=draft, sale_status=hidden, availability_status=draft, owner_user_id=null.
- */
 export async function importPermaHorsesAction(): Promise<ImportPermaResult> {
   const draft = loadDraftManifest();
   if (!draft) {
@@ -84,7 +72,6 @@ export async function importPermaHorsesAction(): Promise<ImportPermaResult> {
     const templateId = "tmpl-" + item.slug;
     const uniqueId   = "uniq-" + item.slug;
 
-    // 1. Upsert do racer_templates
     const templateRow = {
       id:          templateId,
       species_id:  "horse",
@@ -103,12 +90,10 @@ export async function importPermaHorsesAction(): Promise<ImportPermaResult> {
 
     if (tmplError) {
       errors.push(`[template] ${item.slug}: ${tmplError.message}`);
-      // Přeskoč unique pokud template selhal — FK by selhala
       continue;
     }
     templates++;
 
-    // 2. Upsert do racer_uniques
     const uniqueRow = {
       id:                  uniqueId,
       template_id:         templateId,
@@ -118,6 +103,76 @@ export async function importPermaHorsesAction(): Promise<ImportPermaResult> {
       sale_status:         "hidden",
       rarity:              item.rarity ?? "unique",
       description:         item.story  ?? null,
+      owner_user_id:       null,
+      availability_status: "draft",
+    };
+
+    const { error: uniqError } = await supabaseAdmin
+      .from("racer_uniques")
+      .upsert(uniqueRow, { onConflict: "id" });
+
+    if (uniqError) {
+      errors.push(`[unique] ${item.slug}: ${uniqError.message}`);
+    } else {
+      uniques++;
+    }
+  }
+
+  return { ok: true, templates, uniques, errors };
+}
+
+// ─── Import classic legend koní do racer_templates + racer_uniques ───────────
+
+export type ImportClassicLegendResult =
+  | { ok: true; templates: number; uniques: number; errors: string[] }
+  | { ok: false; error: string };
+
+export async function importClassicLegendHorsesAction(): Promise<ImportClassicLegendResult> {
+  const draft = loadClassicLegendDraftManifest();
+  if (!draft) {
+    return { ok: false, error: "Classic legend draft neexistuje. Nejdřív ho vygeneruj na /admin/racers/import-review?group=classic-legend." };
+  }
+
+  const horses = draft.filter((d) => d.kind === "classic_legend");
+  const errors: string[] = [];
+  let templates = 0;
+  let uniques = 0;
+
+  for (const item of horses) {
+    const templateId = "tmpl-cl-" + item.slug;
+    const uniqueId   = "uniq-cl-" + item.slug;
+
+    const templateRow = {
+      id:          templateId,
+      species_id:  "horse",
+      name:        item.displayName,
+      slug:        "cl-" + item.slug,
+      category:    "classic_legend",
+      pool_type:   "classic_legend",
+      rarity:      item.rarity ?? "legendary_classic",
+      description: item.flavorText ?? null,
+      is_active:   false,
+    };
+
+    const { error: tmplError } = await supabaseAdmin
+      .from("racer_templates")
+      .upsert(templateRow, { onConflict: "id" });
+
+    if (tmplError) {
+      errors.push(`[template] ${item.slug}: ${tmplError.message}`);
+      continue;
+    }
+    templates++;
+
+    const uniqueRow = {
+      id:                  uniqueId,
+      template_id:         templateId,
+      name:                item.displayName,
+      slug:                "cl-" + item.slug,
+      status:              "draft",
+      sale_status:         "hidden",
+      rarity:              item.rarity ?? "legendary_classic",
+      description:         item.story  ?? item.flavorText ?? null,
       owner_user_id:       null,
       availability_status: "draft",
     };

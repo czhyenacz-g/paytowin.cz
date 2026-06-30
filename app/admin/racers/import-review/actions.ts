@@ -2,12 +2,37 @@
 
 import fs from "fs";
 import path from "path";
-import { mergeManifests, saveReviewItem, type RacerImportReviewItem, type RacerDraftItem } from "@/lib/racers/import-review";
+import {
+  mergeManifests,
+  saveReviewItem,
+  mergeClassicLegendManifests,
+  saveClassicLegendReviewItem,
+  exportClassicLegendRacerDraft,
+  type RacerImportReviewItem,
+  type RacerDraftItem,
+} from "@/lib/racers/import-review";
 
 const DRAFT_PATH = path.join(process.cwd(), "data/racer-imports/horses.racers-draft.json");
 
+// ─── Horses (pardubice) ───────────────────────────────────────────────────────
+
 export async function loadImportReviewAction(): Promise<RacerImportReviewItem[]> {
   return mergeManifests();
+}
+
+export async function saveImportReviewItemAction(
+  id: string,
+  updates: Partial<RacerImportReviewItem>
+): Promise<{ ok: boolean; error?: string }> {
+  if (process.env.NODE_ENV === "production") {
+    return { ok: false, error: "Editace není povolena v produkci." };
+  }
+  try {
+    saveReviewItem(id, updates);
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
 }
 
 export async function exportRacerDraftAction(): Promise<{ ok: boolean; error?: string; warnings?: string[] }> {
@@ -18,39 +43,22 @@ export async function exportRacerDraftAction(): Promise<{ ok: boolean; error?: s
   try {
     const merged = mergeManifests();
 
-    // Validate required fields
     const validationErrors: string[] = [];
     for (const item of merged) {
       const missing: string[] = [];
       if (!item.displayName) missing.push("displayName");
       if (!item.slug) missing.push("slug");
-      if (missing.length > 0) {
-        validationErrors.push(`${item.id}: ${missing.join(", ")}`);
-      }
+      if (missing.length > 0) validationErrors.push(`${item.id}: ${missing.join(", ")}`);
     }
 
     if (validationErrors.length > 0) {
-      return {
-        ok: false,
-        error: "Validace selhala. Chybí povinná pole:\n" + validationErrors.join("\n"),
-      };
+      return { ok: false, error: "Validace selhala. Chybí povinná pole:\n" + validationErrors.join("\n") };
     }
 
-    // Map to RacerDraftItem[]
     function determineKind(item: RacerImportReviewItem): RacerDraftItem["kind"] {
-      if (
-        item.suggestedCategory === "perma" ||
-        item.confirmedType === "perma" ||
-        item.rarity === "unique"
-      ) {
-        return "perma_unique";
-      }
-      if (item.suggestedCategory === "work" || item.confirmedType === "work") {
-        return "work";
-      }
-      if (item.suggestedCategory === "race" || item.confirmedType === "race") {
-        return "game_pool";
-      }
+      if (item.suggestedCategory === "perma" || item.confirmedType === "perma" || item.rarity === "unique") return "perma_unique";
+      if (item.suggestedCategory === "work" || item.confirmedType === "work") return "work";
+      if (item.suggestedCategory === "race" || item.confirmedType === "race") return "game_pool";
       return "unknown";
     }
 
@@ -86,9 +94,7 @@ export async function exportRacerDraftAction(): Promise<{ ok: boolean; error?: s
 
     const warnings: string[] = [];
     const unknownCount = draft.filter((d) => d.kind === "unknown").length;
-    if (unknownCount > 0) {
-      warnings.push(`${unknownCount} položek má kind = "unknown" — zkontroluj confirmedType.`);
-    }
+    if (unknownCount > 0) warnings.push(`${unknownCount} položek má kind = "unknown" — zkontroluj confirmedType.`);
 
     return { ok: true, warnings: warnings.length > 0 ? warnings : undefined };
   } catch (err) {
@@ -96,18 +102,30 @@ export async function exportRacerDraftAction(): Promise<{ ok: boolean; error?: s
   }
 }
 
-export async function saveImportReviewItemAction(
+// ─── Classic legend ───────────────────────────────────────────────────────────
+
+export async function loadClassicLegendImportReviewAction(): Promise<RacerImportReviewItem[]> {
+  return mergeClassicLegendManifests();
+}
+
+export async function saveClassicLegendReviewItemAction(
   id: string,
   updates: Partial<RacerImportReviewItem>
 ): Promise<{ ok: boolean; error?: string }> {
   if (process.env.NODE_ENV === "production") {
     return { ok: false, error: "Editace není povolena v produkci." };
   }
-
   try {
-    saveReviewItem(id, updates);
+    saveClassicLegendReviewItem(id, updates);
     return { ok: true };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : String(err) };
   }
+}
+
+export async function exportClassicLegendDraftAction(): Promise<{ ok: boolean; error?: string; count?: number }> {
+  if (process.env.NODE_ENV === "production") {
+    return { ok: false, error: "Export není povolen v produkci." };
+  }
+  return exportClassicLegendRacerDraft();
 }
