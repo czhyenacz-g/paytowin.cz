@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "next lint",
     "db:migrate": "bash _db/migrate.sh",
-    "test": "vitest run"
+    "test": "vitest run",
+    "racers:import-images": "node scripts/import-racer-images.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
