@@ -2,7 +2,7 @@
 
 import React, { useState, useTransition } from "react";
 import { type RacerImportReviewItem } from "@/lib/racers/import-review";
-import { saveImportReviewItemAction } from "./actions";
+import { saveImportReviewItemAction, exportRacerDraftAction } from "./actions";
 
 type Category = "race" | "work" | "perma" | "unknown";
 type FilterValue = "all" | Category;
@@ -90,6 +90,10 @@ export default function ImportReviewClient({ items, isDev }: Props) {
   const [saveStatus, setSaveStatus] = useState<Record<string, "idle" | "saving" | "ok" | "error">>({});
   const [saveError, setSaveError] = useState<Record<string, string>>({});
   const [isPending, startTransition] = useTransition();
+  const [exportStatus, setExportStatus] = useState<"idle" | "exporting" | "ok" | "error">("idle");
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [exportWarnings, setExportWarnings] = useState<string[] | null>(null);
+  const [exportValidationErrors, setExportValidationErrors] = useState<string[] | null>(null);
 
   const categories: FilterValue[] = ["all", "race", "work", "perma", "unknown"];
 
@@ -130,6 +134,100 @@ export default function ImportReviewClient({ items, isDev }: Props) {
     });
   }
 
+  function applyPreset(preset: "sprinter" | "vytrvalec" | "tahoun" | "perma_unique") {
+    if (!selectedId) return;
+    const current = editMap[selectedId] ?? {};
+
+    let updates: Partial<EditState> = {};
+
+    if (preset === "sprinter") {
+      updates = {
+        confirmedRole: "sprinter",
+        confirmedType: "race",
+        speed: 9,
+        maxStamina: 4,
+        rarity: current.rarity ?? "common",
+        price: current.price ?? 100,
+        flavorText: current.flavorText ?? "Rychlý start, krátký dech.",
+      };
+    } else if (preset === "vytrvalec") {
+      updates = {
+        confirmedRole: "vytrvalec",
+        confirmedType: "race",
+        speed: 6,
+        maxStamina: 9,
+        rarity: current.rarity ?? "common",
+        price: current.price ?? 120,
+        flavorText: current.flavorText ?? "Nespěchá. On ví, že ostatní časem odpadnou.",
+      };
+    } else if (preset === "tahoun") {
+      updates = {
+        confirmedRole: "pracovní tahoun",
+        confirmedType: "work",
+        speed: 4,
+        maxStamina: 10,
+        rarity: current.rarity ?? "rare",
+        price: current.price ?? 150,
+        flavorText: current.flavorText ?? "Možná není nejrychlejší, ale utáhne i špatný den.",
+      };
+    } else if (preset === "perma_unique") {
+      updates = {
+        confirmedRole: "perma unikát",
+        confirmedType: "perma",
+        rarity: "unique",
+        price: current.price ?? 500,
+        flavorText: current.flavorText ?? "Jeden kus. Jedna stáj. Jedna legenda.",
+      };
+    }
+
+    setEditMap((prev) => ({
+      ...prev,
+      [selectedId]: {
+        ...prev[selectedId],
+        ...updates,
+      },
+    }));
+    setSaveStatus((prev) => ({ ...prev, [selectedId]: "idle" }));
+  }
+
+  function handleExport() {
+    if (!isDev) return;
+
+    // Client-side validation on all items
+    const errors: string[] = [];
+    for (const item of items) {
+      const e = editMap[item.id] ?? {};
+      const missing: string[] = [];
+      if (!e.displayName) missing.push("displayName");
+      if (!e.slug) missing.push("slug");
+      if (missing.length > 0) {
+        errors.push(`${item.id}: ${missing.join(", ")}`);
+      }
+    }
+
+    if (errors.length > 0) {
+      setExportValidationErrors(errors);
+      setExportStatus("idle");
+      return;
+    }
+
+    setExportValidationErrors(null);
+    setExportStatus("exporting");
+    setExportError(null);
+    setExportWarnings(null);
+
+    startTransition(async () => {
+      const result = await exportRacerDraftAction();
+      if (result.ok) {
+        setExportStatus("ok");
+        setExportWarnings(result.warnings ?? null);
+      } else {
+        setExportStatus("error");
+        setExportError(result.error ?? "Neznámá chyba při exportu.");
+      }
+    });
+  }
+
   const status = selectedId ? (saveStatus[selectedId] ?? "idle") : "idle";
 
   return (
@@ -163,6 +261,59 @@ export default function ImportReviewClient({ items, isDev }: Props) {
           </button>
         ))}
       </div>
+
+      {/* Export section (dev only) */}
+      {isDev && (
+        <div className="rounded-lg border border-slate-200 bg-white p-4 space-y-3">
+          <div className="flex items-center gap-4 flex-wrap">
+            <div>
+              <h2 className="text-sm font-semibold text-slate-700">Export racer draftu</h2>
+              <p className="text-xs text-slate-500">
+                Zapíše <code className="font-mono">horses.racers-draft.json</code> z aktuálně uloženého review.
+                Neuložené změny v editoru se nepřenesou — nejdřív ulož každého koně.
+              </p>
+            </div>
+            <button
+              onClick={handleExport}
+              disabled={isPending || exportStatus === "exporting"}
+              className="shrink-0 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+            >
+              {exportStatus === "exporting" ? "Exportuji…" : "Exportovat racer draft"}
+            </button>
+          </div>
+
+          {exportValidationErrors && exportValidationErrors.length > 0 && (
+            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 space-y-1">
+              <p className="font-semibold">Export nelze provést. Chybí povinná pole:</p>
+              <ul className="list-disc list-inside text-xs space-y-0.5">
+                {exportValidationErrors.map((err) => (
+                  <li key={err}>{err}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {exportStatus === "ok" && (
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+              <p className="font-semibold">Draft exportován ✓</p>
+              {exportWarnings && exportWarnings.length > 0 && (
+                <ul className="mt-1 list-disc list-inside text-xs space-y-0.5">
+                  {exportWarnings.map((w) => (
+                    <li key={w}>{w}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+
+          {exportStatus === "error" && exportError && (
+            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+              <p className="font-semibold">Chyba při exportu:</p>
+              <pre className="mt-1 text-xs whitespace-pre-wrap">{exportError}</pre>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="flex gap-6">
         {/* Grid */}
@@ -238,6 +389,40 @@ export default function ImportReviewClient({ items, isDev }: Props) {
                 <CategoryBadge category={selectedItem.suggestedCategory} />
               </div>
             </div>
+
+            {/* Quick presets */}
+            {isDev && (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Rychlé presety</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => applyPreset("sprinter")}
+                    className="rounded-lg border border-blue-200 bg-blue-50 px-2 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors text-left"
+                  >
+                    ⚡ Sprinter
+                  </button>
+                  <button
+                    onClick={() => applyPreset("vytrvalec")}
+                    className="rounded-lg border border-green-200 bg-green-50 px-2 py-1.5 text-xs font-semibold text-green-700 hover:bg-green-100 transition-colors text-left"
+                  >
+                    🏃 Vytrvalec
+                  </button>
+                  <button
+                    onClick={() => applyPreset("tahoun")}
+                    className="rounded-lg border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-100 transition-colors text-left"
+                  >
+                    🐎 Tahoun
+                  </button>
+                  <button
+                    onClick={() => applyPreset("perma_unique")}
+                    className="rounded-lg border border-purple-200 bg-purple-50 px-2 py-1.5 text-xs font-semibold text-purple-700 hover:bg-purple-100 transition-colors text-left"
+                  >
+                    ✦ Perma unique
+                  </button>
+                </div>
+                <p className="text-xs text-slate-400">Preset upraví formulář, ale neuloží automaticky.</p>
+              </div>
+            )}
 
             {/* Editable fields */}
             <div className="space-y-3">

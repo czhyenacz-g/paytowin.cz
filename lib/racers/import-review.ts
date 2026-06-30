@@ -3,6 +3,7 @@ import path from "path";
 
 const GENERATED_PATH = path.join(process.cwd(), "data/racer-imports/horses.generated.json");
 const REVIEW_PATH = path.join(process.cwd(), "data/racer-imports/horses.review.json");
+const DRAFT_PATH = path.join(process.cwd(), "data/racer-imports/horses.racers-draft.json");
 
 export type RacerImportReviewItem = {
   id: string;
@@ -58,6 +59,38 @@ export function mergeManifests(): RacerImportReviewItem[] {
       notes: overrides.notes ?? item.notes ?? null,
     };
   });
+}
+
+export type RacerDraftItem = {
+  id: string;
+  kind: "game_pool" | "perma_unique" | "work" | "unknown";
+  displayName: string;
+  slug: string;
+  imageUrl: string;
+  imagePath: string;
+  species: "horse";
+  sourceCategory: "race" | "work" | "perma" | "unknown";
+  color: string | null;
+  role: string | null;
+  speed: number | null;
+  maxStamina: number | null;
+  price: number | null;
+  rarity: "common" | "rare" | "epic" | "legendary" | "unique" | null;
+  flavorText: string | null;
+  story: string | null;
+  internalNotes: string | null;
+  source: {
+    importId: string;
+    sourceFolder: string;
+    sourceFile: string;
+    targetPath: string;
+  };
+};
+
+export function loadDraftManifest(): RacerDraftItem[] | null {
+  if (!fs.existsSync(DRAFT_PATH)) return null;
+  const raw = fs.readFileSync(DRAFT_PATH, "utf-8");
+  return JSON.parse(raw) as RacerDraftItem[];
 }
 
 export function saveReviewItem(id: string, updates: Partial<RacerImportReviewItem>): void {
