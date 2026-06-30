@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import WithAdminAuth from "@/app/components/WithAdminAuth";
 import { loadDraftManifest, type RacerDraftItem } from "@/lib/racers/import-review";
+import ImportActions from "./ImportActions";
 
 export const metadata: Metadata = {
   title: "Racer draft export | Admin",
@@ -80,6 +81,12 @@ export default async function AdminRacerImportDraftPage() {
                   </div>
                 ))}
               </div>
+
+              {/* Import actions */}
+              <ImportActions
+                raceWorkCount={draft.filter((d) => d.kind === "game_pool" || d.kind === "work").length}
+                permaCount={draft.filter((d) => d.kind === "perma_unique").length}
+              />
 
               {/* Cards grid */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
