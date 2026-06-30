@@ -19,7 +19,9 @@ export type RacerImportReviewItem = {
   speed: number | null;
   maxStamina: number | null;
   price: number | null;
-  rarity: "common" | "rare" | "epic" | "legendary" | "unique" | null;
+  rarity: "common" | "uncommon" | "rare" | "epic" | "legendary" | "legendary_classic" | "unique" | "premium" | null;
+  poolType: "classic_legend" | null;
+  spawnSource: "historical_stable_card" | null;
   flavorText: string | null;
   story: string | null;
   notes: string | null;
@@ -75,7 +77,9 @@ export type RacerDraftItem = {
   speed: number | null;
   maxStamina: number | null;
   price: number | null;
-  rarity: "common" | "rare" | "epic" | "legendary" | "unique" | null;
+  rarity: "common" | "uncommon" | "rare" | "epic" | "legendary" | "legendary_classic" | "unique" | "premium" | null;
+  poolType: "classic_legend" | null;
+  spawnSource: "historical_stable_card" | null;
   flavorText: string | null;
   story: string | null;
   internalNotes: string | null;

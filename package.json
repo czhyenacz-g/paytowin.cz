@@ -10,7 +10,8 @@
     "lint": "next lint",
     "db:migrate": "bash _db/migrate.sh",
     "test": "vitest run",
-    "racers:import-images": "node scripts/import-racer-images.mjs"
+    "racers:import-images": "node scripts/import-racer-images.mjs",
+    "racers:import-classic-legend": "node scripts/import-classic-legend-images.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",

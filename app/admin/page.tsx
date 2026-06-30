@@ -35,6 +35,18 @@ export default function AdminPage() {
               status="active"
             />
             <AdminDashboardCard
+              title="Import review — koně"
+              description="Editace metadat importovaných obrázků koní, presety, export draft JSONu."
+              href="/admin/racers/import-review"
+              status="dev"
+            />
+            <AdminDashboardCard
+              title="Import draft — koně"
+              description="Read-only náhled exportovaného draft JSONu před zápisem do DB."
+              href="/admin/racers/import-draft"
+              status="dev"
+            />
+            <AdminDashboardCard
               title="Vývojové nástroje"
               description="Theme editor, debug nástroje — pouze localhost."
               href="/admin/themes/dev"

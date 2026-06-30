@@ -69,6 +69,8 @@ export async function exportRacerDraftAction(): Promise<{ ok: boolean; error?: s
       maxStamina: item.maxStamina ?? null,
       price: item.price ?? null,
       rarity: item.rarity ?? null,
+      poolType: item.poolType ?? null,
+      spawnSource: item.spawnSource ?? null,
       flavorText: item.flavorText ?? null,
       story: item.story ?? null,
       internalNotes: item.notes ?? null,

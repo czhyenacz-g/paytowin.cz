@@ -1,0 +1,437 @@
+# Historická stáj — classic legend horse draft
+# Purpose:
+# - These horses are not normal game-pool racers.
+# - They are not perma uniques owned permanently by a player.
+# - They are candidates for a future "Historická stáj" card:
+#   when the card is revealed, one horse from this pool can appear
+#   as a special in-game purchase opportunity.
+#
+# Shared recommended fields:
+# rarity: legendary_classic
+# poolType: classic_legend
+# spawnSource: historical_stable_card
+# maxPerGame: 1
+#
+# Notes:
+# - "verified" means the basic colour / placement was found in historical race records.
+# - "inferred" means the look is a safe stylization based on the name and nearby context.
+# - The generated portrait should not be presented as an exact likeness of the real historical horse.
+
+classicLegendHorses:
+  fantome:
+    displayName: "Fantôme"
+    slug: "fantome"
+    rarity: "legendary_classic"
+    poolType: "classic_legend"
+    spawnSource: "historical_stable_card"
+    confirmedType: "horse"
+    confirmedColor: "hnědák"
+    confirmedRole: "classic_legend"
+    speed: 7
+    maxStamina: 8
+    price: 1500
+    sourceYear: 1874
+    historicalNote: "Vítěz prvního ročníku Velké pardubické."
+    appearanceBasis: "verified"
+    visualDescription: "Elegantní tmavší hnědák starého steeplechase typu, černá hříva, jemnější hlava, ušlechtilý a historický výraz."
+    flavorText: "První stopa v historii."
+    story: "Fantôme patří do nejstarší vrstvy pardubických jmen. Ve hře by měl působit jako dostupnější historická legenda: ne nejsilnější, ale výjimečný tím, že otevírá celou linii slavné tradice."
+
+  gavora:
+    displayName: "Gavora"
+    slug: "gavora"
+    rarity: "legendary_classic"
+    poolType: "classic_legend"
+    spawnSource: "historical_stable_card"
+    confirmedType: "horse"
+    confirmedColor: "tmavá hnědka"
+    confirmedRole: "classic_legend"
+    speed: 6
+    maxStamina: 10
+    price: 1800
+    sourceYear: 1969
+    historicalNote: "Třetí ve Velké pardubické 1969."
+    appearanceBasis: "verified"
+    visualDescription: "Tmavá hnědka až seal-brown, černá hříva a nohy, zkušený a tvrdý překážkový typ."
+    flavorText: "Tmavá klisna s dlouhou pamětí."
+    story: "Gavora nepůsobí jako kůň pro rychlý efekt. Její síla je v odolnosti a zkušenosti, což z ní dělá výbornou kartu pro hráče, kteří chtějí vydržet déle než soupeři."
+
+  lady_anne:
+    displayName: "Lady Anne"
+    slug: "lady-anne"
+    rarity: "legendary_classic"
+    poolType: "classic_legend"
+    spawnSource: "historical_stable_card"
+    confirmedType: "horse"
+    confirmedColor: "ryzka"
+    confirmedRole: "classic_legend"
+    speed: 9
+    maxStamina: 10
+    price: 9000
+    sourceYear: 1891
+    historicalNote: "Vícenásobná vítězka Velké pardubické."
+    appearanceBasis: "verified"
+    visualDescription: "Výrazná měděná ryzka, jemnější klisna, lehčí sportovní stavba, bystrý pohled a historicky noblesní dojem."
+    flavorText: "Dáma, která se neptá na svolení."
+    story: "Lady Anne je jedna z nejsilnějších historických karet. Ve hře má působit jako vzácná legenda s kombinací rychlosti, elegance a výdrže."
+
+  pasek:
+    displayName: "Pasek"
+    slug: "pasek"
+    rarity: "legendary_classic"
+    poolType: "classic_legend"
+    spawnSource: "historical_stable_card"
+    confirmedType: "horse"
+    confirmedColor: "hnědák"
+    confirmedRole: "classic_legend"
+    speed: 7
+    maxStamina: 8
+    price: 2200
+    sourceYear: null
+    historicalNote: "Jméno převzaté z historického okruhu jmen; přesný vzhled zatím neověřen."
+    appearanceBasis: "inferred"
+    visualDescription: "Klasický hnědák s výraznější bílou lysinou nebo páskem na hlavě, aby jméno vizuálně dávalo smysl."
+    flavorText: "Jméno podle stopy přes čelo."
+    story: "Pasek je vhodný jako nižší historická karta: zapamatovatelný vzhledem, přístupný cenou a dostatečně odlišný od běžných hnědáků."
+
+  koran:
+    displayName: "Koran"
+    slug: "koran"
+    rarity: "legendary_classic"
+    poolType: "classic_legend"
+    spawnSource: "historical_stable_card"
+    confirmedType: "horse"
+    confirmedColor: "hnědák"
+    confirmedRole: "classic_legend"
+    speed: 7
+    maxStamina: 11
+    price: 6500
+    sourceYear: 1963
+    historicalNote: "Vítěz Velké pardubické 1963."
+    appearanceBasis: "verified"
+    visualDescription: "Robustní hnědák-valach, pevný překážkový typ, méně okázalý, ale velmi spolehlivý."
+    flavorText: "Síla bez okázalosti."
+    story: "Koran není karta pro efekt na první pohled. Je to poctivý vítězný typ, který má hráči nabídnout jistotu a dlouhou výdrž."
+
+  neklan:
+    displayName: "Neklan"
+    slug: "neklan"
+    rarity: "legendary_classic"
+    poolType: "classic_legend"
+    spawnSource: "historical_stable_card"
+    confirmedType: "horse"
+    confirmedColor: "ryzák"
+    confirmedRole: "classic_legend"
+    speed: 7
+    maxStamina: 8
+    price: 2600
+    sourceYear: 1969
+    historicalNote: "Sedmý ve Velké pardubické 1969."
+    appearanceBasis: "verified"
+    visualDescription: "Ryzák-valach se sušší sportovní stavbou, energický výraz, ostřejší dostihový profil."
+    flavorText: "Staré jméno, tvrdý krok."
+    story: "Neklan má být dostupnější historický kůň s dobrým poměrem rychlosti a výdrže. Nejde o top legendu, ale do hry přináší výraznou identitu."
+
+  portland:
+    displayName: "Portland"
+    slug: "portland"
+    rarity: "legendary_classic"
+    poolType: "classic_legend"
+    spawnSource: "historical_stable_card"
+    confirmedType: "horse"
+    confirmedColor: "hnědák"
+    confirmedRole: "classic_legend"
+    speed: 7
+    maxStamina: 8
+    price: 2000
+    sourceYear: 1969
+    historicalNote: "Osmý ve Velké pardubické 1969; v poznámkách někdy chybně přepsán jako Portlancl."
+    appearanceBasis: "verified"
+    visualDescription: "Mladší hnědák, klasická černá hříva, živější výraz, méně hotový a méně masivní než největší legendy."
+    flavorText: "Jméno opravené v cílové rovině."
+    story: "Portland je karta s historií drobného omylu v názvu. Ve hře může být sympatickým levnějším classic koněm, který nepůsobí přehnaně vzácně, ale má příběh."
+
+  japan:
+    displayName: "Japan"
+    slug: "japan"
+    rarity: "legendary_classic"
+    poolType: "classic_legend"
+    spawnSource: "historical_stable_card"
+    confirmedType: "horse"
+    confirmedColor: "hnědák"
+    confirmedRole: "classic_legend"
+    speed: 7
+    maxStamina: 7
+    price: 2400
+    sourceYear: 1969
+    historicalNote: "Účastník ročníku 1969; tragický osud během závodu."
+    appearanceBasis: "verified"
+    visualDescription: "Kompaktní hnědák-valach, tmavší hříva, klidný, ale bojovný výraz."
+    flavorText: "Tiché jméno s těžkou stopou."
+    story: "Japan by měl být pojatý citlivě, bez humorného tónu. Ve hře může nést melancholickou historickou notu, ne přehnaný bonus."
+
+  kostrava:
+    displayName: "Kostrava"
+    slug: "kostrava"
+    rarity: "legendary_classic"
+    poolType: "classic_legend"
+    spawnSource: "historical_stable_card"
+    confirmedType: "horse"
+    confirmedColor: "hnědka"
+    confirmedRole: "classic_legend"
+    speed: 7
+    maxStamina: 9
+    price: 3000
+    sourceYear: 1969
+    historicalNote: "Čtvrtá ve Velké pardubické 1969."
+    appearanceBasis: "verified"
+    visualDescription: "Atletická hnědka, jemnější klisna, středně hnědá srst, vytrvalostní výraz."
+    flavorText: "Klisna, která drží trať."
+    story: "Kostrava je solidní historická karta s dobrým vytrvalostním profilem. Nepůsobí jako největší hvězda, ale její umístění jí dává váhu."
+
+  lukava:
+    displayName: "Lukava"
+    slug: "lukava"
+    rarity: "legendary_classic"
+    poolType: "classic_legend"
+    spawnSource: "historical_stable_card"
+    confirmedType: "horse"
+    confirmedColor: "bělka"
+    confirmedRole: "classic_legend"
+    speed: 6
+    maxStamina: 11
+    price: 4200
+    sourceYear: 1970
+    historicalNote: "Druhá ve Velké pardubické 1970."
+    appearanceBasis: "verified"
+    visualDescription: "Světlá bělka, šedobílá srst, klidný výraz, jasně rozpoznatelná mezi ostatními koňmi."
+    flavorText: "Světlá stopa na dlouhé trati."
+    story: "Lukava je přirozeně výrazná díky barvě. Ve hře by měla být vytrvalostní classic karta, která nepůsobí rychle, ale vydrží."
+
+  melak:
+    displayName: "Melák"
+    slug: "melak"
+    rarity: "legendary_classic"
+    poolType: "classic_legend"
+    spawnSource: "historical_stable_card"
+    confirmedType: "horse"
+    confirmedColor: "tmavý hnědák"
+    confirmedRole: "classic_legend"
+    speed: 6
+    maxStamina: 8
+    price: 1800
+    sourceYear: null
+    historicalNote: "Jméno převzaté z historického okruhu jmen; přesný vzhled zatím neověřen."
+    appearanceBasis: "inferred"
+    visualDescription: "Tmavší hnědák s matnějším, zemitým vzhledem a černou hřívou."
+    flavorText: "Nenápadný tmavý kus."
+    story: "Melák je levnější historická karta. Nemá mít sílu šampiona, ale dobrý charakter a příjemně starosvětské jméno."
+
+  grifel:
+    displayName: "Grifel"
+    slug: "grifel"
+    rarity: "legendary_classic"
+    poolType: "classic_legend"
+    spawnSource: "historical_stable_card"
+    confirmedType: "horse"
+    confirmedColor: "ryzák"
+    confirmedRole: "classic_legend"
+    speed: 8
+    maxStamina: 11
+    price: 8500
+    sourceYear: 1960
+    historicalNote: "Vítěz Velké pardubické 1960 a 1961."
+    appearanceBasis: "verified"
+    visualDescription: "Sytý ryzák, sportovní a tvrdý výraz, úzká lysina nebo hvězda, výrazná vítězná aura bez fantasy efektů."
+    flavorText: "Dvakrát vítěz, jednou legenda."
+    story: "Grifel je jedna z nejsilnějších classic karet. Má být drahý, výkonný a okamžitě působit jako kůň, kterého se vyplatí respektovat."
+
+  mohyla:
+    displayName: "Mohyla"
+    slug: "mohyla"
+    rarity: "legendary_classic"
+    poolType: "classic_legend"
+    spawnSource: "historical_stable_card"
+    confirmedType: "horse"
+    confirmedColor: "hnědka"
+    confirmedRole: "classic_legend"
+    speed: 6
+    maxStamina: 10
+    price: 3600
+    sourceYear: 1969
+    historicalNote: "Druhá ve Velké pardubické 1969."
+    appearanceBasis: "verified"
+    visualDescription: "Tmavší hnědka, delší rámec, zkušená vytrvalostní klisna, klidný a těžší výraz."
+    flavorText: "Stojí pevně, i když ostatní padají."
+    story: "Mohyla je vytrvalostní karta s vážnějším tónem. Měla by působit jako kůň, který se nezalekne dlouhé a těžké hry."
+
+  metal:
+    displayName: "Metál"
+    slug: "metal"
+    rarity: "legendary_classic"
+    poolType: "classic_legend"
+    spawnSource: "historical_stable_card"
+    confirmedType: "horse"
+    confirmedColor: "tmavý hnědák"
+    confirmedRole: "classic_legend"
+    speed: 7
+    maxStamina: 10
+    price: 5000
+    sourceYear: 1971
+    historicalNote: "Druhý v roce 1971 a třetí v roce 1972."
+    appearanceBasis: "verified"
+    visualDescription: "Velmi tmavý hnědák s kovovým leskem, černá hříva a nohy, pevný a hodnotný dojem."
+    flavorText: "Lesk, který něco váží."
+    story: "Metál je karta pro hráče, kteří chtějí stabilního a ceněného koně. Není nejdražší, ale jeho jméno i výsledky působí silně."
+
+  tara:
+    displayName: "Tara"
+    slug: "tara"
+    rarity: "legendary_classic"
+    poolType: "classic_legend"
+    spawnSource: "historical_stable_card"
+    confirmedType: "horse"
+    confirmedColor: "ryzka"
+    confirmedRole: "classic_legend"
+    speed: 7
+    maxStamina: 8
+    price: 2800
+    sourceYear: null
+    historicalNote: "Jméno převzaté z historického okruhu jmen; přesný vzhled zatím neověřen."
+    appearanceBasis: "inferred"
+    visualDescription: "Jemnější ryzka nebo světlejší hnědka, elegantní klisna s přístupným výrazem."
+    flavorText: "Krátké jméno, lehký krok."
+    story: "Tara má působit čistě a jednoduše. Je to karta střední hodnoty, vhodná pro hráče, kteří chtějí historický nádech bez těžké legendární váhy."
+
+  furioso:
+    displayName: "Furioso"
+    slug: "furioso"
+    rarity: "legendary_classic"
+    poolType: "classic_legend"
+    spawnSource: "historical_stable_card"
+    confirmedType: "horse"
+    confirmedColor: "ryzák"
+    confirmedRole: "classic_legend"
+    speed: 8
+    maxStamina: 10
+    price: 8000
+    sourceYear: 1955
+    historicalNote: "Vítěz Velké pardubické 1955 jako Furioso XIV."
+    appearanceBasis: "verified"
+    visualDescription: "Výrazný temperamentní ryzák, atletický a ušlechtilý, s historickým hřebčínským dojmem."
+    flavorText: "Temperament se starým rodokmenem."
+    story: "Furioso má být drahá karta s vítěznou minulostí. Oproti Grifelovi může působit živěji a temperamentněji, méně stabilně, ale výrazně."
+
+  genius:
+    displayName: "Genius"
+    slug: "genius"
+    rarity: "legendary_classic"
+    poolType: "classic_legend"
+    spawnSource: "historical_stable_card"
+    confirmedType: "horse"
+    confirmedColor: "tmavý hnědák"
+    confirmedRole: "classic_legend"
+    speed: 7
+    maxStamina: 9
+    price: 3200
+    sourceYear: null
+    historicalNote: "Jméno převzaté z historického okruhu jmen; přesný vzhled zatím neověřen."
+    appearanceBasis: "inferred"
+    visualDescription: "Tmavý hnědák s klidným, inteligentním výrazem a ušlechtilejší hlavou."
+    flavorText: "Nepospíchá. Počítá."
+    story: "Genius je karta s mentálním dojmem: ne nutně nejrychlejší, ale chytrá a spolehlivá. Hodí se do Historické stáje jako elegantní střední volba."
+
+  shagga:
+    displayName: "Shagga"
+    slug: "shagga"
+    rarity: "legendary_classic"
+    poolType: "classic_legend"
+    spawnSource: "historical_stable_card"
+    confirmedType: "horse"
+    confirmedColor: "tmavý hnědák"
+    confirmedRole: "classic_legend"
+    speed: 6
+    maxStamina: 9
+    price: 2200
+    sourceYear: null
+    historicalNote: "Jméno převzaté z historického okruhu jmen; přesný vzhled zatím neověřen."
+    appearanceBasis: "inferred"
+    visualDescription: "Tmavohnědý až téměř vraný kůň s hustší, trochu rozcuchanou hřívou."
+    flavorText: "Nepůsobí uhlazeně. O to víc drží."
+    story: "Shagga je levnější karta s hrubším charakterem. Má působit jako tvrdý outsider, ne jako šampion z plakátu."
+
+  dahoman:
+    displayName: "Dahoman"
+    slug: "dahoman"
+    rarity: "legendary_classic"
+    poolType: "classic_legend"
+    spawnSource: "historical_stable_card"
+    confirmedType: "horse"
+    confirmedColor: "hnědák"
+    confirmedRole: "classic_legend"
+    speed: 6
+    maxStamina: 9
+    price: 2600
+    sourceYear: null
+    historicalNote: "Jméno převzaté z historického okruhu jmen; přesný vzhled zatím neověřen."
+    appearanceBasis: "inferred"
+    visualDescription: "Silnější hnědák, starokrevnější a hřebčínský dojem, pevná stavba."
+    flavorText: "Starý tón ve jméně i kroku."
+    story: "Dahoman je karta pro hráče, kteří chtějí něco méně známého, ale výrazného. Nemá být rychlostní hvězda, spíš pevný classic typ."
+
+  gira:
+    displayName: "Gira"
+    slug: "gira"
+    rarity: "legendary_classic"
+    poolType: "classic_legend"
+    spawnSource: "historical_stable_card"
+    confirmedType: "horse"
+    confirmedColor: "ryzka"
+    confirmedRole: "classic_legend"
+    speed: 7
+    maxStamina: 8
+    price: 2400
+    sourceYear: null
+    historicalNote: "Jméno převzaté z historického okruhu jmen; přesný vzhled zatím neověřen."
+    appearanceBasis: "inferred"
+    visualDescription: "Světlejší ryzka nebo jemná hnědka, subtilnější stavba, klidnější výraz."
+    flavorText: "Krátká karta s lehkou hlavou."
+    story: "Gira je nižší classic karta, která má fungovat hlavně vizuálně a atmosférou. Nepřebíjí slavnější jména, ale dobře doplňuje pool."
+
+  narcius:
+    displayName: "Narcius"
+    slug: "narcius"
+    rarity: "legendary_classic"
+    poolType: "classic_legend"
+    spawnSource: "historical_stable_card"
+    confirmedType: "horse"
+    confirmedColor: "ryzák s lysinou"
+    confirmedRole: "classic_legend"
+    speed: 7
+    maxStamina: 8
+    price: 3000
+    sourceYear: null
+    historicalNote: "Jméno převzaté z historického okruhu jmen; přesný vzhled zatím neověřen."
+    appearanceBasis: "inferred"
+    visualDescription: "Výrazný ryzák s bílou lysinou, parádnější vzhled, vhodný pro vizuálně výraznou kartu."
+    flavorText: "Jméno, které chce být vidět."
+    story: "Narcius má být karta s nápadným vzhledem. Není nejdražší, ale v nabídce Historické stáje by měl hráče vizuálně zaujmout."
+
+  napoli:
+    displayName: "Napoli"
+    slug: "napoli"
+    rarity: "legendary_classic"
+    poolType: "classic_legend"
+    spawnSource: "historical_stable_card"
+    confirmedType: "horse"
+    confirmedColor: "ryzka"
+    confirmedRole: "classic_legend"
+    speed: 9
+    maxStamina: 11
+    price: 10000
+    sourceYear: 1957
+    historicalNote: "V roce 1957 je v pardubických výsledcích uvedena klisna 135 Napoli; jméno navazuje i na starší derby tradici."
+    appearanceBasis: "partly_verified"
+    visualDescription: "Elegantní ryzka-klisna s teplou měděnou srstí, lehčí a ušlechtilejší typ, výrazný prémiový dojem."
+    flavorText: "Jméno s rodokmenem a cenou, která se neomlouvá."
+    story: "Napoli je nejdražší karta Historické stáje. Nemá být běžně dostupná; když se objeví, má působit jako mimořádná nabídka pro hráče, který je ochotný riskovat vysokou cenu za výjimečné jméno."
