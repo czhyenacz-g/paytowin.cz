@@ -91,7 +91,7 @@ export default function RacerEditorPanel({ racer, onChange, readOnly = false, th
   function commit(overrides: Partial<{ name: string; speed: number; price: number; maxStamina: number; racerType: RacerType; isLegendary: boolean; isBuiltIn: boolean; isPublic: boolean; flavorText: string; imageUrl: string }>) {
     const parsedSpeed      = clampInt(Number(overrides.speed      ?? speed),      1, 10);
     const parsedPrice      = clampInt(Number(overrides.price      ?? price),      0, 99999);
-    const parsedMaxStamina = clampInt(Number(overrides.maxStamina ?? maxStamina),  0, 100);
+    const parsedMaxStamina = clampInt(Number(overrides.maxStamina ?? maxStamina),  0, 200);
     onChange({
       ...racer,
       name:        overrides.name        ?? name,
@@ -289,7 +289,7 @@ export default function RacerEditorPanel({ racer, onChange, readOnly = false, th
               value={maxStamina}
               onChange={(e) => setMaxStamina(e.target.value)}
               onBlur={() => {
-                const v = clampInt(Number(maxStamina), 0, 100);
+                const v = clampInt(Number(maxStamina), 0, 200);
                 setMaxStamina(String(v));
                 commit({ maxStamina: v });
               }}
