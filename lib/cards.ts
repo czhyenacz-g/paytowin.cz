@@ -231,7 +231,7 @@ export const MAFIA_CARDS: GameCard[] = [
     {
         id: "ma6",
         type: "mafia",
-        text: "Zaplatil jsi, aby tě nechali jít. Cesta se otevřela.",
+        text: "Zaplatil jsi, aby tě nechali jít. Utíkáš jak o život.",
         effect:  { kind: "coins", value: -1000 },
         effect2: { kind: "move",  value: 4 },
         effectLabel: "-1000 💰 / +4 pole",
