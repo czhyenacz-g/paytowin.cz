@@ -82,6 +82,11 @@ export interface RacerConfig {
    */
   isBuiltIn?: boolean;
   /**
+   * Viditelnost závodníka pro hráče. false = skrytý (admin only, classic legend, draft).
+   * Výchozí true — závodník je dostupný ve hře.
+   */
+  isPublic?: boolean;
+  /**
    * Explicitní přiřazení na slot (index racer pole na boardu).
    * Zatím nepoužíváno v buildFields() — slot je stále implicitní (pořadí v arrayi).
    * Groundwork pro budoucí Racer Registry: po zavedení registry bude toto pole

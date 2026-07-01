@@ -3,6 +3,11 @@
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { loadDraftManifest, loadClassicLegendDraftManifest } from "@/lib/racers/import-review";
 
+function normalizeStamina(v: number | null | undefined): number {
+  if (v == null) return 80;
+  return v <= 20 ? v * 10 : v;
+}
+
 // ─── Import race/work koní do tabulky racers ──────────────────────────────────
 
 export type ImportRaceWorkResult =
@@ -26,7 +31,7 @@ export async function importRaceWorkHorsesAction(): Promise<ImportRaceWorkResult
       speed:        item.speed         ?? 5,
       price:        item.price         ?? 100,
       emoji:        "🐴",
-      max_stamina:  item.maxStamina    ?? 8,
+      max_stamina:  normalizeStamina(item.maxStamina),
       is_legendary: false,
       flavor_text:  item.flavorText    ?? null,
       image_url:    item.imageUrl      ?? null,
@@ -195,7 +200,7 @@ export async function importClassicLegendHorsesAction(): Promise<ImportClassicLe
       speed:        item.speed      ?? 7,
       price:        item.price      ?? 3000,
       emoji:        "🏆",
-      max_stamina:  item.maxStamina ?? 8,
+      max_stamina:  normalizeStamina(item.maxStamina),
       is_legendary: true,
       flavor_text:  item.flavorText ?? null,
       image_url:    item.imageUrl   ?? null,

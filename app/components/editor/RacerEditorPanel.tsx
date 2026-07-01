@@ -65,6 +65,7 @@ export default function RacerEditorPanel({ racer, onChange, readOnly = false, th
   const [racerType, setRacerType]     = React.useState<RacerType>(racer.racerType ?? "unset");
   const [isLegendary, setIsLegendary] = React.useState(racer.isLegendary ?? false);
   const [isBuiltIn, setIsBuiltIn]     = React.useState(racer.isBuiltIn ?? false);
+  const [isPublic, setIsPublic]       = React.useState(racer.isPublic ?? true);
   // flavorText: preferuj flavorText, fallback na deprecated heroText pro compat
   const [flavorText, setFlavorText] = React.useState(racer.flavorText ?? racer.heroText ?? "");
   const [imageUrl, setImageUrl]     = React.useState(racer.image ?? "");
@@ -79,6 +80,7 @@ export default function RacerEditorPanel({ racer, onChange, readOnly = false, th
     setRacerType(racer.racerType ?? "unset");
     setIsLegendary(racer.isLegendary ?? false);
     setIsBuiltIn(racer.isBuiltIn ?? false);
+    setIsPublic(racer.isPublic ?? true);
     setFlavorText(racer.flavorText ?? racer.heroText ?? "");
     setImageUrl(racer.image ?? "");
   // Záměrně pouze racer.id — form se resetuje jen při přepnutí závodníka, ne při každé aktualizaci prop.
@@ -86,7 +88,7 @@ export default function RacerEditorPanel({ racer, onChange, readOnly = false, th
   }, [racer.id]);
 
   // Zavolá onChange jen tehdy, kdy jsou hodnoty platné a lišící se
-  function commit(overrides: Partial<{ name: string; speed: number; price: number; maxStamina: number; racerType: RacerType; isLegendary: boolean; isBuiltIn: boolean; flavorText: string; imageUrl: string }>) {
+  function commit(overrides: Partial<{ name: string; speed: number; price: number; maxStamina: number; racerType: RacerType; isLegendary: boolean; isBuiltIn: boolean; isPublic: boolean; flavorText: string; imageUrl: string }>) {
     const parsedSpeed      = clampInt(Number(overrides.speed      ?? speed),      1, 10);
     const parsedPrice      = clampInt(Number(overrides.price      ?? price),      0, 99999);
     const parsedMaxStamina = clampInt(Number(overrides.maxStamina ?? maxStamina),  0, 100);
@@ -99,6 +101,7 @@ export default function RacerEditorPanel({ racer, onChange, readOnly = false, th
       racerType:   overrides.racerType   ?? racerType,
       isLegendary: (overrides.isLegendary ?? isLegendary) || undefined,
       isBuiltIn:   (overrides.isBuiltIn   ?? isBuiltIn)   || undefined,
+      isPublic:    overrides.isPublic ?? isPublic,
       stamina:     undefined, // vynuluj deprecated pole po první editaci
       flavorText:  (overrides.flavorText ?? flavorText) || undefined, // prázdný string → undefined
       heroText:    undefined, // explicitně vynuluj deprecated pole po první editaci
@@ -337,6 +340,23 @@ export default function RacerEditorPanel({ racer, onChange, readOnly = false, th
             </span>
           </label>
         )}
+
+        {/* Public flag */}
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={isPublic}
+            onChange={(e) => {
+              setIsPublic(e.target.checked);
+              commit({ isPublic: e.target.checked });
+            }}
+            className="h-4 w-4 rounded border-emerald-300 text-emerald-500 focus:ring-emerald-300"
+          />
+          <span className="text-xs font-medium text-emerald-700">
+            Veřejný (is_public)
+            <span className="ml-1 font-normal text-emerald-500">— závodník viditelný a dostupný hráčům</span>
+          </span>
+        </label>
 
         {/* Flavor text */}
         <div className="space-y-1">
