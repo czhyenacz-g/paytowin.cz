@@ -35,7 +35,7 @@ const KIND_LABELS: Record<CardEffectKind, string> = {
   give_racer:          "Závodník",
   stamina_debuff:      "Stamina debuff",
   all_racers_stamina:  "Stamina všech racerů",
-  historical_stable:   "Historická stáj",
+  racer_auction:       "Aukce",
 };
 
 const KIND_COLORS: Record<CardEffectKind, string> = {
@@ -45,7 +45,7 @@ const KIND_COLORS: Record<CardEffectKind, string> = {
   give_racer:          "bg-violet-100 text-violet-700",
   stamina_debuff:      "bg-orange-100 text-orange-700",
   all_racers_stamina:  "bg-orange-100 text-orange-700",
-  historical_stable:   "bg-amber-100 text-amber-800",
+  racer_auction:       "bg-amber-100 text-amber-800",
 };
 
 function generateId(type: "chance" | "finance", existing: GameCard[]): string {

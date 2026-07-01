@@ -237,10 +237,9 @@ export interface StableDuelPendingOffer {
   resultSummary?: StableDuelResultSummary;
 }
 
-export interface HistoricalStableOffer {
-  type: "historical_stable";
-  /** "revealed" = current player deciding; "public" = open to all; "sold" = done (ephemeral, cleared quickly). */
-  phase: "revealed" | "public" | "sold";
+export interface RacerAuctionOffer {
+  type: "racer_auction";
+  phase: "running" | "public" | "sold";
   cardId: string;
   racerId: string;
   racerName: string;
@@ -250,11 +249,17 @@ export interface HistoricalStableOffer {
   racerMaxStamina: number;
   racerFlavorText?: string;
   price: number;
+  startPrice: number;
+  currentBid: number | null;
+  currentBidderPlayerId: string | null;
+  bidStep: number;
+  endsAt: number;
+  createdAt: number;
   revealedByPlayerId: string;
   boughtByPlayerId?: string;
 }
 
-export type OfferPending = RerollOffer | RaceOffer | BankruptAnnouncement | RacePendingEvent | StableDuelPendingOffer | HistoricalStableOffer;
+export type OfferPending = RerollOffer | RaceOffer | BankruptAnnouncement | RacePendingEvent | StableDuelPendingOffer | RacerAuctionOffer;
 
 /**
  * PostTurnEvent — caller-facing payload pro post-turn hook ve finishTurn.

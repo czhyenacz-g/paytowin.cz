@@ -2,7 +2,8 @@
 
 import React from "react";
 import type { Field } from "@/lib/engine";
-import type { Player, Horse, GameState, HistoricalStableOffer } from "@/lib/types/game";
+import type { Player, Horse, GameState, RacerAuctionOffer } from "@/lib/types/game";
+import RacerAuctionPanel from "@/app/components/auction/RacerAuctionPanel";
 import type { GameCard } from "@/lib/cards";
 import type { Theme } from "@/lib/themes";
 import { UI_TEXT } from "@/lib/ui-text";
@@ -87,9 +88,9 @@ interface Props {
   rollDice: () => void;
   buyRacer: () => void;
   skipRacer: () => void;
-  buyHistoricalStableRacer: () => void;
-  skipHistoricalStableRacer: () => void;
-  buyPublicHistoricalOffer: () => void;
+  placeAuctionBid: () => void;
+  settleAuction: () => void;
+  buyPublicAuctionOffer: () => void;
   setPreferredRacer: (playerId: string, key: string | null) => void;
   sellRacerToBank: (player: Player, horse: Horse) => void;
   myPlayerId: string | null;
@@ -170,9 +171,9 @@ export default function GamePanel({
   rollDice,
   buyRacer,
   skipRacer,
-  buyHistoricalStableRacer,
-  skipHistoricalStableRacer,
-  buyPublicHistoricalOffer,
+  placeAuctionBid,
+  settleAuction,
+  buyPublicAuctionOffer,
   setPreferredRacer,
   sellRacerToBank,
   myPlayerId,
@@ -205,9 +206,9 @@ export default function GamePanel({
 }: Props) {
   const [copied, setCopied] = React.useState(false);
 
-  const historicalStableOffer: HistoricalStableOffer | null =
-    gameState?.offer_pending?.type === "historical_stable"
-      ? (gameState.offer_pending as HistoricalStableOffer)
+  const auctionOffer: RacerAuctionOffer | null =
+    gameState?.offer_pending?.type === "racer_auction"
+      ? (gameState.offer_pending as RacerAuctionOffer)
       : null;
 
   const copyInviteLink = () => {
@@ -520,55 +521,17 @@ export default function GamePanel({
                 </div>
               )}
             </div>
-          ) : historicalStableOffer?.phase === "revealed" ? (
-            <div className="rounded-[4px] border-2 border-amber-600 bg-amber-50 p-4 space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-widest text-amber-700">🏛️ Historická stáj</span>
-                <span className="rounded-full bg-amber-200 px-2 py-0.5 text-[10px] font-semibold text-amber-900">Historická legenda</span>
-              </div>
-              <div className="flex items-start gap-3">
-                {historicalStableOffer.racerImageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={historicalStableOffer.racerImageUrl}
-                    alt={historicalStableOffer.racerName}
-                    className="h-20 w-20 rounded-lg object-contain bg-amber-100 shrink-0"
-                    onError={(e) => { e.currentTarget.style.display = "none"; }}
-                  />
-                ) : (
-                  <div className="text-5xl shrink-0 h-20 w-20 flex items-center justify-center bg-amber-100 rounded-lg">{historicalStableOffer.racerEmoji}</div>
-                )}
-                <div className="space-y-1">
-                  <div className="font-bold text-slate-900 text-base">{historicalStableOffer.racerName}</div>
-                  <div className="text-sm text-slate-600">⚡ Rychlost: {historicalStableOffer.racerSpeed} &nbsp;|&nbsp; 💪 Stamina: {historicalStableOffer.racerMaxStamina}</div>
-                  <div className="text-base font-bold text-amber-700">{historicalStableOffer.price.toLocaleString("cs-CZ")} 💰</div>
-                  {historicalStableOffer.racerFlavorText && (
-                    <p className="text-xs italic text-slate-500">„{historicalStableOffer.racerFlavorText}"</p>
-                  )}
-                </div>
-              </div>
-              {isMyTurn ? (
-                <div className="flex gap-2">
-                  <button
-                    onClick={buyHistoricalStableRacer}
-                    disabled={(players.find(p => p.id === historicalStableOffer.revealedByPlayerId)?.coins ?? 0) < historicalStableOffer.price}
-                    className="flex-1 rounded-[3px] bg-amber-600 px-3 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-slate-300 transition"
-                  >
-                    Koupit za {historicalStableOffer.price.toLocaleString("cs-CZ")} 💰
-                  </button>
-                  <button
-                    onClick={skipHistoricalStableRacer}
-                    className="flex-1 rounded-[3px] border border-slate-300 px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
-                  >
-                    Přeskočit
-                  </button>
-                </div>
-              ) : (
-                <div className="rounded-[3px] bg-amber-100 px-3 py-2 text-center text-sm text-amber-800">
-                  Čeká se na rozhodnutí hráče {players.find(p => p.id === historicalStableOffer.revealedByPlayerId)?.name ?? "?"}…
-                </div>
-              )}
-            </div>
+          ) : auctionOffer?.phase === "running" ? (
+            <RacerAuctionPanel
+              offer={auctionOffer}
+              players={players}
+              myPlayerId={myPlayerId}
+              myPlayer={players.find(p => p.id === myPlayerId) ?? null}
+              isMyTurn={isMyTurn}
+              onBid={placeAuctionBid}
+              onSettleAuction={settleAuction}
+              onBuyPublicOffer={buyPublicAuctionOffer}
+            />
           ) : pendingRollDecision ? (
             <div className="rounded-[4px] border border-slate-300 bg-white p-4 shadow-sm">
               <div className="flex items-start justify-between gap-3">
@@ -672,37 +635,17 @@ export default function GamePanel({
                 />
               ) : (
                 <>
-                  {historicalStableOffer?.phase === "public" && (
-                    <div className="rounded-[4px] border border-amber-500 bg-amber-50 p-3 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold uppercase tracking-widest text-amber-700">🏛️ Historická stáj</span>
-                        <span className="rounded-full bg-amber-200 px-2 py-0.5 text-[10px] font-semibold text-amber-900">Veřejná nabídka</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {historicalStableOffer.racerImageUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={historicalStableOffer.racerImageUrl}
-                            alt={historicalStableOffer.racerName}
-                            className="h-10 w-10 rounded object-contain bg-amber-100 shrink-0"
-                            onError={(e) => { e.currentTarget.style.display = "none"; }}
-                          />
-                        ) : (
-                          <div className="text-2xl shrink-0">{historicalStableOffer.racerEmoji}</div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-slate-900 text-sm truncate">{historicalStableOffer.racerName}</div>
-                          <div className="text-xs text-slate-500">⚡ {historicalStableOffer.racerSpeed} &nbsp;|&nbsp; 💪 {historicalStableOffer.racerMaxStamina} &nbsp;|&nbsp; {historicalStableOffer.price.toLocaleString("cs-CZ")} 💰</div>
-                        </div>
-                        <button
-                          onClick={buyPublicHistoricalOffer}
-                          disabled={(players.find(p => p.id === myPlayerId)?.coins ?? 0) < historicalStableOffer.price}
-                          className="shrink-0 rounded-[3px] bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-slate-300 transition"
-                        >
-                          Koupit
-                        </button>
-                      </div>
-                    </div>
+                  {auctionOffer?.phase === "public" && (
+                    <RacerAuctionPanel
+                      offer={auctionOffer}
+                      players={players}
+                      myPlayerId={myPlayerId}
+                      myPlayer={players.find(p => p.id === myPlayerId) ?? null}
+                      isMyTurn={isMyTurn}
+                      onBid={placeAuctionBid}
+                      onSettleAuction={settleAuction}
+                      onBuyPublicOffer={buyPublicAuctionOffer}
+                    />
                   )}
                   {canReroll && (
                     <div className="rounded-[3px] bg-amber-100 px-3 py-2 text-center text-xs font-semibold text-amber-800">
@@ -740,9 +683,9 @@ export default function GamePanel({
             </div>
           ) : (
             <div className="space-y-2">
-              {historicalStableOffer?.phase === "public" && (
+              {auctionOffer?.phase === "public" && (
                 <div className="rounded-[4px] border border-amber-400 bg-amber-50 p-3 text-sm text-amber-800">
-                  🏛️ <span className="font-semibold">{historicalStableOffer.racerEmoji} {historicalStableOffer.racerName}</span> — historický závodník je k dispozici za {historicalStableOffer.price.toLocaleString("cs-CZ")} 💰. Koupíš ho ve svém tahu.
+                  🔨 <span className="font-semibold">{auctionOffer.racerEmoji} {auctionOffer.racerName}</span> — závodník je k dispozici za {auctionOffer.price.toLocaleString("cs-CZ")} 💰. Koupíš ho ve svém tahu.
                 </div>
               )}
               <div className="w-full rounded-[4px] bg-slate-100 px-4 py-4 text-center text-slate-500">
