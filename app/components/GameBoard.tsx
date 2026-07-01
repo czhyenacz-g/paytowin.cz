@@ -1602,24 +1602,58 @@ export default function GameBoard({ gameCode }: Props) {
 
   const settleAuction = async () => {
     if (!gameState || !gameId) return;
-    if (auctionSettledRef.current) return;
 
-    // Vždy čti čerstvá data z DB — ochrana před race condition
+    // Fresh DB read PRVNÍ — zdroj pravdy je DB, ne lokální ref
     const { data: freshState } = await supabase.from("game_state").select("*").eq("game_id", gameId).single();
     if (!freshState) return;
+
     const offer = freshState.offer_pending as RacerAuctionOffer | null;
-    if (!offer || offer.type !== "racer_auction" || offer.phase !== "running") return;
+
+    // Aukce v DB už není running → někdo jiný settled nebo nikdy nebyla
+    if (!offer || offer.type !== "racer_auction" || offer.phase !== "running") {
+      auctionSettledRef.current = true;
+      if (process.env.NODE_ENV === "development") {
+        console.log("[auction] settlement skipped: offer not racer_auction/running in DB", { type: offer?.type });
+      }
+      return;
+    }
+
+    // Aukce ještě běží (příliš brzy — lokální hodiny možná napřed)
+    if (Date.now() < offer.endsAt) {
+      if (process.env.NODE_ENV === "development") {
+        console.log("[auction] settlement skipped: auction still running", { msLeft: offer.endsAt - Date.now() });
+      }
+      return;
+    }
+
+    // Stale ref guard: pokud je ref true, ale DB stále ukazuje expired running aukci,
+    // jde o stale lokální ref (child effect stihl volat settlement dřív než parent effect ref resetoval).
+    // V takovém případě pokračuj settlementem — nesmíme zůstat ve freeze.
+    if (auctionSettledRef.current) {
+      if (process.env.NODE_ENV === "development") {
+        console.log("[auction] settlement proceeding despite settled ref — DB shows expired running auction (stale ref)");
+      }
+      auctionSettledRef.current = false;
+    }
     auctionSettledRef.current = true;
 
+    if (process.env.NODE_ENV === "development") {
+      console.log("[auction] settlement requested", { bidder: offer.currentBidderPlayerId, bid: offer.currentBid });
+    }
+
     const newLog = (freshState.log as string[]) ?? [];
+    // nextIndex vždy počítáme od current_player_index (kdo měl tah), ne od vítěze ani revealera
+    const currentIdx = freshState.current_player_index;
 
     if (hasAuctionBid(offer) && offer.currentBidderPlayerId) {
       // Má vítěze — odečti currentBid, přidej koně, ukonči tah
       const winner = players.find(p => p.id === offer.currentBidderPlayerId);
+      if (process.env.NODE_ENV === "development") {
+        console.log("[auction] settlement winner", { id: offer.currentBidderPlayerId, name: winner?.name, isBot: winner?.is_bot });
+      }
       if (!winner || winner.coins < offer.currentBid!) {
-        // Fallback — nestačí peníze (race condition) → aukce bez prodeje
-        const revealerIdx = players.findIndex(p => p.id === offer.revealedByPlayerId);
-        const nextIdx = getNextActiveIndex(revealerIdx, players);
+        // Fallback — vítěz nemá peníze (race condition)
+        const nextIdx = getNextActiveIndex(currentIdx, players);
         await finishTurn({
           nextIndex: nextIdx, turnCount: freshState.turn_count + 1,
           log: [`Aukce skončila — vítěz nemá dost peněz. ${offer.racerEmoji} ${offer.racerName} zmizí.`, ...newLog],
@@ -1645,7 +1679,7 @@ export default function GameBoard({ gameCode }: Props) {
       const updatedHorses = normalizeFavoriteHorse([...winner.horses, racer]);
       const winnerIndex = players.findIndex(p => p.id === winner.id);
       const updatedPlayers = players.map((p, i) => i === winnerIndex ? { ...winner, coins: updatedCoins, horses: updatedHorses } : p);
-      const nextIndex = getNextActiveIndex(winnerIndex, updatedPlayers);
+      const nextIndex = getNextActiveIndex(currentIdx, updatedPlayers);
 
       await supabase.from("players").update({ coins: updatedCoins, horses: updatedHorses }).eq("id", winner.id);
 
@@ -1661,23 +1695,27 @@ export default function GameBoard({ gameCode }: Props) {
 
       // updatedCurrentPlayerHorses předáváme jen pokud vítěz JE aktuální hráč —
       // jinak by finishTurn zapsal vítězovy koně do regen updatu jiného hráče (bota).
-      const isWinnerCurrentPlayer = winnerIndex === freshState.current_player_index;
+      const isWinnerCurrentPlayer = winnerIndex === currentIdx;
       await finishTurn({
         nextIndex, turnCount: freshState.turn_count + 1,
         log: [`${winner.name} vydražil ${racer.emoji} ${racer.name} za ${offer.currentBid!} 💰!`, ...newLog],
         clearOfferPending: { type: "racer_auction" },
         ...(isWinnerCurrentPlayer ? { updatedCurrentPlayerHorses: updatedHorses } : {}),
       });
+      if (process.env.NODE_ENV === "development") {
+        console.log("[auction] settlement cleared offer", { winner: winner.name, nextIndex, currentIdx });
+      }
     } else {
       // Žádný příhoz — aukce skončila bez prodeje, kůň zmizí
-      const revealerIndex = players.findIndex(p => p.id === offer.revealedByPlayerId);
-      const nextIndex = getNextActiveIndex(revealerIndex, players);
-
+      const nextIndex = getNextActiveIndex(currentIdx, players);
       await finishTurn({
         nextIndex, turnCount: freshState.turn_count + 1,
         log: [`Nikdo nepřihodil. Aukce skončila bez prodeje.`, ...newLog],
         clearOfferPending: { type: "racer_auction" },
       });
+      if (process.env.NODE_ENV === "development") {
+        console.log("[auction] settlement cleared offer (no bid)", { nextIndex, currentIdx });
+      }
     }
   };
 

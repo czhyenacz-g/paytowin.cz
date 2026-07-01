@@ -287,3 +287,43 @@ describe("isBidStale", () => {
     expect(isBidStale(fresh, null, null)).toBe(true);
   });
 });
+
+// ─── Bot winner scénáře ───────────────────────────────────────────────────────
+
+describe("bot winner (settlement logic)", () => {
+  it("hasAuctionBid vrátí true pokud currentBidderPlayerId je bot", () => {
+    const offer = makeOffer({ currentBid: 4300, currentBidderPlayerId: "bot-1" });
+    expect(hasAuctionBid(offer)).toBe(true);
+  });
+
+  it("winner se určuje výhradně podle currentBidderPlayerId, ne podle is_bot flagu", () => {
+    const botOffer = makeOffer({ currentBid: 4300, currentBidderPlayerId: "bot-1" });
+    const humanOffer = makeOffer({ currentBid: 4300, currentBidderPlayerId: "player-a" });
+    expect(hasAuctionBid(botOffer)).toBe(true);
+    expect(hasAuctionBid(humanOffer)).toBe(true);
+  });
+
+  it("lidský hráč bez příhozu neblokuje settlement — hasAuctionBid závisí jen na currentBid", () => {
+    // Aukce kde bot přihodil, lidský ne
+    const offer = makeOffer({ currentBid: 4300, currentBidderPlayerId: "bot-1" });
+    expect(hasAuctionBid(offer)).toBe(true);
+    // Expirovaná aukce s bot bidderem = vyhrál bot
+    expect(isAuctionExpired(offer, now + 15_000)).toBe(true);
+  });
+
+  it("isAuctionExpired vrátí true po endsAt bez ohledu na to kdo přihodil", () => {
+    const offerBotWinner = makeOffer({ currentBid: 4300, currentBidderPlayerId: "bot-1", endsAt: now - 1 });
+    expect(isAuctionExpired(offerBotWinner, now)).toBe(true);
+  });
+
+  it("isBidStale vrátí false pokud fresh stav souhlasí s bot bidderem", () => {
+    const fresh = makeOffer({ currentBid: 4300, currentBidderPlayerId: "bot-1" });
+    expect(isBidStale(fresh, 4300, "bot-1")).toBe(false);
+  });
+
+  it("isBidStale vrátí true pokud bot přihodil mezi snapshot a zápisem", () => {
+    const fresh = makeOffer({ currentBid: 4300, currentBidderPlayerId: "bot-1" });
+    // Player viděl null → bot mezitím přihodil → stale
+    expect(isBidStale(fresh, null, null)).toBe(true);
+  });
+});
