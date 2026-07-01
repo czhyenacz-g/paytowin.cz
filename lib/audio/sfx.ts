@@ -412,19 +412,28 @@ function synthAuctionWin(ctx: AudioContext): void {
   });
 }
 
-// Krátké pípnutí pro poslední 3 sekundy aukce — vyšší než countdown_tick
+// Ostré dvojité pípnutí pro poslední sekundy aukce
 function synthAuctionTick(ctx: AudioContext): void {
-  const t = ctx.currentTime;
-  const osc = ctx.createOscillator();
-  osc.type = "sine";
-  osc.frequency.setValueAtTime(1400, t);
-  osc.frequency.exponentialRampToValueAtTime(1100, t + 0.05);
-  const gain = ctx.createGain();
-  gain.gain.setValueAtTime(0, t);
-  gain.gain.linearRampToValueAtTime(0.25, t + 0.004);
-  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
-  osc.connect(gain); gain.connect(ctx.destination);
-  osc.start(t); osc.stop(t + 0.08);
+  // Dvě krátká pípnutí ~80ms od sebe — výrazné, nelze přeslechnout
+  [0, 0.10].forEach((offset) => {
+    const t = ctx.currentTime + offset;
+    const osc = ctx.createOscillator();
+    osc.type = "square";
+    osc.frequency.setValueAtTime(880, t);
+
+    // Lehký LP filtr — ubere ostrost čtvercové vlny, ale ponechá razanci
+    const lp = ctx.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.value = 2200;
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(0.55, t + 0.005);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
+
+    osc.connect(lp); lp.connect(gain); gain.connect(ctx.destination);
+    osc.start(t); osc.stop(t + 0.11);
+  });
 }
 
 // ─── Dispatch tabulka ─────────────────────────────────────────────────────────

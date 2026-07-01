@@ -36,14 +36,14 @@ export default function RacerAuctionPanel({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Pípání v posledních 5 sekundách — jednou za sekundu
+  // Pípání po celý countdown — jednou za sekundu
   const prevTickRef = React.useRef<number | null>(null);
   // Reset tick guardu při každém novém příhozu (endsAt se změní) — zabrání přeskočení tiknutí
   React.useEffect(() => {
     prevTickRef.current = null;
   }, [offer.endsAt]);
   React.useEffect(() => {
-    if (secondsLeft > 0 && secondsLeft <= 5 && secondsLeft !== prevTickRef.current) {
+    if (secondsLeft > 0 && secondsLeft !== prevTickRef.current) {
       prevTickRef.current = secondsLeft;
       playSfx("auction_tick");
     }
