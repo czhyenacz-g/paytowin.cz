@@ -92,6 +92,7 @@ export const CHANCE_CARDS: GameCard[] = [
     text: "Začíná aukce o vzácného závodníka.",
     effect: { kind: "racer_auction" },
     effectLabel: "🔨 Aukce",
+    imagePath: "/themes/_shared/card-aukce.webp",
     themeTags: ["horse"],
   },
   {

@@ -129,10 +129,9 @@ export const SMALL_BOARD: BoardConfig = {
     },
     {
       "index": 15,
-      "type": "coins_gain",
-      "label": "Věrnostní bonus",
-      "emoji": "🎁",
-      "amount": 500
+      "type": "chance",
+      "label": "Šance",
+      "emoji": "🎲"
     },
     {
       "index": 16,

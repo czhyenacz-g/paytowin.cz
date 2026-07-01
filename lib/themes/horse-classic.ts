@@ -75,7 +75,7 @@ export const horseClassicTheme: Theme = {
       { index: 12, type: "mafia",      label: "Sázkový boss",        emoji: "🎩" },
       { index: 13, type: "racer",      label: "Závodník",            emoji: "🐎" },
       { index: 14, type: "finance",    label: "Sázková kancelář",    emoji: "💰" },
-      { index: 15, type: "coins_gain", label: "Stájový bonus",       emoji: "🎖️",  amount: 500 },
+      { index: 15, type: "chance",     label: "Šance",               emoji: "🎲" },
       { index: 16, type: "coins_lose", label: "Ztráta sázky",        emoji: "🎫",  amount: -700 },
       { index: 17, type: "racer",      label: "Závodník",            emoji: "🐎" },
       { index: 18, type: "coins_lose", label: "Zranění koně",        emoji: "🩹",  amount: -600 },
@@ -239,6 +239,14 @@ export const horseClassicTheme: Theme = {
           text: "Tady bude velký rychlý. Překvapivě u tebe.",
           effect: { kind: "move", value: 4 },
           effectLabel: "+4 pole",
+        },
+        {
+          id: "ch13",
+          type: "chance",
+          text: "Začíná aukce o vzácného závodníka.",
+          effect: { kind: "racer_auction" },
+          effectLabel: "🔨 Aukce",
+          imagePath: "/themes/_shared/card-aukce.webp",
         },
         {
           id: "chuchle_chance_9",

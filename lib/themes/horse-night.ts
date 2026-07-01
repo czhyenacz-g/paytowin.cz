@@ -203,6 +203,14 @@ export const horseNightTheme: Theme = {
           effect: { kind: "skip_turn" },
           effectLabel: "Vynecháš tah",
         },
+        {
+          id: "ch13",
+          type: "chance",
+          text: "Začíná aukce o vzácného závodníka.",
+          effect: { kind: "racer_auction" },
+          effectLabel: "🔨 Aukce",
+          imagePath: "/themes/_shared/card-aukce.webp",
+        },
       ],
       finance: [
         {
