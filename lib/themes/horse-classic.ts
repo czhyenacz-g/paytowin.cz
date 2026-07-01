@@ -87,6 +87,9 @@ export const horseClassicTheme: Theme = {
   assets: {
     boardBgImage: "/chuchle.webp",
     centerBgImage: "/plaketa-light.webp",
+    fieldTextures: {
+      auction: "/themes/_shared/card-aukce.webp",
+    },
   },
   racerRefs: [
     { slotIndex: 0, racer_id: "r6" },

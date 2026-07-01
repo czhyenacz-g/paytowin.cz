@@ -158,6 +158,9 @@ export const horseNightTheme: Theme = {
   assets: {
     boardBgImage: "/horse-night.webp",
     centerBgImage: "/plaketa-dark-rectangle.webp",
+    fieldTextures: {
+      auction: "/themes/_shared/card-aukce.webp",
+    },
   },
   mapMeta: {
     yearStart: 1925,

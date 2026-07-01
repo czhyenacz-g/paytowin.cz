@@ -174,6 +174,9 @@ export const horseDayTheme: Theme = {
   assets: {
     centerBgImage:   "/plaketa-light.webp",
     minigameBgImage: "/horse-day-board.webp",
+    fieldTextures: {
+      auction: "/themes/_shared/card-aukce.webp",
+    },
   },
 
   mapMeta: {
