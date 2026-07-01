@@ -528,6 +528,7 @@ export default function GamePanel({
               isMyTurn={isMyTurn}
               onBid={placeAuctionBid}
               onSettleAuction={settleAuction}
+              playSfx={playSfx}
             />
           ) : pendingRollDecision ? (
             <div className="rounded-[4px] border border-slate-300 bg-white p-4 shadow-sm">

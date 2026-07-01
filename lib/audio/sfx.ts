@@ -10,7 +10,8 @@ export type SoundId = "dice" | "coin_gain" | "coin_loss" | "race" | "newspaper" 
   | "hoof_hover" | "engine_hover" | "hoof_move" | "engine_move"
   | "hoof_step" | "engine_step"
   | "countdown_tick" | "countdown_go"
-  | "duel_nitro";
+  | "duel_nitro"
+  | "auction_start" | "auction_tick";
 
 // Cooldown guard — zabraňuje spamování (ms)
 const COOLDOWNS: Record<SoundId, number> = {
@@ -20,6 +21,8 @@ const COOLDOWNS: Record<SoundId, number> = {
   race:           600,
   newspaper:      300,
   bankrupt:       1200,
+  auction_start:  3000,
+  auction_tick:   850,
   hoof_hover:     350,
   engine_hover:   350,
   hoof_move:      500,
@@ -343,6 +346,55 @@ function synthDuelNitro(ctx: AudioContext): void {
   osc.start(t); osc.stop(t + 0.11);
 }
 
+// Slavnostní cinkání při startu aukce — zvon s harmoniky, dlouhý dozvuk
+function synthAuctionStart(ctx: AudioContext): void {
+  // Tři harmoniky zvonu: základní tón + 2× vyšší
+  const freqs = [880, 1760, 2640];
+  const gains = [0.30, 0.15, 0.08];
+  freqs.forEach((freq, i) => {
+    const t = ctx.currentTime + i * 0.01;
+    const osc = ctx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.value = freq;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(gains[i], t + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 1.4);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(t); osc.stop(t + 1.5);
+  });
+  // Druhé cinknutí po 0.35 s — jako dvojité cinkání
+  const freqs2 = [1108, 2216];
+  const gains2 = [0.18, 0.09];
+  freqs2.forEach((freq, i) => {
+    const t = ctx.currentTime + 0.35 + i * 0.01;
+    const osc = ctx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.value = freq;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(gains2[i], t + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 1.0);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(t); osc.stop(t + 1.1);
+  });
+}
+
+// Krátké pípnutí pro poslední 3 sekundy aukce — vyšší než countdown_tick
+function synthAuctionTick(ctx: AudioContext): void {
+  const t = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  osc.type = "sine";
+  osc.frequency.setValueAtTime(1400, t);
+  osc.frequency.exponentialRampToValueAtTime(1100, t + 0.05);
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0, t);
+  gain.gain.linearRampToValueAtTime(0.25, t + 0.004);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.start(t); osc.stop(t + 0.08);
+}
+
 // ─── Dispatch tabulka ─────────────────────────────────────────────────────────
 
 const SYNTHS: Record<SoundId, (ctx: AudioContext) => void> = {
@@ -361,6 +413,8 @@ const SYNTHS: Record<SoundId, (ctx: AudioContext) => void> = {
   countdown_tick: synthCountdownTick,
   countdown_go:   synthCountdownGo,
   duel_nitro:     synthDuelNitro,
+  auction_start:  synthAuctionStart,
+  auction_tick:   synthAuctionTick,
 };
 
 // ─── Public API ───────────────────────────────────────────────────────────────

@@ -3,6 +3,7 @@
 import React from "react";
 import type { RacerAuctionOffer } from "@/lib/types/game";
 import type { Player } from "@/lib/types/game";
+import type { SoundId } from "@/lib/audio/sfx";
 import { getNextBidAmount, canPlayerBid } from "@/lib/game/racerAuction";
 import { useAuctionCountdown } from "./useAuctionCountdown";
 
@@ -14,6 +15,7 @@ interface Props {
   isMyTurn: boolean;
   onBid: () => void;
   onSettleAuction: () => void;
+  playSfx: (id: SoundId) => void;
 }
 
 export default function RacerAuctionPanel({
@@ -23,8 +25,24 @@ export default function RacerAuctionPanel({
   myPlayer,
   onBid,
   onSettleAuction,
+  playSfx,
 }: Props) {
   const { secondsLeft, isExpired } = useAuctionCountdown(offer.endsAt);
+
+  // Slavnostní cinkání při startu aukce — jednou při mountu
+  React.useEffect(() => {
+    playSfx("auction_start");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Pípání v posledních 3 sekundách — jednou za sekundu
+  const prevTickRef = React.useRef<number | null>(null);
+  React.useEffect(() => {
+    if (secondsLeft > 0 && secondsLeft <= 3 && secondsLeft !== prevTickRef.current) {
+      prevTickRef.current = secondsLeft;
+      playSfx("auction_tick");
+    }
+  }, [secondsLeft, playSfx]);
   const isSettlementAuthority = myPlayerId === offer.revealedByPlayerId;
 
   const onSettleRef = React.useRef(onSettleAuction);
