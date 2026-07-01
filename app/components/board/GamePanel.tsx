@@ -90,7 +90,6 @@ interface Props {
   skipRacer: () => void;
   placeAuctionBid: () => void;
   settleAuction: () => void;
-  buyPublicAuctionOffer: () => void;
   setPreferredRacer: (playerId: string, key: string | null) => void;
   sellRacerToBank: (player: Player, horse: Horse) => void;
   myPlayerId: string | null;
@@ -173,7 +172,6 @@ export default function GamePanel({
   skipRacer,
   placeAuctionBid,
   settleAuction,
-  buyPublicAuctionOffer,
   setPreferredRacer,
   sellRacerToBank,
   myPlayerId,
@@ -521,7 +519,7 @@ export default function GamePanel({
                 </div>
               )}
             </div>
-          ) : auctionOffer?.phase === "running" ? (
+          ) : auctionOffer ? (
             <RacerAuctionPanel
               offer={auctionOffer}
               players={players}
@@ -530,7 +528,6 @@ export default function GamePanel({
               isMyTurn={isMyTurn}
               onBid={placeAuctionBid}
               onSettleAuction={settleAuction}
-              onBuyPublicOffer={buyPublicAuctionOffer}
             />
           ) : pendingRollDecision ? (
             <div className="rounded-[4px] border border-slate-300 bg-white p-4 shadow-sm">
@@ -635,18 +632,6 @@ export default function GamePanel({
                 />
               ) : (
                 <>
-                  {auctionOffer?.phase === "public" && (
-                    <RacerAuctionPanel
-                      offer={auctionOffer}
-                      players={players}
-                      myPlayerId={myPlayerId}
-                      myPlayer={players.find(p => p.id === myPlayerId) ?? null}
-                      isMyTurn={isMyTurn}
-                      onBid={placeAuctionBid}
-                      onSettleAuction={settleAuction}
-                      onBuyPublicOffer={buyPublicAuctionOffer}
-                    />
-                  )}
                   {canReroll && (
                     <div className="rounded-[3px] bg-amber-100 px-3 py-2 text-center text-xs font-semibold text-amber-800">
                       {UI_TEXT.board.freeRerollNotice}
@@ -683,11 +668,6 @@ export default function GamePanel({
             </div>
           ) : (
             <div className="space-y-2">
-              {auctionOffer?.phase === "public" && (
-                <div className="rounded-[4px] border border-amber-400 bg-amber-50 p-3 text-sm text-amber-800">
-                  🔨 <span className="font-semibold">{auctionOffer.racerEmoji} {auctionOffer.racerName}</span> — závodník je k dispozici za {auctionOffer.price.toLocaleString("cs-CZ")} 💰. Koupíš ho ve svém tahu.
-                </div>
-              )}
               <div className="w-full rounded-[4px] bg-slate-100 px-4 py-4 text-center text-slate-500">
                 {UI_TEXT.board.waitingForPlayer} <span className="font-semibold text-slate-700">{currentPlayer?.name ?? "…"}</span>
               </div>

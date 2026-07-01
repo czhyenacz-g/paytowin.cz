@@ -58,9 +58,9 @@ export function buildRacerAuctionOffer(
   };
 }
 
-/** Převede skončenou aukci bez příhozů na veřejnou nabídku za plnou cenu. */
-export function convertAuctionToPublicOffer(offer: RacerAuctionOffer): RacerAuctionOffer {
-  return { ...offer, phase: "public", currentBid: null, currentBidderPlayerId: null };
+/** Vrátí true pokud aukce má příhoz — aukce bude prodána. */
+export function hasAuctionBid(offer: RacerAuctionOffer): boolean {
+  return offer.currentBid !== null && offer.currentBidderPlayerId !== null;
 }
 
 /** Vrátí true, pokud countdown pro aktivní aukci vypršel. */

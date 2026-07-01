@@ -114,7 +114,7 @@ import { BoardSurface } from "./board/BoardSurface";
 import { DEFAULT_STARTING_COINS } from "@/lib/game-constants";
 import { getFieldOwner, expireStaleEntries, buildFieldOwnershipPlacement, buildFieldOwnership, applyFieldOwnerPayment } from "@/lib/game/fieldOwnership";
 import { pickRandomClassicLegendRacer } from "@/lib/racers/catalog";
-import { buildRacerAuctionOffer, canPlayerBid, getNextBidAmount, convertAuctionToPublicOffer, AUCTION_DURATION_MS } from "@/lib/game/racerAuction";
+import { buildRacerAuctionOffer, canPlayerBid, getNextBidAmount, hasAuctionBid, AUCTION_DURATION_MS } from "@/lib/game/racerAuction";
 
 // Styly polí jsou součástí theme systému (lib/themes/*)
 // Přistupuj přes: theme.colors.fieldStyles[field.type]
@@ -1591,16 +1591,18 @@ export default function GameBoard({ gameCode }: Props) {
 
     const newLog = (freshState.log as string[]) ?? [];
 
-    if (offer.currentBid !== null && offer.currentBidderPlayerId) {
+    if (hasAuctionBid(offer) && offer.currentBidderPlayerId) {
       // Má vítěze — odečti currentBid, přidej koně, ukonči tah
       const winner = players.find(p => p.id === offer.currentBidderPlayerId);
-      if (!winner || winner.coins < offer.currentBid) {
-        // Fallback — nestačí peníze (race condition) → veřejná nabídka
-        const publicOffer = convertAuctionToPublicOffer(offer);
-        await supabase.from("game_state").update({
-          offer_pending: publicOffer as unknown as Record<string, unknown>,
-          log: [`Aukce skončila — vítěz nemá dost peněz, ${offer.racerEmoji} ${offer.racerName} je nyní veřejně k dispozici.`, ...newLog].slice(0, 20),
-        }).eq("game_id", gameId);
+      if (!winner || winner.coins < offer.currentBid!) {
+        // Fallback — nestačí peníze (race condition) → aukce bez prodeje
+        const revealerIdx = players.findIndex(p => p.id === offer.revealedByPlayerId);
+        const nextIdx = getNextActiveIndex(revealerIdx, players);
+        await finishTurn({
+          nextIndex: nextIdx, turnCount: freshState.turn_count + 1,
+          log: [`Aukce skončila — vítěz nemá dost peněz. ${offer.racerEmoji} ${offer.racerName} zmizí.`, ...newLog],
+          clearOfferPending: { type: "racer_auction" },
+        });
         return;
       }
 
@@ -1616,7 +1618,7 @@ export default function GameBoard({ gameCode }: Props) {
         image: offer.racerImageUrl,
       };
 
-      const updatedCoins = winner.coins - offer.currentBid;
+      const updatedCoins = winner.coins - offer.currentBid!;
       const updatedHorses = normalizeFavoriteHorse([...winner.horses, racer]);
       const winnerIndex = players.findIndex(p => p.id === winner.id);
       const updatedPlayers = players.map((p, i) => i === winnerIndex ? { ...winner, coins: updatedCoins, horses: updatedHorses } : p);
@@ -1627,7 +1629,7 @@ export default function GameBoard({ gameCode }: Props) {
       if (winner.discord_id && gameId) {
         supabase.from("spend_events").insert({
           game_id: gameId, player_id: winner.id, discord_id: winner.discord_id,
-          event_type: "racer_purchase", amount: offer.currentBid,
+          event_type: "racer_purchase", amount: offer.currentBid!,
           metadata: { racer_id: offer.racerId, racer_name: offer.racerName, source: "racer_auction" },
         }).then(({ error }) => { if (error) console.warn("[spend_events] racer_auction insert failed", error); });
       }
@@ -1636,70 +1638,21 @@ export default function GameBoard({ gameCode }: Props) {
 
       await finishTurn({
         nextIndex, turnCount: freshState.turn_count + 1,
-        log: [`${winner.name} vydražil ${racer.emoji} ${racer.name} za ${offer.currentBid} 💰!`, ...newLog],
+        log: [`${winner.name} vydražil ${racer.emoji} ${racer.name} za ${offer.currentBid!} 💰!`, ...newLog],
         clearOfferPending: { type: "racer_auction" },
         updatedCurrentPlayerHorses: updatedHorses,
       });
     } else {
-      // Žádný příhoz — veřejná nabídka za plnou cenu
-      const publicOffer = convertAuctionToPublicOffer(offer);
+      // Žádný příhoz — aukce skončila bez prodeje, kůň zmizí
       const revealerIndex = players.findIndex(p => p.id === offer.revealedByPlayerId);
       const nextIndex = getNextActiveIndex(revealerIndex, players);
 
-      await supabase.from("game_state").update({
-        offer_pending: publicOffer as unknown as Record<string, unknown>,
-      }).eq("game_id", gameId);
-
       await finishTurn({
         nextIndex, turnCount: freshState.turn_count + 1,
-        log: [`Aukce bez příhozu — ${offer.racerEmoji} ${offer.racerName} je nyní veřejně k dispozici za ${offer.price} 💰.`, ...newLog],
+        log: [`Nikdo nepřihodil. Aukce skončila bez prodeje.`, ...newLog],
+        clearOfferPending: { type: "racer_auction" },
       });
     }
-  };
-
-  const buyPublicAuctionOffer = async () => {
-    if (!gameState || !gameId || !myPlayerId) return;
-
-    // Čerstvé načtení z DB — ochrana před race condition mezi hráči
-    const { data: freshState } = await supabase.from("game_state").select("*").eq("game_id", gameId).single();
-    if (!freshState) return;
-    const offer = freshState.offer_pending as RacerAuctionOffer | null;
-    if (!offer || offer.type !== "racer_auction" || offer.phase !== "public") return;
-
-    const player = players.find(p => p.id === myPlayerId);
-    if (!player || player.coins < offer.price) return;
-
-    const racer: Horse = {
-      id: offer.racerId,
-      name: offer.racerName,
-      emoji: offer.racerEmoji,
-      speed: offer.racerSpeed,
-      price: offer.price,
-      maxStamina: offer.racerMaxStamina,
-      stamina: offer.racerMaxStamina,
-      isLegendary: true,
-      image: offer.racerImageUrl,
-    };
-
-    const updatedCoins = player.coins - offer.price;
-    const updatedHorses = normalizeFavoriteHorse([...player.horses, racer]);
-    const newLog = (freshState.log as string[]) ?? [];
-
-    await supabase.from("players").update({ coins: updatedCoins, horses: updatedHorses }).eq("id", player.id);
-    await supabase.from("game_state").update({
-      offer_pending: null,
-      log: [`${player.name} koupil ${racer.emoji} ${racer.name} za ${offer.price} 💰`, ...newLog].slice(0, 20),
-    }).eq("game_id", gameId);
-
-    if (player.discord_id) {
-      supabase.from("spend_events").insert({
-        game_id: gameId, player_id: player.id, discord_id: player.discord_id,
-        event_type: "racer_purchase", amount: offer.price,
-        metadata: { racer_id: offer.racerId, racer_name: offer.racerName, source: "racer_auction_public" },
-      }).then(({ error }) => { if (error) console.warn("[spend_events] racer_auction_public insert failed", error); });
-    }
-
-    setPlayers(prev => prev.map(p => p.id === player.id ? { ...p, coins: updatedCoins, horses: updatedHorses } : p));
   };
 
   // ── Nabídka rerollu ───────────────────────────────────────────────────────────
@@ -3605,7 +3558,6 @@ export default function GameBoard({ gameCode }: Props) {
             skipRacer={skipRacer}
             placeAuctionBid={placeAuctionBid}
             settleAuction={settleAuction}
-            buyPublicAuctionOffer={buyPublicAuctionOffer}
             setPreferredRacer={setPreferredRacer}
             sellRacerToBank={sellRacerToBank}
             myPlayerId={myPlayerId}

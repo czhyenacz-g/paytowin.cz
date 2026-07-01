@@ -4,7 +4,7 @@ import {
   getNextBidAmount,
   canPlayerBid,
   buildRacerAuctionOffer,
-  convertAuctionToPublicOffer,
+  hasAuctionBid,
   isAuctionExpired,
   AUCTION_BID_STEP,
   AUCTION_DURATION_MS,
@@ -123,8 +123,9 @@ describe("canPlayerBid", () => {
     expect(result.reason).toMatch(/skončila/);
   });
 
-  it("zakáže příhoz pro neaktivní aukci", () => {
-    const offer = makeOffer({ phase: "public" });
+  it("zakáže příhoz pokud phase není running (neočekávaný stav)", () => {
+    // Typ phase je nyní jen "running", ale canPlayerBid hlídá interně
+    const offer = makeOffer({ endsAt: now - 1 }); // expired = not running
     const player = makePlayer({ coins: 10000 });
     expect(canPlayerBid(player, offer, now).ok).toBe(false);
   });
@@ -159,24 +160,22 @@ describe("buildRacerAuctionOffer", () => {
   });
 });
 
-// ─── convertAuctionToPublicOffer ─────────────────────────────────────────────
+// ─── hasAuctionBid ────────────────────────────────────────────────────────────
 
-describe("convertAuctionToPublicOffer", () => {
-  it("nastaví phase = public", () => {
-    const offer = makeOffer();
-    expect(convertAuctionToPublicOffer(offer).phase).toBe("public");
+describe("hasAuctionBid", () => {
+  it("vrátí false pokud currentBid je null (no-bid aukce)", () => {
+    const offer = makeOffer({ currentBid: null, currentBidderPlayerId: null });
+    expect(hasAuctionBid(offer)).toBe(false);
   });
 
-  it("zachová plnou cenu koně", () => {
-    const offer = makeOffer({ price: 8500 });
-    expect(convertAuctionToPublicOffer(offer).price).toBe(8500);
-  });
-
-  it("resetuje currentBid a currentBidderPlayerId", () => {
+  it("vrátí true pokud currentBid je nastaven", () => {
     const offer = makeOffer({ currentBid: 4300, currentBidderPlayerId: "player-b" });
-    const pub = convertAuctionToPublicOffer(offer);
-    expect(pub.currentBid).toBeNull();
-    expect(pub.currentBidderPlayerId).toBeNull();
+    expect(hasAuctionBid(offer)).toBe(true);
+  });
+
+  it("no-bid aukce → kůň zmizí, nikdo nic nezíská", () => {
+    const offer = makeOffer({ currentBid: null, currentBidderPlayerId: null });
+    expect(hasAuctionBid(offer)).toBe(false);
   });
 });
 
@@ -193,8 +192,8 @@ describe("isAuctionExpired", () => {
     expect(isAuctionExpired(offer, now)).toBe(false);
   });
 
-  it("vrátí false pokud phase není running", () => {
-    const offer = makeOffer({ phase: "public", endsAt: now - 1 });
+  it("vrátí false pokud endsAt je v budoucnu", () => {
+    const offer = makeOffer({ endsAt: now + 1 });
     expect(isAuctionExpired(offer, now)).toBe(false);
   });
 });

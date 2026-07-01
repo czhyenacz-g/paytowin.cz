@@ -239,7 +239,7 @@ export interface StableDuelPendingOffer {
 
 export interface RacerAuctionOffer {
   type: "racer_auction";
-  phase: "running" | "public" | "sold";
+  phase: "running";
   cardId: string;
   racerId: string;
   racerName: string;
@@ -256,7 +256,6 @@ export interface RacerAuctionOffer {
   endsAt: number;
   createdAt: number;
   revealedByPlayerId: string;
-  boughtByPlayerId?: string;
 }
 
 export type OfferPending = RerollOffer | RaceOffer | BankruptAnnouncement | RacePendingEvent | StableDuelPendingOffer | RacerAuctionOffer;
