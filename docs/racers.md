@@ -2,6 +2,14 @@
 
 > Zdroj: Supabase DB, tabulka `racers`. Aktualizováno 2026-05-03.
 
+## Důležité zdroje dat
+
+- **Závodiště Pardubice — historické výsledky:** https://zavodistepardubice.cz/1965-2/
+  Ověřené výsledky Velké pardubické, jména a umístění skutečných koní. Primární referenční zdroj pro classic legend horses.
+
+- **Wikipedia — Dostihy a sázky:** https://cs.wikipedia.org/wiki/Dostihy_a_s%C3%A1zky
+  Popis originální deskové hry, pravidla, terminologie. Základ pro herní mechaniky a tematický kontext.
+
 ---
 
 ## 🐪 Camel
