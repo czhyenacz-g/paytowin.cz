@@ -32,6 +32,8 @@ import { buildFogReveal } from "@/lib/fog";
 import { getFieldOwner, applyFieldOwnerPayment } from "@/lib/game/fieldOwnership";
 import type { FieldOwnerEntry } from "@/lib/types/game";
 import { selectStableMinigame } from "@/lib/minigames/selectStableMinigame";
+import { pickRandomClassicLegendRacer } from "@/lib/racers/catalog";
+import { buildRacerAuctionOffer } from "@/lib/game/racerAuction";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -398,6 +400,22 @@ export async function executeBotTurnAction(
           if (fieldLog) cardLog.push(fieldLog);
         }
       }
+    } else if (effect.kind === "racer_auction") {
+      const auctionRevealedBy = players.find(p => !p.is_bot && !isBankrupt(p))?.id ?? botPlayer.id;
+      const auctionRacer = await pickRandomClassicLegendRacer();
+      if (auctionRacer) {
+        const offer = buildRacerAuctionOffer(auctionRacer, card.id, auctionRevealedBy, Date.now());
+        await supabase.from("game_state").update({
+          turn_count: newTurnCount,
+          card_pending: null,
+          last_roll: roll,
+          offer_pending: offer as unknown as Record<string, unknown>,
+          log: [`🤖 Bot ${botPlayer.name} spustil aukci (karta) o ${auctionRacer.emoji} ${auctionRacer.name}.`, ...extraLog, ...logEntries].slice(0, 20),
+        }).eq("game_id", gameId);
+        BOT_LOG("bot_auction_started_from_card", { gameId, botId: botPlayer.id, botName: botPlayer.name, racerId: auctionRacer.id, racerName: auctionRacer.name, auctionRevealedBy });
+        return { ok: true };
+      }
+      cardLog.push("Aukce se neotevřela, nejsou dostupní žádní classic_legend koně.");
     } else if (effect.kind === "give_racer") {
       const result = resolveGiveRacer({
         racerId: effect.racerId,
@@ -471,6 +489,33 @@ export async function executeBotTurnAction(
       revealedFields: fogReveal(finalPlayer.position),
       ...(effect.kind === "give_racer" ? { updatedHorses: finalPlayer.horses } : {}),
     });
+    return { ok: true };
+  }
+
+  // ── Pole Aukce — spustí racer_auction offer, neukončuje tah ─────────────────
+  if (field.type === "auction") {
+    BOT_LOG("bot_landed_on_auction", { gameId, botId: botPlayer.id, botName: botPlayer.name, position: newPosition });
+    // Settlement authority musí být lidský hráč (boti nemají klientský useEffect)
+    const revealedByPlayerId = players.find(p => !p.is_bot && !isBankrupt(p))?.id ?? botPlayer.id;
+    const racer = await pickRandomClassicLegendRacer();
+    if (!racer) {
+      const noRacerLog = ["Aukce se neotevřela, nejsou dostupní žádní classic_legend koně.", ...extraLog, ...logEntries];
+      await botFinishTurn(gameId, botPlayer, movedPlayer, updatedPlayers, {
+        nextIndex, turnCount: newTurnCount, log: noRacerLog, lastRoll: finalRoll,
+        revealedFields: fogReveal(newPosition),
+      });
+      return { ok: true };
+    }
+    const offer = buildRacerAuctionOffer(racer, `field_${field.index}`, revealedByPlayerId, Date.now());
+    await supabase.from("game_state").update({
+      turn_count: newTurnCount,
+      card_pending: null,
+      last_roll: finalRoll,
+      offer_pending: offer as unknown as Record<string, unknown>,
+      log: [`🤖 Bot ${botPlayer.name} spustil aukci o ${racer.emoji} ${racer.name}.`, ...extraLog, ...logEntries].slice(0, 20),
+      ...(fogReveal(newPosition) !== undefined ? { revealed_fields: fogReveal(newPosition) } : {}),
+    }).eq("game_id", gameId);
+    BOT_LOG("bot_auction_started", { gameId, botId: botPlayer.id, botName: botPlayer.name, racerId: racer.id, racerName: racer.name, revealedByPlayerId });
     return { ok: true };
   }
 
