@@ -119,7 +119,7 @@ export default function RacerAuctionPanel({
       >
         {offer.currentBid !== null
           ? `Přihodit +${offer.bidStep.toLocaleString("cs-CZ")} na ${nextBid.toLocaleString("cs-CZ")} 💰`
-          : `Přihodit ${nextBid.toLocaleString("cs-CZ")} 💰`}
+          : `Přihodit na ${nextBid.toLocaleString("cs-CZ")} 💰`}
       </button>
 
       {!bidCheck.ok && bidCheck.reason && (
