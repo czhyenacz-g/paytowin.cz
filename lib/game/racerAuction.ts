@@ -77,6 +77,21 @@ export function canBotPlaceSingleBid(
   return { ok: true };
 }
 
+/**
+ * Vrátí true pokud se fresh DB stav lišší od stavu, ze kterého hráč/bot vycházel.
+ * Používá se jako optimistic concurrency check před zápisem příhozu.
+ */
+export function isBidStale(
+  freshOffer: RacerAuctionOffer,
+  expectedCurrentBid: number | null,
+  expectedCurrentBidderId: string | null,
+): boolean {
+  return (
+    freshOffer.currentBid !== expectedCurrentBid ||
+    freshOffer.currentBidderPlayerId !== expectedCurrentBidderId
+  );
+}
+
 /** Vrátí true pokud aukce má příhoz — aukce bude prodána. */
 export function hasAuctionBid(offer: RacerAuctionOffer): boolean {
   return offer.currentBid !== null && offer.currentBidderPlayerId !== null;

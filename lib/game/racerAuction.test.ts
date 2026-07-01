@@ -7,6 +7,7 @@ import {
   hasAuctionBid,
   canBotPlaceSingleBid,
   isAuctionExpired,
+  isBidStale,
   AUCTION_BID_STEP,
   AUCTION_DURATION_MS,
 } from "./racerAuction";
@@ -257,5 +258,34 @@ describe("canBotPlaceSingleBid", () => {
     const offer = makeOffer({ botBidderIds: ["bot-1"] });
     const bot2 = makeBot({ id: "bot-2", coins: 10_000 });
     expect(canBotPlaceSingleBid(bot2, offer, now).ok).toBe(true);
+  });
+});
+
+// ─── isBidStale ───────────────────────────────────────────────────────────────
+
+describe("isBidStale", () => {
+  it("vrátí false pokud fresh odpovídá očekávanému stavu (no-bid)", () => {
+    const fresh = makeOffer({ currentBid: null, currentBidderPlayerId: null });
+    expect(isBidStale(fresh, null, null)).toBe(false);
+  });
+
+  it("vrátí false pokud fresh odpovídá očekávanému stavu (s příhozem)", () => {
+    const fresh = makeOffer({ currentBid: 4300, currentBidderPlayerId: "player-b" });
+    expect(isBidStale(fresh, 4300, "player-b")).toBe(false);
+  });
+
+  it("vrátí true pokud currentBid se liší", () => {
+    const fresh = makeOffer({ currentBid: 4400, currentBidderPlayerId: "player-b" });
+    expect(isBidStale(fresh, 4300, "player-b")).toBe(true);
+  });
+
+  it("vrátí true pokud currentBidderPlayerId se liší", () => {
+    const fresh = makeOffer({ currentBid: 4300, currentBidderPlayerId: "player-c" });
+    expect(isBidStale(fresh, 4300, "player-b")).toBe(true);
+  });
+
+  it("vrátí true pokud fresh má bid ale expected byl null (soupeř přihodil první)", () => {
+    const fresh = makeOffer({ currentBid: 4300, currentBidderPlayerId: "player-b" });
+    expect(isBidStale(fresh, null, null)).toBe(true);
   });
 });

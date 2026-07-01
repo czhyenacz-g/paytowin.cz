@@ -88,7 +88,7 @@ interface Props {
   rollDice: () => void;
   buyRacer: () => void;
   skipRacer: () => void;
-  placeAuctionBid: () => void;
+  placeAuctionBid: () => Promise<"ok" | "stale">;
   settleAuction: () => void;
   setPreferredRacer: (playerId: string, key: string | null) => void;
   sellRacerToBank: (player: Player, horse: Horse) => void;

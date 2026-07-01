@@ -13,7 +13,7 @@ interface Props {
   myPlayerId: string | null;
   myPlayer: Player | null;
   isMyTurn: boolean;
-  onBid: () => void;
+  onBid: () => Promise<"ok" | "stale">;
   onSettleAuction: () => void;
   playSfx: (id: SoundId) => void;
 }
@@ -28,6 +28,7 @@ export default function RacerAuctionPanel({
   playSfx,
 }: Props) {
   const { secondsLeft, isExpired } = useAuctionCountdown(offer.endsAt);
+  const [staleMsg, setStaleMsg] = React.useState<string | null>(null);
 
   // Slavnostní cinkání při startu aukce — jednou při mountu
   React.useEffect(() => {
@@ -131,7 +132,14 @@ export default function RacerAuctionPanel({
 
       {/* Tlačítko příhozu */}
       <button
-        onClick={onBid}
+        onClick={async () => {
+          setStaleMsg(null);
+          const result = await onBid();
+          if (result === "stale") {
+            setStaleMsg("Někdo byl rychlejší. Nabídka se změnila.");
+            setTimeout(() => setStaleMsg(null), 4000);
+          }
+        }}
         disabled={!bidCheck.ok}
         className="w-full rounded-[3px] bg-amber-600 px-3 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-slate-300 transition"
       >
@@ -140,7 +148,10 @@ export default function RacerAuctionPanel({
           : `Přihodit na ${nextBid.toLocaleString("cs-CZ")} 💰`}
       </button>
 
-      {!bidCheck.ok && bidCheck.reason && (
+      {staleMsg && (
+        <p className="text-center text-xs text-amber-700 font-medium">{staleMsg}</p>
+      )}
+      {!staleMsg && !bidCheck.ok && bidCheck.reason && (
         <p className="text-center text-xs text-slate-500">{bidCheck.reason}</p>
       )}
     </div>

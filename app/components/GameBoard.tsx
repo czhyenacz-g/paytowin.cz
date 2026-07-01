@@ -114,7 +114,7 @@ import { BoardSurface } from "./board/BoardSurface";
 import { DEFAULT_STARTING_COINS } from "@/lib/game-constants";
 import { getFieldOwner, expireStaleEntries, buildFieldOwnershipPlacement, buildFieldOwnership, applyFieldOwnerPayment } from "@/lib/game/fieldOwnership";
 import { pickRandomClassicLegendRacer } from "@/lib/racers/catalog";
-import { buildRacerAuctionOffer, canPlayerBid, getNextBidAmount, hasAuctionBid, canBotPlaceSingleBid, AUCTION_DURATION_MS } from "@/lib/game/racerAuction";
+import { buildRacerAuctionOffer, canPlayerBid, getNextBidAmount, hasAuctionBid, canBotPlaceSingleBid, isBidStale, AUCTION_DURATION_MS } from "@/lib/game/racerAuction";
 
 // Styly polí jsou součástí theme systému (lib/themes/*)
 // Přistupuj přes: theme.colors.fieldStyles[field.type]
@@ -1558,20 +1558,35 @@ export default function GameBoard({ gameCode }: Props) {
     return true;
   };
 
-  const placeAuctionBid = async () => {
-    if (!gameState || !gameId || !myPlayerId) return;
-    const offer = gameState.offer_pending as RacerAuctionOffer | null;
-    if (!offer || offer.type !== "racer_auction" || offer.phase !== "running") return;
+  const placeAuctionBid = async (): Promise<"ok" | "stale"> => {
+    if (!gameState || !gameId || !myPlayerId) return "stale";
+    const localOffer = gameState.offer_pending as RacerAuctionOffer | null;
+    if (!localOffer || localOffer.type !== "racer_auction" || localOffer.phase !== "running") return "stale";
+
+    // Snapshot stavu ze kterého hráč vycházel
+    const expectedBid      = localOffer.currentBid;
+    const expectedBidderId = localOffer.currentBidderPlayerId;
 
     const player = players.find(p => p.id === myPlayerId);
-    if (!player) return;
+    if (!player) return "stale";
 
-    const check = canPlayerBid(player, offer, Date.now());
-    if (!check.ok) return;
+    // Vždy číst čerstvý stav z DB před zápisem
+    const { data: fresh } = await supabase
+      .from("game_state").select("offer_pending").eq("game_id", gameId).single();
+    if (!fresh) return "stale";
+    const freshOffer = fresh.offer_pending as RacerAuctionOffer | null;
+    if (!freshOffer || freshOffer.type !== "racer_auction" || freshOffer.phase !== "running") return "stale";
+    if (Date.now() >= freshOffer.endsAt) return "stale";
 
-    const nextBid = getNextBidAmount(offer);
+    // Optimistic concurrency — odmítni příhoz pokud někdo stihl přihodit dříve
+    if (isBidStale(freshOffer, expectedBid, expectedBidderId)) return "stale";
+
+    const check = canPlayerBid(player, freshOffer, Date.now());
+    if (!check.ok) return "stale";
+
+    const nextBid = getNextBidAmount(freshOffer);
     const updatedOffer: RacerAuctionOffer = {
-      ...offer,
+      ...freshOffer,
       currentBid: nextBid,
       currentBidderPlayerId: myPlayerId,
       endsAt: Date.now() + AUCTION_DURATION_MS,
@@ -1580,6 +1595,7 @@ export default function GameBoard({ gameCode }: Props) {
     await supabase.from("game_state").update({
       offer_pending: updatedOffer as unknown as Record<string, unknown>,
     }).eq("game_id", gameId);
+    return "ok";
   };
 
   const settleAuction = async () => {
@@ -1678,6 +1694,10 @@ export default function GameBoard({ gameCode }: Props) {
     if (bots.length === 0) return;
 
     for (const bot of bots) {
+      // Snapshot stavu při plánování — pro stale check po zpoždění
+      const scheduledBid      = offer.currentBid;
+      const scheduledBidderId = offer.currentBidderPlayerId;
+
       const delay = 1000 + Math.random() * 2000; // 1–3 s
       const t = setTimeout(async () => {
         if (!gameId) return;
@@ -1686,6 +1706,9 @@ export default function GameBoard({ gameCode }: Props) {
         if (!fresh) return;
         const freshOffer = fresh.offer_pending as RacerAuctionOffer | null;
         if (!freshOffer || freshOffer.type !== "racer_auction" || freshOffer.phase !== "running") return;
+
+        // Stale check — pokud se mezitím přihodilo, bot nepřihazuje
+        if (isBidStale(freshOffer, scheduledBid, scheduledBidderId)) return;
 
         const { data: freshBotRow } = await supabase
           .from("players").select("coins").eq("id", bot.id).single();
