@@ -416,6 +416,9 @@ export default function ImportReviewClient({ items, isDev, group }: Props) {
               <Field label="Slug">
                 <input type="text" value={edit.slug ?? ""} onChange={(e) => updateEdit("slug", e.target.value || null)} disabled={!isDev} className="input-field" placeholder="např. fantome" />
               </Field>
+              <Field label="Typ (confirmedType)">
+                <input type="text" value={edit.confirmedType ?? ""} onChange={(e) => updateEdit("confirmedType", e.target.value || null)} disabled={!isDev} className="input-field" placeholder="např. horse" />
+              </Field>
               <Field label="Barva (confirmedColor)">
                 <select value={edit.confirmedColor ?? ""} onChange={(e) => updateEdit("confirmedColor", e.target.value || null)} disabled={!isDev} className="input-field">
                   {COLOR_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -426,6 +429,22 @@ export default function ImportReviewClient({ items, isDev, group }: Props) {
                   {ROLE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </Field>
+              {isClassicLegend && (
+                <>
+                  <Field label="Pool type (poolType)">
+                    <select value={edit.poolType ?? ""} onChange={(e) => updateEdit("poolType", e.target.value || null)} disabled={!isDev} className="input-field">
+                      <option value="">—</option>
+                      <option value="classic_legend">classic_legend</option>
+                    </select>
+                  </Field>
+                  <Field label="Spawn source (spawnSource)">
+                    <select value={edit.spawnSource ?? ""} onChange={(e) => updateEdit("spawnSource", e.target.value || null)} disabled={!isDev} className="input-field">
+                      <option value="">—</option>
+                      <option value="historical_stable_card">historical_stable_card</option>
+                    </select>
+                  </Field>
+                </>
+              )}
               <Field label="Rychlost (speed)">
                 <input type="number" value={edit.speed ?? ""} onChange={(e) => updateEdit("speed", e.target.value === "" ? null : Number(e.target.value))} disabled={!isDev} className="input-field" placeholder="—" />
               </Field>
