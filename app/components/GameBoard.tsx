@@ -1658,11 +1658,14 @@ export default function GameBoard({ gameCode }: Props) {
 
       setPlayers(prev => prev.map(p => p.id === winner.id ? { ...p, coins: updatedCoins, horses: updatedHorses } : p));
 
+      // updatedCurrentPlayerHorses předáváme jen pokud vítěz JE aktuální hráč —
+      // jinak by finishTurn zapsal vítězovy koně do regen updatu jiného hráče (bota).
+      const isWinnerCurrentPlayer = winnerIndex === freshState.current_player_index;
       await finishTurn({
         nextIndex, turnCount: freshState.turn_count + 1,
         log: [`${winner.name} vydražil ${racer.emoji} ${racer.name} za ${offer.currentBid!} 💰!`, ...newLog],
         clearOfferPending: { type: "racer_auction" },
-        updatedCurrentPlayerHorses: updatedHorses,
+        ...(isWinnerCurrentPlayer ? { updatedCurrentPlayerHorses: updatedHorses } : {}),
       });
     } else {
       // Žádný příhoz — aukce skončila bez prodeje, kůň zmizí
