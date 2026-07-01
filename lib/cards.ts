@@ -136,7 +136,7 @@ export const FINANCE_CARDS: GameCard[] = [
   {
     id: "fi3",
     type: "finance",
-    text: "Investice do závodní výstroje se vyplatila. Dostáváš dividendy.",
+    text: "Investice do reklamní plochy se vyplatila.",
     effect: { kind: "coins", value: 900 },
     effectLabel: "+900 💰",
   },
