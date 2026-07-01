@@ -117,7 +117,9 @@ export default function RacerAuctionPanel({
         disabled={!bidCheck.ok}
         className="w-full rounded-[3px] bg-amber-600 px-3 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:bg-slate-300 transition"
       >
-        Přihodit {nextBid.toLocaleString("cs-CZ")} 💰
+        {offer.currentBid !== null
+          ? `Přihodit +${offer.bidStep.toLocaleString("cs-CZ")} na ${nextBid.toLocaleString("cs-CZ")} 💰`
+          : `Přihodit ${nextBid.toLocaleString("cs-CZ")} 💰`}
       </button>
 
       {!bidCheck.ok && bidCheck.reason && (

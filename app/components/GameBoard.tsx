@@ -1211,6 +1211,7 @@ export default function GameBoard({ gameCode }: Props) {
         currentPlayer.id, `field_${field.index}`,
         (e, n) => `${currentPlayer.name}: Aukce na poli — ${e} ${n} vstoupil do dražby!`,
         [...extraLog, ...newLog],
+        newPosition,
       );
       if (canReroll) setCanReroll(false);
       if (!started) {
@@ -1540,6 +1541,7 @@ export default function GameBoard({ gameCode }: Props) {
     sourceId: string,
     buildLog: (emoji: string, name: string) => string,
     currentLog: string[],
+    revealPosition?: number,
   ): Promise<boolean> => {
     if (!gameId || !gameState) return false;
     const racer = await pickRandomClassicLegendRacer();
@@ -1551,6 +1553,7 @@ export default function GameBoard({ gameCode }: Props) {
       card_pending: null,
       offer_pending: offer as unknown as Record<string, unknown>,
       log: [buildLog(racer.emoji, racer.name), ...currentLog].slice(0, 20),
+      ...(fogOfWar && revealPosition !== undefined ? { revealed_fields: buildFogReveal(revealPosition) } : {}),
     }).eq("game_id", gameId);
     return true;
   };
