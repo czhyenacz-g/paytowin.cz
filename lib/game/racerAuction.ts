@@ -23,7 +23,6 @@ export function canPlayerBid(
 ): { ok: boolean; reason?: string } {
   if (offer.phase !== "running") return { ok: false, reason: "Aukce není aktivní." };
   if (now >= offer.endsAt) return { ok: false, reason: "Aukce už skončila." };
-  if (offer.currentBidderPlayerId === player.id) return { ok: false, reason: "Už vedeš." };
   const next = getNextBidAmount(offer);
   if (player.coins < next) return { ok: false, reason: "Nemáš dost peněz na další příhoz." };
   return { ok: true };

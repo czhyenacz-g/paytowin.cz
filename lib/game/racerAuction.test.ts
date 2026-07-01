@@ -109,12 +109,10 @@ describe("canPlayerBid", () => {
     expect(result.reason).toMatch(/peněz/);
   });
 
-  it("zakáže currentBidderPlayerId přihazovat sám na sebe", () => {
+  it("povolí currentBidderPlayerId přihodit znovu (navýšení vlastní nabídky)", () => {
     const offer = makeOffer({ currentBidderPlayerId: "player-b", currentBid: 4300 });
     const player = makePlayer({ id: "player-b", coins: 10000 });
-    const result = canPlayerBid(player, offer, now);
-    expect(result.ok).toBe(false);
-    expect(result.reason).toMatch(/vedeš/);
+    expect(canPlayerBid(player, offer, now).ok).toBe(true);
   });
 
   it("zakáže příhoz po endsAt", () => {
