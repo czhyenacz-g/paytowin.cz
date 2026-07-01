@@ -71,6 +71,7 @@ const FIELD_TYPES: BoardFieldType[] = [
   "chance",
   "finance",
   "mafia",
+  "auction",
 ];
 
 const FIELD_TYPE_LABELS: Record<BoardFieldType, string> = {
@@ -83,6 +84,7 @@ const FIELD_TYPE_LABELS: Record<BoardFieldType, string> = {
   chance:     "Osud (karta)",
   finance:    "Finance (karta)",
   mafia:      "Mafie (karta)",
+  auction:    "Aukce (přímý spouštěč)",
 };
 
 /** Typy polí kde amount dává smysl */

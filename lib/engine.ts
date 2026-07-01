@@ -33,6 +33,7 @@ export type FieldType =
   | "coins_lose"
   | "gamble"
   | "racer"    // nový kanonický typ racerového pole
+  | "auction"
   | "horse"    // @deprecated legacy — zachováno pro zpětnou kompatibilitu
   | "neutral"
   | "chance"

@@ -76,6 +76,7 @@ const DEFAULT_TEMPLATE: ThemeManifest = {
       chance: "h-16 w-16 border-sky-400 bg-sky-100 text-sky-800",
       finance: "h-16 w-16 border-teal-400 bg-teal-100 text-teal-800",
       mafia: "h-16 w-16 border-purple-400 bg-purple-100 text-purple-800",
+      auction: "h-16 w-16 border-amber-500 bg-amber-200 text-amber-900",
     },
     activePlayerBadge: "bg-slate-900 text-white",
     rollPanelIdle: "bg-slate-100",

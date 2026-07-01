@@ -39,6 +39,7 @@ const FIELD_TYPES: Array<{ type: string }> = [
   { type: "gamble" },
   { type: "racer" },
   { type: "chance" },
+  { type: "auction" },
   { type: "finance" },
   { type: "neutral" },
 ];

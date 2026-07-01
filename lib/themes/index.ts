@@ -26,7 +26,8 @@ export type FieldStyleKey =
   | "neutral"
   | "chance"
   | "finance"
-  | "mafia";
+  | "mafia"
+  | "auction";
 
 // ─── RacerConfig ──────────────────────────────────────────────────────────────
 

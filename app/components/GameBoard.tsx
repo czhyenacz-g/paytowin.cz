@@ -1203,6 +1203,23 @@ export default function GameBoard({ gameCode }: Props) {
         if (canReroll) setCanReroll(false);
         setPendingRacer({ racer: field.racer, playerIndex: gameState.current_player_index, flavorText: field.flavorText });
       }
+    } else if (field.type === "auction") {
+      // ── Pole Aukce: přímý spouštěč racer_auction (bez losování karty) ─────
+      await supabase.from("players").update({ position: newPosition, coins: movedPlayer.coins, laps: movedPlayer.laps ?? 0 }).eq("id", currentPlayer.id);
+      const started = await triggerRacerAuction(
+        currentPlayer.id, `field_${field.index}`,
+        (e, n) => `${currentPlayer.name}: Aukce na poli — ${e} ${n} vstoupil do dražby!`,
+        [...extraLog, ...newLog],
+      );
+      if (canReroll) setCanReroll(false);
+      if (!started) {
+        await supabase.from("game_state").update({
+          last_roll: roll,
+          turn_count: newTurnCount,
+          offer_pending: null,
+          log: [`${currentPlayer.name}: Aukce — žádný závodník není k dispozici.`, ...extraLog, ...newLog].slice(0, 20),
+        }).eq("game_id", gameId);
+      }
     } else if (field.type === "chance" || field.type === "finance" || field.type === "mafia") {
       // ── Karta: lízni, zobraz všem, efekt se aplikuje automaticky po 2.5 s ──
       const card = drawCard(field.type, theme.content?.cards, theme.cardThemeTag);
@@ -1516,6 +1533,27 @@ export default function GameBoard({ gameCode }: Props) {
 
   // ── Racer Auction ─────────────────────────────────────────────────────────────
 
+  /** Sdílený spouštěč aukce — volán z karty ch13 i z pole "auction". */
+  const triggerRacerAuction = async (
+    revealedByPlayerId: string,
+    sourceId: string,
+    buildLog: (emoji: string, name: string) => string,
+    currentLog: string[],
+  ): Promise<boolean> => {
+    if (!gameId || !gameState) return false;
+    const racer = await pickRandomClassicLegendRacer();
+    if (!racer) return false;
+    auctionSettledRef.current = false;
+    const offer = buildRacerAuctionOffer(racer, sourceId, revealedByPlayerId, Date.now());
+    await supabase.from("game_state").update({
+      turn_count: gameState.turn_count + 1,
+      card_pending: null,
+      offer_pending: offer as unknown as Record<string, unknown>,
+      log: [buildLog(racer.emoji, racer.name), ...currentLog].slice(0, 20),
+    }).eq("game_id", gameId);
+    return true;
+  };
+
   const placeAuctionBid = async () => {
     if (!gameState || !gameId || !myPlayerId) return;
     const offer = gameState.offer_pending as RacerAuctionOffer | null;
@@ -1774,9 +1812,9 @@ export default function GameBoard({ gameCode }: Props) {
       const landingField = fieldsRef.current[newPos];
       if (landingField) {
         const lt = landingField.type;
-        if (lt === "chance" || lt === "finance" || lt === "mafia") {
-          const label = lt === "chance" ? "Osud" : lt === "mafia" ? "Mafie" : "Finance";
-          logLines.push(`${player.name}: přistál na poli ${label} — karta se nevylosuje (přesun byl kartou).`);
+        if (lt === "chance" || lt === "finance" || lt === "mafia" || lt === "auction") {
+          const label = lt === "chance" ? "Osud" : lt === "mafia" ? "Mafie" : lt === "auction" ? "Aukce" : "Finance";
+          logLines.push(`${player.name}: přistál na poli ${label} — efekt se nespustí (přesun byl kartou).`);
           console.log(`[turn-flow] card move landed on ${lt} — skipped (chain guard depth=1)`);
         } else if ((lt === "racer" || lt === "horse") && landingField.racer) {
           const alreadyOwned = playerOwnsRacer(updatedPlayer, landingField.racer);
@@ -1839,19 +1877,12 @@ export default function GameBoard({ gameCode }: Props) {
         logLines.push(`${player.name}: ${card.text}`);
       }
     } else if (card.effect.kind === "racer_auction") {
-      const randomRacer = await pickRandomClassicLegendRacer();
-      if (randomRacer) {
-        auctionSettledRef.current = false;
-        const offer = buildRacerAuctionOffer(randomRacer, card.id, player.id, Date.now());
-        await supabase.from("game_state").update({
-          turn_count: gameState.turn_count + 1,
-          card_pending: null,
-          offer_pending: offer as unknown as Record<string, unknown>,
-          log: [`${player.name}: Aukce — ${randomRacer.emoji} ${randomRacer.name} vstoupil do dražby!`, ...newLog].slice(0, 20),
-        }).eq("game_id", gameId);
-        setPendingCard(null);
-        return;
-      }
+      const started = await triggerRacerAuction(
+        player.id, card.id,
+        (e, n) => `${player.name}: Aukce (karta) — ${e} ${n} vstoupil do dražby!`,
+        newLog,
+      );
+      if (started) { setPendingCard(null); return; }
       logLines.push(`${player.name}: Aukce — žádný závodník není k dispozici.`);
     }
 
@@ -3690,7 +3721,7 @@ export default function GameBoard({ gameCode }: Props) {
         <span>·</span>
         <a href="mailto:info@paytowin.cz" className="hover:text-slate-600 underline">info@paytowin.cz</a>
         <span>·</span>
-        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 tracking-wide">Beta v1.1.0-seno</span>
+        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 tracking-wide">Beta v1.1.1-seno</span>
       </div>
     </div>
   );

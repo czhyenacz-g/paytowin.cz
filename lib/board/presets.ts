@@ -70,10 +70,9 @@ export const SMALL_BOARD: BoardConfig = {
     },
     {
       "index": 6,
-      "type": "coins_gain",
-      "label": "Zlaté podkůvky",
-      "emoji": "🥇",
-      "amount": 800
+      "type": "auction",
+      "label": "Aukce",
+      "emoji": "🔨"
     },
     {
       "index": 7,

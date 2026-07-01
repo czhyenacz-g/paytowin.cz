@@ -30,7 +30,8 @@ export type BoardFieldType =
   | "neutral"
   | "chance"
   | "finance"
-  | "mafia";
+  | "mafia"
+  | "auction";
 
 // ─── Konfigurace pole ─────────────────────────────────────────────────────────
 

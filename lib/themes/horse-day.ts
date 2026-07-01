@@ -29,6 +29,7 @@ export const horseDayTheme: Theme = {
       chance:     "h-[72px] w-[72px] border-sky-400 bg-sky-100 text-sky-800",
       finance:    "h-[72px] w-[72px] border-sky-400 bg-teal-100 text-teal-800",
       mafia:     "h-[72px] w-[72px] border-purple-400 bg-purple-100 text-purple-800",
+      auction:   "h-[72px] w-[72px] border-amber-500 bg-amber-200 text-amber-900",
     },
     activePlayerBadge: "bg-slate-900 text-white",
     rollPanelIdle:     "bg-slate-100",
@@ -233,10 +234,9 @@ export const horseDayTheme: Theme = {
       },
       {
         "index": 6,
-        "type": "coins_gain",
-        "label": "Zlaté podkůvky",
-        "emoji": "🥇",
-        "amount": 800
+        "type": "auction",
+        "label": "Aukce",
+        "emoji": "🔨"
       },
       {
         "index": 7,
