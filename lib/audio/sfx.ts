@@ -11,7 +11,7 @@ export type SoundId = "dice" | "coin_gain" | "coin_loss" | "race" | "newspaper" 
   | "hoof_step" | "engine_step"
   | "countdown_tick" | "countdown_go"
   | "duel_nitro"
-  | "auction_start" | "auction_tick";
+  | "auction_start" | "auction_tick" | "auction_win";
 
 // Cooldown guard — zabraňuje spamování (ms)
 const COOLDOWNS: Record<SoundId, number> = {
@@ -23,6 +23,7 @@ const COOLDOWNS: Record<SoundId, number> = {
   bankrupt:       1200,
   auction_start:  3000,
   auction_tick:   850,
+  auction_win:    4000,
   hoof_hover:     350,
   engine_hover:   350,
   hoof_move:      500,
@@ -380,6 +381,37 @@ function synthAuctionStart(ctx: AudioContext): void {
   });
 }
 
+// Vítězná fanfára po vydražení — vzestupný akord s dozvukem
+function synthAuctionWin(ctx: AudioContext): void {
+  // Vzestupný burst 5 tónů — radostná fanfára
+  const notes = [523, 659, 784, 1047, 1319]; // C5 E5 G5 C6 E6
+  notes.forEach((freq, i) => {
+    const t = ctx.currentTime + i * 0.09;
+    const osc = ctx.createOscillator();
+    osc.type = "triangle";
+    osc.frequency.value = freq;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(0.28, t + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(t); osc.stop(t + 0.6);
+  });
+  // Druhá vlna — plné cinknutí zvonu po 0.5 s
+  [880, 1760].forEach((freq, i) => {
+    const t = ctx.currentTime + 0.5 + i * 0.01;
+    const osc = ctx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.value = freq;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(i === 0 ? 0.22 : 0.11, t + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(t); osc.stop(t + 1.3);
+  });
+}
+
 // Krátké pípnutí pro poslední 3 sekundy aukce — vyšší než countdown_tick
 function synthAuctionTick(ctx: AudioContext): void {
   const t = ctx.currentTime;
@@ -415,6 +447,7 @@ const SYNTHS: Record<SoundId, (ctx: AudioContext) => void> = {
   duel_nitro:     synthDuelNitro,
   auction_start:  synthAuctionStart,
   auction_tick:   synthAuctionTick,
+  auction_win:    synthAuctionWin,
 };
 
 // ─── Public API ───────────────────────────────────────────────────────────────

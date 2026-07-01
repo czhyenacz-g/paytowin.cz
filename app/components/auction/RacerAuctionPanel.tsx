@@ -36,14 +36,28 @@ export default function RacerAuctionPanel({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Pípání v posledních 3 sekundách — jednou za sekundu
+  // Pípání v posledních 5 sekundách — jednou za sekundu
   const prevTickRef = React.useRef<number | null>(null);
+  // Reset tick guardu při každém novém příhozu (endsAt se změní) — zabrání přeskočení tiknutí
   React.useEffect(() => {
-    if (secondsLeft > 0 && secondsLeft <= 3 && secondsLeft !== prevTickRef.current) {
+    prevTickRef.current = null;
+  }, [offer.endsAt]);
+  React.useEffect(() => {
+    if (secondsLeft > 0 && secondsLeft <= 5 && secondsLeft !== prevTickRef.current) {
       prevTickRef.current = secondsLeft;
       playSfx("auction_tick");
     }
   }, [secondsLeft, playSfx]);
+
+  // Vítězný zvuk — jednou při expiraci aukce kde jsem vyhrál
+  const winFiredRef = React.useRef(false);
+  React.useEffect(() => {
+    if (isExpired && offer.currentBidderPlayerId === myPlayerId && !winFiredRef.current) {
+      winFiredRef.current = true;
+      playSfx("auction_win");
+    }
+  }, [isExpired, offer.currentBidderPlayerId, myPlayerId, playSfx]);
+
   const isSettlementAuthority = myPlayerId === offer.revealedByPlayerId;
 
   const onSettleRef = React.useRef(onSettleAuction);
@@ -124,7 +138,7 @@ export default function RacerAuctionPanel({
       </div>
 
       {/* Countdown */}
-      <div className={`text-center text-xs font-semibold ${secondsLeft <= 3 ? "text-red-600 animate-pulse" : "text-amber-700"}`}>
+      <div className={`text-center text-xs font-semibold ${secondsLeft <= 5 ? "text-red-600 animate-pulse" : "text-amber-700"}`}>
         {secondsLeft > 0
           ? `Konec za ${secondsLeft} s bez dalšího příhozu`
           : "Aukce právě končí…"}

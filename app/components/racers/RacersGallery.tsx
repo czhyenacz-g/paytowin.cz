@@ -10,13 +10,19 @@ interface Props {
 
 function RacerCard({ racer, href }: { racer: RacerProfile | RacerUnique; href?: string }) {
   const isPerma = "sale_status" in racer;
+  const flavorText = "flavorText" in racer ? racer.flavorText : undefined;
   const body = (
     <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm hover:shadow-md transition">
-      <div className="aspect-square bg-slate-100 flex items-center justify-center">
+      <div className="relative aspect-square bg-slate-100 flex items-center justify-center group">
         {"imageUrl" in racer && racer.imageUrl ? (
           <img src={racer.imageUrl} alt={racer.name} className="h-full w-full object-cover" />
         ) : (
           <div className="text-5xl select-none">🏁</div>
+        )}
+        {flavorText && (
+          <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-2.5">
+            <p className="text-[11px] leading-snug text-white/95 font-medium">{flavorText}</p>
+          </div>
         )}
       </div>
       <div className="p-3">
