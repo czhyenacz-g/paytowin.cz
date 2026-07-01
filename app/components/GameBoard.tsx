@@ -209,6 +209,7 @@ export default function GameBoard({ gameCode }: Props) {
   // Guard: createdAt posledního bot-created duelu který jsme zpracovali (proti re-triggeru)
   const botDuelHandledRef    = React.useRef<number | null>(null);
   const auctionSettledRef    = React.useRef(false);
+  const lastAuctionCreatedAtRef = React.useRef<number | null>(null);
   const botBidTimeoutsRef    = React.useRef<ReturnType<typeof setTimeout>[]>([]);
   // Lokální zobrazovací stav countdownu (3/2/1/START) — jen UI, žádný DB zápis
   const [countdownDisplay, setCountdownDisplay] = React.useState<string | null>(null);
@@ -1686,6 +1687,15 @@ export default function GameBoard({ gameCode }: Props) {
   const auctionCreatedAt = (gameState?.offer_pending as RacerAuctionOffer | null)?.type === "racer_auction"
     ? (gameState!.offer_pending as RacerAuctionOffer).createdAt
     : null;
+
+  // Reset settled guard při každé nové aukci — bot-triggered aukce nevolají
+  // triggerRacerAuction (kde se ref resetoval), takže bez tohoto by druhá aukce nikdy nesettlovala.
+  React.useEffect(() => {
+    if (auctionCreatedAt !== null && auctionCreatedAt !== lastAuctionCreatedAtRef.current) {
+      lastAuctionCreatedAtRef.current = auctionCreatedAt;
+      auctionSettledRef.current = false;
+    }
+  }, [auctionCreatedAt]);
 
   React.useEffect(() => {
     botBidTimeoutsRef.current.forEach(clearTimeout);
