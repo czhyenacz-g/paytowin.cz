@@ -66,7 +66,7 @@ function canTriggerRivalsRace(p1: Player, p2: Player): boolean {
 
 import { drawCard } from "@/lib/cards";
 import type { GameCard } from "@/lib/cards";
-import type { Player, Horse, ActiveEffect, GameState, OfferPending, RerollOffer, RaceOffer, BankruptAnnouncement, RacePendingEvent, StableDuelPendingOffer, PostTurnEvent, RaceType, EconomyConfig, RollAdjustment, FieldOwnerEntry } from "@/lib/types/game";
+import type { Player, Horse, ActiveEffect, GameState, OfferPending, RerollOffer, RaceOffer, BankruptAnnouncement, RacePendingEvent, StableDuelPendingOffer, HistoricalStableOffer, PostTurnEvent, RaceType, EconomyConfig, RollAdjustment, FieldOwnerEntry } from "@/lib/types/game";
 import { DEFAULT_ECONOMY } from "@/lib/types/game";
 import { resolveYearEvent } from "@/lib/year-events";
 import type { CenterEvent, FlashEvent } from "@/lib/types/events";
@@ -113,6 +113,7 @@ import { BoardAnimationLayer } from "./board/BoardAnimationLayer";
 import { BoardSurface } from "./board/BoardSurface";
 import { DEFAULT_STARTING_COINS } from "@/lib/game-constants";
 import { getFieldOwner, expireStaleEntries, buildFieldOwnershipPlacement, buildFieldOwnership, applyFieldOwnerPayment } from "@/lib/game/fieldOwnership";
+import { pickRandomClassicLegendRacer } from "@/lib/racers/catalog";
 
 // Styly polí jsou součástí theme systému (lib/themes/*)
 // Přistupuj přes: theme.colors.fieldStyles[field.type]
@@ -1511,6 +1512,117 @@ export default function GameBoard({ gameCode }: Props) {
     setPendingRacer(null);
   };
 
+  // ── Historická stáj ───────────────────────────────────────────────────────────
+
+  const buyHistoricalStableRacer = async () => {
+    if (!gameState || !gameId) return;
+    const offer = gameState.offer_pending as HistoricalStableOffer | null;
+    if (!offer || offer.type !== "historical_stable" || offer.phase !== "revealed") return;
+
+    const player = players.find(p => p.id === offer.revealedByPlayerId);
+    if (!player || player.coins < offer.price) return;
+
+    const racer: Horse = {
+      id: offer.racerId,
+      name: offer.racerName,
+      emoji: offer.racerEmoji,
+      speed: offer.racerSpeed,
+      price: offer.price,
+      maxStamina: offer.racerMaxStamina,
+      stamina: offer.racerMaxStamina,
+      isLegendary: true,
+      image: offer.racerImageUrl,
+    };
+
+    const updatedCoins = player.coins - offer.price;
+    const updatedHorses = normalizeFavoriteHorse([...player.horses, racer]);
+    const playerIndex = players.findIndex(p => p.id === player.id);
+    const updatedPlayers = players.map((p, i) => i === playerIndex ? { ...player, coins: updatedCoins, horses: updatedHorses } : p);
+    const nextIndex = getNextActiveIndex(playerIndex, updatedPlayers);
+    const newLog = gameState.log ?? [];
+
+    await supabase.from("players").update({ coins: updatedCoins, horses: updatedHorses }).eq("id", player.id);
+
+    if (player.discord_id && gameId) {
+      supabase.from("spend_events").insert({
+        game_id: gameId, player_id: player.id, discord_id: player.discord_id,
+        event_type: "racer_purchase", amount: offer.price,
+        metadata: { racer_id: offer.racerId, racer_name: offer.racerName, source: "historical_stable_card" },
+      }).then(({ error }) => { if (error) console.warn("[spend_events] historical_stable insert failed", error); });
+    }
+
+    setPlayers(prev => prev.map(p => p.id === player.id ? { ...p, coins: updatedCoins, horses: updatedHorses } : p));
+
+    await finishTurn({
+      nextIndex, turnCount: gameState.turn_count + 1,
+      log: [`${player.name} koupil historického závodníka ${racer.emoji} ${racer.name} za ${offer.price} 💰`, ...newLog],
+      clearOfferPending: { type: "historical_stable" },
+      updatedCurrentPlayerHorses: updatedHorses,
+    });
+  };
+
+  const skipHistoricalStableRacer = async () => {
+    if (!gameState || !gameId) return;
+    const offer = gameState.offer_pending as HistoricalStableOffer | null;
+    if (!offer || offer.type !== "historical_stable" || offer.phase !== "revealed") return;
+
+    const player = players.find(p => p.id === offer.revealedByPlayerId);
+    const playerIndex = players.findIndex(p => p.id === offer.revealedByPlayerId);
+    const nextIndex = getNextActiveIndex(playerIndex, players);
+    const newLog = gameState.log ?? [];
+    const publicOffer: HistoricalStableOffer = { ...offer, phase: "public" };
+
+    await supabase.from("game_state").update({
+      offer_pending: publicOffer as unknown as Record<string, unknown>,
+    }).eq("game_id", gameId);
+
+    await finishTurn({
+      nextIndex, turnCount: gameState.turn_count + 1,
+      log: [`${player?.name ?? "?"} odmítl nabídku — ${offer.racerEmoji} ${offer.racerName} je nyní veřejně k dispozici!`, ...newLog],
+    });
+  };
+
+  const buyPublicHistoricalOffer = async () => {
+    if (!gameState || !gameId || !myPlayerId) return;
+    const offer = gameState.offer_pending as HistoricalStableOffer | null;
+    if (!offer || offer.type !== "historical_stable" || offer.phase !== "public") return;
+
+    const player = players.find(p => p.id === myPlayerId);
+    if (!player || player.coins < offer.price) return;
+
+    const racer: Horse = {
+      id: offer.racerId,
+      name: offer.racerName,
+      emoji: offer.racerEmoji,
+      speed: offer.racerSpeed,
+      price: offer.price,
+      maxStamina: offer.racerMaxStamina,
+      stamina: offer.racerMaxStamina,
+      isLegendary: true,
+      image: offer.racerImageUrl,
+    };
+
+    const updatedCoins = player.coins - offer.price;
+    const updatedHorses = normalizeFavoriteHorse([...player.horses, racer]);
+    const newLog = gameState.log ?? [];
+
+    await supabase.from("players").update({ coins: updatedCoins, horses: updatedHorses }).eq("id", player.id);
+    await supabase.from("game_state").update({
+      offer_pending: null,
+      log: [`${player.name} koupil historického závodníka ${racer.emoji} ${racer.name} za ${offer.price} 💰`, ...newLog].slice(0, 20),
+    }).eq("game_id", gameId);
+
+    if (player.discord_id) {
+      supabase.from("spend_events").insert({
+        game_id: gameId, player_id: player.id, discord_id: player.discord_id,
+        event_type: "racer_purchase", amount: offer.price,
+        metadata: { racer_id: offer.racerId, racer_name: offer.racerName, source: "historical_stable_public" },
+      }).then(({ error }) => { if (error) console.warn("[spend_events] historical_stable_public insert failed", error); });
+    }
+
+    setPlayers(prev => prev.map(p => p.id === player.id ? { ...p, coins: updatedCoins, horses: updatedHorses } : p));
+  };
+
   // ── Nabídka rerollu ───────────────────────────────────────────────────────────
 
   const acceptOffer = async () => {
@@ -1685,6 +1797,33 @@ export default function GameBoard({ gameCode }: Props) {
       } else {
         logLines.push(`${player.name}: ${card.text}`);
       }
+    } else if (card.effect.kind === "historical_stable") {
+      const randomRacer = await pickRandomClassicLegendRacer();
+      if (randomRacer) {
+        const offer: HistoricalStableOffer = {
+          type: "historical_stable",
+          phase: "revealed",
+          cardId: card.id,
+          racerId: randomRacer.id,
+          racerName: randomRacer.name,
+          racerEmoji: randomRacer.emoji,
+          racerImageUrl: randomRacer.imageUrl,
+          racerSpeed: randomRacer.speed,
+          racerMaxStamina: randomRacer.maxStamina,
+          racerFlavorText: randomRacer.flavorText,
+          price: randomRacer.price,
+          revealedByPlayerId: player.id,
+        };
+        await supabase.from("game_state").update({
+          turn_count: gameState.turn_count + 1,
+          card_pending: null,
+          offer_pending: offer as unknown as Record<string, unknown>,
+          log: [`${player.name}: Historická stáj — ${randomRacer.emoji} ${randomRacer.name} vstoupil do hry!`, ...newLog].slice(0, 20),
+        }).eq("game_id", gameId);
+        setPendingCard(null);
+        return;
+      }
+      logLines.push(`${player.name}: Historická stáj je prázdná — žádný závodník není k dispozici.`);
     }
 
     // effect2 — Mafia trade-off druhý efekt (coins nebo move)
@@ -3404,6 +3543,9 @@ export default function GameBoard({ gameCode }: Props) {
             rollDice={rollDice}
             buyRacer={buyRacer}
             skipRacer={skipRacer}
+            buyHistoricalStableRacer={buyHistoricalStableRacer}
+            skipHistoricalStableRacer={skipHistoricalStableRacer}
+            buyPublicHistoricalOffer={buyPublicHistoricalOffer}
             setPreferredRacer={setPreferredRacer}
             sellRacerToBank={sellRacerToBank}
             myPlayerId={myPlayerId}
@@ -3519,7 +3661,7 @@ export default function GameBoard({ gameCode }: Props) {
         <span>·</span>
         <a href="mailto:info@paytowin.cz" className="hover:text-slate-600 underline">info@paytowin.cz</a>
         <span>·</span>
-        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 tracking-wide">Beta v0.8.0-seno</span>
+        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 tracking-wide">Beta v0.8.1-seno</span>
       </div>
     </div>
   );

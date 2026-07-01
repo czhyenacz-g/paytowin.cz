@@ -339,7 +339,7 @@ export async function markPermaRacerSold(uniqueRacerId: string, userId: string):
   return { ok: true, racer: rowToPermaRacer(data as Record<string, unknown>) };
 }
 
-async function getClassicLegendRacers(): Promise<RacerProfile[]> {
+export async function getClassicLegendRacers(): Promise<RacerProfile[]> {
   const { data } = await supabase
     .from("racers")
     .select("*")
@@ -362,6 +362,12 @@ async function getClassicLegendRacers(): Promise<RacerProfile[]> {
     isPublic:    row.is_public   as boolean,
     ownerId:     row.owner_id    as string | undefined,
   }));
+}
+
+export async function pickRandomClassicLegendRacer(): Promise<RacerProfile | null> {
+  const racers = await getClassicLegendRacers();
+  if (racers.length === 0) return null;
+  return racers[Math.floor(Math.random() * racers.length)];
 }
 
 export async function getRacerCatalogSections(): Promise<RacerCatalogSection[]> {

@@ -1,6 +1,6 @@
 // ─── Karty Náhoda / Finance ───────────────────────────────────────────────────
 
-export type CardEffectKind = "coins" | "skip_turn" | "move" | "give_racer" | "stamina_debuff" | "all_racers_stamina";
+export type CardEffectKind = "coins" | "skip_turn" | "move" | "give_racer" | "stamina_debuff" | "all_racers_stamina" | "historical_stable";
 
 export interface CardEffect {
   kind: CardEffectKind;
@@ -84,6 +84,14 @@ export const CHANCE_CARDS: GameCard[] = [
     effect: { kind: "give_racer", racerId: "zeleznik" },
     effectLabel: "Získáš Železníka",
     imagePath: "/themes/_shared/racer-zeleznik.webp",
+    themeTags: ["horse"],
+  },
+  {
+    id: "ch13",
+    type: "chance",
+    text: "Z archivu Velké pardubické se vynořil závodník, jehož jméno psala historie. Historická stáj otevírá svou bránu.",
+    effect: { kind: "historical_stable" },
+    effectLabel: "🏛️ Historická stáj",
     themeTags: ["horse"],
   },
   {

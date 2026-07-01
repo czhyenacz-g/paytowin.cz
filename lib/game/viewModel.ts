@@ -1,5 +1,5 @@
 import type { GameCard } from "@/lib/cards";
-import type { Player, Horse, RerollOffer, OfferPending } from "@/lib/types/game";
+import type { Player, Horse, RerollOffer, OfferPending, HistoricalStableOffer } from "@/lib/types/game";
 import type { CenterEvent } from "@/lib/types/events";
 import type { Field } from "@/lib/engine";
 import { ROLL_CORRECTION_COST } from "@/lib/engine";
@@ -92,6 +92,8 @@ export function getRollBlockedReason(
       return "Pokračujeme za chvíli…";
     case "race_pending":
       return "Připravuje se dostih";
+    case "historical_stable":
+      return (offerPending as HistoricalStableOffer).phase === "revealed" ? "Čeká se na rozhodnutí o historickém závodníkovi" : null;
     default:
       return null;
   }
