@@ -688,6 +688,7 @@ export async function executeBotHorseDecisionAction(
       maxStamina:  field.racer.maxStamina ?? 100,
       stamina:     field.racer.maxStamina ?? 100,
       isLegendary: field.racer.isLegendary,
+      flavorText:  field.flavorText,
     };
     // Deduplicate: filter out any existing entry with same key before adding (idempotent safety)
     const updatedHorses = [

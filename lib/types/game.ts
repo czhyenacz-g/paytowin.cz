@@ -98,6 +98,8 @@ export interface Horse {
   isPreferred?: boolean; // označen hráčem jako preferovaný pro příští závod
   /** Volitelná URL obrázku — kopíruje se z RacerConfig.image. Fallback: emoji. */
   image?: string;
+  /** Flavor text — kopíruje se z RacerConfig.flavorText při nákupu. */
+  flavorText?: string;
 }
 
 /**

@@ -1370,13 +1370,14 @@ export default function GameBoard({ gameCode }: Props) {
 
   const buyRacer = async () => {
     if (!pendingRacer || !gameState) return;
-    const { racer, playerIndex } = pendingRacer;
+    const { racer, playerIndex, flavorText: racerFlavorText } = pendingRacer;
     const player = players[playerIndex];
     if (!player || player.coins < racer.price) return;
     if (playerOwnsRacer(player, racer)) return; // pojistka: už vlastní (id-first)
 
     const updatedCoins = player.coins - racer.price;
-    const updatedHorses = [...player.horses, racer];
+    const racerWithFlavor: Horse = racerFlavorText ? { ...racer, flavorText: racerFlavorText } : racer;
+    const updatedHorses = [...player.horses, racerWithFlavor];
     const newLog = gameState.log ?? [];
     const newTurnCount = gameState.turn_count + 1;
 
@@ -1636,6 +1637,7 @@ export default function GameBoard({ gameCode }: Props) {
         stamina: offer.racerMaxStamina,
         isLegendary: true,
         image: offer.racerImageUrl,
+        flavorText: offer.racerFlavorText,
       };
 
       const updatedCoins = winner.coins - offer.currentBid!;
