@@ -5,6 +5,7 @@ import {
   canPlayerBid,
   buildRacerAuctionOffer,
   hasAuctionBid,
+  canBotPlaceSingleBid,
   isAuctionExpired,
   AUCTION_BID_STEP,
   AUCTION_DURATION_MS,
@@ -195,5 +196,66 @@ describe("isAuctionExpired", () => {
   it("vrátí false pokud endsAt je v budoucnu", () => {
     const offer = makeOffer({ endsAt: now + 1 });
     expect(isAuctionExpired(offer, now)).toBe(false);
+  });
+});
+
+// ─── canBotPlaceSingleBid ─────────────────────────────────────────────────────
+
+function makeBot(overrides: Partial<Player> = {}): Player {
+  return makePlayer({ id: "bot-1", is_bot: true, coins: 10_000, ...overrides });
+}
+
+describe("canBotPlaceSingleBid", () => {
+  it("povolí bota s coins >= startPrice × 1.6", () => {
+    const offer = makeOffer({ startPrice: 4300 }); // threshold = 6880
+    const bot = makeBot({ coins: 7000 });
+    expect(canBotPlaceSingleBid(bot, offer, now).ok).toBe(true);
+  });
+
+  it("zakáže bota s coins < startPrice × 1.6", () => {
+    const offer = makeOffer({ startPrice: 4300 }); // threshold = 6880
+    const bot = makeBot({ coins: 6000 });
+    const result = canBotPlaceSingleBid(bot, offer, now);
+    expect(result.ok).toBe(false);
+    expect(result.reason).toMatch(/startPrice/);
+  });
+
+  it("zakáže bota bez peněz na nextBidAmount", () => {
+    const offer = makeOffer({ startPrice: 4300, currentBid: 9000 }); // next = 9100
+    const bot = makeBot({ coins: 9000 }); // < 9100
+    expect(canBotPlaceSingleBid(bot, offer, now).ok).toBe(false);
+  });
+
+  it("zakáže bota který je currentBidderPlayerId", () => {
+    const offer = makeOffer({ currentBidderPlayerId: "bot-1", currentBid: 4300 });
+    const bot = makeBot({ id: "bot-1", coins: 10_000 });
+    const result = canBotPlaceSingleBid(bot, offer, now);
+    expect(result.ok).toBe(false);
+    expect(result.reason).toMatch(/vede/);
+  });
+
+  it("zakáže bota v botBidderIds (už přihodil)", () => {
+    const offer = makeOffer({ botBidderIds: ["bot-1"] });
+    const bot = makeBot({ id: "bot-1", coins: 10_000 });
+    const result = canBotPlaceSingleBid(bot, offer, now);
+    expect(result.ok).toBe(false);
+    expect(result.reason).toMatch(/přihodil/);
+  });
+
+  it("zakáže bota po endsAt", () => {
+    const offer = makeOffer({ endsAt: now - 1 });
+    const bot = makeBot({ coins: 10_000 });
+    expect(canBotPlaceSingleBid(bot, offer, now).ok).toBe(false);
+  });
+
+  it("bot příhoz použije getNextBidAmount — startPrice pokud nikdo nepřihodil", () => {
+    const offer = makeOffer({ startPrice: 4300, currentBid: null });
+    expect(getNextBidAmount(offer)).toBe(4300);
+  });
+
+  it("jiný bot smí přihodit i když bot-1 je v botBidderIds", () => {
+    const offer = makeOffer({ botBidderIds: ["bot-1"] });
+    const bot2 = makeBot({ id: "bot-2", coins: 10_000 });
+    expect(canBotPlaceSingleBid(bot2, offer, now).ok).toBe(true);
   });
 });

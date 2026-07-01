@@ -58,6 +58,25 @@ export function buildRacerAuctionOffer(
   };
 }
 
+/**
+ * Ověří, zda může bot přihodit (maximálně jednou za aukci).
+ * Každý bot přihodí nejvýše jednou — sledováno přes offer.botBidderIds.
+ */
+export function canBotPlaceSingleBid(
+  bot: Player,
+  offer: RacerAuctionOffer,
+  now: number,
+): { ok: boolean; reason?: string } {
+  if (offer.phase !== "running")          return { ok: false, reason: "Aukce není aktivní." };
+  if (now >= offer.endsAt)                return { ok: false, reason: "Aukce už skončila." };
+  if (bot.id === offer.currentBidderPlayerId) return { ok: false, reason: "Bot už vede." };
+  if (offer.botBidderIds?.includes(bot.id))   return { ok: false, reason: "Bot už přihodil." };
+  const next = getNextBidAmount(offer);
+  if (bot.coins < next)                   return { ok: false, reason: "Bot nemá dost peněz na příhoz." };
+  if (bot.coins < offer.startPrice * 1.6) return { ok: false, reason: "Bot nemá dost peněz (startPrice × 1.6)." };
+  return { ok: true };
+}
+
 /** Vrátí true pokud aukce má příhoz — aukce bude prodána. */
 export function hasAuctionBid(offer: RacerAuctionOffer): boolean {
   return offer.currentBid !== null && offer.currentBidderPlayerId !== null;

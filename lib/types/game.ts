@@ -256,6 +256,7 @@ export interface RacerAuctionOffer {
   endsAt: number;
   createdAt: number;
   revealedByPlayerId: string;
+  botBidderIds?: string[];
 }
 
 export type OfferPending = RerollOffer | RaceOffer | BankruptAnnouncement | RacePendingEvent | StableDuelPendingOffer | RacerAuctionOffer;

@@ -114,7 +114,7 @@ import { BoardSurface } from "./board/BoardSurface";
 import { DEFAULT_STARTING_COINS } from "@/lib/game-constants";
 import { getFieldOwner, expireStaleEntries, buildFieldOwnershipPlacement, buildFieldOwnership, applyFieldOwnerPayment } from "@/lib/game/fieldOwnership";
 import { pickRandomClassicLegendRacer } from "@/lib/racers/catalog";
-import { buildRacerAuctionOffer, canPlayerBid, getNextBidAmount, hasAuctionBid, AUCTION_DURATION_MS } from "@/lib/game/racerAuction";
+import { buildRacerAuctionOffer, canPlayerBid, getNextBidAmount, hasAuctionBid, canBotPlaceSingleBid, AUCTION_DURATION_MS } from "@/lib/game/racerAuction";
 
 // Styly polí jsou součástí theme systému (lib/themes/*)
 // Přistupuj přes: theme.colors.fieldStyles[field.type]
@@ -209,6 +209,7 @@ export default function GameBoard({ gameCode }: Props) {
   // Guard: createdAt posledního bot-created duelu který jsme zpracovali (proti re-triggeru)
   const botDuelHandledRef    = React.useRef<number | null>(null);
   const auctionSettledRef    = React.useRef(false);
+  const botBidTimeoutsRef    = React.useRef<ReturnType<typeof setTimeout>[]>([]);
   // Lokální zobrazovací stav countdownu (3/2/1/START) — jen UI, žádný DB zápis
   const [countdownDisplay, setCountdownDisplay] = React.useState<string | null>(null);
   // Dev: přepínač režimu Stable Duel — default pvbot_awareness, opt-in online_1v1
@@ -1654,6 +1655,63 @@ export default function GameBoard({ gameCode }: Props) {
       });
     }
   };
+
+  // ── Bot příhozy v aukci ───────────────────────────────────────────────────────
+  // Pouze settlement authority (revealedByPlayerId) spouští bot logiku.
+  // Každý bot přihodí nejvýše jednou za aukci — sledováno přes offer.botBidderIds.
+  const auctionCreatedAt = (gameState?.offer_pending as RacerAuctionOffer | null)?.type === "racer_auction"
+    ? (gameState!.offer_pending as RacerAuctionOffer).createdAt
+    : null;
+
+  React.useEffect(() => {
+    botBidTimeoutsRef.current.forEach(clearTimeout);
+    botBidTimeoutsRef.current = [];
+
+    const offer = gameState?.offer_pending as RacerAuctionOffer | null;
+    if (!offer || offer.type !== "racer_auction" || offer.phase !== "running") return;
+    if (!gameId || myPlayerId !== offer.revealedByPlayerId) return;
+
+    const bots = players.filter(p => !!p.is_bot);
+    if (bots.length === 0) return;
+
+    for (const bot of bots) {
+      const delay = 1000 + Math.random() * 2000; // 1–3 s
+      const t = setTimeout(async () => {
+        if (!gameId) return;
+        const { data: fresh } = await supabase
+          .from("game_state").select("offer_pending").eq("game_id", gameId).single();
+        if (!fresh) return;
+        const freshOffer = fresh.offer_pending as RacerAuctionOffer | null;
+        if (!freshOffer || freshOffer.type !== "racer_auction" || freshOffer.phase !== "running") return;
+
+        const { data: freshBotRow } = await supabase
+          .from("players").select("coins").eq("id", bot.id).single();
+        const botCoins = (freshBotRow as { coins?: number } | null)?.coins ?? bot.coins;
+
+        const check = canBotPlaceSingleBid({ ...bot, coins: botCoins }, freshOffer, Date.now());
+        if (!check.ok) return;
+
+        const nextBid = getNextBidAmount(freshOffer);
+        const updatedOffer: RacerAuctionOffer = {
+          ...freshOffer,
+          currentBid: nextBid,
+          currentBidderPlayerId: bot.id,
+          endsAt: Date.now() + AUCTION_DURATION_MS,
+          botBidderIds: [...(freshOffer.botBidderIds ?? []), bot.id],
+        };
+        await supabase.from("game_state").update({
+          offer_pending: updatedOffer as unknown as Record<string, unknown>,
+        }).eq("game_id", gameId);
+      }, delay);
+      botBidTimeoutsRef.current.push(t);
+    }
+
+    return () => {
+      botBidTimeoutsRef.current.forEach(clearTimeout);
+      botBidTimeoutsRef.current = [];
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auctionCreatedAt, myPlayerId]);
 
   // ── Nabídka rerollu ───────────────────────────────────────────────────────────
 
