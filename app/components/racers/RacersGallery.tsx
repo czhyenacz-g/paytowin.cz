@@ -72,6 +72,16 @@ export default function RacersGallery({ sections }: Props) {
                 ))}
               </div>
             </div>
+
+            {section.classicLegend.length > 0 && (
+              <div>
+                <h3 className="mb-1 text-sm font-semibold uppercase tracking-wide text-amber-700">Historická stáj</h3>
+                <p className="mb-2 text-xs text-amber-600">Historičtí koně z Velké pardubické. Dostupní přes speciální kartu.</p>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                  {section.classicLegend.map((r) => <RacerCard key={r.id} racer={r} />)}
+                </div>
+              </div>
+            )}
           </div>
         </section>
       ))}

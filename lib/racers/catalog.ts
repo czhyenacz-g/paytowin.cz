@@ -87,6 +87,7 @@ export interface RacerCatalogSection {
   legendRacers: RacerProfile[];
   permaForSale: PermaRacer[];
   ownedPerma: PermaRacer[];
+  classicLegend: RacerProfile[];
 }
 
 export type RacerUnique = PermaRacer;
@@ -338,8 +339,34 @@ export async function markPermaRacerSold(uniqueRacerId: string, userId: string):
   return { ok: true, racer: rowToPermaRacer(data as Record<string, unknown>) };
 }
 
+async function getClassicLegendRacers(): Promise<RacerProfile[]> {
+  const { data } = await supabase
+    .from("racers")
+    .select("*")
+    .like("id", "cl-%")
+    .eq("type", "horse")
+    .order("name");
+  return ((data ?? []) as Record<string, unknown>[]).map((row) => ({
+    id:          row.id          as string,
+    name:        row.name        as string,
+    speed:       row.speed       as number,
+    price:       row.price       as number,
+    emoji:       row.emoji       as string,
+    maxStamina:  row.max_stamina as number,
+    isLegendary: row.is_legendary as boolean,
+    flavorText:  row.flavor_text as string | undefined,
+    imageUrl:    row.image_url   as string | undefined,
+    imagePath:   row.image_path  as string | undefined,
+    type:        "horse" as const,
+    isBuiltin:   row.is_builtin  as boolean,
+    isPublic:    row.is_public   as boolean,
+    ownerId:     row.owner_id    as string | undefined,
+  }));
+}
+
 export async function getRacerCatalogSections(): Promise<RacerCatalogSection[]> {
   const speciesList: RacerSpecies[] = ["horse", "lama", "camel", "car"];
+  const classicLegend = await getClassicLegendRacers();
   return Promise.all(speciesList.map(async (species) => ({
     species,
     label: SPECIES_LABELS[species],
@@ -347,5 +374,6 @@ export async function getRacerCatalogSections(): Promise<RacerCatalogSection[]> 
     legendRacers: await getLegendPoolRacers(species),
     permaForSale: await getPermaRacersForSale(species),
     ownedPerma: [],
+    classicLegend: species === "horse" ? classicLegend : [],
   })));
 }
