@@ -10,6 +10,8 @@ import MapMenuStrip from "./MapMenuStrip";
 import JoinableGamesList from "./landing/JoinableGamesList";
 import RotatingBenefitStrip from "./RotatingBenefitStrip";
 import { logEvent } from "@/lib/analytics";
+import { useAudioUnlock } from "@/app/hooks/useAudioUnlock";
+import { playMusic, stopMusic } from "@/lib/audio/audio-manager";
 import {
   requestJoinAction,
   approveJoinRequestAction,
@@ -196,6 +198,14 @@ function EconomyFields({
 
 export default function LandingPage() {
   const router = useRouter();
+
+  // Audio — unlock při prvním kliku, menu hudba po celou dobu na landing page
+  useAudioUnlock();
+  React.useEffect(() => {
+    playMusic("menu");
+    return () => stopMusic();
+  }, []);
+
   const [name, setName] = React.useState("");
   const [joinCode, setJoinCode] = React.useState("");
   const [loading, setLoading] = React.useState(false);

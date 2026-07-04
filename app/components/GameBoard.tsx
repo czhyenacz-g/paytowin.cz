@@ -115,6 +115,8 @@ import { DEFAULT_STARTING_COINS } from "@/lib/game-constants";
 import { getFieldOwner, expireStaleEntries, buildFieldOwnershipPlacement, buildFieldOwnership, applyFieldOwnerPayment } from "@/lib/game/fieldOwnership";
 import { pickRandomClassicLegendRacer } from "@/lib/racers/catalog";
 import { buildRacerAuctionOffer, canPlayerBid, getNextBidAmount, hasAuctionBid, canBotPlaceSingleBid, isBidStale, AUCTION_DURATION_MS } from "@/lib/game/racerAuction";
+import { useAudioUnlock } from "@/app/hooks/useAudioUnlock";
+import { useGameMusic } from "@/app/hooks/useGameMusic";
 
 // Styly polí jsou součástí theme systému (lib/themes/*)
 // Přistupuj přes: theme.colors.fieldStyles[field.type]
@@ -268,6 +270,10 @@ export default function GameBoard({ gameCode }: Props) {
   // Theme + FIELDS — odvozeno ze stavu themeId/boardId, aktualizuje se při každém renderu
   const theme = getThemeById(themeId);
   const themeManifest = themeToManifest(theme);
+
+  // Audio — unlock při první interakci, hudba podle aktivního theme
+  useAudioUnlock();
+  useGameMusic(theme.cardThemeTag);
   const board = theme.board ?? getBoardById(boardId);
   const shuffledBoard = applyBoardShuffle(board, gameId);
   // resolvedRacers: závodníci z globální registry (racerRefs flow); null = inline fallback
