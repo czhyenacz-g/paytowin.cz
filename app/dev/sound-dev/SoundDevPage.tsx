@@ -121,21 +121,27 @@ export default function SoundDevPage() {
             <thead className="bg-gray-900 text-gray-400 text-xs uppercase">
               <tr>
                 <th className="text-left px-3 py-2">Kontext</th>
-                <th className="text-left px-3 py-2 hidden sm:table-cell">Soubor</th>
-                <th className="text-left px-3 py-2 hidden sm:table-cell">Popis</th>
+                <th className="text-left px-3 py-2 hidden sm:table-cell">Tracks</th>
+                <th className="text-left px-3 py-2 hidden sm:table-cell">Loop / gap</th>
                 <th className="text-left px-3 py-2">Stav</th>
                 <th className="px-3 py-2"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800">
               {musicContexts.map(ctx => {
-                const track = MUSIC_TRACKS[ctx];
+                const cfg = MUSIC_TRACKS[ctx];
                 const isActive = activeMusicCtx === ctx;
                 return (
                   <tr key={ctx} className={isActive ? "bg-amber-950/40" : "bg-gray-950"}>
                     <td className="px-3 py-2 font-mono text-amber-300">{ctx}</td>
-                    <td className="px-3 py-2 text-gray-500 text-xs hidden sm:table-cell">{track.src}</td>
-                    <td className="px-3 py-2 text-gray-400 hidden sm:table-cell">{track.description}</td>
+                    <td className="px-3 py-2 text-gray-500 text-xs hidden sm:table-cell">
+                      {cfg.tracks.map((t, i) => (
+                        <div key={i}>{t}</div>
+                      ))}
+                    </td>
+                    <td className="px-3 py-2 text-gray-400 text-xs hidden sm:table-cell">
+                      {cfg.loop === true ? "∞" : `${cfg.loop}×`} / {cfg.gapSeconds}s gap
+                    </td>
                     <td className="px-3 py-2">
                       {isActive
                         ? <span className="text-xs font-semibold text-green-400">▶ playing</span>

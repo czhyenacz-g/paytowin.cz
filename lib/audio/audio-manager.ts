@@ -7,11 +7,24 @@ import { DEFAULT_AUDIO_SETTINGS, MUSIC_TRACKS, SFX_TRACKS } from "./audio-config
 
 let settings: AudioSettings = { ...DEFAULT_AUDIO_SETTINGS };
 let unlocked = false;
-// Co má hrát (i když je hudba vypnutá) — zachováváme záměr pro re-enable
-let intendedMusicContext: MusicContext | null = null;
-let currentMusicEl: HTMLAudioElement | null = null;
 
-// ─── Subscribers (pro reaktivní React hooky) ──────────────────────────────────
+// Playlist stav
+interface PlaylistState {
+  context: MusicContext;
+  tracks: string[];
+  loop: true | number;
+  gapSeconds: number;
+  trackIndex: number;  // pozice v tracks[] (pro multi-track playlist)
+  cycleCount: number;  // kolik celých průchodů playlistem proběhlo
+  el: HTMLAudioElement | null;
+  gapTimer: ReturnType<typeof setTimeout> | null;
+}
+
+let playlist: PlaylistState | null = null;
+// Co chceme hrát — zachováno i při musicEnabled=false
+let intendedContext: MusicContext | null = null;
+
+// ─── Subscribers ─────────────────────────────────────────────────────────────
 
 const subscribers = new Set<() => void>();
 
@@ -24,7 +37,7 @@ export function subscribeToSettings(fn: () => void): () => void {
   return () => subscribers.delete(fn);
 }
 
-// ─── localStorage persistence ─────────────────────────────────────────────────
+// ─── localStorage ─────────────────────────────────────────────────────────────
 
 const STORAGE_KEY = "ptw_audio_settings";
 
@@ -55,8 +68,6 @@ function loadSavedSettings(): Partial<AudioSettings> {
   } catch { return {}; }
 }
 
-// ─── Lazy init ze storage (jednou při prvním volání z browseru) ───────────────
-
 let storageLoaded = false;
 
 function ensureStorageLoaded(): void {
@@ -65,7 +76,7 @@ function ensureStorageLoaded(): void {
   settings = { ...settings, ...loadSavedSettings() };
 }
 
-// ─── Pomocné ─────────────────────────────────────────────────────────────────
+// ─── Pomocné ──────────────────────────────────────────────────────────────────
 
 function devLog(...args: unknown[]): void {
   if (process.env.NODE_ENV === "development") {
@@ -81,27 +92,101 @@ function effectiveSfxVolume(): number {
   return settings.masterVolume * settings.sfxVolume;
 }
 
-function startMusicEl(context: MusicContext): void {
-  if (currentMusicEl) {
-    currentMusicEl.pause();
-    currentMusicEl.src = "";
-    currentMusicEl = null;
+// ─── Playlist engine ──────────────────────────────────────────────────────────
+
+function clearPlaylist(): void {
+  if (!playlist) return;
+  if (playlist.gapTimer !== null) {
+    clearTimeout(playlist.gapTimer);
+    playlist.gapTimer = null;
   }
-  const track = MUSIC_TRACKS[context];
-  if (!track) return;
+  if (playlist.el) {
+    playlist.el.onended = null;
+    playlist.el.pause();
+    playlist.el.src = "";
+    playlist.el = null;
+  }
+  playlist = null;
+}
+
+function playTrack(state: PlaylistState): void {
+  // Vyčisti předchozí element v rámci playlistu
+  if (state.el) {
+    state.el.onended = null;
+    state.el.pause();
+    state.el.src = "";
+    state.el = null;
+  }
+
+  const src = state.tracks[state.trackIndex];
+  if (!src) return;
+
   try {
-    const audio = new Audio(track.src);
-    audio.loop = true;
+    const audio = new Audio(src);
     audio.volume = effectiveMusicVolume();
-    currentMusicEl = audio;
+    // Nepoužíváme audio.loop — opakování řídíme sami přes onended
+    state.el = audio;
+
+    audio.onended = () => {
+      if (playlist !== state) return; // playlist byl mezitím vyměněn
+
+      const nextTrackIndex = state.trackIndex + 1;
+
+      if (nextTrackIndex < state.tracks.length) {
+        // Pokračuj na další track v playlistu po gapSeconds
+        state.trackIndex = nextTrackIndex;
+        devLog("playlist next track in", state.gapSeconds, "s");
+        state.gapTimer = setTimeout(() => {
+          state.gapTimer = null;
+          if (playlist === state && settings.musicEnabled) playTrack(state);
+        }, state.gapSeconds * 1000);
+      } else {
+        // Konec playlistu — increment cycle
+        state.cycleCount += 1;
+        devLog("playlist cycle", state.cycleCount, "of", state.loop);
+
+        const shouldRepeat = state.loop === true || state.cycleCount < state.loop;
+        if (shouldRepeat) {
+          state.trackIndex = 0;
+          state.gapTimer = setTimeout(() => {
+            state.gapTimer = null;
+            if (playlist === state && settings.musicEnabled) playTrack(state);
+          }, state.gapSeconds * 1000);
+        } else {
+          devLog("playlist finished (", state.cycleCount, "cycles)");
+          clearPlaylist();
+        }
+      }
+    };
+
     if (unlocked) {
-      audio.play().catch((e) => devLog("playMusic failed", context, e));
+      audio.play().catch((e) => devLog("playTrack failed", src, e));
     } else {
-      devLog("playMusic queued until unlock", context);
+      devLog("playTrack queued until unlock", src);
     }
   } catch (e) {
-    devLog("playMusic error", context, e);
+    devLog("playTrack error", src, e);
   }
+}
+
+function startPlaylist(context: MusicContext): void {
+  clearPlaylist();
+
+  const cfg = MUSIC_TRACKS[context];
+  if (!cfg || cfg.tracks.length === 0) return;
+
+  playlist = {
+    context,
+    tracks: cfg.tracks,
+    loop: cfg.loop,
+    gapSeconds: cfg.gapSeconds,
+    trackIndex: 0,
+    cycleCount: 0,
+    el: null,
+    gapTimer: null,
+  };
+
+  playTrack(playlist);
 }
 
 // ─── Veřejné API ──────────────────────────────────────────────────────────────
@@ -116,29 +201,29 @@ export function unlockAudio(): void {
   if (unlocked) return;
   unlocked = true;
   devLog("unlocked");
-  if (currentMusicEl && settings.musicEnabled) {
-    currentMusicEl.play().catch((e) => devLog("unlock play failed", e));
-  } else if (!currentMusicEl && intendedMusicContext && settings.musicEnabled) {
-    startMusicEl(intendedMusicContext);
+
+  // Spusť čekající hudbu
+  if (playlist?.el && settings.musicEnabled) {
+    playlist.el.play().catch((e) => devLog("unlock play failed", e));
+  } else if (!playlist && intendedContext && settings.musicEnabled) {
+    startPlaylist(intendedContext);
   }
 }
 
 export function playMusic(context: MusicContext): void {
   ensureStorageLoaded();
-  intendedMusicContext = context;
+  intendedContext = context;
+
   if (!settings.musicEnabled) return;
-  // Stejný track už hraje
-  if (currentMusicEl && !currentMusicEl.paused && intendedMusicContext === context) return;
-  startMusicEl(context);
+  // Stejný kontext a playlist aktivní — nepřerušuj
+  if (playlist?.context === context && (playlist.el && !playlist.el.paused || playlist.gapTimer !== null)) return;
+
+  startPlaylist(context);
 }
 
 export function stopMusic(): void {
-  intendedMusicContext = null;
-  if (currentMusicEl) {
-    currentMusicEl.pause();
-    currentMusicEl.src = "";
-    currentMusicEl = null;
-  }
+  intendedContext = null;
+  clearPlaylist();
 }
 
 export function playSfx(event: SfxEvent): void {
@@ -162,13 +247,15 @@ export function setMusicEnabled(value: boolean): void {
   settings = { ...settings, musicEnabled: value };
   saveSettings(settings);
   notify();
+
   if (!value) {
-    currentMusicEl?.pause();
+    // Pozastav element, ale nech playlist stav — resume bude fungovat
+    playlist?.el?.pause();
   } else {
-    if (currentMusicEl && currentMusicEl.paused) {
-      currentMusicEl.play().catch((e) => devLog("resume failed", e));
-    } else if (!currentMusicEl && intendedMusicContext) {
-      startMusicEl(intendedMusicContext);
+    if (playlist?.el && playlist.el.paused) {
+      playlist.el.play().catch((e) => devLog("resume failed", e));
+    } else if (!playlist && intendedContext) {
+      startPlaylist(intendedContext);
     }
   }
 }
@@ -183,7 +270,7 @@ export function setSfxEnabled(value: boolean): void {
 export function setMasterVolume(value: number): void {
   ensureStorageLoaded();
   settings = { ...settings, masterVolume: Math.max(0, Math.min(1, value)) };
-  if (currentMusicEl) currentMusicEl.volume = effectiveMusicVolume();
+  if (playlist?.el) playlist.el.volume = effectiveMusicVolume();
   saveSettings(settings);
   notify();
 }
@@ -191,7 +278,7 @@ export function setMasterVolume(value: number): void {
 export function setMusicVolume(value: number): void {
   ensureStorageLoaded();
   settings = { ...settings, musicVolume: Math.max(0, Math.min(1, value)) };
-  if (currentMusicEl) currentMusicEl.volume = effectiveMusicVolume();
+  if (playlist?.el) playlist.el.volume = effectiveMusicVolume();
   saveSettings(settings);
   notify();
 }
@@ -209,5 +296,5 @@ export function getSettings(): AudioSettings {
 }
 
 export function getCurrentMusicContext(): MusicContext | null {
-  return intendedMusicContext;
+  return intendedContext;
 }

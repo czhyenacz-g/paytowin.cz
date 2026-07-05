@@ -10,28 +10,45 @@ export const DEFAULT_AUDIO_SETTINGS: AudioSettings = {
   sfxVolume: 0.7,
 };
 
-// ─── Mapování hudebních kontextů na soubory ───────────────────────────────────
+// ─── Konfigurace hudebního playlistu ─────────────────────────────────────────
 
 export interface MusicTrackConfig {
-  src: string;
+  /** Soubory playlistu — přehrávají se postupně, pak se opakuje od začátku. */
+  tracks: string[];
+  /**
+   * Počet přehrání celého playlistu.
+   *   true  = nekonečné opakování
+   *   N     = přehraj playlist N-krát celkem, pak zastav
+   */
+  loop: true | number;
+  /** Pauza v sekundách mezi jednotlivými přehráními (i mezi opakováními playlistu). */
+  gapSeconds: number;
   description: string;
 }
 
 export const MUSIC_TRACKS: Record<MusicContext, MusicTrackConfig> = {
   menu: {
-    src: "/audio/music/menu/menu-theme.mp3",
+    tracks: ["/audio/music/menu/menu-theme.mp3"],
+    loop: 2,
+    gapSeconds: 30,
     description: "Hudba hlavního menu",
   },
   race_horses: {
-    src: "/audio/music/maps/horses/horse-race-theme.mp3",
+    tracks: ["/audio/music/maps/horses/horse-race-theme.mp3"],
+    loop: 2,
+    gapSeconds: 30,
     description: "Hudba pro koňské závody",
   },
   race_cars: {
-    src: "/audio/music/maps/cars/city-car-race-theme.mp3",
+    tracks: ["/audio/music/maps/cars/city-car-race-theme.mp3"],
+    loop: 2,
+    gapSeconds: 30,
     description: "Hudba pro závodní auta",
   },
   race_default: {
-    src: "/audio/music/maps/default/default-race-theme.mp3",
+    tracks: ["/audio/music/maps/default/default-race-theme.mp3"],
+    loop: 2,
+    gapSeconds: 30,
     description: "Výchozí hudba závodu",
   },
 };
