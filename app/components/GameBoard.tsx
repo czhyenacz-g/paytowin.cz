@@ -117,6 +117,7 @@ import { pickRandomClassicLegendRacer } from "@/lib/racers/catalog";
 import { buildRacerAuctionOffer, canPlayerBid, getNextBidAmount, hasAuctionBid, canBotPlaceSingleBid, isBidStale, AUCTION_DURATION_MS } from "@/lib/game/racerAuction";
 import { useAudioUnlock } from "@/app/hooks/useAudioUnlock";
 import { useGameMusic } from "@/app/hooks/useGameMusic";
+import AudioControlButton from "@/app/components/ui/AudioControlButton";
 
 // Styly polí jsou součástí theme systému (lib/themes/*)
 // Přistupuj přes: theme.colors.fieldStyles[field.type]
@@ -3560,7 +3561,8 @@ export default function GameBoard({ gameCode }: Props) {
                   </button>
                 </div>
               )}
-              {/* Skrýt panel — vždy na pravém okraji */}
+              {/* Audio ovladač + skrýt panel — vždy na pravém okraji */}
+              <AudioControlButton />
               <button
                 onClick={() => setTopPanelVisible(false)}
                 className="shrink-0 ml-1 rounded-[3px] px-1.5 py-1 text-[11px] text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"

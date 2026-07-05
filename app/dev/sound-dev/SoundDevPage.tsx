@@ -4,13 +4,10 @@ import React from "react";
 import { MUSIC_TRACKS, SFX_TRACKS } from "@/lib/audio/audio-config";
 import type { MusicContext, SfxEvent } from "@/lib/audio/audio-types";
 import * as audioManager from "@/lib/audio/audio-manager";
+import { useAudioSettings } from "@/app/hooks/useAudioSettings";
 
 export default function SoundDevPage() {
-  const [musicEnabled, setMusicEnabledState] = React.useState(true);
-  const [sfxEnabled, setSfxEnabledState] = React.useState(true);
-  const [masterVol, setMasterVol] = React.useState(0.7);
-  const [musicVol, setMusicVol] = React.useState(0.35);
-  const [sfxVol, setSfxVol] = React.useState(0.7);
+  const { settings, setMusicEnabled, setSfxEnabled, setMusicVolume, setSfxVolume, setMasterVolume } = useAudioSettings();
   const [activeMusicCtx, setActiveMusicCtx] = React.useState<MusicContext | null>(null);
   const [unlocked, setUnlocked] = React.useState(false);
   const [lastSfx, setLastSfx] = React.useState<SfxEvent | null>(null);
@@ -31,31 +28,6 @@ export default function SoundDevPage() {
   function handleStopMusic() {
     audioManager.stopMusic();
     setActiveMusicCtx(null);
-  }
-
-  function handleMusicEnabled(v: boolean) {
-    audioManager.setMusicEnabled(v);
-    setMusicEnabledState(v);
-  }
-
-  function handleSfxEnabled(v: boolean) {
-    audioManager.setSfxEnabled(v);
-    setSfxEnabledState(v);
-  }
-
-  function handleMasterVol(v: number) {
-    audioManager.setMasterVolume(v);
-    setMasterVol(v);
-  }
-
-  function handleMusicVol(v: number) {
-    audioManager.setMusicVolume(v);
-    setMusicVol(v);
-  }
-
-  function handleSfxVol(v: number) {
-    audioManager.setSfxVolume(v);
-    setSfxVol(v);
   }
 
   function handlePlaySfx(event: SfxEvent) {
@@ -96,20 +68,20 @@ export default function SoundDevPage() {
         </div>
 
         <div className="grid grid-cols-2 gap-3 text-sm">
-          <label className="flex items-center gap-2">
+          <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
-              checked={musicEnabled}
-              onChange={e => handleMusicEnabled(e.target.checked)}
+              checked={settings.musicEnabled}
+              onChange={e => setMusicEnabled(e.target.checked)}
               className="accent-amber-500"
             />
             <span>Music enabled</span>
           </label>
-          <label className="flex items-center gap-2">
+          <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
-              checked={sfxEnabled}
-              onChange={e => handleSfxEnabled(e.target.checked)}
+              checked={settings.sfxEnabled}
+              onChange={e => setSfxEnabled(e.target.checked)}
               className="accent-amber-500"
             />
             <span>SFX enabled</span>
@@ -119,9 +91,9 @@ export default function SoundDevPage() {
         <div className="space-y-2 text-sm">
           {(
             [
-              { label: "Master volume", value: masterVol, setter: handleMasterVol },
-              { label: "Music volume", value: musicVol, setter: handleMusicVol },
-              { label: "SFX volume", value: sfxVol, setter: handleSfxVol },
+              { label: "Master volume", value: settings.masterVolume, setter: setMasterVolume },
+              { label: "Music volume",  value: settings.musicVolume,  setter: setMusicVolume },
+              { label: "SFX volume",    value: settings.sfxVolume,    setter: setSfxVolume },
             ] as { label: string; value: number; setter: (v: number) => void }[]
           ).map(({ label, value, setter }) => (
             <label key={label} className="flex items-center gap-3">

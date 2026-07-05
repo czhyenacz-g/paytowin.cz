@@ -3,14 +3,69 @@
 import type { AudioSettings, MusicContext, SfxEvent } from "./audio-types";
 import { DEFAULT_AUDIO_SETTINGS, MUSIC_TRACKS, SFX_TRACKS } from "./audio-config";
 
-// ─── Stav audio manageru ──────────────────────────────────────────────────────
+// ─── Stav ─────────────────────────────────────────────────────────────────────
 
 let settings: AudioSettings = { ...DEFAULT_AUDIO_SETTINGS };
 let unlocked = false;
-let currentMusicContext: MusicContext | null = null;
+// Co má hrát (i když je hudba vypnutá) — zachováváme záměr pro re-enable
+let intendedMusicContext: MusicContext | null = null;
 let currentMusicEl: HTMLAudioElement | null = null;
 
-// ─── Pomocné funkce ───────────────────────────────────────────────────────────
+// ─── Subscribers (pro reaktivní React hooky) ──────────────────────────────────
+
+const subscribers = new Set<() => void>();
+
+function notify(): void {
+  subscribers.forEach(fn => fn());
+}
+
+export function subscribeToSettings(fn: () => void): () => void {
+  subscribers.add(fn);
+  return () => subscribers.delete(fn);
+}
+
+// ─── localStorage persistence ─────────────────────────────────────────────────
+
+const STORAGE_KEY = "ptw_audio_settings";
+
+function saveSettings(s: AudioSettings): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      musicEnabled: s.musicEnabled,
+      sfxEnabled: s.sfxEnabled,
+      musicVolume: s.musicVolume,
+      sfxVolume: s.sfxVolume,
+    }));
+  } catch { /* quota exceeded apod. */ }
+}
+
+function loadSavedSettings(): Partial<AudioSettings> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return {};
+    const p = JSON.parse(raw) as Record<string, unknown>;
+    const out: Partial<AudioSettings> = {};
+    if (typeof p.musicEnabled === "boolean") out.musicEnabled = p.musicEnabled;
+    if (typeof p.sfxEnabled === "boolean") out.sfxEnabled = p.sfxEnabled;
+    if (typeof p.musicVolume === "number" && p.musicVolume >= 0 && p.musicVolume <= 1) out.musicVolume = p.musicVolume;
+    if (typeof p.sfxVolume === "number" && p.sfxVolume >= 0 && p.sfxVolume <= 1) out.sfxVolume = p.sfxVolume;
+    return out;
+  } catch { return {}; }
+}
+
+// ─── Lazy init ze storage (jednou při prvním volání z browseru) ───────────────
+
+let storageLoaded = false;
+
+function ensureStorageLoaded(): void {
+  if (storageLoaded || typeof window === "undefined") return;
+  storageLoaded = true;
+  settings = { ...settings, ...loadSavedSettings() };
+}
+
+// ─── Pomocné ─────────────────────────────────────────────────────────────────
 
 function devLog(...args: unknown[]): void {
   if (process.env.NODE_ENV === "development") {
@@ -26,49 +81,19 @@ function effectiveSfxVolume(): number {
   return settings.masterVolume * settings.sfxVolume;
 }
 
-// ─── Veřejné API ──────────────────────────────────────────────────────────────
-
-/** Inicializuje audio manager — volat při startu aplikace (volitelné). */
-export function init(): void {
-  devLog("init");
-}
-
-/**
- * Odblokuje audio po první uživatelské interakci.
- * Volat z click/tap handleru — prohlížeče blokují autoplay bez uživatelské akce.
- */
-export function unlockAudio(): void {
-  if (unlocked) return;
-  unlocked = true;
-  devLog("unlocked");
-
-  // Pokud čeká na přehrání hudby, spusť ji teď
-  if (currentMusicEl && settings.musicEnabled) {
-    currentMusicEl.play().catch((e) => devLog("unlock play failed", e));
+function startMusicEl(context: MusicContext): void {
+  if (currentMusicEl) {
+    currentMusicEl.pause();
+    currentMusicEl.src = "";
+    currentMusicEl = null;
   }
-}
-
-/**
- * Přehraje hudbu pro daný kontext.
- * Pokud je stejný track aktivní, nic nedělá.
- * Pokud soubor chybí nebo prohlížeč přehrání odmítne, tiché selhání.
- */
-export function playMusic(context: MusicContext): void {
-  if (!settings.musicEnabled) return;
-  if (currentMusicContext === context && currentMusicEl && !currentMusicEl.paused) return;
-
-  stopMusic();
-
   const track = MUSIC_TRACKS[context];
   if (!track) return;
-
   try {
     const audio = new Audio(track.src);
     audio.loop = true;
     audio.volume = effectiveMusicVolume();
     currentMusicEl = audio;
-    currentMusicContext = context;
-
     if (unlocked) {
       audio.play().catch((e) => devLog("playMusic failed", context, e));
     } else {
@@ -79,26 +104,48 @@ export function playMusic(context: MusicContext): void {
   }
 }
 
-/** Zastaví aktuálně přehrávanou hudbu. */
+// ─── Veřejné API ──────────────────────────────────────────────────────────────
+
+export function init(): void {
+  ensureStorageLoaded();
+  devLog("init", settings);
+}
+
+export function unlockAudio(): void {
+  ensureStorageLoaded();
+  if (unlocked) return;
+  unlocked = true;
+  devLog("unlocked");
+  if (currentMusicEl && settings.musicEnabled) {
+    currentMusicEl.play().catch((e) => devLog("unlock play failed", e));
+  } else if (!currentMusicEl && intendedMusicContext && settings.musicEnabled) {
+    startMusicEl(intendedMusicContext);
+  }
+}
+
+export function playMusic(context: MusicContext): void {
+  ensureStorageLoaded();
+  intendedMusicContext = context;
+  if (!settings.musicEnabled) return;
+  // Stejný track už hraje
+  if (currentMusicEl && !currentMusicEl.paused && intendedMusicContext === context) return;
+  startMusicEl(context);
+}
+
 export function stopMusic(): void {
+  intendedMusicContext = null;
   if (currentMusicEl) {
     currentMusicEl.pause();
     currentMusicEl.src = "";
     currentMusicEl = null;
   }
-  currentMusicContext = null;
 }
 
-/**
- * Přehraje SFX event jednorázově.
- * Pokud soubor chybí nebo přehrání selže, tiché selhání.
- */
 export function playSfx(event: SfxEvent): void {
+  ensureStorageLoaded();
   if (!settings.sfxEnabled || !unlocked) return;
-
   const track = SFX_TRACKS[event];
   if (!track) return;
-
   try {
     const audio = new Audio(track.src);
     audio.volume = effectiveSfxVolume();
@@ -111,38 +158,56 @@ export function playSfx(event: SfxEvent): void {
 // ─── Nastavení ────────────────────────────────────────────────────────────────
 
 export function setMusicEnabled(value: boolean): void {
+  ensureStorageLoaded();
   settings = { ...settings, musicEnabled: value };
+  saveSettings(settings);
+  notify();
   if (!value) {
     currentMusicEl?.pause();
-  } else if (currentMusicEl) {
-    currentMusicEl.play().catch((e) => devLog("setMusicEnabled resume failed", e));
+  } else {
+    if (currentMusicEl && currentMusicEl.paused) {
+      currentMusicEl.play().catch((e) => devLog("resume failed", e));
+    } else if (!currentMusicEl && intendedMusicContext) {
+      startMusicEl(intendedMusicContext);
+    }
   }
 }
 
 export function setSfxEnabled(value: boolean): void {
+  ensureStorageLoaded();
   settings = { ...settings, sfxEnabled: value };
+  saveSettings(settings);
+  notify();
 }
 
 export function setMasterVolume(value: number): void {
+  ensureStorageLoaded();
   settings = { ...settings, masterVolume: Math.max(0, Math.min(1, value)) };
   if (currentMusicEl) currentMusicEl.volume = effectiveMusicVolume();
+  saveSettings(settings);
+  notify();
 }
 
 export function setMusicVolume(value: number): void {
+  ensureStorageLoaded();
   settings = { ...settings, musicVolume: Math.max(0, Math.min(1, value)) };
   if (currentMusicEl) currentMusicEl.volume = effectiveMusicVolume();
+  saveSettings(settings);
+  notify();
 }
 
 export function setSfxVolume(value: number): void {
+  ensureStorageLoaded();
   settings = { ...settings, sfxVolume: Math.max(0, Math.min(1, value)) };
+  saveSettings(settings);
+  notify();
 }
 
-/** Vrátí aktuální kopii nastavení (read-only). */
 export function getSettings(): AudioSettings {
+  ensureStorageLoaded();
   return { ...settings };
 }
 
-/** Vrátí aktuálně přehrávaný hudební kontext nebo null. */
 export function getCurrentMusicContext(): MusicContext | null {
-  return currentMusicContext;
+  return intendedMusicContext;
 }
