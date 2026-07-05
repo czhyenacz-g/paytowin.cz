@@ -15,6 +15,7 @@ import StableDuelBoardLayer, { type DuelContestant } from "../StableDuelBoardLay
 import DevRaceFlipLayer from "../DevRaceFlipLayer";
 import PlayerList from "./PlayerList";
 import FieldOwnershipPanel from "./FieldOwnershipPanel";
+import AudioControlButton from "@/app/components/ui/AudioControlButton";
 
 const DICE_DOTS: [number, number][][] = [
   [[50, 50]],
@@ -234,13 +235,7 @@ export default function GamePanel({
                 💬 Discord místnost ↗
               </a>
             )}
-            <button
-              onClick={toggleSound}
-              title={soundEnabled ? "Vypnout zvuky" : "Zapnout zvuky"}
-              className="rounded-[3px] px-2 py-1 text-base text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
-            >
-              {soundEnabled ? "🔊" : "🔇"}
-            </button>
+            <AudioControlButton />
           </div>
         </div>
         <div className="space-y-3">
