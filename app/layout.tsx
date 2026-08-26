@@ -39,6 +39,8 @@ export const metadata: Metadata = {
     description: "Multiplayerová desková hra v prohlížeči. Kupuj závodníky, riskuj v závodech a přežij finanční chaos.",
     images: ["/api/og?title=StartovníPole.cz&sub=Multiplayer+závodní+deskovka"],
   },
+  // Seznam Webmaster Tools — ověření vlastnictví domény.
+  other: { "seznam-wmt": "3tpzfrWfwwG0zXFUqY7IOJUyz3QmnR1e" },
 };
 
 export default function RootLayout({
